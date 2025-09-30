@@ -27,6 +27,11 @@ const bodega = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    Estado: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
   },
   {
     tableName: "bodega",
