@@ -45,9 +45,9 @@ const funcionario = sequelize.define(
       allowNull: false,
     },
     estado: {
-      type: DataTypes.BOOLEAN,
+      type: DataTypes.ENUM("Activo", "Inactivo"),
       allowNull: false,
-      defaultValue: true,
+      defaultValue: "Activo",
     },
     idRol: {
       type: DataTypes.INTEGER,
