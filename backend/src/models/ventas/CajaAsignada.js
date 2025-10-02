@@ -1,38 +1,42 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/bd");
 
-const compraproveedor = sequelize.define(
-  "compraproveedor",
+const cajaasignada = sequelize.define(
+  "cajaasignada",
   {
-    idCompraProveedor: {
+    idCajaAsignada: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
       autoIncrement: true,
     },
-    FechaCompra: {
+    fechaAsignacion: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW,
     },
-    Cantidad: {
-      type: DataTypes.INTEGER,
+    horaAsignacion: {
+      type: DataTypes.TIME,
       allowNull: false,
-      defaultValue: 1,
     },
-    Total: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
-    },
-    idProductos: {
+    idFuncionario: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "productos",
-        key: "idProducto",
+        model: "funcionario",
+        key: "idFuncionario",
       },
       onDelete: "CASCADE",
+      onUpdate: "CASCADE",
+    },
+    idCaja: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "caja",
+        key: "idCaja",
+      },
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
     idSucursal: {
       type: DataTypes.INTEGER,
@@ -42,19 +46,13 @@ const compraproveedor = sequelize.define(
         key: "idSucursal",
       },
       onDelete: "CASCADE",
-    },
-    idProveedor: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "proveedor",
-
-        key: "idProveedor",
-      },
-      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
   },
-  { tableName: "compraProveedor", timestamps: false }
+  {
+    tableName: "cajaasignada",
+    timestamps: false,
+  }
 );
 
-module.exports = compraproveedor;
+module.exports = cajaasignada;

@@ -49,6 +49,14 @@ const funcionario = sequelize.define(
       allowNull: false,
       defaultValue: true,
     },
+    idRol: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "rol",
+        key: "idRol",
+      },
+    },
   },
   {
     tableName: "funcionario",

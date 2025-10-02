@@ -15,22 +15,35 @@ const bodega = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    Nombre: {
+    nombre: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    Ubicacion: {
+    ubicacion: {
       type: DataTypes.STRING(100),
       allowNull: true,
     },
-    Capacidad: {
+    capacidad: {
       type: DataTypes.INTEGER,
       allowNull: true,
     },
-    Estado: {
-      type: DataTypes.BOOLEAN,
+    estado: {
+      type: DataTypes.ENUM(
+        "En Funcionamiento",
+        "En Mantenimiento",
+        "Fuera de Servicio"
+      ),
       allowNull: false,
-      defaultValue: true,
+      defaultValue: "En Funcionamiento",
+    },
+    idSucursal: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "sucursal",
+        key: "idSucursal",
+      },
+      onDelete: "CASCADE",
     },
   },
   {

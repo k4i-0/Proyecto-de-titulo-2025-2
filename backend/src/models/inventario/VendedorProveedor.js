@@ -15,11 +15,16 @@ const vendedorProveedor = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    Telefono: {
+    rut: {
+      type: DataTypes.STRING(12),
+      allowNull: false,
+      unique: true,
+    },
+    telefono: {
       type: DataTypes.STRING(15),
       allowNull: false,
     },
-    Email: {
+    email: {
       type: DataTypes.STRING(100),
       allowNull: false,
       validate: {
@@ -27,12 +32,12 @@ const vendedorProveedor = sequelize.define(
       },
       unique: true,
     },
-    FechaIngreso: {
+    fechaIngreso: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
-    FechaTermino: {
+    fechaTermino: {
       type: DataTypes.DATE,
       allowNull: true,
     },

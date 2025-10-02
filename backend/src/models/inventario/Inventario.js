@@ -10,11 +10,11 @@ const inventario = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    Nombre: {
+    nombre: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    Fecha: {
+    fecha: {
       type: DataTypes.DATE,
       allowNull: false,
     },

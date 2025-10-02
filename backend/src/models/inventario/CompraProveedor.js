@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../config/bd");
 
 const compraproveedor = sequelize.define(
-  "compraProveedor",
+  "compraproveedor",
   {
     idCompraProveedor: {
       type: DataTypes.INTEGER,
@@ -10,29 +10,27 @@ const compraproveedor = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    FechaEntrega: {
+    fechaCompra: {
       type: DataTypes.DATE,
       allowNull: false,
+      defaultValue: DataTypes.NOW,
     },
-    Repartidor: {
-      type: DataTypes.STRING(100),
+    cantidad: {
+      type: DataTypes.INTEGER,
       allowNull: false,
+      defaultValue: 1,
     },
-    idProveedor: {
+    total: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    idProductos: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "proveedor",
-        key: "idProveedor",
-      },
-      onDelete: "CASCADE",
-    },
-    idLote: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "lote",
-        key: "idLote",
+        model: "productos",
+        key: "idProducto",
       },
       onDelete: "CASCADE",
     },
@@ -42,6 +40,25 @@ const compraproveedor = sequelize.define(
       references: {
         model: "sucursal",
         key: "idSucursal",
+      },
+      onDelete: "CASCADE",
+    },
+    idProveedor: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "proveedor",
+
+        key: "idProveedor",
+      },
+      onDelete: "CASCADE",
+    },
+    idFuncionario: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "funcionario",
+        key: "idFuncionario",
       },
       onDelete: "CASCADE",
     },

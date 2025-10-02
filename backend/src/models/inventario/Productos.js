@@ -10,26 +10,31 @@ const producto = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    Codigo: {
+    codigo: {
       type: DataTypes.STRING(50),
       allowNull: false,
       unique: true,
     },
-    Nombre: {
+    nombre: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    PrecioCompra: {
+    precioCompra: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    PrecioVenta: {
+    precioVenta: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    Stock: {
+    stock: {
       type: DataTypes.INTEGER,
       allowNull: false,
+    },
+    estado: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: "activo",
     },
     idCategoria: {
       type: DataTypes.INTEGER,
