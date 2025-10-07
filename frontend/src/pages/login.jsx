@@ -1,38 +1,32 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Simula autenticación, reemplaza con tu lógica de backend
-    console.log(email, password);
-
-    if (email === "admin" && password === "123") {
-      localStorage.setItem("auth", "true"); // Marca al usuario como autenticado
-      // Redirecciona al Dashboard o a la página previa
-      const from = location.state?.from?.pathname || "/dashboard";
-      navigate(from, { replace: true });
-    } else {
-      alert("Usuario o contraseña incorrectos");
-    }
+    console.log("Email:", email);
+    localStorage.setItem("auth_token", "dummy_token");
+    localStorage.setItem("userData", JSON.stringify({ email, rol: "Admin" }));
+    // Redirigir a la página de inicio después del inicio de sesión
+    navigate("/dashboard");
   };
 
   return (
     <form onSubmit={handleSubmit}>
+      <h2>Login</h2>
+      <label htmlFor="email">Correo</label>
       <input
-        type="email"
-        placeholder="Correo"
+        type="text"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
+      <label htmlFor="password">Contraseña</label>
       <input
         type="password"
-        placeholder="Contraseña"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
