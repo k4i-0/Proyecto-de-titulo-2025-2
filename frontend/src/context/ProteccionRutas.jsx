@@ -1,20 +1,24 @@
-import { Navigate, useLocation } from "react-router-dom";
+import React from "react";
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.jsx";
 
-export const ProtectedRoute = ({ children, roles = [], permissions = [] }) => {
-  const { isAuthenticated, hasAnyRole, hasAnyPermission } = useAuth();
-  const location = useLocation();
+const ProtectedRoute = ({ allowedRoles, fallbackPath = "/Home" }) => {
+  const { user, isAuthenticated, initializing } = useAuth();
+
+  if (initializing) {
+    return <div className="text-center mt-5">Cargando...</div>;
+  }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" replace />;
   }
 
-  if (roles.length > 0 && !hasAnyRole(roles)) {
-    return <Navigate to="/unauthorized" replace />;
+  if (!user || !allowedRoles.includes(user.rol)) {
+    return <Navigate to={fallbackPath} replace />;
   }
 
-  if (permissions.length > 0 && !hasAnyPermission(permissions)) {
-    return <Navigate to="/forbidden" replace />;
-  }
-
-  return children;
+  // Renderiza las rutas hijas
+  return <Outlet />;
 };
+
+export default ProtectedRoute;
