@@ -17,7 +17,7 @@ const roles = sequelize.define(
     },
     privilegios: {
       type: DataTypes.JSON,
-      allowNull: true,
+      allowNull: false,
     },
     estado: {
       type: DataTypes.ENUM("Activo", "Inactivo"),

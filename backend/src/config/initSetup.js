@@ -8,7 +8,7 @@ async function createUsers() {
     const adminPassword = await bcrypt.hash("admin123", 10);
     const userPassword = await bcrypt.hash("user123", 10);
     // Crear roles si no existen
-    const [adminRole, createdAdmin] = await Rol.findOrCreate({
+    const adminRole = await Rol.findOrCreate({
       where: { nombreRol: "Administrador" },
       defaults: {
         nombreRol: "Administrador",
@@ -20,7 +20,7 @@ async function createUsers() {
       },
     });
 
-    const [cajeroRole, createdCajero] = await Rol.findOrCreate({
+    const cajeroRole = await Rol.findOrCreate({
       where: { nombreRol: "Cajero" },
       defaults: {
         nombreRol: "Cajero",
@@ -32,7 +32,7 @@ async function createUsers() {
       },
     });
 
-    const [vendedorRole, createdVendedor] = await Rol.findOrCreate({
+    const vendedorRole = await Rol.findOrCreate({
       where: { nombreRol: "Vendedor" },
       defaults: {
         nombreRol: "Vendedor",
@@ -43,6 +43,8 @@ async function createUsers() {
         descripcion: "Vendedor del sistema",
       },
     });
+
+    //console.log("adminroles", adminRole);
 
     const admin = Funcionario.findOrCreate({
       where: { rut: "11111111-1" },
@@ -57,7 +59,7 @@ async function createUsers() {
         direccion: "collao 1202, concepion",
         cargo: "prueba",
         estado: "Activo",
-        idRol: adminRole.idRol,
+        roleidRol: 1,
       },
     });
 
@@ -74,7 +76,7 @@ async function createUsers() {
         direccion: "collao 1202, concepion",
         cargo: "prueba",
         estado: "Activo",
-        idRol: cajeroRole.idRol,
+        roleidRol: 2,
       },
     });
 
@@ -91,7 +93,7 @@ async function createUsers() {
         direccion: "collao 1202, concepion",
         cargo: "prueba",
         estado: "Activo",
-        idRol: vendedorRole.idRol,
+        roleidRol: 3,
       },
     });
 

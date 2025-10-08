@@ -8,6 +8,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const routes = require("./src/routes/index.route");
 const { createUsers } = require("./src/config/initSetup");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
@@ -15,8 +16,9 @@ const app = express();
 app.use(express.json()); // permite JSON
 app.use(express.urlencoded({ extended: true })); // req.body para formularios
 
+app.use(cookieParser());
 app.use(helmet()); // Headers de seguridad basico hasta ahora
-app.use(cors({ origin: "http://localhost:5173" })); // Habilita CORS para todas las rutas (puedes configurarlo más estrictamente si es necesario)
+app.use(cors()); // Habilita CORS para todas las rutas (puedes configurarlo más estrictamente si es necesario)
 app.use(morgan("dev")); // Registro de solicitudes HTTP
 
 // Rutas indice.route de la API

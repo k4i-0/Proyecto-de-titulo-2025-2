@@ -14,9 +14,10 @@ createRoot(document.getElementById("root")).render(
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
+          <Route element={<ProtectedRoute allowedRoles={["Administrador"]} />}>
             <Route path="/dashboard" element={<Dashboard />} />
           </Route>
+          <Route path="/" element={<App />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

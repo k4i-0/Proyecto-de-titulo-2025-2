@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import inicioSesion from "../services/Auth.services";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -8,11 +9,15 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     //llamada backend para autenticar
-    const usuarioDemo = { email, rol: "Admin" };
-    login(usuarioDemo, "dummy_token");
+    const usuario = await inicioSesion(email, password);
+    if (usuario.code) {
+      alert(usuario.message);
+      return;
+    }
+    login(usuario);
     // Redirigir a la página de inicio después del inicio de sesión
     navigate("/dashboard");
   };

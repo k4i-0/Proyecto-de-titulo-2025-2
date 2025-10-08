@@ -7,35 +7,35 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
+  // Verificación del backend para validar cookie y obtener usuario
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    const userData = localStorage.getItem("userData");
-
-    try {
-      if (token && userData) {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/auth/verify", { credentials: "include" });
+        if (res.ok) {
+          const userData = await res.json();
+          setUser(userData);
+          setIsAuthenticated(true);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } catch {
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setInitializing(false);
       }
-    } catch (error) {
-      console.error("Error al parsear userData desde localStorage:", error);
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("userData");
-    } finally {
-      setInitializing(false);
-    }
+    };
+    checkAuth();
   }, []);
 
-  const login = (usuario, token) => {
-    localStorage.setItem("auth_token", token);
-    localStorage.setItem("userData", JSON.stringify(usuario));
+  const login = (usuario) => {
     setUser(usuario);
     setIsAuthenticated(true);
   };
 
   const logout = () => {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("userData");
     setUser(null);
     setIsAuthenticated(false);
   };
@@ -49,5 +49,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

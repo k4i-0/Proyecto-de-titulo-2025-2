@@ -4,37 +4,46 @@ const Funcionario = require("../models/usuarios/Funcionario");
 const roles = require("../models/usuarios/Rol");
 
 async function login(req, res) {
-  const { rut, password } = req.body;
-  if (!rut || !password) {
+  const { email, password } = req.body;
+  if (!email || !password) {
     res.status(203).send({ message: "Faltan Datos" });
   }
   try {
     const funcionarioEncontrado = await Funcionario.findOne({
-      where: { rut },
+      where: { email },
       include: [roles],
     });
     if (!funcionarioEncontrado) {
-      res.status(404).send({ message: "Usuario No encontrado, verifique" });
+      res
+        .status(404)
+        .send({ code: 1010, message: "Usuario No encontrado, verifique" });
     }
     const passwordMatch = await bcrypt.compare(
       password,
       funcionarioEncontrado.passwordCaja
     );
     if (!passwordMatch)
-      return res.status(401).json({ message: "Contraseña incorrecta" });
+      return res
+        .status(401)
+        .json({ code: 1011, message: "Contraseña incorrecta" });
     const token = jwt.sign(
-      { rut, role: funcionarioEncontrado.nombreRol },
+      { email, role: funcionarioEncontrado.nombreRol },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
     res.cookie("access_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      // secure: process.env.NODE_ENV === "production",
+      // sameSite: "strict",
       maxAge: 86400000,
     });
-    res.json({ message: "Login exitoso" });
+    console.log(funcionarioEncontrado);
+    res.status(200).json({
+      email: funcionarioEncontrado.email,
+      nombreRol: funcionarioEncontrado.nombreRol,
+      nombre: funcionarioEncontrado.nombre,
+    });
   } catch (error) {
     res.status(500).send({ message: "Error interno" });
     console.log(error);
@@ -55,7 +64,7 @@ async function verificarToken(req, res) {
   if (!token) return res.status(403).send("No autorizado");
   try {
     const data = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = data.id;
+    req.userEmail = data.email;
     next();
   } catch {
     res.status(403).send("Token inválido");
