@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/bd");
+const sequelize = require("../../config/bd");
 
 const bodega = sequelize.define(
   "bodega",
@@ -9,11 +9,6 @@ const bodega = sequelize.define(
       primaryKey: true,
       unique: true,
       autoIncrement: true,
-    },
-    codigoBodega: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      unique: true,
     },
     nombre: {
       type: DataTypes.STRING(100),
@@ -36,15 +31,15 @@ const bodega = sequelize.define(
       allowNull: false,
       defaultValue: "En Funcionamiento",
     },
-    idSucursal: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "sucursal",
-        key: "idSucursal",
-      },
-      onDelete: "CASCADE",
-    },
+    // idSucursal: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "sucursal",
+    //     key: "idSucursal",
+    //   },
+    //   onDelete: "CASCADE",
+    // },
   },
   {
     tableName: "bodega",

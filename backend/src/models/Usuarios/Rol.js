@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/bd");
 
-const Rol = sequelize.define(
-  "rol",
+const roles = sequelize.define(
+  "roles",
   {
     idRol: {
       type: DataTypes.INTEGER,
@@ -19,6 +19,11 @@ const Rol = sequelize.define(
       type: DataTypes.JSON,
       allowNull: true,
     },
+    estado: {
+      type: DataTypes.ENUM("Activo", "Inactivo"),
+      allowNull: false,
+      defaultValue: "Activo",
+    },
     descripcion: {
       type: DataTypes.STRING(255),
       allowNull: true,
@@ -30,4 +35,4 @@ const Rol = sequelize.define(
   }
 );
 
-module.exports = Rol;
+module.exports = roles;

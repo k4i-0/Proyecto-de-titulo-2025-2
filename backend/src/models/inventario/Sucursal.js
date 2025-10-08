@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/bd");
+const sequelize = require("../../config/bd");
 
 const sucursal = sequelize.define(
   "sucursal",
@@ -7,12 +7,6 @@ const sucursal = sequelize.define(
     idSucursal: {
       type: DataTypes.INTEGER,
       primaryKey: true,
-      unique: true,
-      autoIncrement: true,
-    },
-    codigoSucursal: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
       unique: true,
     },
     nombre: {
@@ -26,6 +20,11 @@ const sucursal = sequelize.define(
     telefono: {
       type: DataTypes.STRING(15),
       allowNull: true,
+    },
+    estado: {
+      type: DataTypes.ENUM("Abierta", "Cerrada", "Mantencion"),
+      allowNull: false,
+      defaultValue: "Abierta",
     },
   },
   {

@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/bd");
+const sequelize = require("../../config/bd");
 
 const compraproveedor = sequelize.define(
   "compraproveedor",
@@ -20,48 +20,53 @@ const compraproveedor = sequelize.define(
       allowNull: false,
       defaultValue: 1,
     },
+    precioUnitario: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
     total: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
     },
-    idProductos: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "productos",
-        key: "idProducto",
-      },
-      onDelete: "CASCADE",
-    },
-    idSucursal: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "sucursal",
-        key: "idSucursal",
-      },
-      onDelete: "CASCADE",
-    },
-    idProveedor: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "proveedor",
+    // idLote: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "lote",
+    //     key: "idLote",
+    //   },
+    //   onDelete: "CASCADE",
+    // },
+    // idSucursal: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "sucursal",
+    //     key: "idSucursal",
+    //   },
+    //   onDelete: "CASCADE",
+    // },
+    // idProveedor: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "proveedor",
 
-        key: "idProveedor",
-      },
-      onDelete: "CASCADE",
-    },
-    idFuncionario: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "funcionario",
-        key: "idFuncionario",
-      },
-      onDelete: "CASCADE",
-    },
+    //     key: "idProveedor",
+    //   },
+    //   onDelete: "CASCADE",
+    // },
+    // idFuncionario: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "funcionario",
+    //     key: "idFuncionario",
+    //   },
+    //   onDelete: "CASCADE",
+    // },
   },
   { tableName: "compraProveedor", timestamps: false }
 );

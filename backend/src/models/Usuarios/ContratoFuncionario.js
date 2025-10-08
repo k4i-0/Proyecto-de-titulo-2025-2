@@ -19,22 +19,22 @@ const contratoFuncionario = sequelize.define(
       allowNull: false,
       defaultValue: "Plazo Fijo",
     },
-    idFuncionario: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "funcionario",
-        key: "idFuncionario",
-      },
-    },
-    idSucursal: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "sucursal",
-        key: "idSucursal",
-      },
-    },
+    // idFuncionario: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "funcionario",
+    //     key: "idFuncionario",
+    //   },
+    // },
+    // idSucursal: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "sucursal",
+    //     key: "idSucursal",
+    //   },
+    // },
   },
   {
     tableName: "contratoFuncionario",

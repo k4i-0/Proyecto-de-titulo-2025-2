@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/bd");
+const sequelize = require("../../config/bd");
 
 const proveedor = sequelize.define(
   "proveedor",
@@ -10,14 +10,14 @@ const proveedor = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    Nombre: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
     rut: {
       type: DataTypes.STRING(12),
       allowNull: false,
       unique: true,
+    },
+    Nombre: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
     },
     telefono: {
       type: DataTypes.STRING(15),

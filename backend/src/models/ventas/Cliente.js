@@ -1,10 +1,11 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/bd");
+const sequelize = require("../../config/bd");
 
 const cliente = sequelize.define(
+  "cliente",
   {
     rutCliente: {
-      type: DateTypes.STRING(12),
+      type: DataTypes.STRING(12),
       primaryKey: true,
       unique: true,
     },

@@ -1,68 +1,58 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/bd");
 
-const cajaasignada = sequelize.define(
-  "cajaasignada",
+const descuentoAsociado = sequelize.define(
+  "descuentoasociado",
   {
-    idCajaAsignada: {
+    idDescuentoAsociado: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
-      autoIncrement: true,
     },
-    fechaAsignacion: {
+    fechaHoraCreacion: {
       type: DataTypes.DATE,
       allowNull: false,
     },
-    horaAsignacion: {
-      type: DataTypes.TIME,
+    vigencia: {
+      type: DataTypes.BOOLEAN,
       allowNull: false,
+      defaultValue: true,
     },
-    // idFuncionario: {
+    // idDescuento: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,
     //   references: {
-    //     model: "funcionario",
-    //     key: "idFuncionario",
+    //     model: "descuento",
+    //     key: "idDescuento",
     //   },
     //   onDelete: "CASCADE",
     //   onUpdate: "CASCADE",
     // },
-    // idCaja: {
+    // idCategoria: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,
     //   references: {
-    //     model: "caja",
-    //     key: "idCaja",
+    //     model: "categoria",
+    //     key: "idCategoria",
     //   },
     //   onDelete: "CASCADE",
     //   onUpdate: "CASCADE",
     // },
-    // idSucursal: {
+    // idProducto: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,
     //   references: {
-    //     model: "sucursal",
-    //     key: "idSucursal",
-    //   },
-    //   onDelete: "CASCADE",
-    //   onUpdate: "CASCADE",
-    // },
-    // idFuncionario: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    //   references: {
-    //     model: "contratofuncionario",
-    //     key: "idContratoFuncionario",
+    //     model: "producto",
+    //     key: "idProducto",
     //   },
     //   onDelete: "CASCADE",
     //   onUpdate: "CASCADE",
     // },
   },
   {
-    tableName: "cajaasignada",
+    tableName: "descuentos_asociados",
     timestamps: false,
   }
 );
 
-module.exports = cajaasignada;
+module.exports = descuentoAsociado;

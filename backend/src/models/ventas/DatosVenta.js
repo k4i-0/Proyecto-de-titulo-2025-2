@@ -1,40 +1,39 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/bd");
 
-const inventario = sequelize.define(
-  "inventario",
+const datosventa = sequelize.define(
+  "datosventa",
   {
-    idInventario: {
+    idDatosVenta: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
-      autoIncrement: true,
     },
-    nombre: {
+    detalle: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    fechaCreacion: {
+    cantidad: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    fecha: {
       type: DataTypes.DATE,
       allowNull: false,
     },
-    encargado: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    stock: {
+    subTotal: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0,
     },
-    // idBodega: {
+    // idDescuento: {
     //   type: DataTypes.INTEGER,
-    //   allowNull: false,
+    //   allowNull: true,
     //   references: {
-    //     model: "bodega",
-    //     key: "idBodega",
+    //     model: "descuento",
+    //     key: "idDescuento",
     //   },
     //   onDelete: "CASCADE",
+    //   onUpdate: "CASCADE",
     // },
     // idProducto: {
     //   type: DataTypes.INTEGER,
@@ -44,12 +43,13 @@ const inventario = sequelize.define(
     //     key: "idProducto",
     //   },
     //   onDelete: "CASCADE",
+    //   onUpdate: "CASCADE",
     // },
   },
   {
-    tableName: "inventario",
+    tableName: "datosventa",
     timestamps: false,
   }
 );
 
-module.exports = inventario;
+module.exports = datosventa;

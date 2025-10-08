@@ -1,7 +1,8 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/bd");
+const sequelize = require("../../config/bd");
 
 const lote = sequelize.define(
+  "lote",
   {
     idLote: {
       type: DataTypes.INTEGER,
@@ -10,27 +11,36 @@ const lote = sequelize.define(
       autoIncrement: true,
     },
     Codigo: {
-      type: DataTypes.STRING(50),
+      type: DataTypes.INTEGER,
       allowNull: false,
       unique: true,
-    },
-    FechaVencimiento: {
-      type: DataTypes.DATE,
-      allowNull: false,
     },
     FechaIngreso: {
       type: DataTypes.DATE,
       allowNull: false,
     },
-    idBodega: {
-      type: DataTypes.INTEGER,
+    FechaVencimiento: {
+      type: DataTypes.DATE,
       allowNull: false,
-      references: {
-        model: "bodega",
-        key: "idBodega",
-      },
-      onDelete: "CASCADE",
     },
+    // idBodega: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "bodega",
+    //     key: "idBodega",
+    //   },
+    //   onDelete: "CASCADE",
+    // },
+    // idProducto: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "productos",
+    //     key: "idProducto",
+    //   },
+    //   onDelete: "CASCADE",
+    // },
   },
   { tableName: "lote", timestamps: false }
 );

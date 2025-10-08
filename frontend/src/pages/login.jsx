@@ -1,16 +1,18 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Email:", email);
-    localStorage.setItem("auth_token", "dummy_token");
-    localStorage.setItem("userData", JSON.stringify({ email, rol: "Admin" }));
+    //llamada backend para autenticar
+    const usuarioDemo = { email, rol: "Admin" };
+    login(usuarioDemo, "dummy_token");
     // Redirigir a la página de inicio después del inicio de sesión
     navigate("/dashboard");
   };

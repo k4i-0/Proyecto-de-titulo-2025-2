@@ -1,42 +1,50 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/bd");
 
-const cajaasignada = sequelize.define(
-  "cajaasignada",
+const despacho = sequelize.define(
+  "despacho",
   {
-    idCajaAsignada: {
+    idDespacho: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
       autoIncrement: true,
     },
-    fechaAsignacion: {
+    fechaDespacho: {
       type: DataTypes.DATE,
       allowNull: false,
     },
-    horaAsignacion: {
-      type: DataTypes.TIME,
+    tipoDocumento: {
+      type: DataTypes.ENUM("Factura", "Guia de despacho"),
+      allowNull: false,
+      defaultValue: "Factura",
+    },
+    tipoDespacho: {
+      type: DataTypes.ENUM("Proveedor", "Entre Sucursales"),
+      allowNull: false,
+      defaultValue: "Proveedor",
+    },
+    repartidor: {
+      type: DataTypes.STRING(100),
       allowNull: false,
     },
-    // idFuncionario: {
+    // idProveedor: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,
     //   references: {
-    //     model: "funcionario",
-    //     key: "idFuncionario",
+    //     model: "proveedor",
+    //     key: "idProveedor",
     //   },
     //   onDelete: "CASCADE",
-    //   onUpdate: "CASCADE",
     // },
-    // idCaja: {
+    // idLote: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,
     //   references: {
-    //     model: "caja",
-    //     key: "idCaja",
+    //     model: "lote",
+    //     key: "idLote",
     //   },
     //   onDelete: "CASCADE",
-    //   onUpdate: "CASCADE",
     // },
     // idSucursal: {
     //   type: DataTypes.INTEGER,
@@ -46,23 +54,9 @@ const cajaasignada = sequelize.define(
     //     key: "idSucursal",
     //   },
     //   onDelete: "CASCADE",
-    //   onUpdate: "CASCADE",
-    // },
-    // idFuncionario: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    //   references: {
-    //     model: "contratofuncionario",
-    //     key: "idContratoFuncionario",
-    //   },
-    //   onDelete: "CASCADE",
-    //   onUpdate: "CASCADE",
     // },
   },
-  {
-    tableName: "cajaasignada",
-    timestamps: false,
-  }
+  { tableName: "despacho", timestamps: false }
 );
 
-module.exports = cajaasignada;
+module.exports = despacho;

@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/bd");
+const sequelize = require("../../config/bd");
 
 const funcionario = sequelize.define(
   "funcionario",
@@ -28,7 +28,7 @@ const funcionario = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    password: {
+    passwordCaja: {
       type: DataTypes.STRING(255),
       allowNull: false,
     },
@@ -49,14 +49,22 @@ const funcionario = sequelize.define(
       allowNull: false,
       defaultValue: "Activo",
     },
-    idRol: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "rol",
-        key: "idRol",
-      },
-    },
+    // idRol: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "rol",
+    //     key: "idRol",
+    //   },
+    // },
+    // idBitacora: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: true,
+    //   references: {
+    //     model: "bitacora",
+    //     key: "idBitacora",
+    //   },
+    // },
   },
   {
     tableName: "funcionario",

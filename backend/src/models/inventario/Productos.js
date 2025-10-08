@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/bd");
+const sequelize = require("../../config/bd");
 
 const producto = sequelize.define(
   "productos",
@@ -27,24 +27,28 @@ const producto = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    stock: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
+    peso: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
+    descripcion: {
+      type: DataTypes.STRING(200),
+      allowNull: true,
     },
     estado: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.ENUM("Bueno", "Malo", "Dañano"),
       allowNull: false,
-      defaultValue: "activo",
+      defaultValue: "Bueno",
     },
-    idCategoria: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "categorias",
-        key: "idCategoria",
-      },
-      onDelete: "CASCADE",
-    },
+    // idCategoria: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "categorias",
+    //     key: "idCategoria",
+    //   },
+    //   onDelete: "CASCADE",
+    // },
   },
   {
     tableName: "productos",

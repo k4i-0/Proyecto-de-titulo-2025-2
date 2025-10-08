@@ -1,33 +1,31 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/bd");
 
-const categoria = sequelize.define(
-  "categorias",
+const actividad = sequelize.define(
+  "actividad",
   {
-    idCategoria: {
+    idActividad: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
-      autoIncrement: true,
     },
     nombre: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    tipo: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
+    descripcion: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
     },
-    estado: {
-      type: DataTypes.ENUM("Activo", "Inactivo"),
+    nivelAlerta: {
+      type: DataTypes.ENUM("Bajo", "Medio", "Alto"),
       allowNull: false,
-      defaultValue: "Activo",
+      defaultValue: "Bajo",
     },
   },
   {
-    tableName: "categorias",
+    tableName: "actividad",
     timestamps: false,
   }
 );
-
-module.exports = categoria;
+module.exports = actividad;

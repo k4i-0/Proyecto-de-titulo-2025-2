@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const Funcionario = require("../models/Funcionario");
+const Funcionario = require("../models/usuarios/Funcionario");
 
 async function login(req, res) {
   const { user, password } = req.body;
@@ -29,3 +29,5 @@ async function verificarToken(req, res) {
     res.status(403).send("Token inválido");
   }
 }
+
+module.exports = { login, verificarToken };

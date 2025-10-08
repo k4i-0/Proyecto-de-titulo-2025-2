@@ -1,8 +1,8 @@
 const routes = require("express");
 const router = routes.Router();
 
-import AuthRoutes from "./auth.route";
-import productoRoutes from "./producto.route";
+const AuthRoutes = require("./auth.route");
+const productoRoutes = require("./producto.route");
 
 //Autenticacion
 router.use("/auth", AuthRoutes);

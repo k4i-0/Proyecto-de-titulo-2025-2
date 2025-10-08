@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/bd");
+const sequelize = require("../../config/bd");
 
 const caja = sequelize.define(
   "caja",
@@ -19,19 +19,19 @@ const caja = sequelize.define(
       allowNull: true,
     },
     fondoInicial: {
-      type: DataTypes.INTEGER(6),
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
-    totalCajaEfectivo: {
-      type: DataTypes.INTEGER(6),
+    montoCajaEfectivo: {
+      type: DataTypes.INTEGER,
       allowNull: true,
     },
-    totalCajaDebito: {
-      type: DataTypes.INTEGER(6),
+    montoCajaDebito: {
+      type: DataTypes.INTEGER,
       allowNull: true,
     },
-    totalCajaCredito: {
-      type: DataTypes.INTEGER(6),
+    montoCajaCredito: {
+      type: DataTypes.INTEGER,
       allowNull: true,
     },
     idPC: {
@@ -53,6 +53,11 @@ const caja = sequelize.define(
       allowNull: false,
       unique: true,
     },
+    tipoMaquinaPOS: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      defaultValue: "Mercado Pago",
+    },
     descripcionPOS: {
       type: DataTypes.STRING(100),
       allowNull: false,
@@ -66,24 +71,35 @@ const caja = sequelize.define(
       type: DataTypes.DATE,
       allowNull: false,
     },
-    idProveedor: {
-      type: DataTypes.INTEGER,
+    estadoCaja: {
+      type: DataTypes.ENUM("Abierta", "Cerrada"),
       allowNull: false,
-      reference: {
-        model: "proveedor",
-        key: "idProveedor",
-      },
-      onDelete: "CASCADE",
+      defaultValue: "Abierta",
     },
-    idSucursal: {
+    montoArqueo: {
       type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "sucursal",
-        key: "idSucursal",
-      },
-      onDelete: "CASCADE",
+      allowNull: true,
     },
+    // idProveedor: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   reference: {
+    //     model: "proveedor",
+    //     key: "idProveedor",
+    //   },
+    //   onDelete: "CASCADE",
+    //   onUpdate: "CASCADE",
+    // },
+    // idSucursal: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "sucursal",
+    //     key: "idSucursal",
+    //   },
+    //   onDelete: "CASCADE",
+    //   onUpdate: "CASCADE",
+    // },
   },
   {
     tableName: "caja",

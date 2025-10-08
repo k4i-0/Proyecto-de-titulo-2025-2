@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/bd");
+const sequelize = require("../../config/bd");
 
 const vendedorProveedor = sequelize.define(
   "vendedorProveedor",
@@ -32,24 +32,15 @@ const vendedorProveedor = sequelize.define(
       },
       unique: true,
     },
-    fechaIngreso: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
-    },
-    fechaTermino: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    Proveedor: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "proveedor",
-        key: "idProveedor",
-      },
-      onDelete: "CASCADE",
-    },
+    // Proveedor: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: "proveedor",
+    //     key: "idProveedor",
+    //   },
+    //   onDelete: "CASCADE",
+    // },
   },
   {
     tableName: "vendedorProveedor",
