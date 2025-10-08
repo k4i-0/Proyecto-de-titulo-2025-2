@@ -1,18 +1,50 @@
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 const Funcionario = require("../models/usuarios/Funcionario");
+const roles = require("../models/usuarios/Rol");
 
 async function login(req, res) {
-  const { user, password } = req.body;
-  if (!user || !password) {
+  const { rut, password } = req.body;
+  if (!rut || !password) {
     res.status(203).send({ message: "Faltan Datos" });
   }
   try {
-    const funcionarioEncontrado = Funcionario.findOne({ where: user });
+    const funcionarioEncontrado = await Funcionario.findOne({
+      where: { rut },
+      include: [roles],
+    });
     if (!funcionarioEncontrado) {
       res.status(404).send({ message: "Usuario No encontrado, verifique" });
     }
+    const passwordMatch = await bcrypt.compare(
+      password,
+      funcionarioEncontrado.passwordCaja
+    );
+    if (!passwordMatch)
+      return res.status(401).json({ message: "Contraseña incorrecta" });
+    const token = jwt.sign(
+      { rut, role: funcionarioEncontrado.nombreRol },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
-    //decodificar contraseña y comparar y crear cookie y retornar.
+    res.cookie("access_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 86400000,
+    });
+    res.json({ message: "Login exitoso" });
+  } catch (error) {
+    res.status(500).send({ message: "Error interno" });
+    console.log(error);
+  }
+}
+
+async function logout(req, res) {
+  try {
+    res.clearCookie("access_token");
+    res.json({ message: "Sesión cerrada" });
   } catch (error) {
     res.status(500).send({ message: "Error interno" });
     console.log(error);
@@ -30,4 +62,4 @@ async function verificarToken(req, res) {
   }
 }
 
-module.exports = { login, verificarToken };
+module.exports = { login, logout, verificarToken };

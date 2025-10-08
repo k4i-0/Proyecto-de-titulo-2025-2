@@ -1,4 +1,3 @@
-// server.js
 const fs = require("fs");
 const https = require("https");
 const express = require("express");
@@ -8,6 +7,7 @@ const sequelize = require("./src/config/bd");
 const cors = require("cors");
 const morgan = require("morgan");
 const routes = require("./src/routes/index.route");
+const { createUsers } = require("./src/config/initSetup");
 
 const app = express();
 
@@ -45,6 +45,8 @@ const startServer = async () => {
     //Sincroniza todo
     await sequelize.sync({ force: false, alter: true });
     console.log("Todas las tablas sincronizadas correctamente");
+    //Crear usuarios iniciales
+    await createUsers();
 
     https.createServer(sslOptions, app).listen(process.env.PORT, () => {
       console.log(`Servidor HTTPS en https://localhost:${process.env.PORT}`);

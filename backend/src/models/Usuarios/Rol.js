@@ -10,12 +10,12 @@ const roles = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    nombre: {
+    nombreRol: {
       type: DataTypes.STRING(50),
       allowNull: false,
       unique: true,
     },
-    priviliegios: {
+    privilegios: {
       type: DataTypes.JSON,
       allowNull: true,
     },
