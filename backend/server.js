@@ -9,6 +9,30 @@ const morgan = require("morgan");
 const routes = require("./src/routes/index.route");
 const { createUsers } = require("./src/config/initSetup");
 const cookieParser = require("cookie-parser");
+const {
+  Bodega,
+  Inventario,
+  Sucursal,
+  Lote,
+  Proveedor,
+  Vendedor,
+  Caja,
+  Funcionario,
+  Roles,
+  Bitacora,
+  Actividad,
+  DatosVenta,
+  Descuento,
+  Categoria,
+  Productos,
+  Cliente,
+  Despacho,
+  CompraProveedor,
+  ContratoFuncionario,
+  CajaFuncionario,
+  DescuentoAsociado,
+  VentaCliente,
+} = require("./src/models");
 
 const app = express();
 
@@ -17,9 +41,14 @@ app.use(express.json()); // permite JSON
 app.use(express.urlencoded({ extended: true })); // req.body para formularios
 
 app.use(cookieParser());
-app.use(helmet()); // Headers de seguridad basico hasta ahora
-app.use(cors()); // Habilita CORS para todas las rutas (puedes configurarlo más estrictamente si es necesario)
-app.use(morgan("dev")); // Registro de solicitudes HTTP
+app.use(helmet());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+app.use(morgan("dev"));
 
 // Rutas indice.route de la API
 app.use("/api", routes);
@@ -37,16 +66,98 @@ const sslOptions = {
   ),
 };
 
+//base de datos y modelos  --------------------
+async function syncDataBase() {
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const syncOptions = isDevelopment ? { force: true } : { alter: true };
+  try {
+    // NIVEL 1: Tablas sin dependencias
+    await Categoria.sync(syncOptions);
+    console.log("  ✓ Categoria");
+
+    await Sucursal.sync(syncOptions);
+    console.log("  ✓ Sucursal");
+
+    await Cliente.sync(syncOptions);
+    console.log("  ✓ Cliente");
+
+    await Descuento.sync(syncOptions);
+    console.log("  ✓ Descuento");
+
+    await Proveedor.sync(syncOptions);
+    console.log("  ✓ Proveedor");
+
+    // NIVEL 2: Roles y Bitacora (sin dependencias entre ellas)
+    await Roles.sync(syncOptions);
+    console.log("  ✓ Roles");
+
+    await Bitacora.sync(syncOptions);
+    console.log("  ✓ Bitacora");
+
+    // NIVEL 3: Tablas que dependen de Roles y Bitacora
+    await Actividad.sync(syncOptions);
+    console.log("  ✓ Actividad");
+
+    await Funcionario.sync(syncOptions);
+    console.log("  ✓ Funcionario");
+
+    // NIVEL 4: Tablas que dependen de nivel anterior
+    await Vendedor.sync(syncOptions);
+    console.log("  ✓ Vendedor");
+
+    await Bodega.sync(syncOptions);
+    console.log("  ✓ Bodega");
+
+    await Caja.sync(syncOptions);
+    console.log("  ✓ Caja");
+
+    await Productos.sync(syncOptions);
+    console.log("  ✓ Productos");
+
+    await ContratoFuncionario.sync(syncOptions);
+    console.log("  ✓ ContratoFuncionario");
+
+    await CajaFuncionario.sync(syncOptions);
+    console.log("  ✓ CajaFuncionario");
+
+    // NIVEL 5: Tablas que dependen de Productos y Bodega
+    await Inventario.sync(syncOptions);
+    console.log("  ✓ Inventario");
+
+    await Lote.sync(syncOptions);
+    console.log("  ✓ Lote");
+
+    await DescuentoAsociado.sync(syncOptions);
+    console.log("  ✓ DescuentoAsociado");
+
+    await DatosVenta.sync(syncOptions);
+    console.log("  ✓ DatosVenta");
+
+    // NIVEL 6: Tablas intermedias finales
+    await CompraProveedor.sync(syncOptions);
+    console.log("  ✓ CompraProveedor");
+
+    await Despacho.sync(syncOptions);
+    console.log("  ✓ Despacho");
+
+    await VentaCliente.sync(syncOptions);
+    console.log("  ✓ VentaCliente");
+
+    console.log("✅ Todas las tablas sincronizadas correctamente");
+  } catch (error) {
+    console.error("❌ Error al sincronizar base de datos:", error);
+    throw error;
+  }
+}
+
 // Inicia el servidor HTTPS
 const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log("Conexión a BD establecida correctamente.");
-    //models
-    const models = require("./src/models/index");
-    //Sincroniza todo
-    await sequelize.sync({ force: false, alter: true });
-    console.log("Todas las tablas sincronizadas correctamente");
+
+    await syncDataBase();
+
     //Crear usuarios iniciales
     await createUsers();
 

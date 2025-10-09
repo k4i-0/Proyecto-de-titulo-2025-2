@@ -11,7 +11,24 @@ export default async function inicioSesion(email, password) {
     if (!response.data) {
       return "No se recibió respuesta del servidor";
     }
-    console.log(response.data);
+    //console.log(response);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    return error.response.data;
+  }
+}
+
+export async function verificarToken(token) {
+  try {
+    const response = await axios.get(`${API_URL}/auth/verify`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.data) {
+      return "No se recibió respuesta del servidor";
+    }
     return response.data;
   } catch (error) {
     console.log(error);

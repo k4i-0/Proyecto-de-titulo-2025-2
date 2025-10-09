@@ -17,7 +17,8 @@ const Login = () => {
       alert(usuario.message);
       return;
     }
-    login(usuario);
+    console.log(usuario.token.token);
+    login(usuario.datos, usuario.token.token);
     // Redirigir a la página de inicio después del inicio de sesión
     navigate("/dashboard");
   };

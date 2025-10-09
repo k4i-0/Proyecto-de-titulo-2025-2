@@ -55,11 +55,13 @@ const funcionario = sequelize.define(
     },
     // idRol: {
     //   type: DataTypes.INTEGER,
-    //   allowNull: false,
+    //   allowNull: true,
     //   references: {
     //     model: "rol",
     //     key: "idRol",
     //   },
+    //   onDelete: "CASCADE",
+    //   onUpdate: "CASCADE",
     // },
     // idBitacora: {
     //   type: DataTypes.INTEGER,
@@ -68,6 +70,8 @@ const funcionario = sequelize.define(
     //     model: "bitacora",
     //     key: "idBitacora",
     //   },
+    //   onDelete: "CASCADE",
+    //   onUpdate: "CASCADE",
     // },
   },
   {

@@ -2,7 +2,7 @@ import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
-const ProtectedRoute = ({ allowedRoles, fallbackPath = "/" }) => {
+const ProtectedRoute = ({ allowedRoles, fallbackPath = "/dashboard" }) => {
   const { user, isAuthenticated, initializing } = useAuth();
 
   if (initializing) {
@@ -10,13 +10,17 @@ const ProtectedRoute = ({ allowedRoles, fallbackPath = "/" }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const userRole = user?.nombreRol;
   if (!userRole || (allowedRoles && !allowedRoles.includes(userRole))) {
     return <Navigate to={fallbackPath} replace />;
   }
+
+  // if (!user || !allowedRoles.includes(user.nombreRol)) {
+  //   return <Navigate to={fallbackPath} replace />;
+  // }
 
   // Renderiza las rutas hijas
   return <Outlet />;

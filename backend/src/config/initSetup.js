@@ -1,14 +1,17 @@
-//funcion crea usuarios admin y user
+// Función para crear usuarios admin y user
 const bcrypt = require("bcrypt");
 const Funcionario = require("../models/usuarios/Funcionario");
 const Rol = require("../models/usuarios/Rol");
 
 async function createUsers() {
   try {
+    console.log("🔄 Iniciando creación de usuarios iniciales...");
+
     const adminPassword = await bcrypt.hash("admin123", 10);
     const userPassword = await bcrypt.hash("user123", 10);
+
     // Crear roles si no existen
-    const adminRole = await Rol.findOrCreate({
+    const [adminRole, adminCreated] = await Rol.findOrCreate({
       where: { nombreRol: "Administrador" },
       defaults: {
         nombreRol: "Administrador",
@@ -20,7 +23,7 @@ async function createUsers() {
       },
     });
 
-    const cajeroRole = await Rol.findOrCreate({
+    const [cajeroRole, cajeroCreated] = await Rol.findOrCreate({
       where: { nombreRol: "Cajero" },
       defaults: {
         nombreRol: "Cajero",
@@ -32,7 +35,7 @@ async function createUsers() {
       },
     });
 
-    const vendedorRole = await Rol.findOrCreate({
+    const [vendedorRole, vendedorCreated] = await Rol.findOrCreate({
       where: { nombreRol: "Vendedor" },
       defaults: {
         nombreRol: "Vendedor",
@@ -44,9 +47,25 @@ async function createUsers() {
       },
     });
 
-    //console.log("adminroles", adminRole);
+    console.log("✅ Roles verificados/creados:");
+    console.log(
+      `  - Administrador (ID: ${adminRole.idRol}) ${
+        adminCreated ? "[NUEVO]" : "[EXISTENTE]"
+      }`
+    );
+    console.log(
+      `  - Cajero (ID: ${cajeroRole.idRol}) ${
+        cajeroCreated ? "[NUEVO]" : "[EXISTENTE]"
+      }`
+    );
+    console.log(
+      `  - Vendedor (ID: ${vendedorRole.idRol}) ${
+        vendedorCreated ? "[NUEVO]" : "[EXISTENTE]"
+      }`
+    );
 
-    const admin = Funcionario.findOrCreate({
+    // Crear usuarios (await agregado y campo corregido)
+    const [admin, adminUserCreated] = await Funcionario.findOrCreate({
       where: { rut: "11111111-1" },
       defaults: {
         rut: "11111111-1",
@@ -56,53 +75,69 @@ async function createUsers() {
         password: adminPassword,
         passwordCaja: adminPassword,
         telefono: "+56912345678",
-        direccion: "collao 1202, concepion",
-        cargo: "prueba",
+        direccion: "collao 1202, concepcion",
+        cargo: "Administrador",
         estado: "Activo",
-        roleidRol: 1,
+        idRol: adminRole.idRol, // ✅ CORREGIDO: era "roleidRol"
       },
     });
 
-    const cajero = Funcionario.findOrCreate({
+    const [cajero, cajeroUserCreated] = await Funcionario.findOrCreate({
       where: { rut: "22222222-2" },
       defaults: {
         rut: "22222222-2",
-        nombre: "User",
+        nombre: "Cajero",
         apellido: "Test",
         email: "cajero@onate.dev",
         password: userPassword,
         passwordCaja: userPassword,
         telefono: "+56987654321",
-        direccion: "collao 1202, concepion",
-        cargo: "prueba",
+        direccion: "collao 1202, concepcion",
+        cargo: "Cajero",
         estado: "Activo",
-        roleidRol: 2,
+        idRol: cajeroRole.idRol, // ✅ CORREGIDO: era "roleidRol"
       },
     });
 
-    const vendedor = Funcionario.findOrCreate({
+    const [vendedor, vendedorUserCreated] = await Funcionario.findOrCreate({
       where: { rut: "33333333-3" },
       defaults: {
         rut: "33333333-3",
-        nombre: "User",
+        nombre: "Vendedor",
         apellido: "Test",
         email: "vendedor@onate.dev",
         password: userPassword,
         passwordCaja: userPassword,
         telefono: "+56987654321",
-        direccion: "collao 1202, concepion",
-        cargo: "prueba",
+        direccion: "collao 1202, concepcion",
+        cargo: "Vendedor",
         estado: "Activo",
-        roleidRol: 3,
+        idRol: vendedorRole.idRol, // ✅ CORREGIDO: era "roleidRol"
       },
     });
 
-    await Promise.all([admin, cajero, vendedor]);
+    console.log("✅ Usuarios verificados/creados:");
+    console.log(
+      `  - Admin (${admin.email}) ${
+        adminUserCreated ? "[NUEVO]" : "[EXISTENTE]"
+      }`
+    );
+    console.log(
+      `  - Cajero (${cajero.email}) ${
+        cajeroUserCreated ? "[NUEVO]" : "[EXISTENTE]"
+      }`
+    );
+    console.log(
+      `  - Vendedor (${vendedor.email}) ${
+        vendedorUserCreated ? "[NUEVO]" : "[EXISTENTE]"
+      }`
+    );
 
-    console.log("Usuarios iniciales creados");
+    console.log("🎉 Usuarios iniciales verificados/creados exitosamente");
   } catch (error) {
-    console.error("Error al crear usuarios iniciales:", error);
-    return;
+    console.error("❌ Error al crear usuarios iniciales:", error);
+    throw error; // ✅ MEJOR: lanzar el error para manejarlo arriba
   }
 }
+
 module.exports = { createUsers };

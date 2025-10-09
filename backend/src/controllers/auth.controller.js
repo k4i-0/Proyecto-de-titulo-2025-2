@@ -11,7 +11,11 @@ async function login(req, res) {
   try {
     const funcionarioEncontrado = await Funcionario.findOne({
       where: { email },
-      include: [roles],
+      include: [
+        {
+          model: roles,
+        },
+      ],
     });
     if (!funcionarioEncontrado) {
       res
@@ -22,12 +26,17 @@ async function login(req, res) {
       password,
       funcionarioEncontrado.passwordCaja
     );
+
     if (!passwordMatch)
       return res
         .status(401)
         .json({ code: 1011, message: "Contraseña incorrecta" });
+
     const token = jwt.sign(
-      { email, role: funcionarioEncontrado.nombreRol },
+      {
+        email,
+        role: funcionarioEncontrado.dataValues.role.dataValues.nombreRol,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
@@ -38,11 +47,16 @@ async function login(req, res) {
       // sameSite: "strict",
       maxAge: 86400000,
     });
-    console.log(funcionarioEncontrado);
+    console.log(funcionarioEncontrado.dataValues);
     res.status(200).json({
-      email: funcionarioEncontrado.email,
-      nombreRol: funcionarioEncontrado.nombreRol,
-      nombre: funcionarioEncontrado.nombre,
+      datos: {
+        email: funcionarioEncontrado.email,
+        nombreRol: funcionarioEncontrado.dataValues.role.dataValues.nombreRol,
+        nombre: funcionarioEncontrado.dataValues.nombre,
+      },
+      token: {
+        token,
+      },
     });
   } catch (error) {
     res.status(500).send({ message: "Error interno" });
@@ -64,8 +78,7 @@ async function verificarToken(req, res) {
   if (!token) return res.status(403).send("No autorizado");
   try {
     const data = jwt.verify(token, process.env.JWT_SECRET);
-    req.userEmail = data.email;
-    next();
+    req.userEmail = data;
   } catch {
     res.status(403).send("Token inválido");
   }
