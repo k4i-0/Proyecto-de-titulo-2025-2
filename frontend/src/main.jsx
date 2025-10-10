@@ -7,6 +7,7 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import App from "./App.jsx";
 import Login from "./pages/login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
+import PantallaCompleta from "./pages/codigoPantallaCompleta.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
