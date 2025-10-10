@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./context/ProteccionRutas.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 import App from "./App.jsx";
 import Login from "./pages/login.jsx";

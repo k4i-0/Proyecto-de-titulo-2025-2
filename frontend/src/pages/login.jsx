@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import inicioSesion from "../services/Auth.services";
+import { Form, Button, Container } from "react-bootstrap";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -11,18 +12,11 @@ const Login = () => {
   const [showPrompt, setShowPrompt] = useState(true);
   const [autoAttempted, setAutoAttempted] = useState(false);
   const elem = document.documentElement;
+  Container;
   //
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  useEffect(() => {
-    // Esto normalmente NO funciona debido a restricciones del navegador
-    const timer = setTimeout(() => {
-      enterFullscreen();
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -79,25 +73,49 @@ const Login = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} onClick={handleFirstClick}>
-      <h2>Login</h2>
-      <label htmlFor="email">Correo</label>
-      <input
-        type="text"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <label htmlFor="password">Contraseña</label>
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <p className="text-xl mb-4">Presiona ESC para salir</p>
-      <div className="text-sm opacity-75">
-        Estado: {isFullscreen ? "✓ Activo" : "✗ Inactivo"}
+    <Container
+      className="d-flex justify-content-center align-items-center"
+      style={{ minHeight: "100vh" }}>
+      <div style={{ width: "100%", maxWidth: "400px" }}>
+        <Form onSubmit={handleSubmit}>
+          <Form.Group className="mb-3" onClick={handleFirstClick}>
+            <h2 className="text-center mb-4">Login</h2>
+
+            <Form.Label htmlFor="email">Correo</Form.Label>
+            <Form.Control
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@email.com"
+              className="mb-3"
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label htmlFor="password">Contraseña</Form.Label>
+            <Form.Control
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Ingresa tu contraseña"
+              className="w-100"
+            />
+          </Form.Group>
+
+          <Button variant="primary" type="submit" className="w-100 mb-3">
+            Iniciar Sesión
+          </Button>
+
+          <p className="text-center mb-2">Presiona ESC para salir</p>
+
+          <div className="text-center text-muted small">
+            Estado: {isFullscreen ? "✓ Activo" : "✗ Inactivo"}
+          </div>
+        </Form>
       </div>
-    </form>
+    </Container>
   );
 };
 
