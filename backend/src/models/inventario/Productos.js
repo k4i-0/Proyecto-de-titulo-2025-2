@@ -36,7 +36,7 @@ const producto = sequelize.define(
       allowNull: true,
     },
     estado: {
-      type: DataTypes.ENUM("Bueno", "Malo", "Dañano"),
+      type: DataTypes.ENUM("Bueno", "Malo", "Dañano", "eliminado"),
       allowNull: false,
       defaultValue: "Bueno",
     },

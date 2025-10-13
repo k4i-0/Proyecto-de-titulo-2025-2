@@ -2,17 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import inicioSesion from "../services/Auth.services";
-import { Form, Button, Container } from "react-bootstrap";
+import { Form, Button, Container, Alert, Stack } from "react-bootstrap";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   //
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showPrompt, setShowPrompt] = useState(true);
   const [autoAttempted, setAutoAttempted] = useState(false);
-  const elem = document.documentElement;
-  Container;
   //
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -48,7 +45,6 @@ const Login = () => {
     }
 
     setIsFullscreen(true);
-    setShowPrompt(false);
   };
 
   const handleFirstClick = () => {
@@ -56,6 +52,8 @@ const Login = () => {
       enterFullscreen();
       setAutoAttempted(true);
     }
+    if (document.fullscreenElement == null) setAutoAttempted(false);
+    console.log(document.fullscreenElement);
   };
 
   const handleSubmit = async (e) => {
@@ -75,10 +73,12 @@ const Login = () => {
   return (
     <Container
       className="d-flex justify-content-center align-items-center"
-      style={{ minHeight: "100vh" }}>
+      style={{ minHeight: "100vh" }}
+      //onClick={handleFirstClick}
+    >
       <div style={{ width: "100%", maxWidth: "400px" }}>
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3" onClick={handleFirstClick}>
+          <Form.Group className="mb-3">
             <h2 className="text-center mb-4">Login</h2>
 
             <Form.Label htmlFor="email">Correo</Form.Label>
@@ -109,10 +109,9 @@ const Login = () => {
           </Button>
 
           <p className="text-center mb-2">Presiona ESC para salir</p>
-
-          <div className="text-center text-muted small">
-            Estado: {isFullscreen ? "✓ Activo" : "✗ Inactivo"}
-          </div>
+          <Alert className="text-center text-muted small">
+            Pantalla Completa: {isFullscreen ? "✓ Activo" : "✗ Inactivo"}
+          </Alert>
         </Form>
       </div>
     </Container>

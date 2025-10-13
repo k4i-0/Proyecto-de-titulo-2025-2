@@ -19,7 +19,7 @@ const categoria = sequelize.define(
       allowNull: false,
     },
     estado: {
-      type: DataTypes.ENUM("Activo", "Inactivo"),
+      type: DataTypes.ENUM("Activo", "Inactivo", "eliminado"),
       allowNull: false,
       defaultValue: "Activo",
     },

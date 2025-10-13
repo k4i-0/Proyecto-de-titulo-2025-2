@@ -22,7 +22,7 @@ const sucursal = sequelize.define(
       allowNull: true,
     },
     estado: {
-      type: DataTypes.ENUM("Abierta", "Cerrada", "Mantencion"),
+      type: DataTypes.ENUM("Abierta", "Cerrada", "Mantencion", "Eliminada"),
       allowNull: false,
       defaultValue: "Abierta",
     },

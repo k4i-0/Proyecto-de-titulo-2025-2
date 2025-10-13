@@ -27,6 +27,11 @@ const inventario = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
+    estado: {
+      type: DataTypes.ENUM("Activo", "Inactivo", "Eliminado"),
+      allowNull: false,
+      defaultValue: "Activo",
+    },
     // idBodega: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,

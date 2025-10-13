@@ -19,14 +19,15 @@ const bodega = sequelize.define(
       allowNull: true,
     },
     capacidad: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING(100),
       allowNull: true,
     },
     estado: {
       type: DataTypes.ENUM(
         "En Funcionamiento",
         "En Mantenimiento",
-        "Fuera de Servicio"
+        "Fuera de Servicio",
+        "Eliminado"
       ),
       allowNull: false,
       defaultValue: "En Funcionamiento",
