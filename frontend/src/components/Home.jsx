@@ -9,7 +9,7 @@ import Inventario from "./inventario/Inventario";
 
 export default function Home({ nombreRol, vista }) {
   return (
-    <div>
+    <div style={{ height: "100%" }}>
       <h3
         style={{
           textAlign: "center",
