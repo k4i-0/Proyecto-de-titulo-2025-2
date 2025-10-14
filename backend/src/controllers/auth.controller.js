@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const Funcionario = require("../models/usuarios/Funcionario");
-const roles = require("../models/usuarios/Rol");
+const Funcionario = require("../models/Usuarios/Funcionario");
+const roles = require("../models/Usuarios/Rol");
 
 async function login(req, res) {
   const { email, password } = req.body;
@@ -40,6 +40,10 @@ async function login(req, res) {
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
+
+    if (!token) {
+      res.status(404).json({ code: 1013, message: "Error al crear Token" });
+    }
 
     res.cookie("access_token", token, {
       httpOnly: true,

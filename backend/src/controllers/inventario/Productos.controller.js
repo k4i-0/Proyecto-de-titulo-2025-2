@@ -54,12 +54,16 @@ exports.getAllProductos = async (req, res) => {
       },
     });
     if (productos.length === 0 || !productos) {
-      return res.status(404).json({ error: "No hay productos disponibles" });
+      return res
+        .status(404)
+        .json({ code: 1212, error: "No hay productos disponibles" });
     }
     res.status(200).json(productos);
   } catch (error) {
     console.error("Error al obtener los productos:", error);
-    res.status(500).json({ error: "Error al obtener los productos" });
+    res
+      .status(500)
+      .json({ code: 500, error: "Error al obtener los productos" });
   }
 };
 

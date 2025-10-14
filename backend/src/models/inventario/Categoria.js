@@ -14,7 +14,7 @@ const categoria = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    tipo: {
+    descripcion: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },

@@ -1,7 +1,7 @@
 // Función para crear usuarios admin y user
 const bcrypt = require("bcrypt");
-const Funcionario = require("../models/usuarios/Funcionario");
-const Rol = require("../models/usuarios/Rol");
+const Funcionario = require("../models/Usuarios/Funcionario");
+const Rol = require("../models/Usuarios/Rol");
 
 async function createUsers() {
   try {

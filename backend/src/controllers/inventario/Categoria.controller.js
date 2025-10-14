@@ -3,15 +3,15 @@ const { Op } = require("sequelize");
 
 // Crear una nueva categoria
 exports.createCategoria = async (req, res) => {
-  const { nombre, tipo, estado } = req.body;
-  if (!nombre || !tipo || !estado) {
+  const { nombre, descripcion, estado } = req.body;
+  if (!nombre || !descripcion || !estado) {
     return res.status(400).json({ error: "Faltan datos obligatorios" });
   }
   //Validacion de datos con Joi
   try {
     const nuevaCategoria = await Categoria.create({
       nombre,
-      tipo,
+      descripcion,
       estado,
     });
     res.status(201).json(nuevaCategoria);
