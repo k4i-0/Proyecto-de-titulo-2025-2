@@ -253,6 +253,7 @@ export default function Productos() {
       />
       <Editar
         Producto={productosSelect}
+        categorias={categorias}
         modalEditar={modalEditar}
         handleCerrarModal={handleCerrarModal}
         datos={datos}
