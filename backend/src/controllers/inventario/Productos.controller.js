@@ -1,5 +1,6 @@
 const { where, Op } = require("sequelize");
 const Producto = require("../../models/inventario/Productos");
+const Categoria = require("../../models/inventario/Categoria");
 
 // Crear un nuevo producto
 exports.createProducto = async (req, res) => {
@@ -11,7 +12,7 @@ exports.createProducto = async (req, res) => {
     peso,
     descripcion,
     estado,
-    idCategoria,
+    nameCategoria,
   } = req.body;
   if (
     !codigo ||
@@ -19,11 +20,15 @@ exports.createProducto = async (req, res) => {
     !precioCompra ||
     !precioVenta ||
     !estado ||
-    !idCategoria
+    !nameCategoria
   ) {
-    return res.status(400).json({ error: "Faltan datos obligatorios" });
+    return res.status(422).json({ error: "Faltan datos obligatorios" });
   }
   //Validacion de datos con Joi
+  const categoriaExistente = await Categoria.findAll({
+    where: { nombre: nameCategoria },
+  });
+
   try {
     const nuevoProducto = await Producto.create({
       codigo,
@@ -33,7 +38,7 @@ exports.createProducto = async (req, res) => {
       peso,
       descripcion,
       estado,
-      idCategoria,
+      idCategoria: categoriaExistente.idCategoria,
     });
     res.status(201).json(nuevoProducto);
   } catch (error) {
@@ -55,7 +60,7 @@ exports.getAllProductos = async (req, res) => {
     });
     if (productos.length === 0 || !productos) {
       return res
-        .status(404)
+        .status(204)
         .json({ code: 1212, error: "No hay productos disponibles" });
     }
     res.status(200).json(productos);
@@ -74,7 +79,7 @@ exports.getProductoById = async (req, res) => {
     if (producto) {
       res.status(200).json(producto);
     } else {
-      res.status(404).json({ error: "Producto no encontrado" });
+      res.status(204).json({ error: "Producto no encontrado" });
     }
   } catch (error) {
     res.status(500).json({ error: "Error al obtener el producto" });
@@ -96,7 +101,7 @@ exports.updateProducto = async (req, res) => {
     } = req.body;
     const busquedaProducto = await Producto.findByPk(req.params.id);
     if (!busquedaProducto) {
-      return res.status(404).json({ error: "Producto no encontrado" });
+      return res.status(422).json({ error: "Producto no encontrado" });
     }
     const respuesta = await Producto.update(
       {
@@ -126,7 +131,7 @@ exports.updateProducto = async (req, res) => {
 exports.deleteProducto = async (req, res) => {
   try {
     if (!req.params.id) {
-      return res.status(400).json({ error: "ID de producto es obligatorio" });
+      return res.status(422).json({ error: "ID de producto es obligatorio" });
     }
     const busquedaProducto = await Producto.findByPk(req.params.id);
     if (busquedaProducto) {
@@ -136,7 +141,7 @@ exports.deleteProducto = async (req, res) => {
         message: "Producto eliminado (estado actualizado a 'Eliminado')",
       });
     }
-    return res.status(404).json({ error: "Producto no encontrado" });
+    return res.status(204).json({ error: "Producto no encontrado" });
   } catch (error) {
     res.status(500).json({ error: "Error al eliminar el producto" });
   }

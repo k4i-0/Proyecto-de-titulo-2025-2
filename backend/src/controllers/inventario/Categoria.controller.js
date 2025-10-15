@@ -5,7 +5,7 @@ const { Op } = require("sequelize");
 exports.createCategoria = async (req, res) => {
   const { nombre, descripcion, estado } = req.body;
   if (!nombre || !descripcion || !estado) {
-    return res.status(400).json({ error: "Faltan datos obligatorios" });
+    return res.status(422).json({ error: "Faltan datos obligatorios" });
   }
   //Validacion de datos con Joi
   try {
@@ -32,7 +32,7 @@ exports.getAllCategorias = async (req, res) => {
       },
     });
     if (categorias.length === 0 || !categorias) {
-      return res.status(404).json({ error: "No hay categorias disponibles" });
+      return res.status(204).json({ error: "No hay categorias disponibles" });
     }
     res.status(200).json(categorias);
   } catch (error) {
@@ -48,7 +48,7 @@ exports.getCategoriaById = async (req, res) => {
     if (categoria) {
       res.status(200).json(categoria);
     } else {
-      res.status(404).json({ error: "Categoria no encontrada" });
+      res.status(204).json({ error: "Categoria no encontrada" });
     }
   } catch (error) {
     res.status(500).json({ error: "Error al obtener la categoria" });
@@ -61,7 +61,7 @@ exports.updateCategoria = async (req, res) => {
     const { nombre, tipo, estado } = req.body;
     const busquedaCategoria = await Categoria.findByPk(req.params.id);
     if (!busquedaCategoria) {
-      return res.status(404).json({ error: "Categoria no encontrada" });
+      return res.status(422).json({ error: "Categoria no encontrada" });
     }
     const respuesta = await Categoria.update(
       {
@@ -86,7 +86,7 @@ exports.updateCategoria = async (req, res) => {
 exports.deleteCategoria = async (req, res) => {
   try {
     if (!req.params.id) {
-      return res.status(400).json({ error: "ID de categoria es obligatorio" });
+      return res.status(422).json({ error: "ID de categoria es obligatorio" });
     }
     const busquedaCategoria = await Categoria.findByPk(req.params.id);
     if (busquedaCategoria) {

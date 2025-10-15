@@ -18,8 +18,8 @@ export default function Categoria() {
 
   const buscarCategoria = async () => {
     const respuesta2 = await obtenerCategoria();
-    console.log("Categrias:", categorias);
-    console.log("error en categoria", respuesta2);
+    //console.log("Categrias:", categorias);
+    //console.log("error en categoria", respuesta2);
     if (respuesta2.code) {
       setMensaje(respuesta2.error);
     } else {
@@ -47,7 +47,7 @@ export default function Categoria() {
 
     try {
       const confirmacion = await crearCategoria(datos);
-      console.log(confirmacion);
+      //console.log(confirmacion);
 
       if (confirmacion) {
         // Recargar categorías
@@ -60,7 +60,8 @@ export default function Categoria() {
         setError(true);
         setMensaje(confirmacion.error || "Error al crear categoría");
       }
-    } catch (err) {
+    } catch (error) {
+      console.error("Error al crear categoría:", error);
       setError(true);
       setMensaje("Error al crear categoría");
     }
@@ -92,7 +93,8 @@ export default function Categoria() {
             <Col key={categoria.id} md={4} className="mb-3">
               <div
                 className="border p-3 rounded"
-                style={{ marginTop: "100px" }}>
+                style={{ marginTop: "100px" }}
+              >
                 <h5>{categoria.nombre}</h5>
               </div>
             </Col>
@@ -117,11 +119,13 @@ export default function Categoria() {
             borderRadius: "8px",
             width: "90%",
             maxWidth: "500px",
-          }}>
+          }}
+        >
           <Button
             variant="close"
             onClick={() => setModalCrear(false)}
-            style={{ position: "absolute", top: "10px", right: "10px" }}>
+            style={{ position: "absolute", top: "10px", right: "10px" }}
+          >
             X
           </Button>
 
@@ -159,7 +163,8 @@ export default function Categoria() {
                 name="estado"
                 value={datos.estado}
                 onChange={handleChange}
-                required>
+                required
+              >
                 <option value="">Seleccione estado</option>
                 <option value="Activo">Activo</option>
                 <option value="Inactivo">Inactivo</option>
@@ -172,7 +177,8 @@ export default function Categoria() {
                 display: "flex",
                 gap: "10px",
                 justifyContent: "center",
-              }}>
+              }}
+            >
               <Button variant="secondary" onClick={() => setModalCrear(false)}>
                 Cancelar
               </Button>
