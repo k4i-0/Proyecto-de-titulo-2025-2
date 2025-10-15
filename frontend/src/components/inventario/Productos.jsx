@@ -49,14 +49,24 @@ export default function Productos() {
         setError(true);
         setMensaje(respuesta.error);
       } else {
+        if (respuesta.length == 0) {
+          setMensaje(
+            "No hay productos disponibles, por favor cree un producto antes de agregar uno nuevo"
+          );
+        }
         setProductos(respuesta);
-        //console.log("Productos obtenidos:", respuesta);
+        console.log("Productos obtenidos:", respuesta);
       }
 
       if (respuesta2.code) {
         setError(true);
         setMensaje(respuesta2.error);
       } else {
+        if (respuesta2.length == 0) {
+          setMensaje(
+            "No hay categorias disponibles, por favor cree una categoria antes de agregar productos"
+          );
+        }
         //console.log("Categrias:", categorias);
         setCategorias(respuesta2);
       }
