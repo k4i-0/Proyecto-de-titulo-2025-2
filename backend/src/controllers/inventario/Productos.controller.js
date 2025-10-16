@@ -28,7 +28,7 @@ exports.createProducto = async (req, res) => {
   const categoriaExistente = await Categoria.findAll({
     where: { nombre: nameCategoria },
   });
-  console.log(categoriaExistente[0].dataValues.idCategoria);
+  //console.log(categoriaExistente[0].dataValues.idCategoria);
   if (!categoriaExistente) {
     res.status(301).send(categoriaExistente);
   }
@@ -140,15 +140,19 @@ exports.deleteProducto = async (req, res) => {
       return res.status(422).json({ error: "ID de producto es obligatorio" });
     }
     const busquedaProducto = await Producto.findByPk(req.params.id);
+
     if (busquedaProducto) {
-      busquedaProducto.estado = "Eliminado";
+      busquedaProducto.estado = "eliminado";
+
       await busquedaProducto.save();
+
       return res.status(200).json({
-        message: "Producto eliminado (estado actualizado a 'Eliminado')",
+        message: "Producto eliminado (estado actualizado a 'eliminado')",
       });
     }
     return res.status(204).json({ error: "Producto no encontrado" });
   } catch (error) {
+    //console.log("Error al eliminar el producto:", error);
     res.status(500).json({ error: "Error al eliminar el producto" });
   }
 };

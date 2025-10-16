@@ -27,7 +27,7 @@ export async function obtenerProductosId(id) {
 export async function crearProducto(datos) {
   try {
     const response = await axios.post(`${API_URL}/crear`, datos);
-    console.log("Productos obtenidos:", response);
+    //console.log("Productos obtenidos:", response);
     return response;
   } catch (error) {
     console.error("Error al crear productos:", error.response.data.error);
@@ -38,7 +38,7 @@ export async function crearProducto(datos) {
 export async function editarProducto(datos, id) {
   try {
     const response = await axios.put(`${API_URL}/actualizar/${id}`, datos);
-    console.log("Productos obtenidos:", response);
+    //console.log("Productos obtenidos:", response);
     return response;
   } catch (error) {
     console.error("Error al editar productos:", error.response.data.error);
@@ -48,11 +48,11 @@ export async function editarProducto(datos, id) {
 
 export async function eliminarProducto(id) {
   try {
-    const response = await axios.delete(`${API_URL}/actualizar/${id}`);
+    const response = await axios.delete(`${API_URL}/eliminar/${id}`);
     console.log("Productos obtenidos:", response);
-    return response.data;
+    return response;
   } catch (error) {
     console.error("Error al editar productos:", error.response.data.error);
-    return error.response.data;
+    return error.response;
   }
 }

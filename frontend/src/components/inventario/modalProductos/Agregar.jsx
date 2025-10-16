@@ -126,7 +126,8 @@ export default function Agregar({
                   name="estado"
                   value={datos.estado}
                   onChange={handleChange}
-                  required>
+                  required
+                >
                   <option value="">Seleccione estado</option>
                   <option value="Bueno">Bueno</option>
                   <option value="Malo">Malo</option>
@@ -155,13 +156,12 @@ export default function Agregar({
               name="nameCategoria"
               value={datos.nameCategoria}
               onChange={handleChange}
-              required>
+              required
+            >
               <option value="">Seleccione una categoría</option>
               {categorias.length > 0 &&
                 categorias.map((categoria) => (
-                  <option key={categoria.id} value={categoria.id}>
-                    {categoria.nombre}
-                  </option>
+                  <option key={categoria.id}>{categoria.nombre}</option>
                 ))}
             </Form.Control>
           </Form.Group>

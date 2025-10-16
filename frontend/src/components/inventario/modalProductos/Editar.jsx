@@ -9,8 +9,17 @@ export default function Editar({
   categorias,
   funcionBuscarProductos,
 }) {
-  console.log("producto seleccionado:", Producto.categoria);
-  const [formData, setFormData] = useState({});
+  //console.log("producto seleccionado:", Producto);
+  const [formData, setFormData] = useState({
+    codigo: "",
+    nombre: "",
+    precioCompra: "",
+    precioVenta: "",
+    peso: "",
+    descripcion: "",
+    estado: "",
+    nameCategoria: "",
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -53,7 +62,7 @@ export default function Editar({
       }
     } catch (error) {
       setError("Error de conexión. Por favor, intenta de nuevo.");
-      console.log("Error al editar:", err);
+      console.log("Error al editar:", error);
     } finally {
       setLoading(false);
     }
@@ -153,7 +162,8 @@ export default function Editar({
                   name="estado"
                   value={formData.estado}
                   onChange={handleChangeLocal}
-                  required>
+                  required
+                >
                   <option value="">Seleccione estado</option>
                   <option value="Bueno">Bueno</option>
                   <option value="Malo">Malo</option>
@@ -180,7 +190,8 @@ export default function Editar({
               value={formData.nameCategoria}
               placeholder={formData.nameCategoria}
               onChange={handleChangeLocal}
-              required>
+              required
+            >
               <option value="">Seleccione una categoría</option>
               {categorias?.length > 0 &&
                 categorias.map((categoria) => (
@@ -196,13 +207,15 @@ export default function Editar({
         <Button
           variant="secondary"
           onClick={handleCerrarModal}
-          disabled={loading}>
+          disabled={loading}
+        >
           Cancelar
         </Button>
         <Button
           variant="warning"
           onClick={handleSubmitEdicion}
-          disabled={loading}>
+          disabled={loading}
+        >
           {loading ? "Guardando..." : "Guardar Cambios"}
         </Button>
       </Modal.Footer>

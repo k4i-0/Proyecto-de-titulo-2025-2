@@ -4,13 +4,14 @@ import {
   Row,
   Col,
   Button,
-  Form,
+  ButtonGroup,
   Alert,
   Card,
 } from "react-bootstrap";
 
 import Agregar from "./modalProductos/Agregar";
 import Editar from "./modalProductos/Editar";
+import Eliminar from "./modalProductos/Eliminar";
 
 import obtenerProductos, {
   crearProducto,
@@ -22,6 +23,7 @@ export default function Productos() {
   const [categorias, setCategorias] = useState([]);
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
+  const [modalEliminar, setModalEliminar] = useState(false);
 
   const [productosSelect, setProductoSelect] = useState(null);
 
@@ -55,7 +57,7 @@ export default function Productos() {
           );
         }
         setProductos(respuesta);
-        console.log("Productos obtenidos:", respuesta[0]);
+        //console.log("Productos obtenidos:", respuesta[0]);
       }
 
       if (respuesta2.code) {
@@ -153,6 +155,11 @@ export default function Productos() {
     });
   };
 
+  const handleEliminar = (producto) => {
+    setModalEliminar(true);
+    setProductoSelect(producto);
+  };
+
   return (
     <Container style={{ marginTop: "30px" }}>
       {/* Encabezado */}
@@ -172,7 +179,8 @@ export default function Productos() {
             <Alert
               variant={error ? "danger" : "success"}
               dismissible
-              onClose={() => setMensaje("")}>
+              onClose={() => setMensaje("")}
+            >
               {mensaje}
             </Alert>
           </Col>
@@ -181,16 +189,17 @@ export default function Productos() {
 
       {/* Botones de acción */}
       <Row className="mb-4">
-        <Col md={4}>
+        <Col md={3}>
           <Button
             variant="primary"
             onClick={handleCrear}
             disabled={loading}
-            className="w-100">
-            + Agregar Producto
+            className="w-100"
+          >
+            + Agregar
           </Button>
         </Col>
-        <Col md={4}>
+        {/* <Col md={4}>
           <Button
             variant="warning"
             className="w-100"
@@ -204,7 +213,7 @@ export default function Productos() {
           <Button variant="danger" className="w-100" disabled>
             − Eliminar Producto
           </Button>
-        </Col>
+        </Col> */}
       </Row>
 
       {/* Lista de productos */}
@@ -216,7 +225,7 @@ export default function Productos() {
             </Col>
           ) : productos.length > 0 ? (
             productos.map((producto) => (
-              <Col key={producto.id} md={4} className="mb-3">
+              <Col key={producto.id} md={4} className="mb-4">
                 <Card>
                   <Card.Body>
                     <Card.Title>{producto.nombre}</Card.Title>
@@ -233,12 +242,22 @@ export default function Productos() {
                       {producto.categoria.nombre}
                     </Card.Text>
                     <Card.Text>
-                      <Button
-                        variant="warning"
-                        className="w-100"
-                        onClick={() => handleEditar(producto)}>
-                        ✎ Modificar Producto
-                      </Button>
+                      <ButtonGroup>
+                        <Button
+                          variant="warning"
+                          className="w-100"
+                          onClick={() => handleEditar(producto)}
+                        >
+                          Modificar Producto
+                        </Button>
+                        <Button
+                          variant="danger"
+                          className="w-100"
+                          onClick={() => handleEliminar(producto)}
+                        >
+                          Eliminar Producto
+                        </Button>
+                      </ButtonGroup>
                     </Card.Text>
                   </Card.Body>
                 </Card>
@@ -268,6 +287,14 @@ export default function Productos() {
         categorias={categorias}
         modalEditar={modalEditar}
         handleCerrarModal={handleCerrarModal}
+        funcionBuscarProductos={buscarProducto}
+      />
+
+      <Eliminar
+        modalEliminar={modalEliminar}
+        setModalEliminar={setModalEliminar}
+        productoEliminar={productosSelect}
+        setProductoEliminar={setProductoSelect}
         funcionBuscarProductos={buscarProducto}
       />
     </Container>

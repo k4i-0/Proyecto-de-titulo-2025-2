@@ -51,7 +51,7 @@ async function login(req, res) {
       // sameSite: "strict",
       maxAge: 86400000,
     });
-    console.log(funcionarioEncontrado.dataValues);
+    //console.log(funcionarioEncontrado.dataValues);
     res.status(200).json({
       datos: {
         email: funcionarioEncontrado.email,

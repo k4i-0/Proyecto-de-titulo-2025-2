@@ -16,7 +16,7 @@ export default async function obtenerCategoria() {
 export async function crearCategoria(datos) {
   try {
     const response = await axios.post(`${API_URL}/crear`, datos);
-    console.log("Productos obtenidos:", response);
+    //console.log("Productos obtenidos:", response);
     return response;
   } catch (error) {
     console.error("Error al crear productos:", error.response.data.error);
