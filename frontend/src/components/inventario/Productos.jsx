@@ -51,22 +51,22 @@ export default function Productos() {
       } else {
         if (respuesta.length == 0) {
           setMensaje(
-            "No hay productos disponibles, por favor cree un producto antes de agregar uno nuevo"
+            "No hay productos disponibles, por favor cree un producto"
           );
         }
         setProductos(respuesta);
-        console.log("Productos obtenidos:", respuesta);
+        console.log("Productos obtenidos:", respuesta[0]);
       }
 
       if (respuesta2.code) {
         setError(true);
         setMensaje(respuesta2.error);
       } else {
-        if (respuesta2.length == 0) {
-          setMensaje(
-            "No hay categorias disponibles, por favor cree una categoria antes de agregar productos"
-          );
-        }
+        //if (respuesta2.length == 0) {
+        //  setMensaje(
+        //    "No hay categorias disponibles, por favor cree una categoria antes de agregar productos"
+        //  );
+        //}
         //console.log("Categrias:", categorias);
         setCategorias(respuesta2);
       }
@@ -106,10 +106,10 @@ export default function Productos() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    console.log("Datos a enviar:", datos);
+    //console.log("Datos a enviar:", datos);
     try {
       const resultado = await crearProducto(datos);
-      console.log("el resultado es:", resultado);
+      //console.log("el resultado es:", resultado);
       if (resultado.status === 201) {
         setMensaje("Producto creado exitosamente");
         setError(false);
@@ -172,8 +172,7 @@ export default function Productos() {
             <Alert
               variant={error ? "danger" : "success"}
               dismissible
-              onClose={() => setMensaje("")}
-            >
+              onClose={() => setMensaje("")}>
               {mensaje}
             </Alert>
           </Col>
@@ -187,8 +186,7 @@ export default function Productos() {
             variant="primary"
             onClick={handleCrear}
             disabled={loading}
-            className="w-100"
-          >
+            className="w-100">
             + Agregar Producto
           </Button>
         </Col>
@@ -228,13 +226,17 @@ export default function Productos() {
                       <strong>Precio:</strong> ${producto.precioVenta}
                       <br />
                       <strong>Estado:</strong> {producto.estado}
+                      <br />
+                      <strong>IdCategoria:</strong> {producto.idCategoria}
+                      <br />
+                      <strong>Nombre Categoria:</strong>
+                      {producto.categoria.nombre}
                     </Card.Text>
                     <Card.Text>
                       <Button
                         variant="warning"
                         className="w-100"
-                        onClick={() => handleEditar(producto)}
-                      >
+                        onClick={() => handleEditar(producto)}>
                         ✎ Modificar Producto
                       </Button>
                     </Card.Text>
@@ -266,8 +268,7 @@ export default function Productos() {
         categorias={categorias}
         modalEditar={modalEditar}
         handleCerrarModal={handleCerrarModal}
-        datos={datos}
-        handleChange={handleChange}
+        funcionBuscarProductos={buscarProducto}
       />
     </Container>
   );

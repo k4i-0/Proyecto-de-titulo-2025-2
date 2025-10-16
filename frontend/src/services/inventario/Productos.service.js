@@ -39,7 +39,7 @@ export async function editarProducto(datos, id) {
   try {
     const response = await axios.put(`${API_URL}/actualizar/${id}`, datos);
     console.log("Productos obtenidos:", response);
-    return response.data;
+    return response;
   } catch (error) {
     console.error("Error al editar productos:", error.response.data.error);
     return error.response.data;

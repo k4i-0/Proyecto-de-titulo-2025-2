@@ -28,6 +28,10 @@ exports.createProducto = async (req, res) => {
   const categoriaExistente = await Categoria.findAll({
     where: { nombre: nameCategoria },
   });
+  console.log(categoriaExistente[0].dataValues.idCategoria);
+  if (!categoriaExistente) {
+    res.status(301).send(categoriaExistente);
+  }
 
   try {
     const nuevoProducto = await Producto.create({
@@ -38,7 +42,7 @@ exports.createProducto = async (req, res) => {
       peso,
       descripcion,
       estado,
-      idCategoria: categoriaExistente.idCategoria,
+      idCategoria: categoriaExistente[0].dataValues.idCategoria,
     });
     res.status(201).json(nuevoProducto);
   } catch (error) {
@@ -57,12 +61,14 @@ exports.getAllProductos = async (req, res) => {
           [Op.ne]: "eliminado",
         },
       },
+      include: [{ model: Categoria }],
     });
     if (productos.length === 0 || !productos) {
       return res
         .status(204)
         .json({ code: 1212, error: "No hay productos disponibles" });
     }
+    console.log(productos);
     res.status(200).json(productos);
   } catch (error) {
     console.error("Error al obtener los productos:", error);

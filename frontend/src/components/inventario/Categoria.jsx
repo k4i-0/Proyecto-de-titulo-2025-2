@@ -1,194 +1,183 @@
+// src/pages/inventario/Categoria.jsx
+
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Button, Form } from "react-bootstrap";
+import { Container, Row, Col, Button, Alert, Card } from "react-bootstrap";
 import obtenerCategoria, {
   crearCategoria,
 } from "../../services/inventario/Categorias.service";
+import AgregarCategoria from "../../components/inventario/modalCategoria/AgregarCategoria"; // Asegúrate que la ruta sea correcta
 
 export default function Categoria() {
   const [categorias, setCategorias] = useState([]);
-  const [error, setError] = useState(true);
   const [modalCrear, setModalCrear] = useState(false);
-  const [mensaje, setMensaje] = useState();
 
+  // Estados para feedback al usuario, igual que en Productos
+  const [error, setError] = useState(false);
+  const [mensaje, setMensaje] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Estado unificado para el formulario
   const [datos, setDatos] = useState({
     nombre: "",
     descripcion: "",
     estado: "",
   });
 
-  const buscarCategoria = async () => {
-    const respuesta2 = await obtenerCategoria();
-    //console.log("Categrias:", categorias);
-    //console.log("error en categoria", respuesta2);
-    if (respuesta2.code) {
-      setMensaje(respuesta2.error);
-    } else {
-      //manejar cuando llegue categoria
-      setCategorias(respuesta2);
+  const buscarCategorias = async () => {
+    try {
+      setLoading(true);
+      setError(false);
+      const respuesta = await obtenerCategoria();
+
+      if (respuesta.code) {
+        setError(true);
+        setMensaje(respuesta.error || "Error al cargar categorías.");
+      } else {
+        setCategorias(respuesta);
+        if (respuesta.length === 0) {
+          setMensaje("No hay categorías disponibles, por favor crea una.");
+        }
+      }
+    } catch (err) {
+      setError(true);
+      setMensaje("Error de conexión al cargar las categorías.");
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
+
   useEffect(() => {
-    buscarCategoria();
+    buscarCategorias();
   }, []);
 
-  const handleCrear = () => {
-    setError(false);
-    setModalCrear(true);
-  };
+  // Función genérica para manejar cambios en el formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setDatos({
-      ...datos,
-      [name]: value,
-    });
+    setDatos({ ...datos, [name]: value });
   };
-  const handleCrearCategoria = async (e) => {
+
+  // Abre el modal de creación y resetea estados
+  const handleCrear = () => {
+    setError(false);
+    setMensaje("");
+    setModalCrear(true);
+  };
+
+  // Cierra el modal y resetea el formulario
+  const handleCerrarModal = () => {
+    setModalCrear(false);
+    setDatos({ nombre: "", descripcion: "", estado: "" });
+  };
+
+  // Maneja el envío del formulario para crear una nueva categoría
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
-      const confirmacion = await crearCategoria(datos);
-      //console.log(confirmacion);
-
-      if (confirmacion) {
-        // Recargar categorías
-        await buscarCategoria();
-        // Cerrar modal y limpiar formulario
-        setModalCrear(false);
-        setDatos({ nombre: "", descripcion: "", estado: "" });
+      const resultado = await crearCategoria(datos);
+      console.log("Respuesta al crear", resultado);
+      if (resultado.status === 201) {
         setMensaje("Categoría creada exitosamente");
+        setError(false);
+        handleCerrarModal();
+        await buscarCategorias(); // Recarga la lista
       } else {
         setError(true);
-        setMensaje(confirmacion.error || "Error al crear categoría");
+        setMensaje(resultado.error || "Error al crear la categoría.");
       }
-    } catch (error) {
-      console.error("Error al crear categoría:", error);
+    } catch (err) {
       setError(true);
-      setMensaje("Error al crear categoría");
+      setMensaje("Error de conexión al crear la categoría.");
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
-    <Container style={{ textAlign: "center", marginTop: "30px" }}>
-      <Row>
-        <Col>
-          <h2>Gestión de Categorias</h2>
-          <p>Aquí puedes gestionar los categorias de tu inventario.</p>
+    <Container style={{ marginTop: "30px" }}>
+      {/* Encabezado */}
+      <Row className="mb-4">
+        <Col className="text-center">
+          <h2>Gestión de Categorías</h2>
+          <p className="text-muted">
+            Aquí puedes gestionar las categorías de tu inventario.
+          </p>
         </Col>
       </Row>
-      <Row>
-        <Col>
-          <Button variant="primary" onClick={() => handleCrear()}>
-            Agregar Categoria
+
+      {/* Mensajes de Alerta */}
+      {mensaje && (
+        <Row className="mb-3">
+          <Col>
+            <Alert
+              variant={error ? "danger" : "success"}
+              dismissible
+              onClose={() => setMensaje("")}>
+              {mensaje}
+            </Alert>
+          </Col>
+        </Row>
+      )}
+
+      {/* Botones de acción */}
+      <Row className="mb-4">
+        <Col md={4}>
+          <Button
+            variant="primary"
+            onClick={handleCrear}
+            disabled={loading}
+            className="w-100">
+            + Agregar Categoría
           </Button>
         </Col>
-        <Col>
-          <Button variant="primary"> Modificar Categoria</Button>
+        <Col md={4}>
+          <Button variant="warning" className="w-100" disabled>
+            ✎ Modificar Categoría
+          </Button>
         </Col>
-        <Col>
-          <Button variant="primary">Eliminar Categoria</Button>
+        <Col md={4}>
+          <Button variant="danger" className="w-100" disabled>
+            − Eliminar Categoría
+          </Button>
         </Col>
       </Row>
+
+      {/* Lista de Categorías */}
       <Row>
-        {categorias.length > 0 ? (
+        {loading ? (
+          <Col className="text-center">
+            <p>Cargando categorías...</p>
+          </Col>
+        ) : (
+          categorias.length > 0 &&
           categorias.map((categoria) => (
             <Col key={categoria.id} md={4} className="mb-3">
-              <div
-                className="border p-3 rounded"
-                style={{ marginTop: "100px" }}
-              >
-                <h5>{categoria.nombre}</h5>
-              </div>
+              <Card>
+                <Card.Body>
+                  <Card.Title>{categoria.nombre}</Card.Title>
+                  <Card.Text>
+                    <strong>Estado:</strong> {categoria.estado}
+                  </Card.Text>
+                  {/* Aquí podrías agregar botones de editar/eliminar por tarjeta */}
+                </Card.Body>
+              </Card>
             </Col>
           ))
-        ) : (
-          <Col>
-            <p style={{ color: error ? "red" : "gray", marginTop: "50px" }}>
-              {error ? mensaje : "No hay categorías disponibles"}
-            </p>
-          </Col>
         )}
       </Row>
-      {modalCrear && (
-        <div
-          style={{
-            position: "fixed",
-            top: "60%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            backgroundColor: "white",
-            padding: "30px",
-            borderRadius: "8px",
-            width: "90%",
-            maxWidth: "500px",
-          }}
-        >
-          <Button
-            variant="close"
-            onClick={() => setModalCrear(false)}
-            style={{ position: "absolute", top: "10px", right: "10px" }}
-          >
-            X
-          </Button>
 
-          <Form onSubmit={handleCrearCategoria}>
-            <h3>Crear Nueva Categoría</h3>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Nombre</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Ingrese nombre de la categoría"
-                name="nombre"
-                value={datos.nombre}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Descripcion</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Ingrese tipo de categoría"
-                name="descripcion"
-                value={datos.descripcion}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Estado</Form.Label>
-              <Form.Control
-                as="select"
-                name="estado"
-                value={datos.estado}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Seleccione estado</option>
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
-                <option value="eliminado">eliminado</option>
-              </Form.Control>
-            </Form.Group>
-
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-                justifyContent: "center",
-              }}
-            >
-              <Button variant="secondary" onClick={() => setModalCrear(false)}>
-                Cancelar
-              </Button>
-              <Button variant="primary" type="submit">
-                Crear Categoría
-              </Button>
-            </div>
-          </Form>
-        </div>
-      )}
+      {/* Componente Modal */}
+      <AgregarCategoria
+        show={modalCrear}
+        handleClose={handleCerrarModal}
+        handleSubmit={handleSubmit}
+        datos={datos}
+        handleChange={handleChange}
+        loading={loading}
+      />
     </Container>
   );
 }

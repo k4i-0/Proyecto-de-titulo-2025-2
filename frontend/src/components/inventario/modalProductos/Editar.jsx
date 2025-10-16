@@ -1,32 +1,84 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Row, Col, Button, Form, Modal } from "react-bootstrap";
+import { editarProducto } from "../../../services/inventario/Productos.service";
 
 export default function Editar({
   Producto,
   modalEditar,
   handleCerrarModal,
-  datos,
-  handleChange,
   categorias,
+  funcionBuscarProductos,
 }) {
-  console.log("Categorias:", categorias);
+  console.log("producto seleccionado:", Producto.categoria);
+  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (Producto) {
+      setFormData({
+        codigo: Producto.codigo || "",
+        nombre: Producto.nombre || "",
+        precioCompra: Producto.precioCompra || "",
+        precioVenta: Producto.precioVenta || "",
+        peso: Producto.peso || "",
+        descripcion: Producto.descripcion || "",
+        estado: Producto.estado || "",
+        nameCategoria: Producto.categoria.nombre || "",
+      });
+      setError("");
+    }
+  }, [Producto]);
+
+  const handleChangeLocal = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleSubmitEdicion = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const respuesta = await editarProducto(formData, Producto.idProducto);
+      if (respuesta.status == 200) {
+        await funcionBuscarProductos();
+        handleCerrarModal();
+      } else {
+        setError(respuesta.error || "Ocurrió un error al actualizar.");
+      }
+    } catch (error) {
+      setError("Error de conexión. Por favor, intenta de nuevo.");
+      console.log("Error al editar:", err);
+    } finally {
+      setLoading(false);
+    }
+    // Llama a una función del padre para actualizar el producto, pasando formData
+    // Ejemplo: handleUpdate(Producto.id, formData);
+    console.log("Datos para actualizar:", formData);
+  };
+
   return (
     <Modal show={modalEditar} onHide={handleCerrarModal} centered size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Editar Producto {Producto?.nombre}</Modal.Title>
+        <Modal.Title>Editar Producto {formData.nombre}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <Form>
+        {error && <Alert variant="danger">{error}</Alert>}
+        <Form onSubmit={handleSubmitEdicion}>
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>Código *</Form.Label>
                 <Form.Control
                   type="number"
-                  placeholder={Producto?.codigo}
                   name="codigo"
-                  value={datos.codigo}
-                  onChange={handleChange}
+                  value={formData.codigo}
+                  onChange={handleChangeLocal}
                   required
                 />
               </Form.Group>
@@ -37,10 +89,9 @@ export default function Editar({
                 <Form.Label>Nombre *</Form.Label>
                 <Form.Control
                   type="text"
-                  placeholder={Producto?.nombre}
                   name="nombre"
-                  value={datos.nombre}
-                  onChange={handleChange}
+                  value={formData.nombre}
+                  onChange={handleChangeLocal}
                   required
                 />
               </Form.Group>
@@ -53,10 +104,9 @@ export default function Editar({
                 <Form.Label>Precio Compra *</Form.Label>
                 <Form.Control
                   type="number"
-                  placeholder={Producto?.precioCompra}
                   name="precioCompra"
-                  value={datos.precioCompra}
-                  onChange={handleChange}
+                  value={formData.precioCompra}
+                  onChange={handleChangeLocal}
                   min="0"
                   step="0.01"
                   required
@@ -69,10 +119,9 @@ export default function Editar({
                 <Form.Label>Precio Venta *</Form.Label>
                 <Form.Control
                   type="number"
-                  placeholder={Producto?.precioVenta}
                   name="precioVenta"
-                  value={datos.precioVenta}
-                  onChange={handleChange}
+                  value={formData.precioVenta}
+                  onChange={handleChangeLocal}
                   min="0"
                   step="0.01"
                   required
@@ -87,10 +136,9 @@ export default function Editar({
                 <Form.Label>Peso (kg)</Form.Label>
                 <Form.Control
                   type="number"
-                  placeholder={Producto?.peso}
                   name="peso"
-                  value={datos.peso}
-                  onChange={handleChange}
+                  value={formData.peso}
+                  onChange={handleChangeLocal}
                   min="0"
                   step="0.01"
                 />
@@ -103,10 +151,9 @@ export default function Editar({
                 <Form.Control
                   as="select"
                   name="estado"
-                  value={datos.estado}
-                  onChange={handleChange}
-                  required
-                >
+                  value={formData.estado}
+                  onChange={handleChangeLocal}
+                  required>
                   <option value="">Seleccione estado</option>
                   <option value="Bueno">Bueno</option>
                   <option value="Malo">Malo</option>
@@ -120,10 +167,9 @@ export default function Editar({
             <Form.Control
               as="textarea"
               rows={3}
-              placeholder={Producto?.descripcion}
               name="descripcion"
-              value={datos.descripcion}
-              onChange={handleChange}
+              value={formData.descripcion}
+              onChange={handleChangeLocal}
             />
           </Form.Group>
           <Form.Group className="mb-3">
@@ -131,10 +177,10 @@ export default function Editar({
             <Form.Control
               as="select"
               name="nameCategoria"
-              value={datos.nameCategoria}
-              onChange={handleChange}
-              required
-            >
+              value={formData.nameCategoria}
+              placeholder={formData.nameCategoria}
+              onChange={handleChangeLocal}
+              required>
               <option value="">Seleccione una categoría</option>
               {categorias?.length > 0 &&
                 categorias.map((categoria) => (
@@ -146,6 +192,20 @@ export default function Editar({
           </Form.Group>
         </Form>
       </Modal.Body>
+      <Modal.Footer>
+        <Button
+          variant="secondary"
+          onClick={handleCerrarModal}
+          disabled={loading}>
+          Cancelar
+        </Button>
+        <Button
+          variant="warning"
+          onClick={handleSubmitEdicion}
+          disabled={loading}>
+          {loading ? "Guardando..." : "Guardar Cambios"}
+        </Button>
+      </Modal.Footer>
     </Modal>
   );
 }

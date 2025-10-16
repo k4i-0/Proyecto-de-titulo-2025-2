@@ -1,5 +1,5 @@
-import React from "react";
-import { Row, Col, Button, Form, Modal } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import { Row, Col, Button, Form, Modal, Alert } from "react-bootstrap";
 
 export default function Agregar({
   modalCrear,
@@ -10,6 +10,19 @@ export default function Agregar({
   categorias,
   loading,
 }) {
+  const [mensaje, setMensaje] = useState("");
+  const [flag, setFlag] = useState(false);
+
+  useEffect(() => {
+    if (categorias.length === 0) {
+      setMensaje("!!No existe Categoría, debe crear una antes!!");
+      setFlag(true);
+    } else {
+      setMensaje("");
+      setFlag(false);
+    }
+  }, [categorias]);
+
   return (
     <Modal show={modalCrear} onHide={handleCerrarModal} centered size="lg">
       <Modal.Header closeButton>
@@ -18,6 +31,13 @@ export default function Agregar({
 
       <Modal.Body>
         <Form onSubmit={handleSubmit}>
+          {mensaje && (
+            <Row className="mb-3">
+              <Col>
+                <Alert variant={flag ? "danger" : "success"}>{mensaje}</Alert>
+              </Col>
+            </Row>
+          )}
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
@@ -106,8 +126,7 @@ export default function Agregar({
                   name="estado"
                   value={datos.estado}
                   onChange={handleChange}
-                  required
-                >
+                  required>
                   <option value="">Seleccione estado</option>
                   <option value="Bueno">Bueno</option>
                   <option value="Malo">Malo</option>
@@ -136,8 +155,7 @@ export default function Agregar({
               name="nameCategoria"
               value={datos.nameCategoria}
               onChange={handleChange}
-              required
-            >
+              required>
               <option value="">Seleccione una categoría</option>
               {categorias.length > 0 &&
                 categorias.map((categoria) => (
