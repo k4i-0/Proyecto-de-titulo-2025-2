@@ -1,12 +1,21 @@
 // src/pages/inventario/Categoria.jsx
 
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Button, Alert, Card } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Button,
+  Alert,
+  Card,
+  ButtonGroup,
+} from "react-bootstrap";
 import obtenerCategoria, {
   crearCategoria,
 } from "../../services/inventario/Categorias.service";
 import AgregarCategoria from "../../components/inventario/modalCategoria/AgregarCategoria"; // Asegúrate que la ruta sea correcta
 
+import EditarCategoria from "../../components/inventario/modalCategoria/EditarCategoria";
 export default function Categoria() {
   const [categorias, setCategorias] = useState([]);
   const [modalCrear, setModalCrear] = useState(false);
@@ -15,6 +24,9 @@ export default function Categoria() {
   const [error, setError] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [categoriaSelect, setCategoriaSelect] = useState(null);
+  const [modalEditar, setModalEditar] = useState(false);
 
   // Estado unificado para el formulario
   const [datos, setDatos] = useState({
@@ -67,6 +79,7 @@ export default function Categoria() {
   // Cierra el modal y resetea el formulario
   const handleCerrarModal = () => {
     setModalCrear(false);
+    setModalEditar(false);
     setDatos({ nombre: "", descripcion: "", estado: "" });
   };
 
@@ -96,6 +109,13 @@ export default function Categoria() {
     }
   };
 
+  const handleEditar = (categoria) => {
+    setError(false);
+    setCategoriaSelect(categoria);
+    setMensaje("");
+    setModalEditar(true);
+  };
+
   return (
     <Container style={{ marginTop: "30px" }}>
       {/* Encabezado */}
@@ -115,7 +135,8 @@ export default function Categoria() {
             <Alert
               variant={error ? "danger" : "success"}
               dismissible
-              onClose={() => setMensaje("")}>
+              onClose={() => setMensaje("")}
+            >
               {mensaje}
             </Alert>
           </Col>
@@ -124,16 +145,17 @@ export default function Categoria() {
 
       {/* Botones de acción */}
       <Row className="mb-4">
-        <Col md={4}>
+        <Col md={3}>
           <Button
             variant="primary"
             onClick={handleCrear}
             disabled={loading}
-            className="w-100">
+            className="w-100"
+          >
             + Agregar Categoría
           </Button>
         </Col>
-        <Col md={4}>
+        {/* <Col md={4}>
           <Button variant="warning" className="w-100" disabled>
             ✎ Modificar Categoría
           </Button>
@@ -142,7 +164,7 @@ export default function Categoria() {
           <Button variant="danger" className="w-100" disabled>
             − Eliminar Categoría
           </Button>
-        </Col>
+        </Col> */}
       </Row>
 
       {/* Lista de Categorías */}
@@ -162,6 +184,20 @@ export default function Categoria() {
                     <strong>Estado:</strong> {categoria.estado}
                   </Card.Text>
                   {/* Aquí podrías agregar botones de editar/eliminar por tarjeta */}
+                  <Card.Text>
+                    <ButtonGroup>
+                      <Button
+                        variant="warning"
+                        className="w-100"
+                        onClick={() => handleEditar(categoria)}
+                      >
+                        Modificar Producto
+                      </Button>
+                      <Button variant="danger" className="w-100">
+                        Eliminar Producto
+                      </Button>
+                    </ButtonGroup>
+                  </Card.Text>
                 </Card.Body>
               </Card>
             </Col>
@@ -177,6 +213,12 @@ export default function Categoria() {
         datos={datos}
         handleChange={handleChange}
         loading={loading}
+      />
+      <EditarCategoria
+        Categoria={categoriaSelect}
+        modalEditar={modalEditar}
+        handleCerrarModal={handleCerrarModal}
+        funcionBuscarCategorias={buscarCategorias}
       />
     </Container>
   );

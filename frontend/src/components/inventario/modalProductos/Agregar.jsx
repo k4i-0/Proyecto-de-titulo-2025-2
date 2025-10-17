@@ -161,7 +161,9 @@ export default function Agregar({
               <option value="">Seleccione una categoría</option>
               {categorias.length > 0 &&
                 categorias.map((categoria) => (
-                  <option key={categoria.id}>{categoria.nombre}</option>
+                  <option key={categoria.idCategoria}>
+                    {categoria.nombre}
+                  </option>
                 ))}
             </Form.Control>
           </Form.Group>

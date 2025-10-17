@@ -12,7 +12,14 @@ const Login = () => {
   const [autoAttempted, setAutoAttempted] = useState(false);
   //
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    if (token || isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {

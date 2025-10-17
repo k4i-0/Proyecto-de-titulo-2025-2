@@ -56,11 +56,11 @@ exports.createProducto = async (req, res) => {
 exports.getAllProductos = async (req, res) => {
   try {
     const productos = await Producto.findAll({
-      where: {
-        estado: {
-          [Op.ne]: "eliminado",
-        },
-      },
+      // where: {
+      //   estado: {
+      //     [Op.ne]: "eliminado",
+      //   },
+      // },
       include: [{ model: Categoria }],
     });
     if (productos.length === 0 || !productos) {
