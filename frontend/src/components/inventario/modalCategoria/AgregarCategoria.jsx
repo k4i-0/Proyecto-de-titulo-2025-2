@@ -1,22 +1,103 @@
 // src/components/modalCategorias/AgregarCategoria.jsx
 
-import React from "react";
-import { Modal, Button, Form, Row, Col } from "react-bootstrap";
+import { useState } from "react";
+import { Modal, Button, Form, Row, Col, Spinner, Alert } from "react-bootstrap";
+import { crearCategoria } from "../../../services/inventario/Categorias.service";
 
 export default function AgregarCategoria({
   show,
   handleClose,
-  handleSubmit,
-  datos,
-  handleChange,
-  loading,
+  funcionBuscarCategorias,
 }) {
+  const [loading, setLoading] = useState(false);
+  const [mensaje, setMensaje] = useState("");
+  const [error, setError] = useState(false);
+  const [datos, setDatos] = useState({
+    nombre: "",
+    descripcion: "",
+    estado: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setDatos({ ...datos, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const resultado = await crearCategoria(datos);
+      console.log("Respuesta al crear", resultado);
+      if (resultado.status === 201) {
+        setMensaje("Categoría creada exitosamente");
+        setError(false);
+        setTimeout(() => {
+          funcionBuscarCategorias();
+          setDatos({ nombre: "", descripcion: "", estado: "" });
+          handleClose();
+          setMensaje("");
+        }, 1200);
+      } else {
+        setError(true);
+        setMensaje(resultado.error || "Error al crear la categoría.");
+      }
+    } catch (err) {
+      setError(true);
+      setMensaje("Error de conexión al crear la categoría.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Modal show={show} onHide={handleClose} centered size="lg">
+      {loading ? (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(255, 255, 255, 0.85)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10,
+            borderRadius: "var(--bs-modal-border-radius)",
+          }}
+        >
+          <Spinner animation="grow" />
+          <p>Creando categoría...</p>
+        </div>
+      ) : null}
       <Modal.Header closeButton>
         <Modal.Title>Crear Nueva Categoría</Modal.Title>
       </Modal.Header>
       <Modal.Body>
+        {mensaje && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "rgba(255, 255, 255, 0.85)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 10,
+              borderRadius: "var(--bs-modal-border-radius)",
+            }}
+          >
+            <Alert variant={error ? "danger" : "success"}>{mensaje}</Alert>
+          </div>
+        )}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
             <Form.Label>Nombre *</Form.Label>
@@ -49,7 +130,8 @@ export default function AgregarCategoria({
               name="estado"
               value={datos.estado}
               onChange={handleChange}
-              required>
+              required
+            >
               <option value="">Seleccione estado</option>
               <option value="Activo">Activo</option>
               <option value="Inactivo">Inactivo</option>

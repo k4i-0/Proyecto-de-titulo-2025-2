@@ -9,6 +9,7 @@ export default function Agregar({
   handleChange,
   categorias,
   loading,
+  cambiarVista,
 }) {
   const [mensaje, setMensaje] = useState("");
   const [flag, setFlag] = useState(false);
@@ -30,14 +31,24 @@ export default function Agregar({
       </Modal.Header>
 
       <Modal.Body>
+        {mensaje && (
+          <Row className="mb-3">
+            <Col>
+              <Alert variant={flag ? "danger" : "success"}>{mensaje}</Alert>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  handleCerrarModal();
+                  cambiarVista("categorias");
+                }}
+              >
+                Agregar Categoria
+              </Button>
+            </Col>
+          </Row>
+        )}
         <Form onSubmit={handleSubmit}>
-          {mensaje && (
-            <Row className="mb-3">
-              <Col>
-                <Alert variant={flag ? "danger" : "success"}>{mensaje}</Alert>
-              </Col>
-            </Row>
-          )}
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
@@ -49,6 +60,7 @@ export default function Agregar({
                   value={datos.codigo}
                   onChange={handleChange}
                   required
+                  disabled={flag}
                 />
               </Form.Group>
             </Col>
@@ -63,6 +75,7 @@ export default function Agregar({
                   value={datos.nombre}
                   onChange={handleChange}
                   required
+                  disabled={flag}
                 />
               </Form.Group>
             </Col>
@@ -81,6 +94,7 @@ export default function Agregar({
                   min="0"
                   step="0.01"
                   required
+                  disabled={flag}
                 />
               </Form.Group>
             </Col>
@@ -97,6 +111,7 @@ export default function Agregar({
                   min="0"
                   step="0.01"
                   required
+                  disabled={flag}
                 />
               </Form.Group>
             </Col>
@@ -114,6 +129,7 @@ export default function Agregar({
                   onChange={handleChange}
                   min="0"
                   step="0.01"
+                  disabled={flag}
                 />
               </Form.Group>
             </Col>
@@ -127,6 +143,7 @@ export default function Agregar({
                   value={datos.estado}
                   onChange={handleChange}
                   required
+                  disabled={flag}
                 >
                   <option value="">Seleccione estado</option>
                   <option value="Bueno">Bueno</option>
@@ -144,6 +161,7 @@ export default function Agregar({
               rows={3}
               placeholder="Ingrese descripción del producto"
               name="descripcion"
+              disabled={flag}
               value={datos.descripcion}
               onChange={handleChange}
             />
@@ -157,6 +175,7 @@ export default function Agregar({
               value={datos.nameCategoria}
               onChange={handleChange}
               required
+              disabled={flag}
             >
               <option value="">Seleccione una categoría</option>
               {categorias.length > 0 &&
@@ -174,7 +193,11 @@ export default function Agregar({
         <Button variant="secondary" onClick={handleCerrarModal}>
           Cancelar
         </Button>
-        <Button variant="primary" onClick={handleSubmit} disabled={loading}>
+        <Button
+          variant="primary"
+          onClick={handleSubmit}
+          disabled={loading || flag}
+        >
           {loading ? "Creando..." : "Crear Producto"}
         </Button>
       </Modal.Footer>

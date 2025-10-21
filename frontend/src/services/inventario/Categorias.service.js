@@ -4,7 +4,9 @@ const API_URL = "https://localhost:3443/api/categorias";
 
 export default async function obtenerCategoria() {
   try {
-    const response = await axios.get(`${API_URL}/buscar`);
+    const response = await axios.get(`${API_URL}/buscar`, {
+      withCredentials: true,
+    });
     //console.log("Categorías obtenidas:", response);
     return response.data;
   } catch (error) {
@@ -15,7 +17,9 @@ export default async function obtenerCategoria() {
 
 export async function crearCategoria(datos) {
   try {
-    const response = await axios.post(`${API_URL}/crear`, datos);
+    const response = await axios.post(`${API_URL}/crear`, datos, {
+      withCredentials: true,
+    });
     //console.log("Productos obtenidos:", response);
     return response;
   } catch (error) {
@@ -26,11 +30,26 @@ export async function crearCategoria(datos) {
 
 export async function editarCategoria(datos, id) {
   try {
-    const response = await axios.put(`${API_URL}/actualizar/${id}`, datos);
+    const response = await axios.put(`${API_URL}/actualizar/${id}`, datos, {
+      withCredentials: true,
+    });
     console.log("categoria obtenidos:", response);
-    return response.data;
+    return response;
   } catch (error) {
     console.error("Error al editar categoria:", error.response.data.error);
+    return error.response.data;
+  }
+}
+
+export async function eliminarCategoria(id) {
+  try {
+    const response = await axios.delete(`${API_URL}/eliminar/${id}`, {
+      withCredentials: true,
+    });
+    console.log("categoria eliminada:", response);
+    return response;
+  } catch (error) {
+    console.error("Error al eliminar categoria:", error.response.data.error);
     return error.response.data;
   }
 }

@@ -4,7 +4,9 @@ const API_URL = "https://localhost:3443/api/productos";
 
 export default async function obtenerProductos() {
   try {
-    const response = await axios.get(`${API_URL}/buscar`);
+    const response = await axios.get(`${API_URL}/buscar`, {
+      withCredentials: true,
+    });
     //console.log("Productos obtenidos:", response);
     return response.data;
   } catch (error) {
@@ -15,7 +17,9 @@ export default async function obtenerProductos() {
 
 export async function obtenerProductosId(id) {
   try {
-    const response = await axios.get(`${API_URL}/buscar/${id}`);
+    const response = await axios.get(`${API_URL}/buscar/${id}`, {
+      withCredentials: true,
+    });
     //console.log("Productos obtenidos:", response);
     return response.data;
   } catch (error) {
@@ -26,7 +30,9 @@ export async function obtenerProductosId(id) {
 
 export async function crearProducto(datos) {
   try {
-    const response = await axios.post(`${API_URL}/crear`, datos);
+    const response = await axios.post(`${API_URL}/crear`, datos, {
+      withCredentials: true,
+    });
     //console.log("Productos obtenidos:", response);
     return response;
   } catch (error) {
@@ -37,7 +43,9 @@ export async function crearProducto(datos) {
 
 export async function editarProducto(datos, id) {
   try {
-    const response = await axios.put(`${API_URL}/actualizar/${id}`, datos);
+    const response = await axios.put(`${API_URL}/actualizar/${id}`, datos, {
+      withCredentials: true,
+    });
     //console.log("Productos obtenidos:", response);
     return response;
   } catch (error) {
@@ -48,7 +56,9 @@ export async function editarProducto(datos, id) {
 
 export async function eliminarProducto(id) {
   try {
-    const response = await axios.delete(`${API_URL}/eliminar/${id}`);
+    const response = await axios.delete(`${API_URL}/eliminar/${id}`, {
+      withCredentials: true,
+    });
     console.log("Productos obtenidos:", response);
     return response;
   } catch (error) {

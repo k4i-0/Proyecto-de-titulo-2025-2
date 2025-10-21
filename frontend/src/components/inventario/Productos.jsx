@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Container,
   Row,
@@ -18,7 +18,7 @@ import obtenerProductos, {
 } from "../../services/inventario/Productos.service";
 import obtenerCategoria from "../../services/inventario/Categorias.service";
 
-export default function Productos() {
+export default function Productos({ onCambiarVista }) {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [modalCrear, setModalCrear] = useState(false);
@@ -281,6 +281,7 @@ export default function Productos() {
         handleChange={handleChange}
         categorias={categorias}
         loading={loading}
+        cambiarVista={onCambiarVista}
       />
       <Editar
         Producto={productosSelect}

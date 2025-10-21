@@ -4,14 +4,17 @@ const API_URL = "https://localhost:3443/api";
 
 export default async function inicioSesion(email, password) {
   try {
-    const response = await axios.post(`${API_URL}/auth/login`, {
-      email,
-      password,
-    });
+    const response = await axios.post(
+      `${API_URL}/auth/login`,
+      {
+        email,
+        password,
+      },
+      { withCredentials: true }
+    );
     if (!response.data) {
       return "No se recibió respuesta del servidor";
     }
-    //console.log(response);
     return response.data;
   } catch (error) {
     console.log(error);

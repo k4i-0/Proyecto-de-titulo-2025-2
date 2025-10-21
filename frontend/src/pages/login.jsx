@@ -67,6 +67,7 @@ const Login = () => {
     e.preventDefault();
     //llamada backend para autenticar
     const usuario = await inicioSesion(email, password);
+    console.log("Usuario dentro de login", usuario.accessToken);
     if (usuario.code) {
       alert(usuario.message);
       return;

@@ -32,7 +32,9 @@ const {
   CajaFuncionario,
   DescuentoAsociado,
   VentaCliente,
+  BitacoraActividad,
 } = require("./src/models");
+const { allowedNodeEnvironmentFlags } = require("process");
 
 const app = express();
 
@@ -42,12 +44,15 @@ app.use(express.urlencoded({ extended: true })); // req.body para formularios
 
 app.use(cookieParser());
 app.use(helmet());
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: "http://localhost:5173",
+  credentials: true,
+  allowedNodeEnvironmentFlags: true,
+  accessControlAllowOrigin: true,
+};
+
+app.use(cors(corsOptions));
+
 app.use(morgan("dev"));
 
 // Rutas indice.route de la API
@@ -142,6 +147,9 @@ async function syncDataBase() {
 
     await VentaCliente.sync(syncOptions);
     console.log("  ✓ VentaCliente");
+
+    await BitacoraActividad.sync(syncOptions);
+    console.log("  ✓ BitacoraActividad");
 
     console.log("✅ Todas las tablas sincronizadas correctamente");
   } catch (error) {

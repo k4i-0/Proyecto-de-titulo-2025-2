@@ -7,7 +7,7 @@ import Productos from "./inventario/Productos";
 import Sucursal from "./inventario/Sucursal";
 import Inventario from "./inventario/Inventario";
 
-export default function Home({ nombreRol, vista }) {
+export default function Home({ nombreRol, vista, onCambiarVista }) {
   return (
     <div style={{ height: "100%" }}>
       <h3
@@ -15,12 +15,10 @@ export default function Home({ nombreRol, vista }) {
           textAlign: "center",
           padding: "10px",
         }}
-      >
-        Bienvenido {nombreRol}
-      </h3>
+      ></h3>
       <div>
-        {vista === "home" && <Inicio />}
-        {vista === "productos" && <Productos />}
+        {vista === "home" && <Inicio nombreRol={nombreRol} />}
+        {vista === "productos" && <Productos onCambiarVista={onCambiarVista} />}
         {vista === "categorias" && <Categoria />}
         {vista === "inventario" && <Inventario />}
         {vista === "sucursal" && <Sucursal />}

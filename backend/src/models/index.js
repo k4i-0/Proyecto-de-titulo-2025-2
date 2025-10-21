@@ -7,8 +7,8 @@ const Vendedor = require("./inventario/VendedorProveedor");
 const Caja = require("./ventas/Caja");
 const Funcionario = require("./Usuarios/Funcionario");
 const Roles = require("./Usuarios/Rol");
-const Bitacora = require("./Usuarios/Bitacora");
-const Actividad = require("./Usuarios/Actividad");
+const Bitacora = require("./usuarios/Bitacora");
+const Actividad = require("./usuarios/Actividad");
 const DatosVenta = require("./ventas/DatosVenta");
 const Descuento = require("./ventas/Descuento");
 const Categoria = require("./inventario/Categoria");
@@ -22,6 +22,7 @@ const ContratoFuncionario = require("./Usuarios/ContratoFuncionario");
 const CajaFuncionario = require("./ventas/CajaAsignada");
 const DescuentoAsociado = require("./ventas/DescuentoAsociado");
 const VentaCliente = require("./ventas/VentaCliente");
+const BitacoraActividad = require("./usuarios/BitacoraActividad");
 
 // ========== ASOCIACIONES PRINCIPALES ==========
 
@@ -125,12 +126,12 @@ Funcionario.belongsTo(Bitacora, {
   targetKey: "idBitacora",
 });
 
-// Bitacora -> Actividad (1:N)
-Bitacora.hasMany(Actividad, {
+// Bitacora -> Funcionario (1:N)
+Bitacora.hasMany(Funcionario, {
   foreignKey: "idBitacora",
   sourceKey: "idBitacora",
 });
-Actividad.belongsTo(Bitacora, {
+Funcionario.belongsTo(Bitacora, {
   foreignKey: "idBitacora",
   targetKey: "idBitacora",
 });
@@ -156,6 +157,18 @@ DatosVenta.belongsTo(Productos, {
 });
 
 // ========== TABLAS INTERMEDIAS ==========
+
+// // BitacoraActividad (intermedia)
+// Bitacora.belongsToMany(Actividad, {
+//   through: BitacoraActividad,
+//   foreignKey: "idBitacora",
+//   otherKey: "idActividad",
+// });
+// Actividad.belongsToMany(Bitacora, {
+//   through: BitacoraActividad,
+//   foreignKey: "idActividad",
+//   otherKey: "idBitacora",
+// });
 
 // Despacho (intermedia)
 Lote.hasMany(Despacho, { foreignKey: "idLote" });
@@ -249,4 +262,5 @@ module.exports = {
   CajaFuncionario,
   DescuentoAsociado,
   VentaCliente,
+  BitacoraActividad,
 };

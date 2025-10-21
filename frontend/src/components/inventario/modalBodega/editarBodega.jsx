@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Alert, Button, Form, Modal } from "react-bootstrap";
 
-import { editarCategoria } from "../../../services/inventario/Categorias.service";
+import { editarBodega } from "../../../services/inventario/Bodega.service";
 
-export default function EditarCategoria({
-  Categoria,
+export default function EditarBodega({
+  bodegas,
   modalEditar,
   handleCerrarModal,
   funcionBuscarCategorias,
@@ -18,17 +18,18 @@ export default function EditarCategoria({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (Categoria) {
+    if (bodegas) {
       setFormData({
-        nombre: Categoria.nombre || "",
-        descripcion: Categoria.descripcion || "",
-        estado: Categoria.estado || "",
+        nombre: bodegas.nombre || "",
+        ubicacion: bodegas.ubicacion || "",
+        capacidad: bodegas.capacidad || "",
+        estado: bodegas.estado || "",
       });
       setError("");
     } else {
       setError("");
     }
-  }, [Categoria]);
+  }, [bodegas]);
 
   const handleChangeLocal = (e) => {
     const { name, value } = e.target;
@@ -43,7 +44,7 @@ export default function EditarCategoria({
     setLoading(true);
     setError("");
     try {
-      const respuesta = await editarCategoria(formData, Categoria.idCategoria);
+      const respuesta = await editarBodega(formData, bodegas.idBodega);
       if (respuesta.status == 200) {
         funcionBuscarCategorias();
         handleCerrarModal();
@@ -56,13 +57,12 @@ export default function EditarCategoria({
     } finally {
       setLoading(false);
     }
-    console.log("Datos para editar:", formData, Categoria.idCategoria);
+    console.log("Datos para editar:", formData, bodegas.idBodega);
   };
-
   return (
     <Modal show={modalEditar} onHide={handleCerrarModal}>
-      <Modal.Header closeButton onClick={handleCerrarModal}>
-        <Modal.Title>Editar Categoría {Categoria?.nombre}</Modal.Title>
+      <Modal.Header closeButton>
+        <Modal.Title>Editar Bodega</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {error && <Alert variant="danger">{error}</Alert>}
@@ -72,7 +72,7 @@ export default function EditarCategoria({
             <Form.Control
               type="text"
               name="idCategoria"
-              value={Categoria ? Categoria.idCategoria : ""}
+              value={bodegas ? bodegas.idBodega : ""}
               readOnly
             />
           </Form.Group>
@@ -83,17 +83,24 @@ export default function EditarCategoria({
               name="nombre"
               value={formData.nombre}
               onChange={handleChangeLocal}
-              required
             />
           </Form.Group>
-          <Form.Group controlId="formDescripcion">
-            <Form.Label>Descripción</Form.Label>
+          <Form.Group controlId="formUbicacion">
+            <Form.Label>Ubicación</Form.Label>
             <Form.Control
-              as="textarea"
-              name="descripcion"
-              value={formData.descripcion}
+              type="text"
+              name="ubicacion"
+              value={formData.ubicacion}
               onChange={handleChangeLocal}
-              required
+            />
+          </Form.Group>
+          <Form.Group controlId="formCapacidad">
+            <Form.Label>Capacidad</Form.Label>
+            <Form.Control
+              type="number"
+              name="capacidad"
+              value={formData.capacidad}
+              onChange={handleChangeLocal}
             />
           </Form.Group>
           <Form.Group controlId="formEstado">
@@ -103,12 +110,11 @@ export default function EditarCategoria({
               name="estado"
               value={formData.estado}
               onChange={handleChangeLocal}
-              required
             >
               <option value="">Seleccione un estado</option>
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-              <option value="eliminado">eliminado</option>
+              <option value="En Funcionamiento">En Funcionamiento</option>
+              <option value="En Mantenimiento">En Mantenimiento</option>
+              <option value="Fuera de Servicio">Fuera de Servicio</option>
             </Form.Control>
           </Form.Group>
         </Form>

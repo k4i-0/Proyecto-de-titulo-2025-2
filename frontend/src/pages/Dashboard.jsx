@@ -21,7 +21,11 @@ function Dashboard() {
         onCambiarVista={cambiarVista}
       />
       <div style={{ margin: 0, padding: 0 }}>
-        <Home nombreRol={user.nombre} vista={vistaActual} />
+        <Home
+          nombreRol={user.nombre}
+          vista={vistaActual}
+          onCambiarVista={cambiarVista}
+        />
       </div>
     </div>
   );
