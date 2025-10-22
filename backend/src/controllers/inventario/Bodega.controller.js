@@ -139,8 +139,9 @@ exports.getBodegaById = async (req, res) => {
 // Actualizar una bodega por ID
 exports.updateBodega = async (req, res) => {
   try {
-    const { nombre, ubicacion, capacidad, estado, idSucursal } = req.body;
-    if (!nombre || !ubicacion || !capacidad || !estado || !idSucursal) {
+    const { nombre, ubicacion, capacidad, estado } = req.body;
+    console.log("Datos recibidos para actualizar:", req.body, req.params.id);
+    if (!nombre || !ubicacion || !capacidad || !estado) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
     }
     if (!req.params.id || req.params.id === null) {
@@ -156,7 +157,7 @@ exports.updateBodega = async (req, res) => {
         ubicacion,
         capacidad,
         estado,
-        idSucursal,
+        idSucursal: busquedaBodega.dataValues.idSucursal,
       },
       {
         where: { idBodega: req.params.id },

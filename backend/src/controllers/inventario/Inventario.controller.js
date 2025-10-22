@@ -12,7 +12,9 @@ exports.createInventario = async (req, res) => {
     !idBodega ||
     !idProducto
   ) {
-    return res.status(400).json({ error: "Faltan datos obligatorios" });
+    return res
+      .status(422)
+      .json({ code: 1112, error: "Faltan datos obligatorios" });
   }
   //Validacion de datos con Joi
   try {
@@ -36,14 +38,16 @@ exports.createInventario = async (req, res) => {
 exports.getAllInventario = async (req, res) => {
   try {
     const inventarios = await Inventario.findAll({
-      where: {
-        estado: {
-          [Op.ne]: "Eliminado",
-        },
-      },
+      // where: {
+      //   estado: {
+      //     [Op.ne]: "Eliminado",
+      //   },
+      // },
     });
     if (inventarios.length === 0 || !inventarios) {
-      return res.status(404).json({ error: "No hay inventarios disponibles" });
+      return res
+        .status(422)
+        .json({ code: 1113, error: "No hay inventarios disponibles" });
     }
     res.status(200).json(inventarios);
   } catch (error) {
@@ -58,7 +62,7 @@ exports.getInventarioById = async (req, res) => {
     if (inventario) {
       res.status(200).json(inventario);
     } else {
-      res.status(404).json({ error: "Inventario no encontrado" });
+      res.status(422).json({ code: 1114, error: "Inventario no encontrado" });
     }
   } catch (error) {
     res.status(500).json({ error: "Error al obtener el inventario" });
@@ -72,7 +76,9 @@ exports.updateInventario = async (req, res) => {
       req.body;
     const busquedaInventario = await Inventario.findByPk(req.params.id);
     if (!busquedaInventario) {
-      return res.status(404).json({ error: "Inventario no encontrado" });
+      return res
+        .status(422)
+        .json({ code: 1114, error: "Inventario no encontrado" });
     }
     await Inventario.update(
       {
@@ -100,7 +106,9 @@ exports.updateInventario = async (req, res) => {
 exports.deleteInventario = async (req, res) => {
   try {
     if (!req.params.id) {
-      return res.status(400).json({ error: "ID de inventario es obligatorio" });
+      return res
+        .status(422)
+        .json({ code: 1115, error: "ID de inventario es obligatorio" });
     }
     const busquedaInventario = await Inventario.findByPk(req.params.id);
     if (busquedaInventario) {

@@ -78,37 +78,53 @@ async function login(req, res) {
 }
 
 async function logout(req, res) {
+  console.log("antes de", req.cookies);
+  const { token } = req.cookies;
+  let emailDelToken = "Usuario desconocido (token inválido/expirado)";
   try {
-    //cambiar jwt para buscar del token el email
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    if (payload && payload.email) {
+      emailDelToken = payload.email;
+    }
+  } catch (error) {
+    console.warn(
+      `Intento de logout con token inválido/expirado: ${error.name}`
+    );
+  }
+  try {
     await crearBitacora({
-      nombre: `logout usuario ${req.userEmail.email}`,
+      nombre: "logout usuario",
       fechaCreacion: new Date(),
-      descripcion: `Cierre de sesión del usuario: ${
-        jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-        "error de lectura cookie"
-      }`,
+      descripcion: `Cierre de sesión del usuario: ${emailDelToken}`,
       funcionOcupo: "logout controller",
-      usuariosCreador: ` Sistema por ${
-        jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-        "error de lectura cookie"
-      } `,
+      usuariosCreador: ` Sistema por ${emailDelToken} `,
       nivelAlerta: "Bajo",
     });
-    res.clearCookie("access_token");
-    res.json({ message: "Sesión cerrada" });
+    res.clearCookie("token", { httpOnly: true, secure: true });
+    res.status(200).json({ message: "Sesión cerrada" });
   } catch (error) {
     res.status(500).send({ message: "Error interno" });
     console.log(error);
   }
 }
+// Este es un controlador de ruta
 async function verificarToken(req, res) {
-  const token = req.cookies.token;
-  if (!token) return res.status(403).send("No autorizado");
+  const { token } = req.cookies;
+  if (!token) {
+    return res
+      .status(401)
+      .json({ message: "No autorizado, no se proveyó un token" });
+  }
+
   try {
-    const data = jwt.verify(token, process.env.JWT_SECRET);
-    req.userEmail = data;
-  } catch {
-    res.status(403).send("Token inválido");
+    const decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
+    return res.status(200).json({ usuario: decodedPayload });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token ha expirado" });
+    }
+
+    return res.status(401).json({ message: "Token inválido" });
   }
 }
 

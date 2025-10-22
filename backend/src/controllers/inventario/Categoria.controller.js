@@ -57,30 +57,30 @@ exports.getAllCategorias = async (req, res) => {
       },
     });
     if (categorias.length === 0 || !categorias) {
-      await crearBitacora({
-        nombre: `consulta de categorias`,
-        fechaCreacion: new Date(),
-        descripcion: `Se consultaron vacia de categorias`,
-        funcionOcupo: "getAllCategorias controller",
-        usuariosCreador: ` Sistema por ${
-          jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-          "error de lectura cookie"
-        } `,
-        nivelAlerta: "Bajo",
-      });
+      // await crearBitacora({
+      //   nombre: `consulta de categorias`,
+      //   fechaCreacion: new Date(),
+      //   descripcion: `Se consultaron vacia de categorias`,
+      //   funcionOcupo: "getAllCategorias controller",
+      //   usuariosCreador: ` Sistema por ${
+      //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
+      //     "error de lectura cookie"
+      //   } `,
+      //   nivelAlerta: "Bajo",
+      // });
       return res.status(204).json({ error: "No hay categorias disponibles" });
     }
-    await crearBitacora({
-      nombre: `consulta de categorias`,
-      fechaCreacion: new Date(),
-      descripcion: `Se consultaron todas las categorias`,
-      funcionOcupo: "getAllCategorias controller",
-      usuariosCreador: ` Sistema por ${
-        jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-        "error de lectura cookie"
-      } `,
-      nivelAlerta: "Bajo",
-    });
+    // await crearBitacora({
+    //   nombre: `consulta de categorias`,
+    //   fechaCreacion: new Date(),
+    //   descripcion: `Se consultaron todas las categorias`,
+    //   funcionOcupo: "getAllCategorias controller",
+    //   usuariosCreador: ` Sistema por ${
+    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
+    //     "error de lectura cookie"
+    //   } `,
+    //   nivelAlerta: "Bajo",
+    // });
     res.status(200).json(categorias);
   } catch (error) {
     console.error("Error al obtener las categorias:", error);
