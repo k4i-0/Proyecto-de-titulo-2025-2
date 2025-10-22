@@ -16,9 +16,7 @@ export default function Inicio({ nombreRol }) {
           <Card className="text-center mt-5">
             <Card.Body>
               <Card.Title>Bienvenido {nombreRol}</Card.Title>
-              <Card.Text>
-                Esta es una aplicación de ejemplo utilizando React y Bootstrap.
-              </Card.Text>
+              <Card.Text>Este es un prototipo</Card.Text>
             </Card.Body>
           </Card>
         </Col>

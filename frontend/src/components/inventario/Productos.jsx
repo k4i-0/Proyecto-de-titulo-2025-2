@@ -51,7 +51,7 @@ export default function Productos({ onCambiarVista }) {
         setError(true);
         setMensaje(respuesta.error);
       } else {
-        if (respuesta.length == 0) {
+        if (respuesta.length === 0) {
           setMensaje(
             "No hay productos disponibles, por favor cree un producto"
           );
@@ -179,8 +179,7 @@ export default function Productos({ onCambiarVista }) {
             <Alert
               variant={error ? "danger" : "success"}
               dismissible
-              onClose={() => setMensaje("")}
-            >
+              onClose={() => setMensaje("")}>
               {mensaje}
             </Alert>
           </Col>
@@ -194,8 +193,7 @@ export default function Productos({ onCambiarVista }) {
             variant="primary"
             onClick={handleCrear}
             disabled={loading}
-            className="w-100"
-          >
+            className="w-100">
             + Agregar
           </Button>
         </Col>
@@ -246,15 +244,13 @@ export default function Productos({ onCambiarVista }) {
                         <Button
                           variant="warning"
                           className="w-100"
-                          onClick={() => handleEditar(producto)}
-                        >
+                          onClick={() => handleEditar(producto)}>
                           Modificar Producto
                         </Button>
                         <Button
                           variant="danger"
                           className="w-100"
-                          onClick={() => handleEliminar(producto)}
-                        >
+                          onClick={() => handleEliminar(producto)}>
                           Eliminar Producto
                         </Button>
                       </ButtonGroup>

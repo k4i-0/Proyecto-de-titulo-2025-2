@@ -79,6 +79,7 @@ async function login(req, res) {
 
 async function logout(req, res) {
   try {
+    //cambiar jwt para buscar del token el email
     await crearBitacora({
       nombre: `logout usuario ${req.userEmail.email}`,
       fechaCreacion: new Date(),
@@ -101,7 +102,7 @@ async function logout(req, res) {
   }
 }
 async function verificarToken(req, res) {
-  const token = req.cookies.access_token;
+  const token = req.cookies.token;
   if (!token) return res.status(403).send("No autorizado");
   try {
     const data = jwt.verify(token, process.env.JWT_SECRET);

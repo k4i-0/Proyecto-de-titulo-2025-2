@@ -1,4 +1,4 @@
-const Bitacora = require("../models/usuarios/Bitacora");
+const Bitacora = require("../models/Usuarios/Bitacora");
 
 async function crearBitacora(data) {
   try {

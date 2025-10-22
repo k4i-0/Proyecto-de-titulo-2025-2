@@ -73,7 +73,7 @@ const sslOptions = {
 
 //base de datos y modelos  --------------------
 async function syncDataBase() {
-  const isDevelopment = process.env.NODE_ENV === "development";
+  const isDevelopment = process.env.NODE_ENV === "desarrollo";
   const syncOptions = isDevelopment ? { force: true } : { alter: true };
   try {
     // NIVEL 1: Tablas sin dependencias

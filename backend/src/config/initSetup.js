@@ -150,7 +150,7 @@ async function createUsers() {
         cargo: "Administrador",
         estado: "Activo",
         idRol: adminRole.idRol,
-        idBitacora: bitacora1.idBitacora,
+        idBitacora: bitacora1.dataValues.idBitacora,
       },
     });
 
@@ -168,7 +168,7 @@ async function createUsers() {
         cargo: "Cajero",
         estado: "Activo",
         idRol: cajeroRole.idRol,
-        idBitacora: bitacora2.idBitacora,
+        idBitacora: bitacora2.dataValues.idBitacora,
       },
     });
 
@@ -186,7 +186,7 @@ async function createUsers() {
         cargo: "Vendedor",
         estado: "Activo",
         idRol: vendedorRole.idRol,
-        idBitacora: bitacora3.idBitacora,
+        idBitacora: bitacora3.dataValues.idBitacora,
       },
     });
 

@@ -7,8 +7,8 @@ const Vendedor = require("./inventario/VendedorProveedor");
 const Caja = require("./ventas/Caja");
 const Funcionario = require("./Usuarios/Funcionario");
 const Roles = require("./Usuarios/Rol");
-const Bitacora = require("./usuarios/Bitacora");
-const Actividad = require("./usuarios/Actividad");
+const Bitacora = require("./Usuarios/Bitacora");
+const Actividad = require("./Usuarios/Actividad");
 const DatosVenta = require("./ventas/DatosVenta");
 const Descuento = require("./ventas/Descuento");
 const Categoria = require("./inventario/Categoria");
@@ -22,7 +22,7 @@ const ContratoFuncionario = require("./Usuarios/ContratoFuncionario");
 const CajaFuncionario = require("./ventas/CajaAsignada");
 const DescuentoAsociado = require("./ventas/DescuentoAsociado");
 const VentaCliente = require("./ventas/VentaCliente");
-const BitacoraActividad = require("./usuarios/BitacoraActividad");
+const BitacoraActividad = require("./Usuarios/BitacoraActividad");
 
 // ========== ASOCIACIONES PRINCIPALES ==========
 
