@@ -17,8 +17,9 @@ export default function Eliminar({
       const resultado = await eliminarProducto(productoEliminar.idProducto);
       console.log("Resultado de eliminar:", resultado);
       if (resultado.status == 200) {
-        console.log("Producto eliminado con éxito");
         funcionBuscarProductos();
+        console.log("Producto eliminado con éxito");
+
         setModalEliminar(false);
         setProductoEliminar(null);
       }

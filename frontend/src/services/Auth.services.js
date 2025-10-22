@@ -38,19 +38,18 @@ export async function finSesion() {
   }
 }
 
-export async function verificarToken(token) {
+export async function verificarToken() {
   try {
-    const response = await axios.get(`${API_URL}/auth/verify`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await axios.get(`${API_URL}/auth/yo`, {
+      withCredentials: true,
     });
     if (!response.data) {
       return "No se recibió respuesta del servidor";
     }
-    return response.data;
+    console.log("Respuesta verificación token:", response.data);
+    return response;
   } catch (error) {
     console.log(error);
-    return error.response.data;
+    return error.response;
   }
 }

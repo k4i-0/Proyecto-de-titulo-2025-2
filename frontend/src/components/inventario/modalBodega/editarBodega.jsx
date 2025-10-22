@@ -5,14 +5,16 @@ import { editarBodega } from "../../../services/inventario/Bodega.service";
 
 export default function EditarBodega({
   bodegas,
-  modalEditar,
-  handleCerrarModal,
-  funcionBuscarCategorias,
+  show,
+  handleClose,
+  buscarBodegas,
 }) {
   const [formData, setFormData] = useState({
     nombre: "",
-    descripcion: "",
+    ubicacion: "",
+    capacidad: "",
     estado: "",
+    idSucursal: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -25,10 +27,8 @@ export default function EditarBodega({
         capacidad: bodegas.capacidad || "",
         estado: bodegas.estado || "",
       });
-      setError("");
-    } else {
-      setError("");
     }
+    setError("");
   }, [bodegas]);
 
   const handleChangeLocal = (e) => {
@@ -46,32 +46,36 @@ export default function EditarBodega({
     try {
       const respuesta = await editarBodega(formData, bodegas.idBodega);
       if (respuesta.status == 200) {
-        funcionBuscarCategorias();
-        handleCerrarModal();
+        buscarBodegas();
+        handleCerrar();
       } else {
-        setError(respuesta || "Error al editar la categoría");
+        setError(respuesta?.error || "Error al editar la bodega.");
         console.log(respuesta);
       }
     } catch (error) {
-      setError("Error al editar la categoría", error);
+      setError(error.response?.data?.message || "Error al editar la bodega.");
     } finally {
       setLoading(false);
     }
     console.log("Datos para editar:", formData, bodegas.idBodega);
   };
+  const handleCerrar = () => {
+    setError(""); // <--- Limpia error al cerrar
+    handleClose();
+  };
   return (
-    <Modal show={modalEditar} onHide={handleCerrarModal}>
+    <Modal show={show} onHide={handleCerrar}>
       <Modal.Header closeButton>
-        <Modal.Title>Editar Bodega</Modal.Title>
+        <Modal.Title>Editar Bodega {bodegas?.nombre}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {error && <Alert variant="danger">{error}</Alert>}
         <Form onSubmit={handleSubmitEdicion}>
-          <Form.Group controlId="formIdCategoria">
-            <Form.Label>ID Categoría</Form.Label>
+          <Form.Group controlId="formIdBodega">
+            <Form.Label>ID Bodega</Form.Label>
             <Form.Control
               type="text"
-              name="idCategoria"
+              name="idBodega"
               value={bodegas ? bodegas.idBodega : ""}
               readOnly
             />
@@ -83,6 +87,7 @@ export default function EditarBodega({
               name="nombre"
               value={formData.nombre}
               onChange={handleChangeLocal}
+              required
             />
           </Form.Group>
           <Form.Group controlId="formUbicacion">
@@ -92,6 +97,7 @@ export default function EditarBodega({
               name="ubicacion"
               value={formData.ubicacion}
               onChange={handleChangeLocal}
+              required
             />
           </Form.Group>
           <Form.Group controlId="formCapacidad">
@@ -101,6 +107,7 @@ export default function EditarBodega({
               name="capacidad"
               value={formData.capacidad}
               onChange={handleChangeLocal}
+              required
             />
           </Form.Group>
           <Form.Group controlId="formEstado">
@@ -110,6 +117,7 @@ export default function EditarBodega({
               name="estado"
               value={formData.estado}
               onChange={handleChangeLocal}
+              required
             >
               <option value="">Seleccione un estado</option>
               <option value="En Funcionamiento">En Funcionamiento</option>
@@ -120,6 +128,9 @@ export default function EditarBodega({
         </Form>
       </Modal.Body>
       <Modal.Footer>
+        <Button variant="secondary" onClick={handleCerrar}>
+          Cancelar
+        </Button>
         <Button type="submit" disabled={loading} onClick={handleSubmitEdicion}>
           {loading ? "Guardando..." : "Guardar cambios"}
         </Button>

@@ -203,7 +203,10 @@ export default function Categoria() {
                 <Card.Body>
                   <Card.Title>{categoria.nombre}</Card.Title>
                   <Card.Text>
+                    <strong>Descripcion:</strong> {categoria.descripcion}
+                    <br />
                     <strong>Estado:</strong> {categoria.estado}
+                    <br />
                   </Card.Text>
                   <ButtonGroup>
                     <Button

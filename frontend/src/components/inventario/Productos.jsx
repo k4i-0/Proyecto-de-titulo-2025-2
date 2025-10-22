@@ -179,7 +179,8 @@ export default function Productos({ onCambiarVista }) {
             <Alert
               variant={error ? "danger" : "success"}
               dismissible
-              onClose={() => setMensaje("")}>
+              onClose={() => setMensaje("")}
+            >
               {mensaje}
             </Alert>
           </Col>
@@ -193,7 +194,8 @@ export default function Productos({ onCambiarVista }) {
             variant="primary"
             onClick={handleCrear}
             disabled={loading}
-            className="w-100">
+            className="w-100"
+          >
             + Agregar
           </Button>
         </Col>
@@ -223,14 +225,22 @@ export default function Productos({ onCambiarVista }) {
             </Col>
           ) : productos.length > 0 ? (
             productos.map((producto) => (
-              <Col key={producto.id} md={4} className="mb-4">
+              <Col key={producto.idCategoria} md={4} className="mb-4">
                 <Card>
-                  <Card.Body>
+                  <Card.Body
+                    style={{
+                      color: `${producto.estado == "eliminado" ? "red" : null}`,
+                    }}
+                  >
                     <Card.Title>{producto.nombre}</Card.Title>
                     <Card.Text>
                       <strong>Código:</strong> {producto.codigo}
                       <br />
-                      <strong>Precio:</strong> ${producto.precioVenta}
+                      <strong>Precio Venta:</strong> ${producto.precioVenta}
+                      <br />
+                      <strong>Precio Compra:</strong> ${producto.precioCompra}
+                      <br />
+                      <strong>Peso:</strong> {producto.peso} kg
                       <br />
                       <strong>Estado:</strong> {producto.estado}
                       <br />
@@ -244,13 +254,15 @@ export default function Productos({ onCambiarVista }) {
                         <Button
                           variant="warning"
                           className="w-100"
-                          onClick={() => handleEditar(producto)}>
+                          onClick={() => handleEditar(producto)}
+                        >
                           Modificar Producto
                         </Button>
                         <Button
                           variant="danger"
                           className="w-100"
-                          onClick={() => handleEliminar(producto)}>
+                          onClick={() => handleEliminar(producto)}
+                        >
                           Eliminar Producto
                         </Button>
                       </ButtonGroup>

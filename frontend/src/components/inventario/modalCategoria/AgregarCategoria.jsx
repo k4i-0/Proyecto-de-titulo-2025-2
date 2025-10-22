@@ -33,8 +33,8 @@ export default function AgregarCategoria({
       if (resultado.status === 201) {
         setMensaje("Categoría creada exitosamente");
         setError(false);
+        funcionBuscarCategorias();
         setTimeout(() => {
-          funcionBuscarCategorias();
           setDatos({ nombre: "", descripcion: "", estado: "" });
           handleClose();
           setMensaje("");

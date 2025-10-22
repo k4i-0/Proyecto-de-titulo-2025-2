@@ -32,6 +32,8 @@ export default function Bodega() {
   const buscarBodegas = async () => {
     try {
       setLoading(true);
+      setError(false);
+      setMensaje("");
       const respuesta = await obtenerBodegas();
       console.log("Respuesta bodegas:", respuesta);
       if (respuesta.code) {
@@ -58,6 +60,8 @@ export default function Bodega() {
 
   const handleCerrarModal = () => {
     setModalCrear(false);
+    setModalEditar(false);
+    setBodegaSelect(null);
 
     // setDatos({ nombre: "", descripcion: "", estado: "" });
   };
@@ -76,6 +80,9 @@ export default function Bodega() {
   };
 
   const handleEliminar = async (id) => {
+    setLoading(true);
+    setError(false);
+    setMensaje("");
     try {
       const respuesta = await eliminarBodega(id);
       if (respuesta.status === 200) {
@@ -90,6 +97,8 @@ export default function Bodega() {
       setError(true);
       setMensaje("Error de conexión al eliminar la bodega.");
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -153,12 +162,14 @@ export default function Bodega() {
                     <Button
                       variant="warning"
                       onClick={() => handleEditar(bodega)}
+                      disabled={loading}
                     >
                       Modificar Bodega
                     </Button>
                     <Button
                       variant="danger"
                       onClick={() => handleEliminar(bodega.idBodega)}
+                      disabled={loading}
                     >
                       Eliminar Bodega
                     </Button>
@@ -168,38 +179,23 @@ export default function Bodega() {
             </Col>
           ))
         ) : (
-          <Col md={4} className="mb-4">
-            <Card>
-              <Card.Body>
-                <Placeholder as={Card.Title} animation="glow">
-                  <Placeholder xs={6} />
-                </Placeholder>
-
-                <Placeholder as={Card.Text} animation="glow">
-                  <Placeholder xs={7} /> <br />
-                  <Placeholder xs={4} /> <br />
-                  <Placeholder xs={4} /> <br />
-                  <Placeholder xs={6} />
-                </Placeholder>
-              </Card.Body>
-              <Card.Footer>
-                <Placeholder.Button variant="primary" xs={6} />
-                <Placeholder.Button variant="danger" xs={6} />
-              </Card.Footer>
-            </Card>
-          </Col>
+          !loading && (
+            <Col>
+              <p>No se encontraron bodegas.</p>
+            </Col>
+          )
         )}
       </Row>
       <CrearBodega
         show={modalCrear}
         handleClose={handleCerrarModal}
-        funcionBuscarCategorias={buscarBodegas}
+        buscarBodegas={buscarBodegas}
       />
       <EditarBodega
         show={modalEditar}
         bodegas={bodegaSelect}
         handleClose={handleCerrarModal}
-        funcionBuscarCategorias={buscarBodegas}
+        buscarBodegas={buscarBodegas}
       />
     </Container>
   );
