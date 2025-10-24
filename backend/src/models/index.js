@@ -14,6 +14,7 @@ const Descuento = require("./ventas/Descuento");
 const Categoria = require("./inventario/Categoria");
 const Productos = require("./inventario/Productos");
 const Cliente = require("./ventas/Cliente");
+const Estante = require("./inventario/Estante");
 
 //intermedias
 const Despacho = require("./inventario/Despacho");
@@ -23,6 +24,7 @@ const CajaFuncionario = require("./ventas/CajaAsignada");
 const DescuentoAsociado = require("./ventas/DescuentoAsociado");
 const VentaCliente = require("./ventas/VentaCliente");
 const BitacoraActividad = require("./Usuarios/BitacoraActividad");
+const estante = require("./inventario/Estante");
 
 // ========== ASOCIACIONES PRINCIPALES ==========
 
@@ -36,6 +38,29 @@ Bodega.belongsTo(Sucursal, {
   targetKey: "idSucursal",
 });
 
+// Bodega -> Estantes (1:N)
+Bodega.hasMany(Estante, {
+  foreignKey: "idBodega",
+  sourceKey: "idBodega",
+});
+
+Estante.belongsTo(Bodega, {
+  foreignKey: "idBodega",
+  sourceKey: "idBodega",
+});
+
+// inventario -> estante (1:N)
+
+Inventario.hasMany(Estante, {
+  foreignKey: "idInventario",
+  sourceKey: "idInventario",
+});
+
+Estante.belongsTo(Inventario, {
+  foreignKey: "idInventario",
+  sourceKey: "idInventario",
+});
+
 // Bodega -> Inventario (1:N)
 Bodega.hasMany(Inventario, {
   foreignKey: "idBodega",
@@ -47,14 +72,14 @@ Inventario.belongsTo(Bodega, {
 });
 
 // Bodega -> Lote (1:N)
-Bodega.hasMany(Lote, {
-  foreignKey: "idBodega",
-  sourceKey: "idBodega",
-});
-Lote.belongsTo(Bodega, {
-  foreignKey: "idBodega",
-  targetKey: "idBodega",
-});
+//Bodega.hasMany(Lote, {
+//  foreignKey: "idBodega",
+//  sourceKey: "idBodega",
+//});
+//Lote.belongsTo(Bodega, {
+//  foreignKey: "idBodega",
+//  targetKey: "idBodega",
+//});
 
 // Categoria -> Productos (1:N)
 Categoria.hasMany(Productos, {
@@ -263,4 +288,5 @@ module.exports = {
   DescuentoAsociado,
   VentaCliente,
   BitacoraActividad,
+  Estante,
 };

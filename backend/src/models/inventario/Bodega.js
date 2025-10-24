@@ -14,12 +14,8 @@ const bodega = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    ubicacion: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-    },
     capacidad: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.INTEGER,
       allowNull: true,
     },
     estado: {

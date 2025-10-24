@@ -14,12 +14,8 @@ const sucursal = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    ubicacion: {
+    direccion: {
       type: DataTypes.STRING(100),
-      allowNull: true,
-    },
-    telefono: {
-      type: DataTypes.STRING(15),
       allowNull: true,
     },
     estado: {

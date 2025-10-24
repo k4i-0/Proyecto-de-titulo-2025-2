@@ -1,10 +1,11 @@
 import axios from "axios";
+import URL from "../Constante";
 
-const API_URL = "https://localhost:3443/api/categorias";
+const API_URL = `${URL}/categorias`;
 
 export default async function obtenerCategoria() {
   try {
-    const response = await axios.get(`${API_URL}/buscar`, {
+    const response = await axios.get(`${API_URL}/buscar`, null, {
       withCredentials: true,
     });
     //console.log("Categorías obtenidas:", response);
@@ -43,7 +44,7 @@ export async function editarCategoria(datos, id) {
 
 export async function eliminarCategoria(id) {
   try {
-    const response = await axios.delete(`${API_URL}/eliminar/${id}`, {
+    const response = await axios.delete(`${API_URL}/eliminar/${id}`, null, {
       withCredentials: true,
     });
     console.log("categoria eliminada:", response);

@@ -48,7 +48,7 @@ exports.createProducto = async (req, res) => {
       estado,
       idCategoria: categoriaExistente[0].dataValues.idCategoria,
     });
-    if (nuevoProducto) {
+    if (nuevoProducto && req.cookies.token) {
       await crearBitacora({
         nombre: `crear producto ${nombre}`,
         fechaCreacion: new Date(),
@@ -122,9 +122,7 @@ exports.getAllProductos = async (req, res) => {
       fechaCreacion: new Date(),
       descripcion: `Error al consultar los productos`,
       funcionOcupo: "getAllProductos controller",
-      usuariosCreador: `error de ${
-        jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-        "error lectura cookie"
+      usuariosCreador: `error de ${error}
       } `,
       nivelAlerta: "Alto",
     });

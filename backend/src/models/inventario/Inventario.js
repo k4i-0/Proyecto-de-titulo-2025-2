@@ -10,27 +10,15 @@ const inventario = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    nombre: {
-      type: DataTypes.STRING(100),
+    estado: {
+      type: DataTypes.ENUM("Bueno", "Malo", "Revision"),
       allowNull: false,
-    },
-    fechaCreacion: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    encargado: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
+      defaultValue: "Bueno",
     },
     stock: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
-    },
-    estado: {
-      type: DataTypes.ENUM("Activo", "Inactivo", "Eliminado"),
-      allowNull: false,
-      defaultValue: "Activo",
     },
     // idBodega: {
     //   type: DataTypes.INTEGER,

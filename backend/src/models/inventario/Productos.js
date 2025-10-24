@@ -8,7 +8,6 @@ const producto = sequelize.define(
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
-      autoIncrement: true,
     },
     codigo: {
       type: DataTypes.STRING(50),
@@ -16,6 +15,10 @@ const producto = sequelize.define(
       unique: true,
     },
     nombre: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+    },
+    marca: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
@@ -31,14 +34,17 @@ const producto = sequelize.define(
       type: DataTypes.FLOAT,
       allowNull: true,
     },
+    fechaVencimiento: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    numeroSerie: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     descripcion: {
       type: DataTypes.STRING(200),
       allowNull: true,
-    },
-    estado: {
-      type: DataTypes.ENUM("Bueno", "Malo", "Dañano", "eliminado"),
-      allowNull: false,
-      defaultValue: "Bueno",
     },
     // idCategoria: {
     //   type: DataTypes.INTEGER,

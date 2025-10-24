@@ -1,10 +1,11 @@
 import axios from "axios";
+import URL from "../Constante";
 
-const API_URL = "https://localhost:3443/api/inventario";
+const API_URL = `${URL}/inventario`;
 
 export default async function obtenerInventarios() {
   try {
-    const response = await axios.get(`${API_URL}/buscar`, {
+    const response = await axios.get(`${API_URL}/buscar`, null, {
       withCredentials: true,
     });
     //console.log("inventarios obtenidas:", response);
@@ -52,7 +53,7 @@ export async function editarInventario(datos, id) {
 
 export async function eliminarInventario(id) {
   try {
-    const response = await axios.delete(`${API_URL}/eliminar/${id}`, {
+    const response = await axios.delete(`${API_URL}/eliminar/${id}`, null, {
       withCredentials: true,
     });
     console.log("inventario eliminado:", response);

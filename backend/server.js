@@ -33,6 +33,7 @@ const {
   DescuentoAsociado,
   VentaCliente,
   BitacoraActividad,
+  Estante,
 } = require("./src/models");
 const { allowedNodeEnvironmentFlags } = require("process");
 
@@ -47,8 +48,6 @@ app.use(helmet());
 const corsOptions = {
   origin: "http://localhost:5173",
   credentials: true,
-  allowedNodeEnvironmentFlags: true,
-  accessControlAllowOrigin: true,
 };
 
 app.use(cors(corsOptions));
@@ -113,6 +112,9 @@ async function syncDataBase() {
     await Bodega.sync(syncOptions);
     console.log("  ✓ Bodega");
 
+    await Estante.sync(syncOptions);
+    console.log("  ✓ Estante");
+
     await Caja.sync(syncOptions);
     console.log("  ✓ Caja");
 
@@ -168,6 +170,10 @@ const startServer = async () => {
 
     //Crear usuarios iniciales
     await createUsers();
+
+    //app.listen(process.env.PORT, () => {
+    //  console.log(`Servidor HTTPS en http://localhost:${process.env.PORT}`);
+    // });
 
     https.createServer(sslOptions, app).listen(process.env.PORT, () => {
       console.log(`Servidor HTTPS en https://localhost:${process.env.PORT}`);

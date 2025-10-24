@@ -1,10 +1,11 @@
 import axios from "axios";
+import URL from "../Constante";
 
-const API_URL = "https://localhost:3443/api/bodegas";
+const API_URL = `${URL}/bodegas`;
 
 export default async function obtenerBodegas() {
   try {
-    const response = await axios.get(`${API_URL}/buscar`, {
+    const response = await axios.get(`${API_URL}/buscar`, null, {
       withCredentials: true,
     });
     //console.log("bodegas obtenidas:", response);
@@ -52,7 +53,7 @@ export async function editarBodega(datos, id) {
 
 export async function eliminarBodega(id) {
   try {
-    const response = await axios.delete(`${API_URL}/eliminar/${id}`, {
+    const response = await axios.delete(`${API_URL}/eliminar/${id}`, null, {
       withCredentials: true,
     });
     console.log("bodega eliminada:", response);

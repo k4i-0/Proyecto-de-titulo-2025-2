@@ -16,7 +16,7 @@ function Dashboard() {
     try {
       const response = await finSesion();
       console.log(response);
-      logout;
+      logout();
     } catch (error) {
       console.log(error);
     }

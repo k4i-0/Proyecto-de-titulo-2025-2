@@ -80,6 +80,9 @@ async function login(req, res) {
 async function logout(req, res) {
   console.log("antes de", req.cookies);
   const { token } = req.cookies;
+  if (!token) {
+    res.status(203).send({ message: "Sin cookies" });
+  }
   let emailDelToken = "Usuario desconocido (token inválido/expirado)";
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
@@ -100,10 +103,11 @@ async function logout(req, res) {
       usuariosCreador: ` Sistema por ${emailDelToken} `,
       nivelAlerta: "Bajo",
     });
+
     res.clearCookie("token", { httpOnly: true, secure: true });
     res.status(200).json({ message: "Sesión cerrada" });
   } catch (error) {
-    res.status(500).send({ message: "Error interno" });
+    res.status(500).json({ message: "Error interno" });
     console.log(error);
   }
 }

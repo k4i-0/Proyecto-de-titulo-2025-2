@@ -46,19 +46,39 @@ export default function Productos({ onCambiarVista }) {
       setLoading(true);
       const respuesta = await obtenerProductos();
       const respuesta2 = await obtenerCategoria();
-
-      if (respuesta.code) {
+      console.log("respuesta", respuesta);
+      console.log("respuesta", respuesta);
+      if (respuesta.status == 500 || respuesta2.status == 500) {
         setError(true);
-        setMensaje(respuesta.error);
-      } else {
-        if (respuesta.length === 0) {
-          setMensaje(
-            "No hay productos disponibles, por favor cree un producto"
-          );
-        }
-        setProductos(respuesta);
-        //console.log("Productos obtenidos:", respuesta[0]);
+        setMensaje("Error en el servidor");
+        return;
       }
+      if (respuesta.status == 204 || respuesta2.status == 204) {
+        setError(true);
+        setMensaje("No Existen Productos");
+      }
+      if (respuesta.data) {
+        setProductos(respuesta.data);
+      }
+      if (respuesta2.data) {
+        setCategorias(respuesta2.data);
+      }
+      if (!respuesta.data || !respuesta2.data) {
+        setCategorias([]);
+        setProductos([]);
+      }
+      /* if (respuesta.code) {
+          setError(true);
+          setMensaje(respuesta.error);
+        } else {
+          if (respuesta.length === 0) {
+            setMensaje(
+              "No hay productos disponibles, por favor cree un producto"
+            );
+          }
+          setProductos(respuesta);
+          //console.log("Productos obtenidos:", respuesta[0]);
+        }
 
       if (respuesta2.code) {
         setError(true);
@@ -71,7 +91,7 @@ export default function Productos({ onCambiarVista }) {
         //}
         //console.log("Categrias:", categorias);
         setCategorias(respuesta2);
-      }
+      }*/
     } catch (error) {
       setError(true);
       setMensaje("Error al cargar datos");
@@ -179,8 +199,7 @@ export default function Productos({ onCambiarVista }) {
             <Alert
               variant={error ? "danger" : "success"}
               dismissible
-              onClose={() => setMensaje("")}
-            >
+              onClose={() => setMensaje("")}>
               {mensaje}
             </Alert>
           </Col>
@@ -194,8 +213,7 @@ export default function Productos({ onCambiarVista }) {
             variant="primary"
             onClick={handleCrear}
             disabled={loading}
-            className="w-100"
-          >
+            className="w-100">
             + Agregar
           </Button>
         </Col>
@@ -219,7 +237,7 @@ export default function Productos({ onCambiarVista }) {
       {/* Lista de productos */}
       <Row>
         {
-          loading ? (
+          loading && productos.length == 0 ? (
             <Col className="text-center">
               <p>Cargando productos...</p>
             </Col>
@@ -230,8 +248,7 @@ export default function Productos({ onCambiarVista }) {
                   <Card.Body
                     style={{
                       color: `${producto.estado == "eliminado" ? "red" : null}`,
-                    }}
-                  >
+                    }}>
                     <Card.Title>{producto.nombre}</Card.Title>
                     <Card.Text>
                       <strong>Código:</strong> {producto.codigo}
@@ -254,15 +271,13 @@ export default function Productos({ onCambiarVista }) {
                         <Button
                           variant="warning"
                           className="w-100"
-                          onClick={() => handleEditar(producto)}
-                        >
+                          onClick={() => handleEditar(producto)}>
                           Modificar Producto
                         </Button>
                         <Button
                           variant="danger"
                           className="w-100"
-                          onClick={() => handleEliminar(producto)}
-                        >
+                          onClick={() => handleEliminar(producto)}>
                           Eliminar Producto
                         </Button>
                       </ButtonGroup>

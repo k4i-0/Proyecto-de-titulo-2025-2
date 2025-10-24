@@ -1,10 +1,11 @@
 import axios from "axios";
+import URL from "../Constante";
 
-const API_URL = "https://localhost:3443/api/sucursales";
+const API_URL = `${URL}/sucursales`;
 
 export default async function obtenerSucursales() {
   try {
-    const response = await axios.get(`${API_URL}/buscar`, {
+    const response = await axios.get(`${API_URL}/buscar`, null, {
       withCredentials: true,
     });
     //console.log("Sucursales obtenidas:", response);
@@ -43,7 +44,7 @@ export async function editarSucursal(datos, id) {
 
 export async function eliminarSucursal(id) {
   try {
-    const response = await axios.delete(`${API_URL}/eliminar/${id}`, {
+    const response = await axios.delete(`${API_URL}/eliminar/${id}`, null, {
       withCredentials: true,
     });
     console.log("Sucursal eliminada:", response);

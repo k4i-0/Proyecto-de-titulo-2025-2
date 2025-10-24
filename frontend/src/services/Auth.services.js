@@ -1,11 +1,12 @@
 import axios from "axios";
+import URL from "./Constante";
 
-const API_URL = "https://localhost:3443/api";
+const API_URL = `${URL}/auth`;
 
 export default async function inicioSesion(email, password) {
   try {
     const response = await axios.post(
-      `${API_URL}/auth/login`,
+      `${API_URL}/login`,
       {
         email,
         password,
@@ -24,13 +25,14 @@ export default async function inicioSesion(email, password) {
 
 export async function finSesion() {
   try {
-    const response = await axios.post(`${API_URL}/auth/logout`, {
+    const response = await axios.post(`${API_URL}/logout`, null, {
       withCredentials: true,
     });
+    console.log("Respuesta logout", response);
     if (!response.data) {
       return "No se recibió respuesta del servidor";
     }
-    console.log(response);
+
     return response.data;
   } catch (error) {
     console.log(error);
@@ -40,7 +42,7 @@ export async function finSesion() {
 
 export async function verificarToken() {
   try {
-    const response = await axios.get(`${API_URL}/auth/yo`, {
+    const response = await axios.get(`${API_URL}/yo`, null, {
       withCredentials: true,
     });
     if (!response.data) {
