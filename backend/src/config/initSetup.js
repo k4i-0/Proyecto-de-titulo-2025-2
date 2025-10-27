@@ -80,44 +80,6 @@ async function createUsers() {
       }`
     );
 
-    //Crear Bitacora inicial
-    const bitacora0 = await crearBitacora({
-      nombre: "Inicialización del sistema",
-      descripcion: "Se Crea base de sistema por sistema",
-      nivelAlerta: "Bajo",
-      funcionOcupo: "crearBitacora Service",
-      fechaCreacion: new Date(),
-      usuariosCreador: "Sistema",
-    });
-    const bitacora1 = await crearBitacora({
-      nombre: "Inicialización del sistema",
-      descripcion:
-        "Se Crea Bitacora para Administrador durante la inicialización del sistema",
-      nivelAlerta: "Bajo",
-      funcionOcupo: "crearBitacora Service",
-      fechaCreacion: new Date(),
-      usuariosCreador: "Sistema",
-    });
-    const bitacora2 = await crearBitacora({
-      nombre: "Inicialización del sistema",
-      descripcion:
-        "Se Crea Bitacora para Cajero durante la inicialización del sistema",
-      nivelAlerta: "Bajo",
-      funcionOcupo: "crearBitacora Service",
-      fechaCreacion: new Date(),
-      usuariosCreador: "Sistema",
-    });
-    const bitacora3 = await crearBitacora({
-      nombre: "Inicialización del sistema",
-      descripcion:
-        "Se Crea Bitacora para Vendedor durante la inicialización del sistema",
-      nivelAlerta: "Bajo",
-      funcionOcupo: "crearBitacora Service",
-      fechaCreacion: new Date(),
-      usuariosCreador: "Sistema",
-    });
-    console.log("✅ Bitacoras iniciales creadas");
-
     // Crear usuarios (await agregado y campo corregido)
     const [sistemaUser, sistemaUserCreated] = await Funcionario.findOrCreate({
       where: { rut: "00000000-0" },
@@ -133,7 +95,6 @@ async function createUsers() {
         cargo: "Sistema",
         estado: "Activo",
         idRol: sistemaRole.idRol,
-        idBitacora: bitacora0.idBitacora,
       },
     });
     const [admin, adminUserCreated] = await Funcionario.findOrCreate({
@@ -150,7 +111,6 @@ async function createUsers() {
         cargo: "Administrador",
         estado: "Activo",
         idRol: adminRole.idRol,
-        idBitacora: bitacora1.dataValues.idBitacora,
       },
     });
 
@@ -168,7 +128,6 @@ async function createUsers() {
         cargo: "Cajero",
         estado: "Activo",
         idRol: cajeroRole.idRol,
-        idBitacora: bitacora2.dataValues.idBitacora,
       },
     });
 
@@ -186,7 +145,6 @@ async function createUsers() {
         cargo: "Vendedor",
         estado: "Activo",
         idRol: vendedorRole.idRol,
-        idBitacora: bitacora3.dataValues.idBitacora,
       },
     });
 
@@ -206,6 +164,45 @@ async function createUsers() {
         vendedorUserCreated ? "[NUEVO]" : "[EXISTENTE]"
       }`
     );
+
+    //Crear Bitacora inicial
+    const bitacora0 = await crearBitacora({
+      nombre: "Inicialización del sistema",
+      descripcion: "Se Crea base de sistema por sistema",
+      nivelAlerta: "Bajo",
+      funcionOcupo: "crearBitacora Service",
+      fechaCreacion: new Date(),
+      idFuncionario: sistemaUser.dataValues.idFuncionario,
+    });
+
+    const bitacora1 = await crearBitacora({
+      nombre: "Inicialización del sistema",
+      descripcion:
+        "Se Crea Bitacora para Administrador durante la inicialización del sistema",
+      nivelAlerta: "Bajo",
+      funcionOcupo: "crearBitacora Service",
+      fechaCreacion: new Date(),
+      idFuncionario: sistemaUser.dataValues.idFuncionario,
+    });
+    const bitacora2 = await crearBitacora({
+      nombre: "Inicialización del sistema",
+      descripcion:
+        "Se Crea Bitacora para Cajero durante la inicialización del sistema",
+      nivelAlerta: "Bajo",
+      funcionOcupo: "crearBitacora Service",
+      fechaCreacion: new Date(),
+      idFuncionario: sistemaUser.dataValues.idFuncionario,
+    });
+    const bitacora3 = await crearBitacora({
+      nombre: "Inicialización del sistema",
+      descripcion:
+        "Se Crea Bitacora para Vendedor durante la inicialización del sistema",
+      nivelAlerta: "Bajo",
+      funcionOcupo: "crearBitacora Service",
+      fechaCreacion: new Date(),
+      idFuncionario: sistemaUser.dataValues.idFuncionario,
+    });
+    console.log("✅ Bitacoras iniciales creadas");
 
     console.log("🎉 Usuarios iniciales verificados/creados exitosamente");
   } catch (error) {

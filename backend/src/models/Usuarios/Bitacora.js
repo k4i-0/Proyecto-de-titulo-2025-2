@@ -26,10 +26,6 @@ const bitacora = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     },
-    usuariosCreador: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-    },
     nivelAlerta: {
       type: DataTypes.ENUM("Bajo", "Medio", "Alto"),
       allowNull: false,

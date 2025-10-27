@@ -26,6 +26,8 @@ const {
   Categoria,
   Productos,
   Cliente,
+  Estante,
+  Boleta,
   Despacho,
   CompraProveedor,
   ContratoFuncionario,
@@ -33,7 +35,8 @@ const {
   DescuentoAsociado,
   VentaCliente,
   BitacoraActividad,
-  Estante,
+  DetalleDescuento,
+  DescuentoSobre,
 } = require("./src/models");
 const { allowedNodeEnvironmentFlags } = require("process");
 
@@ -118,6 +121,9 @@ async function syncDataBase() {
     await Caja.sync(syncOptions);
     console.log("  ✓ Caja");
 
+    await Boleta.sync(syncOptions);
+    console.log("  ✓ Boleta");
+
     await Productos.sync(syncOptions);
     console.log("  ✓ Productos");
 
@@ -153,6 +159,12 @@ async function syncDataBase() {
     await BitacoraActividad.sync(syncOptions);
     console.log("  ✓ BitacoraActividad");
 
+    await DetalleDescuento.sync(syncOptions);
+    console.log("  ✓ DetalleDescuento");
+
+    await DescuentoSobre.sync(syncOptions);
+    console.log("  ✓ DescuentoSobre");
+
     console.log("✅ Todas las tablas sincronizadas correctamente");
   } catch (error) {
     console.error("❌ Error al sincronizar base de datos:", error);
@@ -170,10 +182,6 @@ const startServer = async () => {
 
     //Crear usuarios iniciales
     await createUsers();
-
-    //app.listen(process.env.PORT, () => {
-    //  console.log(`Servidor HTTPS en http://localhost:${process.env.PORT}`);
-    // });
 
     https.createServer(sslOptions, app).listen(process.env.PORT, () => {
       console.log(`Servidor HTTPS en https://localhost:${process.env.PORT}`);

@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/bd");
 
 const vendedorProveedor = sequelize.define(
-  "vendedorProveedor",
+  "vendedor",
   {
     idVendedorProveedor: {
       type: DataTypes.INTEGER,
@@ -10,7 +10,7 @@ const vendedorProveedor = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    Nombre: {
+    nombre: {
       type: DataTypes.STRING(100),
       allowNull: false,
       unique: true,
@@ -43,7 +43,7 @@ const vendedorProveedor = sequelize.define(
     // },
   },
   {
-    tableName: "vendedorProveedor",
+    tableName: "vendedor",
     timestamps: false,
   }
 );

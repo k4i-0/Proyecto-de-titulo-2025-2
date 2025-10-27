@@ -6,7 +6,7 @@ const estante = sequelize.define(
   {
     idEstante: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      primaryKey: true,
       unique: true,
       autoIncrement: true,
     },

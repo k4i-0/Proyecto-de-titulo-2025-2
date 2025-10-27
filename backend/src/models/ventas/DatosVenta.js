@@ -9,12 +9,16 @@ const datosventa = sequelize.define(
       primaryKey: true,
       unique: true,
     },
-    detalle: {
+    descripcion: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
     cantidad: {
       type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    tipoDeEntrega: {
+      type: DataTypes.STRING(50),
       allowNull: false,
     },
     fecha: {

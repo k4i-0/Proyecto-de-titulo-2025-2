@@ -15,120 +15,91 @@ const Categoria = require("./inventario/Categoria");
 const Productos = require("./inventario/Productos");
 const Cliente = require("./ventas/Cliente");
 const Estante = require("./inventario/Estante");
+const Boleta = require("./ventas/Boleta");
 
 //intermedias
 const Despacho = require("./inventario/Despacho");
 const CompraProveedor = require("./inventario/CompraProveedor");
 const ContratoFuncionario = require("./Usuarios/ContratoFuncionario");
 const CajaFuncionario = require("./ventas/CajaAsignada");
-const DescuentoAsociado = require("./ventas/DescuentoAsociado");
+const DescuentoAsociado = require("./ventas/DetalleDescuento");
 const VentaCliente = require("./ventas/VentaCliente");
 const BitacoraActividad = require("./Usuarios/BitacoraActividad");
-const estante = require("./inventario/Estante");
+const DetalleDescuento = require("./ventas/DetalleDescuento");
+const DescuentoSobre = require("./ventas/DescuentoSobre");
 
 // ========== ASOCIACIONES PRINCIPALES ==========
 
 // Sucursal -> Bodega (1:N)
 Sucursal.hasMany(Bodega, {
   foreignKey: "idSucursal",
-  sourceKey: "idSucursal",
 });
 Bodega.belongsTo(Sucursal, {
   foreignKey: "idSucursal",
-  targetKey: "idSucursal",
 });
 
 // Bodega -> Estantes (1:N)
 Bodega.hasMany(Estante, {
   foreignKey: "idBodega",
-  sourceKey: "idBodega",
 });
-
 Estante.belongsTo(Bodega, {
   foreignKey: "idBodega",
-  sourceKey: "idBodega",
 });
 
 // inventario -> estante (1:N)
-
 Inventario.hasMany(Estante, {
   foreignKey: "idInventario",
-  sourceKey: "idInventario",
 });
-
 Estante.belongsTo(Inventario, {
   foreignKey: "idInventario",
-  sourceKey: "idInventario",
 });
-
-// Bodega -> Inventario (1:N)
-Bodega.hasMany(Inventario, {
-  foreignKey: "idBodega",
-  sourceKey: "idBodega",
-});
-Inventario.belongsTo(Bodega, {
-  foreignKey: "idBodega",
-  targetKey: "idBodega",
-});
-
-// Bodega -> Lote (1:N)
-//Bodega.hasMany(Lote, {
-//  foreignKey: "idBodega",
-//  sourceKey: "idBodega",
-//});
-//Lote.belongsTo(Bodega, {
-//  foreignKey: "idBodega",
-//  targetKey: "idBodega",
-//});
 
 // Categoria -> Productos (1:N)
 Categoria.hasMany(Productos, {
   foreignKey: "idCategoria",
-  sourceKey: "idCategoria",
 });
 Productos.belongsTo(Categoria, {
   foreignKey: "idCategoria",
-  targetKey: "idCategoria",
 });
 
 // Productos -> Inventario (1:N)
 Productos.hasMany(Inventario, {
   foreignKey: "idProducto",
-  sourceKey: "idProducto",
 });
 Inventario.belongsTo(Productos, {
   foreignKey: "idProducto",
-  targetKey: "idProducto",
 });
 
 // Productos -> Lote (1:N)
 Productos.hasMany(Lote, {
   foreignKey: "idProducto",
-  sourceKey: "idProducto",
 });
 Lote.belongsTo(Productos, {
   foreignKey: "idProducto",
-  targetKey: "idProducto",
+});
+
+//inventario a lote (1:N)
+Lote.hasMany(Inventario, {
+  foreignKey: "idLote",
+});
+Inventario.belongsTo(Lote, {
+  foreignKey: "idLote",
 });
 
 // Proveedor -> Vendedor (1:N)
 Proveedor.hasMany(Vendedor, {
   foreignKey: "idProveedor",
-  sourceKey: "idProveedor",
 });
 Vendedor.belongsTo(Proveedor, {
   foreignKey: "idProveedor",
-  targetKey: "idProveedor",
 });
 
 // Sucursal -> Caja (1:N)
 Sucursal.hasMany(Caja, {
   foreignKey: "idSucursal",
-  sourceKey: "idSucursal",
 });
 Caja.belongsTo(Sucursal, {
   foreignKey: "idSucursal",
-  targetKey: "idSucursal",
 });
 
 // Roles -> Funcionario (1:N)
@@ -142,127 +113,120 @@ Funcionario.belongsTo(Roles, {
 });
 
 // Bitacora -> Funcionario (1:N)
-Bitacora.hasMany(Funcionario, {
-  foreignKey: "idBitacora",
-  sourceKey: "idBitacora",
+Funcionario.hasMany(Bitacora, {
+  foreignKey: "idFuncionario",
 });
-Funcionario.belongsTo(Bitacora, {
-  foreignKey: "idBitacora",
-  targetKey: "idBitacora",
+Bitacora.belongsTo(Funcionario, {
+  foreignKey: "idFuncionario",
 });
 
-// Bitacora -> Funcionario (1:N)
-Bitacora.hasMany(Funcionario, {
-  foreignKey: "idBitacora",
-  sourceKey: "idBitacora",
+//Encargado de sucursal
+Funcionario.hasMany(Sucursal, {
+  foreignKey: "idFuncionario",
 });
-Funcionario.belongsTo(Bitacora, {
-  foreignKey: "idBitacora",
-  targetKey: "idBitacora",
+Sucursal.belongsTo(Funcionario, {
+  foreignKey: "idFuncionario",
 });
 
-// Descuento -> DatosVenta (1:N)
-Descuento.hasMany(DatosVenta, {
-  foreignKey: "idDescuento",
-  sourceKey: "idDescuento",
-});
-DatosVenta.belongsTo(Descuento, {
-  foreignKey: "idDescuento",
-  targetKey: "idDescuento",
-});
-
-// Productos -> DatosVenta (1:N)
+//Detalle venta -> Producto
 Productos.hasMany(DatosVenta, {
   foreignKey: "idProducto",
-  sourceKey: "idProducto",
 });
 DatosVenta.belongsTo(Productos, {
   foreignKey: "idProducto",
-  targetKey: "idProducto",
+});
+
+Boleta.hasMany(DatosVenta, {
+  foreignKey: "idBoleta",
+});
+DatosVenta.belongsTo(Boleta, {
+  foreignKey: "idBoleta",
+});
+
+Proveedor.hasMany(Caja, {
+  foreignKey: "idProveedor",
+});
+Caja.belongsTo(Proveedor, {
+  foreignKey: "idProveedor",
 });
 
 // ========== TABLAS INTERMEDIAS ==========
 
-// // BitacoraActividad (intermedia)
-// Bitacora.belongsToMany(Actividad, {
-//   through: BitacoraActividad,
-//   foreignKey: "idBitacora",
-//   otherKey: "idActividad",
-// });
-// Actividad.belongsToMany(Bitacora, {
-//   through: BitacoraActividad,
-//   foreignKey: "idActividad",
-//   otherKey: "idBitacora",
-// });
+//============Tablas intermedias ternarias o mas ==========
 
-// Despacho (intermedia)
+//Despacho
 Lote.hasMany(Despacho, { foreignKey: "idLote" });
-Despacho.belongsTo(Lote, { foreignKey: "idLote" });
-
+Sucursal.hasMany(Despacho, { foreignKey: "idSucursal" });
+Funcionario.hasMany(Despacho, { foreignKey: "idFuncionario" });
 Proveedor.hasMany(Despacho, { foreignKey: "idProveedor" });
+
+Despacho.belongsTo(Lote, { foreignKey: "idLote" });
+Despacho.belongsTo(Sucursal, { foreignKey: "idSucursal" });
+Despacho.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
 Despacho.belongsTo(Proveedor, { foreignKey: "idProveedor" });
 
-Funcionario.hasMany(Despacho, { foreignKey: "idFuncionario" });
-Despacho.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
-
-Sucursal.hasMany(Despacho, { foreignKey: "idSucursal" });
-Despacho.belongsTo(Sucursal, { foreignKey: "idSucursal" });
-
-// CompraProveedor (intermedia)
+//Compra
 Lote.hasMany(CompraProveedor, { foreignKey: "idLote" });
-CompraProveedor.belongsTo(Lote, { foreignKey: "idLote" });
-
+Sucursal.hasMany(CompraProveedor, { foreignKey: "idSucursal" });
+Funcionario.hasMany(CompraProveedor, { foreignKey: "idFuncionario" });
 Proveedor.hasMany(CompraProveedor, { foreignKey: "idProveedor" });
+
+CompraProveedor.belongsTo(Lote, { foreignKey: "idLote" });
+CompraProveedor.belongsTo(Sucursal, { foreignKey: "idSucursal" });
+CompraProveedor.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
 CompraProveedor.belongsTo(Proveedor, { foreignKey: "idProveedor" });
 
-Funcionario.hasMany(CompraProveedor, { foreignKey: "idFuncionario" });
-CompraProveedor.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
-
-Sucursal.hasMany(CompraProveedor, { foreignKey: "idSucursal" });
-CompraProveedor.belongsTo(Sucursal, { foreignKey: "idSucursal" });
-
-// ContratoFuncionario (intermedia)
-Funcionario.hasMany(ContratoFuncionario, { foreignKey: "idFuncionario" });
-ContratoFuncionario.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
-
-Sucursal.hasMany(ContratoFuncionario, { foreignKey: "idSucursal" });
-ContratoFuncionario.belongsTo(Sucursal, { foreignKey: "idSucursal" });
-
-// CajaFuncionario (intermedia)
+// Caja-Funcionario-Sucursal (Caja asignada a funcionario)
 Funcionario.hasMany(CajaFuncionario, { foreignKey: "idFuncionario" });
-CajaFuncionario.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
-
 Caja.hasMany(CajaFuncionario, { foreignKey: "idCaja" });
-CajaFuncionario.belongsTo(Caja, { foreignKey: "idCaja" });
-
 Sucursal.hasMany(CajaFuncionario, { foreignKey: "idSucursal" });
+
+CajaFuncionario.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
+CajaFuncionario.belongsTo(Caja, { foreignKey: "idCaja" });
 CajaFuncionario.belongsTo(Sucursal, { foreignKey: "idSucursal" });
 
-// DescuentoAsociado (intermedia)
-Productos.hasMany(DescuentoAsociado, { foreignKey: "idProducto" });
-DescuentoAsociado.belongsTo(Productos, { foreignKey: "idProducto" });
+//Venta Cliente-Funcionario-Caja-Boleta
 
-Categoria.hasMany(DescuentoAsociado, { foreignKey: "idCategoria" });
-DescuentoAsociado.belongsTo(Categoria, { foreignKey: "idCategoria" });
-
-Descuento.hasMany(DescuentoAsociado, { foreignKey: "idDescuento" });
-DescuentoAsociado.belongsTo(Descuento, { foreignKey: "idDescuento" });
-
-// VentaCliente (intermedia)
 Funcionario.hasMany(VentaCliente, { foreignKey: "idFuncionario" });
-VentaCliente.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
-
 Caja.hasMany(VentaCliente, { foreignKey: "idCaja" });
-VentaCliente.belongsTo(Caja, { foreignKey: "idCaja" });
-
+Boleta.hasMany(VentaCliente, { foreignKey: "idBoleta" });
 Cliente.hasMany(VentaCliente, { foreignKey: "idCliente" });
+
+VentaCliente.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
+VentaCliente.belongsTo(Caja, { foreignKey: "idCaja" });
+VentaCliente.belongsTo(Boleta, { foreignKey: "idBoleta" });
 VentaCliente.belongsTo(Cliente, { foreignKey: "idCliente" });
 
-DatosVenta.hasMany(VentaCliente, { foreignKey: "idDatosVenta" });
-VentaCliente.belongsTo(DatosVenta, { foreignKey: "idDatosVenta" });
+// Asocioacion descuento sobre productos y categoria
+Descuento.hasMany(DescuentoSobre, { foreignKey: "idDescuento" });
+Productos.hasMany(DescuentoSobre, { foreignKey: "idProducto" });
+Categoria.hasMany(DescuentoSobre, { foreignKey: "idCategoria" });
 
-Descuento.hasMany(VentaCliente, { foreignKey: "idDescuento" });
-VentaCliente.belongsTo(Descuento, { foreignKey: "idDescuento" });
+DescuentoSobre.belongsTo(Descuento, { foreignKey: "idDescuento" });
+DescuentoSobre.belongsTo(Productos, { foreignKey: "idProducto" });
+DescuentoSobre.belongsTo(Categoria, { foreignKey: "idCategoria" });
+
+// ========== TABLAS INTERMEDIAS BINARIAS ==========
+
+// Boleta Descuento (intermedia)
+Boleta.belongsToMany(DetalleDescuento, {
+  through: DescuentoAsociado,
+  foreignKey: "idBoleta",
+});
+DetalleDescuento.belongsToMany(Boleta, {
+  through: DescuentoAsociado,
+  foreignKey: "idDetalledescuento",
+});
+
+//Sucursal - Funcionario (ContratoFuncionario)
+Sucursal.belongsToMany(Funcionario, {
+  through: ContratoFuncionario,
+  foreignKey: "idSucursal",
+});
+Funcionario.belongsToMany(Sucursal, {
+  through: ContratoFuncionario,
+  foreignKey: "idFuncionario",
+});
 
 module.exports = {
   Bodega,
@@ -281,6 +245,8 @@ module.exports = {
   Categoria,
   Productos,
   Cliente,
+  Estante,
+  Boleta,
   Despacho,
   CompraProveedor,
   ContratoFuncionario,
@@ -288,5 +254,6 @@ module.exports = {
   DescuentoAsociado,
   VentaCliente,
   BitacoraActividad,
-  Estante,
+  DetalleDescuento,
+  DescuentoSobre,
 };

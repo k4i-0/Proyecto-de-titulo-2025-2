@@ -10,16 +10,16 @@ const lote = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    Codigo: {
+    codigo: {
       type: DataTypes.INTEGER,
       allowNull: false,
       unique: true,
     },
-    FechaIngreso: {
+    fechaIngreso: {
       type: DataTypes.DATE,
       allowNull: false,
     },
-    FechaVencimiento: {
+    fechaVencimiento: {
       type: DataTypes.DATE,
       allowNull: false,
     },

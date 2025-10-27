@@ -15,7 +15,7 @@ const proveedor = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    Nombre: {
+    nombre: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
@@ -30,11 +30,7 @@ const proveedor = sequelize.define(
         isEmail: true,
       },
     },
-    ubicacion: {
-      type: DataTypes.STRING(150),
-      allowNull: true,
-    },
-    FechaIngreso: {
+    fechaIngreso: {
       type: DataTypes.DATE,
       allowNull: false,
     },

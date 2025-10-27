@@ -1,22 +1,17 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/bd");
 
-const descuentoAsociado = sequelize.define(
-  "descuentoasociado",
+const detalledescuento = sequelize.define(
+  "detalledescuento",
   {
-    idDescuentoAsociado: {
+    idDetalledescuento: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
     },
-    fechaHoraCreacion: {
+    fechaHora: {
       type: DataTypes.DATE,
       allowNull: false,
-    },
-    vigencia: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: true,
     },
     // idDescuento: {
     //   type: DataTypes.INTEGER,
@@ -50,9 +45,9 @@ const descuentoAsociado = sequelize.define(
     // },
   },
   {
-    tableName: "descuentos_asociados",
+    tableName: "detalledescuento",
     timestamps: false,
   }
 );
 
-module.exports = descuentoAsociado;
+module.exports = detalledescuento;
