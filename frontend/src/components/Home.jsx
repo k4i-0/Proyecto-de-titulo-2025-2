@@ -17,12 +17,18 @@ export default function Home({ nombreRol, vista, onCambiarVista }) {
         }}
       ></h3>
       <div>
-        {vista === "home" && <Inicio nombreRol={nombreRol} />}
+        {vista === "home" && (
+          <Inicio nombreRol={nombreRol} onCambiarVista={onCambiarVista} />
+        )}
         {vista === "productos" && <Productos onCambiarVista={onCambiarVista} />}
-        {vista === "categorias" && <Categoria />}
-        {vista === "inventario" && <Inventario />}
-        {vista === "sucursal" && <Sucursal />}
-        {vista === "bodega" && <Bodega />}
+        {vista === "categorias" && (
+          <Categoria onCambiarVista={onCambiarVista} />
+        )}
+        {vista === "inventario" && (
+          <Inventario onCambiarVista={onCambiarVista} />
+        )}
+        {vista === "sucursal" && <Sucursal onCambiarVista={onCambiarVista} />}
+        {vista === "bodega" && <Bodega onCambiarVista={onCambiarVista} />}
       </div>
     </div>
   );

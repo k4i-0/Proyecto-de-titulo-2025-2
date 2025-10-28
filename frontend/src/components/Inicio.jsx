@@ -8,62 +8,45 @@ import {
   Button,
 } from "react-bootstrap";
 
-export default function Inicio({ nombreRol }) {
+export default function Inicio({ nombreRol, onCambiarVista }) {
   return (
     <Container>
       <Row className="justify-content-md-center">
-        <Col md="8">
-          <Card className="text-center mt-5">
-            <Card.Body>
-              <Card.Title>Bienvenido {nombreRol}</Card.Title>
-              <Card.Text>Este es un prototipo</Card.Text>
-            </Card.Body>
-          </Card>
+        <Col md="4" className="text-center">
+          <h2>Bienvenido {nombreRol}</h2>
+          <p>Que hacemos Hoy?</p>
         </Col>
       </Row>
-      <Row>
+      <Row className="justify-content-md-center">
         <Col md="4">
           <Card className="text-center mt-5">
             <Card.Body>
-              <Placeholder as={Card.Title} animation="glow">
-                <Placeholder xs={6} />
-              </Placeholder>
-              <Placeholder as={Card.Text} animation="glow">
-                <Placeholder xs={7} /> <Placeholder xs={4} />{" "}
-                <Placeholder xs={4} /> <Placeholder xs={6} />{" "}
-                <Placeholder xs={8} />
-              </Placeholder>
-              <Placeholder.Button variant="primary" xs={6} />
+              <Card.Title>Gestiona tu Inventario</Card.Title>
+              <Card.Text>
+                Administra productos, categorías y stock de manera eficiente.
+              </Card.Text>
+              <Button
+                variant="primary"
+                onClick={() => onCambiarVista("inventario")}
+              >
+                Ir a Inventario
+              </Button>
             </Card.Body>
           </Card>
         </Col>
         <Col md="4">
           <Card className="text-center mt-5">
             <Card.Body>
-              <Placeholder as={Card.Title} animation="glow">
-                <Placeholder xs={6} />
-              </Placeholder>
-              <Placeholder as={Card.Text} animation="glow">
-                <Placeholder xs={7} /> <Placeholder xs={4} />{" "}
-                <Placeholder xs={4} /> <Placeholder xs={6} />{" "}
-                <Placeholder xs={8} />
-              </Placeholder>
-              <Placeholder.Button variant="primary" xs={6} />
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md="4">
-          <Card className="text-center mt-5">
-            <Card.Body>
-              <Placeholder as={Card.Title} animation="glow">
-                <Placeholder xs={6} />
-              </Placeholder>
-              <Placeholder as={Card.Text} animation="glow">
-                <Placeholder xs={7} /> <Placeholder xs={4} />{" "}
-                <Placeholder xs={4} /> <Placeholder xs={6} />{" "}
-                <Placeholder xs={8} />
-              </Placeholder>
-              <Placeholder.Button variant="primary" xs={6} />
+              <Card.Title>Gestiona tu Sucursales</Card.Title>
+              <Card.Text>
+                Administra tus sucursales y su inventario de manera eficiente.
+              </Card.Text>
+              <Button
+                variant="primary"
+                onClick={() => onCambiarVista("sucursal")}
+              >
+                Ir a Sucursales
+              </Button>
             </Card.Body>
           </Card>
         </Col>

@@ -9,7 +9,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   //
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [autoAttempted, setAutoAttempted] = useState(false);
+  //const [autoAttempted, setAutoAttempted] = useState(false);
   //
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
@@ -38,30 +38,30 @@ const Login = () => {
     };
   }, []);
 
-  const enterFullscreen = () => {
-    const elem = document.documentElement;
+  // const enterFullscreen = () => {
+  //   const elem = document.documentElement;
 
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch((err) => {
-        console.log("Error al activar pantalla completa:", err);
-      });
-    } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) {
-      elem.msRequestFullscreen();
-    }
+  //   if (elem.requestFullscreen) {
+  //     elem.requestFullscreen().catch((err) => {
+  //       console.log("Error al activar pantalla completa:", err);
+  //     });
+  //   } else if (elem.webkitRequestFullscreen) {
+  //     elem.webkitRequestFullscreen();
+  //   } else if (elem.msRequestFullscreen) {
+  //     elem.msRequestFullscreen();
+  //   }
 
-    setIsFullscreen(true);
-  };
+  //   setIsFullscreen(true);
+  // };
 
-  const handleFirstClick = () => {
-    if (!autoAttempted) {
-      enterFullscreen();
-      setAutoAttempted(true);
-    }
-    if (document.fullscreenElement == null) setAutoAttempted(false);
-    console.log(document.fullscreenElement);
-  };
+  // const handleFirstClick = () => {
+  //   if (!autoAttempted) {
+  //     enterFullscreen();
+  //     setAutoAttempted(true);
+  //   }
+  //   if (document.fullscreenElement == null) setAutoAttempted(false);
+  //   console.log(document.fullscreenElement);
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();

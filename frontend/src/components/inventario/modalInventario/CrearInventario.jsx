@@ -6,7 +6,6 @@ import { Row, Col, Button, Form, Modal, Alert, Spinner } from "react-bootstrap";
 // Asumo que estos servicios existen y se pueden importar
 import { crearInventarios } from "../../../services/inventario/Inventario.service";
 import obtenerProductos from "../../../services/inventario/Productos.service"; // ¡Necesario!
-import obtenerBodegas from "../../../services/inventario/Bodega.service"; // ¡Necesario!
 
 export default function CrearInventario({
   show,
@@ -19,33 +18,26 @@ export default function CrearInventario({
 
   // Estados para las listas de los 'selects'
   const [productos, setProductos] = useState([]);
-  const [bodegas, setBodegas] = useState([]);
+  const [lotes, setLotes] = useState([]);
 
   const estadoInicial = {
-    nombre: "",
-    fechaCreacion: new Date(),
-    encargado: "",
-    estado: "",
     idProducto: "",
-    idBodega: "",
+    estado: "",
+    idLote: "",
     stock: "",
   };
   const [datos, setDatos] = useState(estadoInicial);
 
-  // Carga productos y bodegas cuando se abre el modal
+  // Carga productos y lotes cuando se abre el modal
   useEffect(() => {
     if (show) {
       const cargarDependencias = async () => {
         setLoading(true);
         try {
           // Carga ambas listas en paralelo
-          const [resProductos, resBodegas] = await Promise.all([
-            obtenerProductos(),
-            obtenerBodegas(),
-          ]);
+          const [resProductos] = await Promise.all([obtenerProductos()]);
 
           setProductos(resProductos.length ? resProductos : []);
-          setBodegas(resBodegas.length ? resBodegas : []);
         } catch (err) {
           setError(true);
           setMensaje("Error al cargar productos o bodegas");
@@ -100,8 +92,8 @@ export default function CrearInventario({
     setMensaje("");
     setError(false);
     setDatos(estadoInicial);
-    setProductos([]); // Limpia listas
-    setBodegas([]); // Limpia listas
+    setProductos([]);
+
     handleClose();
   };
 
@@ -153,91 +145,78 @@ export default function CrearInventario({
             <Alert variant={error ? "danger" : "success"}>{mensaje}</Alert>
           </div>
         )}
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label>Nombre *</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Ingrese nombre"
-              name="nombre"
-              value={datos.nombre}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Encargado *</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Ingrese nombre del encargado"
-              name="encargado"
-              value={datos.encargado}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Producto *</Form.Label>
-            <Form.Control
-              as="select"
-              name="idProducto"
-              value={datos.idProducto}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccione un producto</option>
-              {productos.map((p) => (
-                <option key={p.idProducto} value={p.idProducto}>
-                  {p.nombre} (SKU: {p.codigo})
-                </option>
-              ))}
-            </Form.Control>
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Bodega *</Form.Label>
-            <Form.Control
-              as="select"
-              name="idBodega"
-              value={datos.idBodega}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccione una bodega</option>
-              {bodegas.map((b) => (
-                <option key={b.idBodega} value={b.idBodega}>
-                  {b.nombre} ({b.ubicacion})
-                </option>
-              ))}
-            </Form.Control>
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Stock Inicial *</Form.Label>
-            <Form.Control
-              type="number"
-              placeholder="Ingrese la cantidad de stock"
-              name="stock"
-              value={datos.stock}
-              onChange={handleChange}
-              required
-              min="0"
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Estado *</Form.Label>
-            <Form.Control
-              as="select"
-              name="estado"
-              value={datos.estado}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccione estado</option>
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-            </Form.Control>
-          </Form.Group>
+        <Form onSubmit={handleSubmit} className="text-center">
+          <Row>
+            <Col>
+              <Form.Group className="mb-3 ">
+                <Form.Label>Producto *</Form.Label>
+                <Form.Select
+                  as="select"
+                  name="idProducto"
+                  value={datos.idProducto}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Seleccione un producto</option>
+                  {productos.map((p) => (
+                    <option key={p.idProducto} value={p.idProducto}>
+                      {p.nombre} (SKU: {p.codigo})
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col>
+              <Form.Group className="mb-3">
+                <Form.Label>Stock *</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Ingrese stock"
+                  name="stock"
+                  value={datos.stock}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+              <Form.Group className="mb-3 ">
+                <Form.Label>Estado Producto *</Form.Label>
+                <Form.Select
+                  as="select"
+                  name="estado"
+                  value={datos.estado}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Seleccione estado</option>
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col>
+              <Form.Group className="mb-3">
+                <Form.Label>Lote *</Form.Label>
+                <Form.Select
+                  as="select"
+                  name="idLote"
+                  value={datos.idLote}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Seleccione un lote</option>
+                  {lotes.map((l) => (
+                    <option key={l.idLote} value={l.idLote}>
+                      {l.nombre} (SKU: {l.codigo})
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
         </Form>
       </Modal.Body>
 

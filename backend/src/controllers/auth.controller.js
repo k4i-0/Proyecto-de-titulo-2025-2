@@ -111,25 +111,29 @@ async function logout(req, res) {
     console.log(error);
   }
 }
-// Este es un controlador de ruta
-async function verificarToken(req, res) {
-  const { token } = req.cookies;
-  if (!token) {
-    return res
-      .status(401)
-      .json({ message: "No autorizado, no se proveyó un token" });
-  }
 
+async function miEstado(req, res) {
   try {
-    const decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
-    return res.status(200).json({ usuario: decodedPayload });
-  } catch (error) {
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({ message: "Token ha expirado" });
+    const { token } = req.cookies;
+    //console.log("Token recibido en miEstado:", token);
+    if (!token) {
+      res.clearCookie("token", { httpOnly: true, secure: true });
+      return res.status(401).json({ message: "No autorizado" });
     }
 
-    return res.status(401).json({ message: "Token inválido" });
+    const decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decodedPayload) {
+      res.clearCookie("token", { httpOnly: true, secure: true });
+      return res.status(401).json({ message: "No autorizado" });
+    }
+    //console.log("Payload decodificado:", decodedPayload);
+    return res
+      .status(200)
+      .send({ message: "Token válido", payload: decodedPayload });
+  } catch (error) {
+    return res.status(500).json({ message: "Error interno" });
+    console.log(error);
   }
 }
 
-module.exports = { login, logout, verificarToken };
+module.exports = { login, logout, miEstado };

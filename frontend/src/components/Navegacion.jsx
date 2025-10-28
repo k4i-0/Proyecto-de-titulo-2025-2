@@ -13,11 +13,20 @@ export default function Navegacion({ nombreRol, onLogout, onCambiarVista }) {
   console.log("Usuario en Navegacion:", nombreRol);
   return (
     <Navbar
-      style={{ paddingLeft: "10px", paddingRight: "10px", margin: "20px" }}
+      className="justify-content-center"
+      style={{
+        padding: "10px",
+        paddingLeft: "100px",
+        paddingRight: "100px",
+        margin: "40px",
+      }}
     >
-      <Container>
-        <Navbar.Brand>Negocios Rancaguinos</Navbar.Brand>
+      <Container className="justify-content-left">
+        <Navbar.Brand href="/dashboard" onClick={() => onCambiarVista("home")}>
+          Negocios Rancaguinos
+        </Navbar.Brand>
       </Container>
+
       <Navbar.Toggle aria-controls="basic-navbar-nav" />
       <Navbar.Collapse id="basic-navbar-nav">
         <Nav className="me-auto">

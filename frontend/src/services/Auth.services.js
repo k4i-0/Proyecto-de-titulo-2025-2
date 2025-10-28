@@ -40,15 +40,15 @@ export async function finSesion() {
   }
 }
 
-export async function verificarToken() {
+export async function miEstado() {
   try {
-    const response = await axios.get(`${API_URL}/yo`, null, {
+    const response = await axios.get(`${API_URL}/yo`, {
       withCredentials: true,
     });
-    if (!response.data) {
+    if (!response) {
       return "No se recibió respuesta del servidor";
     }
-    console.log("Respuesta verificación token:", response.data);
+    console.log("Respuesta verificación token:", response);
     return response;
   } catch (error) {
     console.log(error);
