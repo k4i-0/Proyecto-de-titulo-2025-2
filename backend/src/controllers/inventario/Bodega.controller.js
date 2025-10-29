@@ -5,15 +5,14 @@ const { crearBitacora } = require("../../services/bitacora.service");
 const jwt = require("jsonwebtoken");
 
 exports.createBodega = async (req, res) => {
-  const { nombre, ubicacion, capacidad, estado, idSucursal } = req.body;
-  if (!nombre || !ubicacion || !capacidad || !estado || !idSucursal) {
+  const { nombre, capacidad, estado, idSucursal } = req.body;
+  if (!nombre || !capacidad || !estado || !idSucursal) {
     return res.status(422).json({ error: "Faltan datos obligatorios" });
   }
   //Validacion de datos con Joi
   try {
     const nuevaBodega = await Bodega.create({
       nombre,
-      ubicacion,
       capacidad,
       estado,
       idSucursal,
@@ -51,11 +50,11 @@ exports.createBodega = async (req, res) => {
 exports.getAllBodega = async (req, res) => {
   try {
     const bodegas = await Bodega.findAll({
-      where: {
-        estado: {
-          [Op.ne]: "Eliminado",
-        },
-      },
+      // where: {
+      //   estado: {
+      //     [Op.ne]: "Eliminado",
+      //   },
+      // },
     });
     if (bodegas.length === 0 || !bodegas) {
       await crearBitacora({

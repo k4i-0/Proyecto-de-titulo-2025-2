@@ -10,10 +10,9 @@ export default function EditarSucursal({
   funcionBuscarSucursales,
 }) {
   const [formData, setFormData] = useState({
-    idSucursal: "",
+    idSucursal: sucursal?.idSucursal,
     nombre: "",
-    ubicacion: "",
-    telefono: "",
+    direccion: "",
     estado: "",
   });
   const [loading, setLoading] = useState(false);
@@ -25,8 +24,7 @@ export default function EditarSucursal({
     if (sucursal) {
       setFormData({
         nombre: sucursal.nombre || "",
-        ubicacion: sucursal.ubicacion || "",
-        telefono: sucursal.telefono || "",
+        direccion: sucursal.direccion || "",
         estado: sucursal.estado || "",
       });
     }
@@ -77,20 +75,11 @@ export default function EditarSucursal({
     (
       <Modal show={show} onHide={handleCerrar}>
         <Modal.Header closeButton onClick={handleCerrar}>
-          <Modal.Title>Editar Sucursal</Modal.Title>
+          <Modal.Title>Editar Sucursal {sucursal?.idSucursal}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmitEdicion}>
-            <Form.Group controlId="formIdSucursal">
-              <Form.Label>ID sucursal</Form.Label>
-              <Form.Control
-                type="text"
-                name="idSucursal"
-                value={sucursal ? sucursal.idSucursal : ""}
-                readOnly
-              />
-            </Form.Group>
             <Form.Group controlId="formNombre">
               <Form.Label>Nombre</Form.Label>
               <Form.Control
@@ -102,21 +91,11 @@ export default function EditarSucursal({
               />
             </Form.Group>
             <Form.Group controlId="formUbicacion">
-              <Form.Label>Ubicación</Form.Label>
+              <Form.Label>Direccion</Form.Label>
               <Form.Control
                 type="text"
-                name="ubicacion"
-                value={formData.ubicacion}
-                onChange={handleChangeLocal}
-                required
-              />
-            </Form.Group>
-            <Form.Group controlId="formCapacidad">
-              <Form.Label>telefono</Form.Label>
-              <Form.Control
-                type="tel"
-                name="telefono"
-                value={formData.telefono}
+                name="direccion"
+                value={formData.direccion}
                 onChange={handleChangeLocal}
                 required
               />

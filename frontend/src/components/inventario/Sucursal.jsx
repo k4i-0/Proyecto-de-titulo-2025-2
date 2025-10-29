@@ -7,7 +7,7 @@ import {
   ButtonGroup,
   Alert,
   Card,
-  Placeholder,
+  Table,
 } from "react-bootstrap";
 
 import CrearSucursal from "./modalSucursal/CrearSucursal";
@@ -34,17 +34,18 @@ export default function Sucursal() {
       setError(false);
       setMensaje("");
       const respuesta = await obtenerSucursales();
-      console.log("Respuesta sucursales:", respuesta);
-      if (respuesta.code) {
+      console.log("Respuesta sucursales:", respuesta.data[0]);
+      if (respuesta.status == 204) {
         setError(true);
-        setMensaje(respuesta.error);
+        setMensaje(
+          "No hay sucursales disponibles, por favor crea una sucursal"
+        );
+        setSucursales([]);
       } else {
-        if (respuesta.length === 0) {
-          setMensaje(
-            "No hay sucursales disponibles, por favor crea una sucursal"
-          );
+        if (respuesta.status === 200) {
+          setMensaje("");
+          setSucursales(respuesta.data);
         }
-        setSucursales(respuesta);
       }
     } catch (error) {
       setError(true);
@@ -109,103 +110,95 @@ export default function Sucursal() {
           <p className="text-muted">Aquí puedes gestionar tus sucursales</p>
         </Col>
       </Row>
+
       {mensaje && (
         <Row className="mb-3">
           <Col>
             <Alert
-              variant={error ? "danger" : "success"}
+              variant={error ? "warning" : "success"}
               dismissible
-              onClose={() => setMensaje("")}
+              onClose={setTimeout(() => setMensaje(""), 5000)}
             >
               {mensaje}
             </Alert>
           </Col>
         </Row>
       )}
+
       <Row className="mb-4">
         <Col md={3}>
           <Button
             variant="primary"
             onClick={handleCrear}
             disabled={loading}
-            className="w-100"
+            className="w-60"
           >
             Crear Sucursal
           </Button>
         </Col>
       </Row>
-      <Row>
-        {loading ? (
-          <Col className="text-center">
-            <p>Cargando Sucursales...</p>
-          </Col>
-        ) : sucursales.length > 0 ? (
-          sucursales.map((sucursal) => (
-            <Col key={sucursal.idSucursal} md={4} className="mb-4">
-              <Card>
-                <Card.Body>
-                  <Card.Title>{sucursal.nombre}</Card.Title>
-                  <Card.Text>
-                    <strong>Sucursal:</strong> {sucursal.idSucursal}
-                    <br />
-                    <strong>Ubicación:</strong> {sucursal.ubicacion}
-                    <br />
-                    <strong>telefono:</strong> {sucursal.telefono}
-                    <br />
-                    <strong>Estado:</strong> {sucursal.estado}
-                  </Card.Text>
-                </Card.Body>
-                <Card.Footer>
-                  <ButtonGroup className="w-100">
-                    <Button
-                      variant="warning"
-                      onClick={() => handleEditar(sucursal)}
-                      disabled={loading}
-                    >
-                      Modificar Sucursal
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleEliminar(sucursal.idSucursal)}
-                      disabled={loading}
-                    >
-                      Eliminar Sucursal
-                    </Button>
-                  </ButtonGroup>
-                </Card.Footer>
-              </Card>
-            </Col>
-          ))
-        ) : (
-          // ) : (
-          //   <Col md={4} className="mb-4">
-          //     <Card>
-          //       <Card.Body>
-          //         <Placeholder as={Card.Title} animation="glow">
-          //           <Placeholder xs={6} />
-          //         </Placeholder>
 
-          //         <Placeholder as={Card.Text} animation="glow">
-          //           <Placeholder xs={7} /> <br />
-          //           <Placeholder xs={4} /> <br />
-          //           <Placeholder xs={4} /> <br />
-          //           <Placeholder xs={6} />
-          //         </Placeholder>
-          //       </Card.Body>
-          //       <Card.Footer>
-          //         <Placeholder.Button variant="primary" xs={6} />
-          //         <Placeholder.Button variant="danger" xs={6} />
-          //       </Card.Footer>
-          //     </Card>
-          //   </Col>
-          // )}
-          !loading && (
-            <Col>
-              <p>No se encontraron sucursales.</p>
-            </Col>
-          )
-        )}
-      </Row>
+      <Table striped bordered hover className="text-center">
+        <thead>
+          <tr>
+            <th>Cod. Sucursal</th>
+            <th>Nombre</th>
+            <th>Direccion</th>
+            <th>Estado</th>
+
+            <th>Acciones</th>
+            <th>Acciones</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sucursales.length > 0 ? (
+            sucursales.map((sucursal) => (
+              <tr key={sucursal.idSucursal}>
+                <td>{sucursal.idSucursal}</td>
+                <td>{sucursal.nombre}</td>
+                <td>{sucursal.direccion}</td>
+                <td>{sucursal.estado}</td>
+
+                <td>
+                  <Button
+                    variant="warning"
+                    onClick={() => handleEditar(sucursal)}
+                    disabled={loading}
+                  >
+                    Modificar
+                  </Button>
+                </td>
+                <td>
+                  <Button
+                    variant="danger"
+                    onClick={() => handleEliminar(sucursal.idSucursal)}
+                    disabled={loading}
+                  >
+                    Eliminar
+                  </Button>
+                </td>
+                <td>
+                  <Button
+                    variant="info"
+                    onClick={() => handleEliminar(sucursal.idSucursal)}
+                    disabled={loading}
+                  >
+                    Ver Detalle Bodegas
+                  </Button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="6" className="text-center">
+                No hay sucursales disponibles
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </Table>
+
       <CrearSucursal
         show={modalCrear}
         handleClose={handleCerrarModal}
@@ -217,6 +210,8 @@ export default function Sucursal() {
         sucursal={sucursalSelect}
         funcionBuscarSucursales={buscarSucursales}
       />
+
+      {/** modal  para ver bodegas */}
     </Container>
   );
 }

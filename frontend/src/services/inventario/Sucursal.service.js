@@ -8,10 +8,10 @@ export default async function obtenerSucursales() {
     const response = await axios.get(`${API_URL}/buscar`, null, {
       withCredentials: true,
     });
-    //console.log("Sucursales obtenidas:", response);
-    return response.data;
+    //console.log("Sucursales obtenidas:", response.status);
+    return response;
   } catch (error) {
-    //console.error("Error al obtener sucursales:", error.response.data.error);
+    console.error("Error al obtener sucursales:", error.response.data.error);
     return error.response.data;
   }
 }
@@ -34,7 +34,7 @@ export async function editarSucursal(datos, id) {
     const response = await axios.put(`${API_URL}/actualizar/${id}`, datos, {
       withCredentials: true,
     });
-    console.log("Sucursal obtenida:", response);
+    //console.log("Sucursal obtenida:", response);
     return response;
   } catch (error) {
     console.error("Error al editar sucursal:", error.response.data.error);
@@ -44,10 +44,10 @@ export async function editarSucursal(datos, id) {
 
 export async function eliminarSucursal(id) {
   try {
-    const response = await axios.delete(`${API_URL}/eliminar/${id}`, null, {
+    const response = await axios.delete(`${API_URL}/eliminar/${id}`, {
       withCredentials: true,
     });
-    console.log("Sucursal eliminada:", response);
+    //console.log("Sucursal eliminada:", response);
     return response;
   } catch (error) {
     console.error("Error al eliminar sucursal:", error.response.data.error);

@@ -5,11 +5,11 @@ const API_URL = `${URL}/bodegas`;
 
 export default async function obtenerBodegas() {
   try {
-    const response = await axios.get(`${API_URL}/buscar`, null, {
+    const response = await axios.get(`${API_URL}/buscar`, {
       withCredentials: true,
     });
     //console.log("bodegas obtenidas:", response);
-    return response.data;
+    return response;
   } catch (error) {
     //console.error("Error al obtener bodegas:", error.response.data.error);
     if (error.response.data.error == undefined) {

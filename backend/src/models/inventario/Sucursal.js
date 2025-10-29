@@ -8,7 +8,6 @@ const sucursal = sequelize.define(
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
-      autoIncrement: true,
     },
     nombre: {
       type: DataTypes.STRING(100),
@@ -26,7 +25,7 @@ const sucursal = sequelize.define(
   },
   {
     tableName: "sucursal",
-    timestamps: false,
+    timestamps: true,
   }
 );
 

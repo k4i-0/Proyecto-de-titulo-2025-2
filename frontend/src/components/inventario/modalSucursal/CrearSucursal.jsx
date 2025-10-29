@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Row, Col, Button, Form, Modal, Alert, Spinner } from "react-bootstrap";
 
 import { crearSucursal } from "../../../services/inventario/Sucursal.service";
+import { crearBodega } from "../../../services/inventario/Bodega.service";
 
 export default function AgregarSucursal({
   show,
@@ -12,19 +13,28 @@ export default function AgregarSucursal({
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState(false);
 
-  const [datos, setDatos] = useState({
+  const [datosSucursal, setDatosSucursal] = useState({
     nombre: "",
-    ubicacion: "",
-    telefono: "",
+    direccion: "",
     estado: "",
   });
-  const handleChange = (e) => {
+  const [datosBodega, setDatosBodega] = useState({
+    nombre: "",
+    capacidad: "",
+    estado: "",
+    idSucursal: "",
+  });
+  const handleChangeSucursal = (e) => {
     const { name, value } = e.target;
-    setDatos({ ...datos, [name]: value });
+    setDatosSucursal({ ...datosSucursal, [name]: value });
+  };
+  const handleChangeBodega = (e) => {
+    const { name, value } = e.target;
+    setDatosBodega({ ...datosBodega, [name]: value });
   };
 
   //   useEffect(() => {}, [sucursales]);
-  //   const handleChange = (e) => {
+  //   const handleChangeSucursal = (e) => {
   //     const { name, value } = e.target;
   //     setDatos({ ...datos, [name]: value });
   //   };
@@ -32,19 +42,40 @@ export default function AgregarSucursal({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const resultado = await crearSucursal(datos);
+      const resultado = await crearSucursal(datosSucursal);
       console.log("Respuesta al crear", resultado);
       if (resultado.status === 201) {
-        setMensaje("Sucursal creada exitosamente");
-        setError(false);
-        setTimeout(() => {
-          buscarSucursales();
-          setDatos({ nombre: "", ubicacion: "", telefono: "", estado: "" });
-          handleClose();
-          setMensaje("");
-        }, 1200);
+        const resultadoBodega = await crearBodega({
+          ...datosBodega,
+          idSucursal: resultado.data.idSucursal,
+        });
+        console.log("Respuesta al crear bodega", resultadoBodega);
+        if (resultadoBodega.status == 201) {
+          setMensaje("Sucursal creada exitosamente");
+          setError(false);
+          setTimeout(() => {
+            buscarSucursales();
+            setDatosSucursal({ nombre: "", direccion: "", estado: "" });
+            setDatosBodega({
+              nombre: "",
+              capacidad: "",
+              estado: "",
+              idSucursal: "",
+            });
+            handleClose();
+            setMensaje("");
+          }, 1200);
+        }
+        if (resultadoBodega.status === 422) {
+          setMensaje(
+            "Sucursal creada, pero error al crear bodega principal: " +
+              (resultadoBodega.data?.message ||
+                resultadoBodega.error ||
+                "Error desconocido.")
+          );
+          setError(true);
+        }
       } else {
         setError(true);
         setMensaje(
@@ -67,7 +98,7 @@ export default function AgregarSucursal({
   const handleCerrarModal = () => {
     setMensaje("");
     setError(false);
-    setDatos({ nombre: "", ubicacion: "", telefono: "", estado: "" });
+    setDatosSucursal({ nombre: "", direccion: "", estado: "" });
     handleClose();
   };
 
@@ -123,26 +154,74 @@ export default function AgregarSucursal({
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Nombre *</Form.Label>
+                <Form.Label>Nombre</Form.Label>
                 <Form.Control
                   type="text"
                   placeholder="Ingrese nombre"
                   name="nombre"
-                  value={datos.nombre}
-                  onChange={handleChange}
+                  value={datosSucursal.nombre}
+                  onChange={handleChangeSucursal}
                   required
                 />
               </Form.Group>
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>telefono *</Form.Label>
+                <Form.Label>Estado</Form.Label>
+                <Form.Select
+                  as="select"
+                  name="estado"
+                  value={datosSucursal.estado}
+                  onChange={handleChangeSucursal}
+                  required
+                >
+                  <option value="">Seleccione un estado</option>
+                  <option value="Abierta">Abierta</option>
+                  <option value="Cerrada">Cerrada</option>
+                  <option value="Mantencion">Mantencion</option>
+                  <option value="Eliminada">Eliminada</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
+          <Row>
+            <Form.Group className="mb-3">
+              <Form.Label>Dirección</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Ingrese dirección de la sucursal"
+                name="direccion"
+                value={datosSucursal.direccion}
+                onChange={handleChangeSucursal}
+                required
+              />
+            </Form.Group>
+          </Row>
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Nombre Bodega Principal</Form.Label>
                 <Form.Control
-                  type="tel"
-                  placeholder="Ingrese telefono"
-                  name="telefono"
-                  value={datos.telefono}
-                  onChange={handleChange}
+                  type="text"
+                  placeholder="Ingrese nombre"
+                  name="nombre"
+                  value={datosBodega.nombre}
+                  onChange={handleChangeBodega}
+                  required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Capacidad Bodega (m²)</Form.Label>
+                <Form.Control
+                  type="number"
+                  min={0}
+                  max={10000}
+                  placeholder="Ingrese capacidad"
+                  name="capacidad"
+                  value={datosBodega.capacidad}
+                  onChange={handleChangeBodega}
                   required
                 />
               </Form.Group>
@@ -150,34 +229,22 @@ export default function AgregarSucursal({
           </Row>
           <Row>
             <Form.Group className="mb-3">
-              <Form.Label>Ubicación *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Ingrese ubicación de la sucursal"
-                name="ubicacion"
-                value={datos.ubicacion}
-                onChange={handleChange}
+              <Form.Label>Estado Bodega</Form.Label>
+              <Form.Select
+                as="select"
+                name="estado"
+                value={datosBodega.estado}
+                onChange={handleChangeBodega}
                 required
-              />
+              >
+                <option value="">Seleccione un estado</option>
+                <option value="En Funcionamiento">En Funcionamiento</option>
+                <option value="En Mantenimiento">En Mantenimiento</option>
+                <option value="Fuera de Servicio">Fuera de Servicio</option>
+                <option value="Eliminado">Eliminado</option>
+              </Form.Select>
             </Form.Group>
           </Row>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Estado *</Form.Label>
-            <Form.Control
-              as="select"
-              name="estado"
-              value={datos.estado}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccione un estado</option>
-              <option value="Abierta">Abierta</option>
-              <option value="Cerrada">Cerrada</option>
-              <option value="Mantencion">Mantencion</option>
-              <option value="Eliminada">Eliminada</option>
-            </Form.Control>
-          </Form.Group>
         </Form>
       </Modal.Body>
 

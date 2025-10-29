@@ -13,7 +13,11 @@ export default async function inicioSesion(email, password) {
       },
       { withCredentials: true }
     );
-    if (!response.data) {
+    if (
+      !response.data ||
+      response.data === null ||
+      response.data === undefined
+    ) {
       return "No se recibió respuesta del servidor";
     }
     return response.data;
@@ -28,7 +32,7 @@ export async function finSesion() {
     const response = await axios.post(`${API_URL}/logout`, null, {
       withCredentials: true,
     });
-    console.log("Respuesta logout", response);
+    //console.log("Respuesta logout", response);
     if (!response.data) {
       return "No se recibió respuesta del servidor";
     }
@@ -48,7 +52,7 @@ export async function miEstado() {
     if (!response) {
       return "No se recibió respuesta del servidor";
     }
-    console.log("Respuesta verificación token:", response);
+    //console.log("Respuesta verificación token:", response);
     return response;
   } catch (error) {
     console.log(error);

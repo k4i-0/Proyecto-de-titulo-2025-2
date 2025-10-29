@@ -1,22 +1,64 @@
 const Sucursal = require("../../models/inventario/Sucursal");
+const Funcionario = require("../../models/Usuarios/Funcionario");
+const Bodega = require("../../models/inventario/Bodega");
 const { Op } = require("sequelize");
 
 const { crearBitacora } = require("../../services/bitacora.service");
 const jwt = require("jsonwebtoken");
 
 exports.createSucursal = async (req, res) => {
-  const { idSucursal, nombre, ubicacion, telefono, estado } = req.body;
-  if (!nombre || !ubicacion || !telefono || !estado) {
-    return res.status(400).json({ error: "Faltan datos obligatorios" });
+  const { nombre, direccion, estado } = req.body;
+
+  const { token } = req.cookies;
+  //return res.status(201).send("prueba");
+  if (!nombre || !direccion || !estado) {
+    return res.status(422).json({ error: "Faltan datos obligatorios" });
   }
+  if (!token) {
+    return res.status(498).json({ error: "Token no proporcionado" });
+  }
+
+  const userData = jwt.verify(token, process.env.JWT_SECRET);
+  if (!userData || userData == undefined || userData == null) {
+    return res.status(498).json({ error: "Token inválido" });
+  }
+
+  const usuarioCreador = await Funcionario.findOne({
+    where: { email: userData.email },
+  });
+  if (!usuarioCreador) {
+    return res.status(404).json({ error: "Usuario creador no encontrado" });
+  }
+
+  const SucursalExistente = await Sucursal.findOne({
+    order: [["createdAt", "DESC"]],
+  });
+
+  //console.log("Sucursal existente:", SucursalExistente);
+
+  // Generar nuevo ID basado en la hora actual si no existe una sucursal
+  let fechaHora = new Date();
+  var nuevoId = parseInt(
+    fechaHora.getHours().toString() +
+      fechaHora.getMinutes().toString() +
+      fechaHora.getSeconds().toString()
+  );
+
+  if (SucursalExistente) {
+    if (SucursalExistente.idSucursal == nuevoId) {
+      // Si el ID generado ya existe, incrementar en 1
+      nuevoId = nuevoId + 1;
+    }
+  }
+
   //Validacion de datos con Joi
   try {
     const nuevaSucursal = await Sucursal.create({
-      idSucursal,
+      idSucursal: nuevoId,
       nombre,
-      ubicacion,
-      telefono,
+      direccion,
       estado,
+      idFuncionario: usuarioCreador.dataValues.idFuncionario,
     });
     await crearBitacora({
       nombre: `crear Sucursal ${nombre}`,
@@ -50,18 +92,13 @@ exports.createSucursal = async (req, res) => {
 // Obtener todos las sucursales
 exports.getAllSucursal = async (req, res) => {
   try {
-    const sucursales = await Sucursal.findAll({
-      where: {
-        estado: {
-          [Op.ne]: "Eliminada",
-        },
-      },
-    });
+    const sucursales = await Sucursal.findAll({});
     if (sucursales.length === 0 || !sucursales) {
-      return res.status(404).json({ error: "No hay sucursales disponibles" });
+      return res.status(204).json({ error: "No hay sucursales disponibles" });
     }
     res.status(200).json(sucursales);
   } catch (error) {
+    console.error("Error al obtener las sucursales:", error);
     res.status(500).json({ error: "Error al obtener las sucursales" });
   }
 };
@@ -95,7 +132,7 @@ exports.getSucursalById = async (req, res) => {
 // Actualizar una sucursal por ID
 exports.updateSucursal = async (req, res) => {
   try {
-    const { nombre, ubicacion, telefono, estado } = req.body;
+    const { nombre, direccion, estado } = req.body;
     const busquedaSucursal = await Sucursal.findByPk(req.params.id);
     if (!busquedaSucursal) {
       return res.status(404).json({ error: "Sucursal no encontrada" });
@@ -103,8 +140,8 @@ exports.updateSucursal = async (req, res) => {
     const respuesta = await Sucursal.update(
       {
         nombre,
-        ubicacion,
-        telefono,
+        direccion,
+
         estado,
       },
       {
@@ -148,10 +185,10 @@ exports.deleteSucursal = async (req, res) => {
     if (!req.params.id) {
       return res.status(400).json({ error: "ID de sucursal es obligatorio" });
     }
-    const busquedaSucursal = await Sucursal.findByPk(req.params.id);
+    const busquedaSucursal = await Sucursal.destroy({
+      where: { idSucursal: req.params.id },
+    });
     if (busquedaSucursal) {
-      busquedaSucursal.estado = "Eliminada";
-      await busquedaSucursal.save();
       await crearBitacora({
         nombre: `eliminación de Sucursal ID: ${req.params.id}`,
         fechaCreacion: new Date(),
