@@ -163,7 +163,10 @@ export default function Sucursal() {
         <tbody>
           {sucursales.length > 0 ? (
             sucursales.map((sucursal) => (
-              <tr key={sucursal.idSucursal}>
+              <tr
+                key={sucursal.idSucursal}
+                onClick={() => handleVer(sucursal.idSucursal)}
+              >
                 <td>{sucursal.idSucursal}</td>
                 <td>{sucursal.nombre}</td>
                 <td>{sucursal.direccion}</td>
@@ -186,14 +189,14 @@ export default function Sucursal() {
                   >
                     Eliminar
                   </Button>
-                  <Button
+                  {/* <Button
                     variant="info"
                     onClick={() => handleVer(sucursal.idSucursal)}
                     disabled={loading}
                     style={{ margin: "5px" }}
                   >
                     Bodegas
-                  </Button>
+                  </Button> */}
                 </td>
               </tr>
             ))
@@ -222,6 +225,7 @@ export default function Sucursal() {
         show={modalBodegaVer}
         handleClose={handleCerrarModal}
         bodega={bodegaSelect}
+        buscarSucursales={buscarSucursales}
       />
     </Container>
   );

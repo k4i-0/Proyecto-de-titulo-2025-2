@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import inicioSesion from "../services/Auth.services";
@@ -9,12 +9,9 @@ const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
 
 const Login = () => {
-  // const [email, setEmail] = useState("");
-  // const [password, setPassword] = useState("");
+  const [flag, setFlag] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
 
-  // const [isFullscreen, setIsFullscreen] = useState(false);
-  //const [autoAttempted, setAutoAttempted] = useState(false);
-  //
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
 
@@ -25,59 +22,27 @@ const Login = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // useEffect(() => {
-  //   const handleFullscreenChange = () => {
-  //     setIsFullscreen(!!document.fullscreenElement);
-  //   };
+  useEffect(() => {
+    if (showAlert) {
+      const timer = setTimeout(() => {
+        setShowAlert(false);
+      }, 3000);
 
-  //   document.addEventListener("fullscreenchange", handleFullscreenChange);
-  //   document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
-
-  //   return () => {
-  //     document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  //     document.removeEventListener(
-  //       "webkitfullscreenchange",
-  //       handleFullscreenChange
-  //     );
-  //   };
-  // }, []);
-
-  // const enterFullscreen = () => {
-  //   const elem = document.documentElement;
-
-  //   if (elem.requestFullscreen) {
-  //     elem.requestFullscreen().catch((err) => {
-  //       console.log("Error al activar pantalla completa:", err);
-  //     });
-  //   } else if (elem.webkitRequestFullscreen) {
-  //     elem.webkitRequestFullscreen();
-  //   } else if (elem.msRequestFullscreen) {
-  //     elem.msRequestFullscreen();
-  //   }
-
-  //   setIsFullscreen(true);
-  // };
-
-  // const handleFirstClick = () => {
-  //   if (!autoAttempted) {
-  //     enterFullscreen();
-  //     setAutoAttempted(true);
-  //   }
-  //   if (document.fullscreenElement == null) setAutoAttempted(false);
-  //   console.log(document.fullscreenElement);
-  // };
+      return () => clearTimeout(timer);
+    }
+  }, [showAlert]);
 
   const onFinishFailed = (errorInfo) => {
     console.log("Falló:", errorInfo);
   };
 
   const handleSubmit = async (values) => {
-    //values.preventDefault();
-    //llamada backend para autenticar
     const usuario = await inicioSesion(values.email, values.password);
     console.log("Usuario dentro de login", usuario);
     if (usuario.code) {
-      alert(usuario.message);
+      setShowAlert(true);
+      setFlag(usuario.message);
+      //alert(usuario.message);
       return;
     }
     //console.log(usuario.token.token);
@@ -88,18 +53,6 @@ const Login = () => {
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <Header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          background: "#fff",
-          borderBottom: "1px solid #f0f0f0",
-        }}
-      >
-        <Title level={3} style={{ margin: 0, color: "#001529" }}>
-          Mi Aplicación
-        </Title>
-      </Header>
       <Content
         style={{
           display: "flex",
@@ -122,12 +75,12 @@ const Login = () => {
           >
             Iniciar Sesión
           </Title>
-          <Alert
-            message="Usuario o contraseña incorrectos"
-            type="error"
-            showIcon
-            style={{ marginBottom: 24 }}
-          />
+          {showAlert && (
+            <div>
+              <Alert message={flag} type="error" showIcon />
+            </div>
+          )}
+
           <Form
             onFinish={handleSubmit}
             onFinishFailed={onFinishFailed}

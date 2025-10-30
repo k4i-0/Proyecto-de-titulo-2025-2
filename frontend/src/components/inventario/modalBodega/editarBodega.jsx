@@ -9,9 +9,9 @@ export default function EditarBodega({
   handleClose,
   buscarBodegas,
 }) {
+  console.log("Bodega a editar:", bodegas?.capacidad);
   const [formData, setFormData] = useState({
     nombre: "",
-    ubicacion: "",
     capacidad: "",
     estado: "",
     idSucursal: "",
@@ -23,9 +23,9 @@ export default function EditarBodega({
     if (bodegas) {
       setFormData({
         nombre: bodegas.nombre || "",
-        ubicacion: bodegas.ubicacion || "",
         capacidad: bodegas.capacidad || "",
         estado: bodegas.estado || "",
+        idSucursal: bodegas.idSucursal || "",
       });
     }
     setError("");
@@ -66,20 +66,11 @@ export default function EditarBodega({
   return (
     <Modal show={show} onHide={handleCerrar}>
       <Modal.Header closeButton>
-        <Modal.Title>Editar Bodega {bodegas?.nombre}</Modal.Title>
+        <Modal.Title>Editar Bodega {bodegas?.idBodega}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {error && <Alert variant="danger">{error}</Alert>}
         <Form onSubmit={handleSubmitEdicion}>
-          <Form.Group controlId="formIdBodega">
-            <Form.Label>ID Bodega</Form.Label>
-            <Form.Control
-              type="text"
-              name="idBodega"
-              value={bodegas ? bodegas.idBodega : ""}
-              readOnly
-            />
-          </Form.Group>
           <Form.Group controlId="formNombre">
             <Form.Label>Nombre</Form.Label>
             <Form.Control
@@ -90,21 +81,13 @@ export default function EditarBodega({
               required
             />
           </Form.Group>
-          <Form.Group controlId="formUbicacion">
-            <Form.Label>Ubicación</Form.Label>
-            <Form.Control
-              type="text"
-              name="ubicacion"
-              value={formData.ubicacion}
-              onChange={handleChangeLocal}
-              required
-            />
-          </Form.Group>
           <Form.Group controlId="formCapacidad">
             <Form.Label>Capacidad</Form.Label>
             <Form.Control
               type="number"
               name="capacidad"
+              min={0}
+              max={10000}
               value={formData.capacidad}
               onChange={handleChangeLocal}
               required

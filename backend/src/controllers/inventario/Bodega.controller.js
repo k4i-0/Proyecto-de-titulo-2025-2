@@ -3,6 +3,7 @@ const { Op, where } = require("sequelize");
 
 const { crearBitacora } = require("../../services/bitacora.service");
 const jwt = require("jsonwebtoken");
+const bodega = require("../../models/inventario/Bodega");
 
 exports.createBodega = async (req, res) => {
   const { nombre, capacidad, estado, idSucursal } = req.body;
@@ -142,25 +143,27 @@ exports.getBodegaPorSucursal = async (req, res) => {
 // Actualizar una bodega por ID
 exports.updateBodega = async (req, res) => {
   try {
-    const { nombre, ubicacion, capacidad, estado } = req.body;
+    const { nombre, capacidad, estado, idSucursal } = req.body;
     console.log("Datos recibidos para actualizar:", req.body, req.params.id);
-    if (!nombre || !ubicacion || !capacidad || !estado) {
+    if (!nombre || !capacidad || !estado || !idSucursal) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
     }
     if (!req.params.id || req.params.id === null) {
       return res.status(422).json({ error: "Revise ID de bodega" });
     }
     const busquedaBodega = await Bodega.findByPk(req.params.id);
-    if (!busquedaBodega) {
+    if (
+      !busquedaBodega ||
+      busquedaBodega.dataValues.idSucursal !== idSucursal
+    ) {
       return res.status(422).json({ error: "Bodega no encontrada" });
     }
     await Bodega.update(
       {
         nombre,
-        ubicacion,
         capacidad,
         estado,
-        idSucursal: busquedaBodega.dataValues.idSucursal,
+        idSucursal: idSucursal,
       },
       {
         where: { idBodega: req.params.id },

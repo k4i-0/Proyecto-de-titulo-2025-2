@@ -1,36 +1,26 @@
 import { useEffect, useState } from "react";
 import { Modal, Button, Table, Spinner, Alert } from "react-bootstrap";
 
-// const obtenerBodegasPorSucursal = async (idSucursal) => {
-//   return new Promise((resolve) => {
-//     setTimeout(() => {
-//       // Simula que la sucursal con ID 1 tiene bodegas
-//       if (idSucursal === 1) {
-//         resolve({
-//           status: 200,
-//           data: [
-//             { idBodega: 101, nombre: "Bodega Principal", capacidad: 1000 },
-//             { idBodega: 102, nombre: "Bodega Refrigerados", capacidad: 500 },
-//           ],
-//         });
-//       } else {
-//         // Simula que otras sucursales no tienen
-//         resolve({ status: 204 });
-//       }
-//     }, 1200); // Simula 1.2s de carga
-//   });
-// };
-
 import { obtenerBodegasPorSucursal } from "../../../services/inventario/Bodega.service";
+import EditarBodega from "../modalBodega/editarBodega";
+import CrearBodega from "../modalBodega/crearBodega";
+import eliminarBodega from "../../../services/inventario/Bodega.service";
 
-export default function VerBodegas({ show, handleClose, bodega }) {
-  // 'bodega' es el prop que contiene el 'idSucursal'
+export default function VerBodegas({
+  show,
+  handleClose,
+  bodega,
+  buscarSucursales,
+}) {
   const idSucursal = bodega;
 
   const [listaBodegas, setListaBodegas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState(false);
+  const [modalEditar, setModalEditar] = useState(false);
+  const [bodegaSelect, setBodegaSelect] = useState(null);
+  const [modalCrear, setModalCrear] = useState(false);
 
   useEffect(() => {
     if (show && idSucursal) {
@@ -42,7 +32,7 @@ export default function VerBodegas({ show, handleClose, bodega }) {
 
         try {
           const respuesta = await obtenerBodegasPorSucursal(idSucursal);
-
+          console.log("Respuesta bodegas por sucursal:", respuesta);
           if (respuesta.status === 200) {
             setListaBodegas(respuesta.data);
           } else if (respuesta.status === 204) {
@@ -65,6 +55,47 @@ export default function VerBodegas({ show, handleClose, bodega }) {
     }
   }, [show, idSucursal]);
 
+  const handleCrear = () => {
+    setError(false);
+    setMensaje("");
+    setModalCrear(true);
+  };
+
+  const handleEditar = (b) => {
+    setError(false);
+    setBodegaSelect(b);
+    setMensaje("");
+    setModalEditar(true);
+  };
+  const handleCerrarModal = () => {
+    setModalEditar(false);
+    setBodegaSelect(null);
+    setModalCrear(false);
+  };
+
+  const handleEliminar = async (id) => {
+    setLoading(true);
+    setError(false);
+    setMensaje("");
+    try {
+      const respuesta = await eliminarBodega(id);
+      if (respuesta.status === 200) {
+        setMensaje("Bodega eliminada exitosamente");
+        setError(false);
+        await buscarSucursales();
+      } else {
+        setError(true);
+        setMensaje(respuesta.error || "Error al eliminar la bodega.");
+      }
+    } catch (error) {
+      setError(true);
+      setMensaje("Error de conexión al eliminar la bodega.");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderContenido = () => {
     if (loading) {
       return (
@@ -83,24 +114,53 @@ export default function VerBodegas({ show, handleClose, bodega }) {
 
     if (listaBodegas.length > 0) {
       return (
-        <Table striped bordered hover responsive>
-          <thead className="text-center">
-            <tr>
-              <th>ID Bodega</th>
-              <th>Nombre</th>
-              <th>Capacidad</th>
-            </tr>
-          </thead>
-          <tbody className="text-center">
-            {listaBodegas.map((b) => (
-              <tr key={b.idBodega}>
-                <td>{b.idBodega}</td>
-                <td>{b.nombre}</td>
-                <td>{b.capacidad} m³</td>
+        <div>
+          <Button variant="info" onClick={() => handleCrear()}>
+            Crear
+          </Button>
+
+          <Table striped bordered hover responsive>
+            <thead className="text-center">
+              <tr>
+                <th>ID Bodega</th>
+                <th>Nombre</th>
+                <th>Capacidad m²</th>
+                <th>Estado</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody className="text-center">
+              {listaBodegas.map((b) => (
+                <tr key={b.idBodega} onClick={() => handleEditar(b)}>
+                  <td>{b.idBodega}</td>
+                  <td>{b.nombre}</td>
+                  <td>{b.capacidad}</td>
+                  <td>{b.estado}</td>
+                  <td>
+                    <Button
+                      variant="info"
+                      onClick={() => handleEliminar(b.idBodega)}
+                    >
+                      Eliminar
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+          <CrearBodega
+            show={modalCrear}
+            handleClose={handleCerrarModal}
+            buscarBodegas={buscarSucursales}
+            idSucursal={idSucursal}
+          />
+          <EditarBodega
+            show={modalEditar}
+            bodegas={bodegaSelect}
+            handleClose={handleCerrarModal}
+            buscarBodegas={buscarSucursales}
+          />
+        </div>
       );
     }
 

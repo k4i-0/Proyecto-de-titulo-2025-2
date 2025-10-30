@@ -1,42 +1,45 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Row, Col, Button, Form, Modal, Alert, Spinner } from "react-bootstrap";
 
 import { crearBodega } from "../../../services/inventario/Bodega.service";
-import obtenerSucursales from "../../../services/inventario/Sucursal.service";
-export default function AgregarBodega({ show, handleClose, buscarBodegas }) {
+// import obtenerSucursales from "../../../services/inventario/Sucursal.service";
+export default function AgregarBodega({
+  show,
+  handleClose,
+  buscarBodegas,
+  idSucursal,
+}) {
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState(false);
-  const [sucursales, setSucursales] = useState([]);
 
   const [datos, setDatos] = useState({
     nombre: "",
-    ubicacion: "",
     capacidad: "",
     estado: "",
-    idSucursal: "",
+    idSucursal: idSucursal || "",
   });
 
-  const buscarSucursales = async () => {
-    try {
-      const respuesta = await obtenerSucursales();
+  // const buscarSucursales = async () => {
+  //   try {
+  //     const respuesta = await obtenerSucursales();
 
-      if (respuesta.code) {
-        setError(true);
-        setMensaje(respuesta.error);
-      } else {
-        setSucursales(respuesta);
-      }
-    } catch (error) {
-      setError(true);
-      setMensaje("Error al cargar sucursales");
-      console.error(error);
-    }
-  };
+  //     if (respuesta.code) {
+  //       setError(true);
+  //       setMensaje(respuesta.error);
+  //     } else {
+  //       setSucursales(respuesta);
+  //     }
+  //   } catch (error) {
+  //     setError(true);
+  //     setMensaje("Error al cargar sucursales");
+  //     console.error(error);
+  //   }
+  // };
 
-  useEffect(() => {
-    if (show) buscarSucursales();
-  }, [show]);
+  // useEffect(() => {
+  //   if (show) buscarSucursales();
+  // }, [show]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -174,19 +177,6 @@ export default function AgregarBodega({ show, handleClose, buscarBodegas }) {
               </Form.Group>
             </Col>
           </Row>
-          <Row>
-            <Form.Group className="mb-3">
-              <Form.Label>Ubicación *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Ingrese ubicación de la bodega"
-                name="ubicacion"
-                value={datos.ubicacion}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
-          </Row>
 
           <Form.Group className="mb-3">
             <Form.Label>Estado *</Form.Label>
@@ -207,20 +197,12 @@ export default function AgregarBodega({ show, handleClose, buscarBodegas }) {
           <Form.Group className="mb-3">
             <Form.Label>Sucursales *</Form.Label>
             <Form.Control
-              as="select"
+              type="text"
               name="idSucursal"
+              placeholder={idSucursal}
               value={datos.idSucursal}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccione una sucursal</option>
-              {sucursales.length > 0 &&
-                sucursales.map((sucursal) => (
-                  <option key={sucursal.idSucursal} value={sucursal.idSucursal}>
-                    {sucursal.nombre}
-                  </option>
-                ))}
-            </Form.Control>
+              disabled={idSucursal}
+            ></Form.Control>
           </Form.Group>
         </Form>
       </Modal.Body>
