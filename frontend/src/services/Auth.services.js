@@ -55,7 +55,7 @@ export async function miEstado() {
     //console.log("Respuesta verificación token:", response);
     return response;
   } catch (error) {
-    console.log(error);
+    console.log("Error en miEstado:", error);
     return error.response;
   }
 }

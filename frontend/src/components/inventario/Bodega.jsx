@@ -28,6 +28,7 @@ export default function Bodega() {
 
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
+
   //const [modalEliminar, setModalEliminar] = useState(false);
   const buscarBodegas = async () => {
     try {

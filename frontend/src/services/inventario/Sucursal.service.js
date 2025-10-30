@@ -11,7 +11,7 @@ export default async function obtenerSucursales() {
     //console.log("Sucursales obtenidas:", response.status);
     return response;
   } catch (error) {
-    console.error("Error al obtener sucursales:", error.response.data.error);
+    console.error("Error al obtener sucursales:", error.response);
     return error.response.data;
   }
 }
@@ -24,7 +24,7 @@ export async function crearSucursal(datos) {
     //console.log("Sucursales creadas:", response);
     return response;
   } catch (error) {
-    console.error("Error al crear sucursales:", error.response.data.error);
+    console.error("Error al crear sucursales:", error.response);
     return error.response.data;
   }
 }

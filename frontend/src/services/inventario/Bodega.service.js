@@ -66,3 +66,22 @@ export async function eliminarBodega(id) {
     return error.response.data;
   }
 }
+
+export async function obtenerBodegasPorSucursal(idSucursal) {
+  try {
+    const response = await axios.get(`${API_URL}/buscar/${idSucursal}`, {
+      withCredentials: true,
+    });
+    //console.log("bodegas obtenidas por sucursal:", response);
+    return response;
+  } catch (error) {
+    console.error(
+      "Error al obtener bodegas por sucursal:",
+      error.response.data.error
+    );
+    if (error.response.data.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response.data;
+  }
+}

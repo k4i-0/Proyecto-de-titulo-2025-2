@@ -9,7 +9,10 @@ router.post(
   /*authMiddleware, roleMiddleware(['admin']),*/ bodegaController.createBodega
 );
 router.get("/buscar", /*authMiddleware,*/ bodegaController.getAllBodega);
-router.get("/buscar/:id", /*authMiddleware,*/ bodegaController.getBodegaById);
+router.get(
+  "/buscar/:id",
+  /*authMiddleware,*/ bodegaController.getBodegaPorSucursal
+);
 router.put(
   "/actualizar/:id",
   /*authMiddleware, roleMiddleware(['admin']),*/ bodegaController.updateBodega

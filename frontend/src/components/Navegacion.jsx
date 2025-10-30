@@ -10,7 +10,7 @@ import {
 } from "react-bootstrap";
 
 export default function Navegacion({ nombreRol, onLogout, onCambiarVista }) {
-  console.log("Usuario en Navegacion:", nombreRol);
+  //console.log("Usuario en Navegacion:", nombreRol);
   return (
     <Navbar
       className="justify-content-center"

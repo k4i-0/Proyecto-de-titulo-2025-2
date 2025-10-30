@@ -71,66 +71,60 @@ export default function EditarSucursal({
     handleClose();
   };
   return (
-    console.log("Modal editar sucursal renderizado"),
-    (
-      <Modal show={show} onHide={handleCerrar}>
-        <Modal.Header closeButton onClick={handleCerrar}>
-          <Modal.Title>Editar Sucursal {sucursal?.idSucursal}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {error && <Alert variant="danger">{error}</Alert>}
-          <Form onSubmit={handleSubmitEdicion}>
-            <Form.Group controlId="formNombre">
-              <Form.Label>Nombre</Form.Label>
-              <Form.Control
-                type="text"
-                name="nombre"
-                value={formData.nombre}
-                onChange={handleChangeLocal}
-                required
-              />
-            </Form.Group>
-            <Form.Group controlId="formUbicacion">
-              <Form.Label>Direccion</Form.Label>
-              <Form.Control
-                type="text"
-                name="direccion"
-                value={formData.direccion}
-                onChange={handleChangeLocal}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Estado *</Form.Label>
-              <Form.Control
-                as="select"
-                name="estado"
-                value={formData.estado}
-                onChange={handleChangeLocal}
-                required
-              >
-                <option value="">Seleccione un estado</option>
-                <option value="Abierta">Abierta</option>
-                <option value="Cerrada">Cerrada</option>
-                <option value="Mantencion">Mantencion</option>
-                <option value="Eliminada">Eliminada</option>
-              </Form.Control>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCerrar}>
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            disabled={loading}
-            onClick={handleSubmitEdicion}
-          >
-            {loading ? "Guardando..." : "Guardar cambios"}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    )
+    //console.log("Modal editar sucursal renderizado"),
+    <Modal show={show} onHide={handleCerrar}>
+      <Modal.Header closeButton onClick={handleCerrar}>
+        <Modal.Title>Editar Sucursal {sucursal?.idSucursal}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {error && <Alert variant="danger">{error}</Alert>}
+        <Form onSubmit={handleSubmitEdicion}>
+          <Form.Group controlId="formNombre">
+            <Form.Label>Nombre</Form.Label>
+            <Form.Control
+              type="text"
+              name="nombre"
+              value={formData.nombre}
+              onChange={handleChangeLocal}
+              required
+            />
+          </Form.Group>
+          <Form.Group controlId="formUbicacion">
+            <Form.Label>Direccion</Form.Label>
+            <Form.Control
+              type="text"
+              name="direccion"
+              value={formData.direccion}
+              onChange={handleChangeLocal}
+              required
+            />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Estado *</Form.Label>
+            <Form.Control
+              as="select"
+              name="estado"
+              value={formData.estado}
+              onChange={handleChangeLocal}
+              required
+            >
+              <option value="">Seleccione un estado</option>
+              <option value="Abierta">Abierta</option>
+              <option value="Cerrada">Cerrada</option>
+              <option value="Mantencion">Mantencion</option>
+              <option value="Eliminada">Eliminada</option>
+            </Form.Control>
+          </Form.Group>
+        </Form>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={handleCerrar}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={loading} onClick={handleSubmitEdicion}>
+          {loading ? "Guardando..." : "Guardar cambios"}
+        </Button>
+      </Modal.Footer>
+    </Modal>
   );
 }

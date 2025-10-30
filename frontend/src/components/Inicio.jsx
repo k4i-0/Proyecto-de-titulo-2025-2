@@ -11,7 +11,7 @@ export default function Inicio({ nombreRol, onCambiarVista }) {
   useEffect(() => {
     const consultaSucursal = async () => {
       const respuesta = await obtenerSucursales();
-      console.log(respuesta);
+      //console.log(respuesta);
       if (respuesta.status === 200) {
         setFlag(false);
         setMensaje("");

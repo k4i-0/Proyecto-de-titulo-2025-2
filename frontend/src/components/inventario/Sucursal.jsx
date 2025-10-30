@@ -6,7 +6,8 @@ import {
   Button,
   ButtonGroup,
   Alert,
-  Card,
+  ToggleButtonGroup,
+  ToggleButton,
   Table,
 } from "react-bootstrap";
 
@@ -17,6 +18,8 @@ import obtenerSucursales, {
   eliminarSucursal,
 } from "../../services/inventario/Sucursal.service";
 
+import VerBodegas from "./modalBodega/verBodegas";
+
 export default function Sucursal() {
   const [sucursales, setSucursales] = useState([]);
   const [error, setError] = useState(false);
@@ -24,9 +27,11 @@ export default function Sucursal() {
   const [loading, setLoading] = useState(false);
 
   const [sucursalSelect, setSucursalSelect] = useState(null);
+  const [bodegaSelect, setBodegaSelect] = useState(null);
 
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
+  const [modalBodegaVer, setModalBodegaVer] = useState(false);
 
   const buscarSucursales = async () => {
     try {
@@ -34,7 +39,7 @@ export default function Sucursal() {
       setError(false);
       setMensaje("");
       const respuesta = await obtenerSucursales();
-      console.log("Respuesta sucursales:", respuesta.data[0]);
+      //console.log("Respuesta sucursales:", respuesta.data[0]);
       if (respuesta.status == 204) {
         setError(true);
         setMensaje(
@@ -63,6 +68,7 @@ export default function Sucursal() {
   const handleCerrarModal = () => {
     setModalCrear(false);
     setModalEditar(false);
+    setModalBodegaVer(false);
     setSucursalSelect(null);
     // setDatos({ nombre: "", descripcion: "", estado: "" });
   };
@@ -101,6 +107,11 @@ export default function Sucursal() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVer = (bodega) => {
+    setBodegaSelect(bodega);
+    setModalBodegaVer(true);
   };
   return (
     <Container style={{ marginTop: "30px" }}>
@@ -147,8 +158,6 @@ export default function Sucursal() {
             <th>Estado</th>
 
             <th>Acciones</th>
-            <th>Acciones</th>
-            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -165,26 +174,25 @@ export default function Sucursal() {
                     variant="warning"
                     onClick={() => handleEditar(sucursal)}
                     disabled={loading}
+                    style={{ margin: "5px" }}
                   >
-                    Modificar
+                    Editar
                   </Button>
-                </td>
-                <td>
                   <Button
                     variant="danger"
                     onClick={() => handleEliminar(sucursal.idSucursal)}
                     disabled={loading}
+                    style={{ margin: "5px" }}
                   >
                     Eliminar
                   </Button>
-                </td>
-                <td>
                   <Button
                     variant="info"
-                    onClick={() => handleEliminar(sucursal.idSucursal)}
+                    onClick={() => handleVer(sucursal.idSucursal)}
                     disabled={loading}
+                    style={{ margin: "5px" }}
                   >
-                    Ver Detalle Bodegas
+                    Bodegas
                   </Button>
                 </td>
               </tr>
@@ -210,8 +218,11 @@ export default function Sucursal() {
         sucursal={sucursalSelect}
         funcionBuscarSucursales={buscarSucursales}
       />
-
-      {/** modal  para ver bodegas */}
+      <VerBodegas
+        show={modalBodegaVer}
+        handleClose={handleCerrarModal}
+        bodega={bodegaSelect}
+      />
     </Container>
   );
 }

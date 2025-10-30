@@ -21,8 +21,8 @@ const ProtectedRoute = ({
   } else {
     miEstado().then((estado) => {
       //console.log("Usuario actual:", user.nombreRol);
-      console.log("Usuario estado llamada:", estado.data.payload.role);
-      if (estado.status == 401) {
+      //console.log("Usuario estado llamada:", estado.data.payload.role);
+      if (estado.status == 401 || estado.status == 498) {
         // Si el estado es 401, redirigir al usuario a la página de inicio de sesión
         logout();
         return <Navigate to="/" replace />;

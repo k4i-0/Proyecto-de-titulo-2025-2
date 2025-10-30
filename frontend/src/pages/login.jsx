@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import inicioSesion from "../services/Auth.services";
-import { Form, Button, Container, Alert, Stack } from "react-bootstrap";
+import { UserOutlined, LockOutlined, GoogleOutlined } from "@ant-design/icons";
+import { Layout, Form, Input, Button, Card, Typography, Alert } from "antd";
+
+const { Header, Content, Footer } = Layout;
+const { Title } = Typography;
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  //
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  // const [email, setEmail] = useState("");
+  // const [password, setPassword] = useState("");
+
+  // const [isFullscreen, setIsFullscreen] = useState(false);
   //const [autoAttempted, setAutoAttempted] = useState(false);
   //
   const navigate = useNavigate();
@@ -21,22 +25,22 @@ const Login = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
+  // useEffect(() => {
+  //   const handleFullscreenChange = () => {
+  //     setIsFullscreen(!!document.fullscreenElement);
+  //   };
 
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+  //   document.addEventListener("fullscreenchange", handleFullscreenChange);
+  //   document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
 
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      document.removeEventListener(
-        "webkitfullscreenchange",
-        handleFullscreenChange
-      );
-    };
-  }, []);
+  //   return () => {
+  //     document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  //     document.removeEventListener(
+  //       "webkitfullscreenchange",
+  //       handleFullscreenChange
+  //     );
+  //   };
+  // }, []);
 
   // const enterFullscreen = () => {
   //   const elem = document.documentElement;
@@ -63,66 +67,121 @@ const Login = () => {
   //   console.log(document.fullscreenElement);
   // };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onFinishFailed = (errorInfo) => {
+    console.log("Falló:", errorInfo);
+  };
+
+  const handleSubmit = async (values) => {
+    //values.preventDefault();
     //llamada backend para autenticar
-    const usuario = await inicioSesion(email, password);
-    console.log("Usuario dentro de login", usuario.accessToken);
+    const usuario = await inicioSesion(values.email, values.password);
+    console.log("Usuario dentro de login", usuario);
     if (usuario.code) {
       alert(usuario.message);
       return;
     }
-    console.log(usuario.token.token);
+    //console.log(usuario.token.token);
     login(usuario.datos, usuario.token.token);
     // Redirigir a la página de inicio después del inicio de sesión
     navigate("/dashboard");
   };
 
   return (
-    <Container
-      className="d-flex justify-content-center align-items-center"
-      style={{ minHeight: "100vh" }}
-      //onClick={handleFirstClick}
-    >
-      <div style={{ width: "100%", maxWidth: "400px" }}>
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <h2 className="text-center mb-4">Login</h2>
-
-            <Form.Label htmlFor="email">Correo</Form.Label>
-            <Form.Control
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com"
-              className="mb-3"
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label htmlFor="password">Contraseña</Form.Label>
-            <Form.Control
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Ingresa tu contraseña"
-              className="w-100"
-            />
-          </Form.Group>
-
-          <Button variant="primary" type="submit" className="w-100 mb-3">
+    <Layout style={{ minHeight: "100vh" }}>
+      <Header
+        style={{
+          display: "flex",
+          alignItems: "center",
+          background: "#fff",
+          borderBottom: "1px solid #f0f0f0",
+        }}
+      >
+        <Title level={3} style={{ margin: 0, color: "#001529" }}>
+          Mi Aplicación
+        </Title>
+      </Header>
+      <Content
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: "48px 24px",
+          background: "#f0f2f5", // Un fondo gris claro
+        }}
+      >
+        <Card
+          style={{
+            width: 400,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            borderRadius: "8px",
+          }}
+        >
+          <Title
+            level={2}
+            style={{ textAlign: "center", marginBottom: "24px" }}
+          >
             Iniciar Sesión
-          </Button>
+          </Title>
+          <Alert
+            message="Usuario o contraseña incorrectos"
+            type="error"
+            showIcon
+            style={{ marginBottom: 24 }}
+          />
+          <Form
+            onFinish={handleSubmit}
+            onFinishFailed={onFinishFailed}
+            layout="vertical"
+            initialValues={{ remember: true }}
+            autoComplete="off"
+          >
+            <Form.Item
+              label="Correo"
+              name="email"
+              rules={[
+                { required: true, message: "¡Por favor ingresa tu correo!" },
+                { type: "email", message: "¡Ese no es un correo válido!" },
+              ]}
+            >
+              <Input
+                id="email"
+                //onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@email.com"
+                className="mb-3"
+              />
+            </Form.Item>
 
-          <p className="text-center mb-2">Presiona ESC para salir</p>
-          <Alert className="text-center text-muted small">
-            Pantalla Completa: {isFullscreen ? "✓ Activo" : "✗ Inactivo"}
-          </Alert>
-        </Form>
-      </div>
-    </Container>
+            <Form.Item
+              label="Contraseña"
+              name="password"
+              rules={[
+                {
+                  required: true,
+                  message: "¡Por favor ingresa tu contraseña!",
+                },
+              ]}
+            >
+              <Input.Password
+                id="password"
+                //onChange={(e) => setPassword(e.target.value)}
+                placeholder="Ingresa tu contraseña"
+                className="w-100"
+              />
+            </Form.Item>
+            <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+              <Button type="primary" htmlType="submit">
+                Iniciar Sesión
+              </Button>
+            </Form.Item>
+
+            {/* <p className="text-center mb-2">Presiona ESC para salir</p>
+        <Alert className="text-center text-muted small">
+          Pantalla Completa: {isFullscreen ? "✓ Activo" : "✗ Inactivo"}
+        </Alert> */}
+          </Form>
+        </Card>
+      </Content>
+    </Layout>
   );
 };
 

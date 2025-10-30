@@ -1,5 +1,5 @@
 const Bodega = require("../../models/inventario/Bodega");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 
 const { crearBitacora } = require("../../services/bitacora.service");
 const jwt = require("jsonwebtoken");
@@ -100,9 +100,13 @@ exports.getAllBodega = async (req, res) => {
 };
 
 // Obtener un bodega por ID
-exports.getBodegaById = async (req, res) => {
+exports.getBodegaPorSucursal = async (req, res) => {
   try {
-    const bodega = await Bodega.findByPk(req.params.id);
+    const bodega = await Bodega.findAll({
+      where: {
+        idSucursal: req.params.id,
+      },
+    });
     if (bodega) {
       await crearBitacora({
         nombre: `consulta de bodega ID: ${req.params.id}`,

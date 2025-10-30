@@ -8,7 +8,7 @@ const { crearBitacora } = require("../services/bitacora.service");
 async function login(req, res) {
   const { email, password } = req.body;
   if (!email || !password) {
-    res.status(203).send({ message: "Faltan Datos" });
+    res.status(203).send({ code: 1238, message: "Faltan Datos" });
   }
   try {
     const funcionarioEncontrado = await Funcionario.findOne({
@@ -131,8 +131,11 @@ async function miEstado(req, res) {
       .status(200)
       .send({ message: "Token válido", payload: decodedPayload });
   } catch (error) {
+    console.log(error.message);
+    if (error.message === "jwt expired") {
+      return res.status(498).json({ message: "Token expirado" });
+    }
     return res.status(500).json({ message: "Error interno" });
-    console.log(error);
   }
 }
 

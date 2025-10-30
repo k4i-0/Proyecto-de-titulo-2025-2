@@ -44,13 +44,13 @@ export default function AgregarSucursal({
     setLoading(true);
     try {
       const resultado = await crearSucursal(datosSucursal);
-      console.log("Respuesta al crear", resultado);
+      //console.log("Respuesta al crear", resultado);
       if (resultado.status === 201) {
         const resultadoBodega = await crearBodega({
           ...datosBodega,
           idSucursal: resultado.data.idSucursal,
         });
-        console.log("Respuesta al crear bodega", resultadoBodega);
+        //console.log("Respuesta al crear bodega", resultadoBodega);
         if (resultadoBodega.status == 201) {
           setMensaje("Sucursal creada exitosamente");
           setError(false);
@@ -132,20 +132,20 @@ export default function AgregarSucursal({
       <Modal.Body>
         {mensaje && !loading && (
           <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              backgroundColor: "rgba(255, 255, 255, 0.85)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 10,
-              borderRadius: "var(--bs-modal-border-radius)",
-            }}
+          // style={{
+          //   position: "absolute",
+          //   top: 0,
+          //   left: 0,
+          //   width: "100%",
+          //   height: "100%",
+          //   backgroundColor: "rgba(255, 255, 255, 0.85)",
+          //   display: "flex",
+          //   flexDirection: "column",
+          //   alignItems: "center",
+          //   justifyContent: "center",
+          //   zIndex: 10,
+          //   borderRadius: "var(--bs-modal-border-radius)",
+          // }}
           >
             <Alert variant={error ? "danger" : "success"}>{mensaje}</Alert>
           </div>
