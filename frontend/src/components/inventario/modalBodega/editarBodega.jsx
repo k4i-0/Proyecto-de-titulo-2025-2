@@ -9,7 +9,7 @@ export default function EditarBodega({
   handleClose,
   buscarBodegas,
 }) {
-  console.log("Bodega a editar:", bodegas?.capacidad);
+  //console.log("Bodega a editar:", bodegas?.capacidad);
   const [formData, setFormData] = useState({
     nombre: "",
     capacidad: "",
@@ -57,7 +57,7 @@ export default function EditarBodega({
     } finally {
       setLoading(false);
     }
-    console.log("Datos para editar:", formData, bodegas.idBodega);
+    //console.log("Datos para editar:", formData, bodegas.idBodega);
   };
   const handleCerrar = () => {
     setError(""); // <--- Limpia error al cerrar

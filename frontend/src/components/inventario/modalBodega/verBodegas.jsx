@@ -4,14 +4,42 @@ import { Modal, Button, Table, Spinner, Alert } from "react-bootstrap";
 import { obtenerBodegasPorSucursal } from "../../../services/inventario/Bodega.service";
 import EditarBodega from "../modalBodega/editarBodega";
 import CrearBodega from "../modalBodega/crearBodega";
-import eliminarBodega from "../../../services/inventario/Bodega.service";
+import { eliminarBodega } from "../../../services/inventario/Bodega.service";
+//import obtenerBodegas from "../../services/inventario/Bodega.service";
 
-export default function VerBodegas({
-  show,
-  handleClose,
-  bodega,
-  buscarSucursales,
-}) {
+async function cargarDatosBodega(
+  idSucursal,
+  setListaBodegas,
+  setError,
+  setMensaje,
+  setLoading
+) {
+  setLoading(true);
+  setError(false);
+  setMensaje("");
+  setListaBodegas([]);
+  try {
+    const respuesta = await obtenerBodegasPorSucursal(idSucursal);
+    console.log("Respuesta bodegas por sucursal:", respuesta);
+    if (respuesta.status === 200) {
+      setListaBodegas(respuesta.data);
+    } else if (respuesta.status === 204) {
+      setError(true);
+      setMensaje("Esta sucursal no tiene bodegas registradas.");
+    } else {
+      setError(true);
+      setMensaje("Error al cargar las bodegas.");
+    }
+  } catch (error) {
+    setError(true);
+    setMensaje("Error de conexión al buscar bodegas.");
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+}
+
+export default function VerBodegas({ show, handleClose, bodega }) {
   const idSucursal = bodega;
 
   const [listaBodegas, setListaBodegas] = useState([]);
@@ -24,36 +52,25 @@ export default function VerBodegas({
 
   useEffect(() => {
     if (show && idSucursal) {
-      const cargarDatosBodega = async () => {
-        setLoading(true);
-        setError(false);
-        setMensaje("");
-        setListaBodegas([]);
-
-        try {
-          const respuesta = await obtenerBodegasPorSucursal(idSucursal);
-          console.log("Respuesta bodegas por sucursal:", respuesta);
-          if (respuesta.status === 200) {
-            setListaBodegas(respuesta.data);
-          } else if (respuesta.status === 204) {
-            setError(true);
-            setMensaje("Esta sucursal no tiene bodegas registradas.");
-          } else {
-            setError(true);
-            setMensaje("Error al cargar las bodegas.");
-          }
-        } catch (error) {
-          setError(true);
-          setMensaje("Error de conexión al buscar bodegas.");
-          console.error(error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      cargarDatosBodega();
+      cargarDatosBodega(
+        idSucursal,
+        setListaBodegas,
+        setError,
+        setMensaje,
+        setLoading
+      );
     }
   }, [show, idSucursal]);
+
+  const recargarBodegas = () => {
+    cargarDatosBodega(
+      idSucursal,
+      setListaBodegas,
+      setError,
+      setMensaje,
+      setLoading
+    );
+  };
 
   const handleCrear = () => {
     setError(false);
@@ -77,15 +94,20 @@ export default function VerBodegas({
     setLoading(true);
     setError(false);
     setMensaje("");
+
     try {
       const respuesta = await eliminarBodega(id);
+      //console.log("Eliminar bodega id:", respuesta);
       if (respuesta.status === 200) {
         setMensaje("Bodega eliminada exitosamente");
         setError(false);
-        await buscarSucursales();
+        recargarBodegas();
       } else {
         setError(true);
         setMensaje(respuesta.error || "Error al eliminar la bodega.");
+        setTimeout(() => {
+          handleClose();
+        }, 2000);
       }
     } catch (error) {
       setError(true);
@@ -131,12 +153,15 @@ export default function VerBodegas({
             </thead>
             <tbody className="text-center">
               {listaBodegas.map((b) => (
-                <tr key={b.idBodega} onClick={() => handleEditar(b)}>
+                <tr key={b.idBodega}>
                   <td>{b.idBodega}</td>
                   <td>{b.nombre}</td>
                   <td>{b.capacidad}</td>
                   <td>{b.estado}</td>
                   <td>
+                    <Button variant="info" onClick={() => handleEditar(b)}>
+                      Editar
+                    </Button>
                     <Button
                       variant="info"
                       onClick={() => handleEliminar(b.idBodega)}
@@ -151,14 +176,14 @@ export default function VerBodegas({
           <CrearBodega
             show={modalCrear}
             handleClose={handleCerrarModal}
-            buscarBodegas={buscarSucursales}
+            buscarBodegas={recargarBodegas}
             idSucursal={idSucursal}
           />
           <EditarBodega
             show={modalEditar}
             bodegas={bodegaSelect}
             handleClose={handleCerrarModal}
-            buscarBodegas={buscarSucursales}
+            buscarBodegas={recargarBodegas}
           />
         </div>
       );

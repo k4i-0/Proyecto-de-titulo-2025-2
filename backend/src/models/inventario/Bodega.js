@@ -18,6 +18,11 @@ const bodega = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    principal: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
     estado: {
       type: DataTypes.ENUM(
         "En Funcionamiento",

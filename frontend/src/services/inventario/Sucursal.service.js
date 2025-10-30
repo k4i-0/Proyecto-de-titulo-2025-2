@@ -11,6 +11,9 @@ export default async function obtenerSucursales() {
     //console.log("Sucursales obtenidas:", response.status);
     return response;
   } catch (error) {
+    if (error.response === undefined) {
+      return { code: 500, error: "Error de conexión al servidor" };
+    }
     console.error("Error al obtener sucursales:", error.response);
     return error.response.data;
   }
@@ -24,6 +27,9 @@ export async function crearSucursal(datos) {
     //console.log("Sucursales creadas:", response);
     return response;
   } catch (error) {
+    if (error.response === undefined) {
+      return { code: 500, error: "Error de conexión al servidor" };
+    }
     console.error("Error al crear sucursales:", error.response);
     return error.response.data;
   }
@@ -37,6 +43,9 @@ export async function editarSucursal(datos, id) {
     //console.log("Sucursal obtenida:", response);
     return response;
   } catch (error) {
+    if (error.response === undefined) {
+      return { code: 500, error: "Error de conexión al servidor" };
+    }
     console.error("Error al editar sucursal:", error.response.data.error);
     return error.response.data;
   }
@@ -50,6 +59,9 @@ export async function eliminarSucursal(id) {
     //console.log("Sucursal eliminada:", response);
     return response;
   } catch (error) {
+    if (error.response === undefined) {
+      return { code: 500, error: "Error de conexión al servidor" };
+    }
     console.error("Error al eliminar sucursal:", error.response.data.error);
     return error.response.data;
   }

@@ -1,4 +1,3 @@
-import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -23,13 +22,11 @@ const ProtectedRoute = ({
       //console.log("Usuario actual:", user.nombreRol);
       //console.log("Usuario estado llamada:", estado.data.payload.role);
       if (estado.status == 401 || estado.status == 498) {
-        // Si el estado es 401, redirigir al usuario a la página de inicio de sesión
         logout();
         return <Navigate to="/" replace />;
       }
 
       if (estado.status == 200 && estado.data.payload.role != user.nombreRol) {
-        // Si el rol ha cambiado, cerrar sesión
         logout();
         return <Navigate to="/" replace />;
       }

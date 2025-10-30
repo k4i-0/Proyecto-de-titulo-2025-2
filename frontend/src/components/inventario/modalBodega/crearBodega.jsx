@@ -1,17 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Row, Col, Button, Form, Modal, Alert, Spinner } from "react-bootstrap";
 
 import { crearBodega } from "../../../services/inventario/Bodega.service";
-// import obtenerSucursales from "../../../services/inventario/Sucursal.service";
+import obtenerBodegasPorSucursal from "../../../services/inventario/Bodega.service";
 export default function AgregarBodega({
   show,
   handleClose,
-  buscarBodegas,
+  recargarBodegas,
   idSucursal,
 }) {
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState(false);
+  const [bodegas, setBodegas] = useState([]);
 
   const [datos, setDatos] = useState({
     nombre: "",
@@ -20,27 +21,31 @@ export default function AgregarBodega({
     idSucursal: idSucursal || "",
   });
 
-  // const buscarSucursales = async () => {
-  //   try {
-  //     const respuesta = await obtenerSucursales();
+  const buscarBodegas = async () => {
+    try {
+      const respuesta = await obtenerBodegasPorSucursal();
 
-  //     if (respuesta.code) {
-  //       setError(true);
-  //       setMensaje(respuesta.error);
-  //     } else {
-  //       setSucursales(respuesta);
-  //     }
-  //   } catch (error) {
-  //     setError(true);
-  //     setMensaje("Error al cargar sucursales");
-  //     console.error(error);
-  //   }
-  // };
+      if (respuesta.code) {
+        setError(true);
 
-  // useEffect(() => {
-  //   if (show) buscarSucursales();
-  // }, [show]);
+        setMensaje(respuesta.error);
+      } else {
+        console.log("Bodegas obtenidas:", respuesta.data.length);
+        setBodegas(respuesta);
+      }
+    } catch (error) {
+      setError(true);
 
+      setMensaje("Error al cargar Bodegas");
+
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (show) buscarBodegas();
+  }, [show]);
+  //console.log("Bodegas disponibles:", bodegas.length);
   const handleChange = (e) => {
     const { name, value } = e.target;
     setDatos({ ...datos, [name]: value });
@@ -52,18 +57,17 @@ export default function AgregarBodega({
 
     try {
       const resultado = await crearBodega(datos);
-      console.log("Respuesta al crear", resultado);
+      //console.log("Respuesta al crear", resultado);
       if (resultado.status === 201) {
         setMensaje("Bodega creada exitosamente");
         setError(false);
         setTimeout(() => {
-          buscarBodegas();
+          recargarBodegas();
           setDatos({
             nombre: "",
-            ubicacion: "",
             capacidad: "",
             estado: "",
-            idSucursal: "",
+            idSucursal: idSucursal || "",
           });
 
           handleClose();
@@ -92,10 +96,9 @@ export default function AgregarBodega({
     setError(false);
     setDatos({
       nombre: "",
-      ubicacion: "",
       capacidad: "",
       estado: "",
-      idSucursal: "",
+      idSucursal: idSucursal || "",
     });
     handleClose();
   };

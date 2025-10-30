@@ -40,7 +40,7 @@ export async function editarBodega(datos, id) {
     const response = await axios.put(`${API_URL}/actualizar/${id}`, datos, {
       withCredentials: true,
     });
-    console.log("bodegas obtenidas:", response);
+    //console.log("bodegas obtenidas:", response);
     return response;
   } catch (error) {
     console.error("Error al editar bodegas:", error.response.data.error);
@@ -53,7 +53,7 @@ export async function editarBodega(datos, id) {
 
 export async function eliminarBodega(id) {
   try {
-    const response = await axios.delete(`${API_URL}/eliminar/${id}`, null, {
+    const response = await axios.delete(`${API_URL}/eliminar/${id}`, {
       withCredentials: true,
     });
     console.log("bodega eliminada:", response);

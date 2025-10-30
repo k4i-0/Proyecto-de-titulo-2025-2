@@ -206,10 +206,10 @@ exports.deleteBodega = async (req, res) => {
     if (!req.params.id) {
       return res.status(422).json({ error: "ID de bodega es obligatorio" });
     }
-    const busquedaBodega = await Bodega.findByPk(req.params.id);
+    const busquedaBodega = await Bodega.destroy({
+      where: { idBodega: req.params.id },
+    });
     if (busquedaBodega) {
-      busquedaBodega.estado = "Eliminado";
-      await busquedaBodega.save();
       await crearBitacora({
         nombre: `eliminación de bodega ID: ${req.params.id}`,
         fechaCreacion: new Date(),

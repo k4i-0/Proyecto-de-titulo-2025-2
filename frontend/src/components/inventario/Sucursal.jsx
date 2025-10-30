@@ -146,6 +146,14 @@ export default function Sucursal() {
           >
             Crear Sucursal
           </Button>
+          <Button
+            variant="primary"
+            onClick={buscarSucursales}
+            disabled={loading}
+            className="w-60"
+          >
+            Actualizar
+          </Button>
         </Col>
       </Row>
 
