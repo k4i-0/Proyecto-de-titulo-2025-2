@@ -42,7 +42,13 @@ const proveedor = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     },
+    estado: {
+      type: DataTypes.ENUM("Activo", "Inactivo"),
+      allowNull: false,
+      defaultValue: "activo",
+    },
   },
+
   {
     tableName: "proveedor",
     timestamps: false,

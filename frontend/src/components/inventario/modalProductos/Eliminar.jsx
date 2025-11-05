@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Row, Col, Button, Alert, Modal } from "react-bootstrap";
+import { Button, Alert, Modal, Typography, Space } from "antd";
 import { eliminarProducto } from "../../../services/inventario/Productos.service";
+
+const { Text } = Typography;
 
 export default function Eliminar({
   modalEliminar,
@@ -8,74 +10,98 @@ export default function Eliminar({
   productoEliminar,
   funcionBuscarProductos,
   setProductoEliminar,
+  setProductos,
 }) {
   const [loading, setLoading] = useState(false);
-  const [mensaje, setMensaje] = useState("false");
+  // Se inicializa en "" (string vacío) para que la lógica del Alert funcione
+  const [mensaje, setMensaje] = useState("");
+
+  const handleCerrarModal = () => {
+    setModalEliminar(false);
+    // Es buena práctica resetear el mensaje al cerrar
+    setMensaje("");
+  };
+
   const handleEliminar = async () => {
     setLoading(true);
+    setMensaje(""); // Limpiar mensajes anteriores
     try {
       const resultado = await eliminarProducto(productoEliminar.idProducto);
       console.log("Resultado de eliminar:", resultado);
-      if (resultado.status == 200) {
+
+      if (resultado.status === 200) {
+        setProductos([]);
         funcionBuscarProductos();
         console.log("Producto eliminado con éxito");
-
         setModalEliminar(false);
         setProductoEliminar(null);
+        funcionBuscarProductos();
+        // No es necesario setLoading(false) aquí, el modal se cierra
+      } else {
+        // Manejar errores de la API
+        if (resultado.status === 404) {
+          setMensaje("Error al eliminar el producto");
+        } else if (resultado.status === 422) {
+          setMensaje("ID de producto es obligatorio");
+        } else if (resultado.status === 500) {
+          setMensaje("Error en el servidor al eliminar el producto");
+        } else {
+          setMensaje("Ocurrió un error inesperado.");
+        }
+        setLoading(false); // Detener loading solo si hubo error
       }
-      if (resultado.status == 404) {
-        setMensaje("Error al eliminar el producto");
-        //console.log("404 Error al eliminar el producto");
-        setTimeout(() => {
-          setLoading(false);
-        }, 3500);
-      }
-      if (resultado.status == 422) {
-        setMensaje("ID de producto es obligatorio");
-        //console.log("422 ID de producto es obligatorio");
-        setTimeout(() => {
-          setLoading(false);
-        }, 3500);
-      }
-      if (resultado.status == 500) {
-        setMensaje("Error en el servidor al eliminar el producto");
-        //console.log("500 Error en el servidor al eliminar el producto");
-        setTimeout(() => {
-          setLoading(false);
-        }, 3500);
-      }
-      setTimeout(() => {
-        setLoading(false);
-      }, 3500);
     } catch (error) {
       console.error("Error al eliminar producto:", error);
+      setMensaje("Error en la conexión o al procesar la solicitud.");
+      setLoading(false); // Detener loading si la promesa falla
     }
   };
 
   return (
-    <Modal show={modalEliminar} onHide={() => setModalEliminar(false)}>
-      <Modal.Header closeButton onClick={() => setModalEliminar(false)}>
-        <Modal.Title>Eliminar Producto</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {loading && (
-          <Alert variant={!mensaje ? "info" : "danger"}>
-            {!mensaje ? "Eliminando producto..." : mensaje}
-          </Alert>
-        )}
-        <p>¿Estás seguro de que deseas eliminar el producto?</p>
-        <p>
-          <strong>{productoEliminar?.nombre}</strong>
-        </p>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={() => setModalEliminar(false)}>
+    <Modal
+      open={modalEliminar}
+      onCancel={handleCerrarModal}
+      title="Eliminar Producto"
+      centered
+      footer={[
+        <Button key="cancel" onClick={handleCerrarModal} disabled={loading}>
           Cancelar
-        </Button>
-        <Button variant="danger" onClick={handleEliminar}>
+        </Button>,
+        <Button
+          key="delete"
+          type="primary"
+          danger // Hace el botón rojo
+          loading={loading}
+          onClick={handleEliminar}
+        >
           Eliminar
-        </Button>
-      </Modal.Footer>
+        </Button>,
+      ]}
+    >
+      <Space direction="vertical" style={{ width: "100%" }}>
+        {/* El Alert ahora solo se muestra si hay un mensaje de error, 
+            ya que el botón 'loading' indica la acción en curso. */}
+        {mensaje && (
+          <Alert
+            message={mensaje}
+            type="error" // 'danger' en Bootstrap es 'error' en Antd
+            showIcon
+          />
+        )}
+
+        {/* Muestra el mensaje de eliminación si no hay error y no está cargando */}
+        {!loading && !mensaje && (
+          <Space direction="vertical">
+            <Text>¿Estás seguro de que deseas eliminar el producto?</Text>
+            <Text strong>{productoEliminar?.nombre}</Text>
+          </Space>
+        )}
+
+        {/* Muestra un estado de "Eliminando..." si está cargando y no hay error */}
+        {loading && !mensaje && (
+          <Alert message="Eliminando producto..." type="info" showIcon />
+        )}
+      </Space>
     </Modal>
   );
 }

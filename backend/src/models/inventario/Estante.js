@@ -14,12 +14,17 @@ const estante = sequelize.define(
       type: DataTypes.STRING(50),
       allowNull: false,
     },
-    lugar: {
-      type: DataTypes.STRING(100),
+    tipo: {
+      type: DataTypes.ENUM("Maquina", "Estante", "Lugar de Piso", "Otro"),
       allowNull: false,
     },
-    seccion: {
-      type: DataTypes.STRING(50),
+    estado: {
+      type: DataTypes.ENUM(
+        "Habilitado",
+        "Inhabilitado",
+        "Mantenimiento",
+        "Reservado"
+      ),
       allowNull: false,
     },
   },

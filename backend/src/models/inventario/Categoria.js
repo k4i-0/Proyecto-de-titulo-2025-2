@@ -18,15 +18,15 @@ const categoria = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    durabilidad: {
-      type: DataTypes.STRING(100),
+    // durabilidad: {
+    //   type: DataTypes.STRING(100),
+    //   allowNull: false,
+    // },
+    estado: {
+      type: DataTypes.ENUM("Activo", "Inactivo", "Suspendido"),
       allowNull: false,
+      defaultValue: "Activo",
     },
-    //estado: {
-    //  type: DataTypes.ENUM("Activo", "Inactivo", "eliminado"),
-    //  allowNull: false,
-    //  defaultValue: "Activo",
-    //},
   },
   {
     tableName: "categorias",

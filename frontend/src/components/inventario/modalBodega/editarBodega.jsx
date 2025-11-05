@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Alert, Button, Form, Modal } from "react-bootstrap";
+import { Alert, Button, Form, Modal, Input, Select, InputNumber } from "antd";
 
 import { editarBodega } from "../../../services/inventario/Bodega.service";
 
@@ -10,41 +10,52 @@ export default function EditarBodega({
   buscarBodegas,
 }) {
   console.log("Bodega a editar:", bodegas?.capacidad);
-  const [formData, setFormData] = useState({
-    nombre: "",
-    capacidad: "",
-    estado: "",
-    idSucursal: "",
-  });
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (bodegas) {
-      setFormData({
+      form.setFieldsValue({
         nombre: bodegas.nombre || "",
-        capacidad: bodegas.capacidad || "",
+        capacidad: bodegas.capacidad || null,
         estado: bodegas.estado || "",
-        idSucursal: bodegas.idSucursal || "",
       });
+    } else {
+      form.resetFields();
     }
     setError("");
-  }, [bodegas]);
+  }, [bodegas, form]);
+  // useEffect(() => {
+  //   if (bodegas) {
+  //     setFormData({
+  //       nombre: bodegas.nombre || "",
+  //       capacidad: bodegas.capacidad || "",
+  //       estado: bodegas.estado || "",
+  //       idSucursal: bodegas.idSucursal || "",
+  //     });
+  //   }
+  //   setError("");
+  // }, [bodegas]);
 
-  const handleChangeLocal = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
+  // const handleChangeLocal = (e) => {
+  //   const { name, value } = e.target;
+  //   setFormData({
+  //     ...formData,
+  //     [name]: value,
+  //   });
+  // };
 
-  const handleSubmitEdicion = async (e) => {
-    e.preventDefault();
+  const handleSubmitEdicion = async (values) => {
+    // e.preventDefault();
     setLoading(true);
     setError("");
+    const dataParaEnviar = {
+      ...values,
+      idSucursal: bodegas.idSucursal,
+    };
     try {
-      const respuesta = await editarBodega(formData, bodegas.idBodega);
+      const respuesta = await editarBodega(dataParaEnviar, bodegas.idBodega);
       if (respuesta.status == 200) {
         buscarBodegas();
         handleCerrar();
@@ -57,20 +68,90 @@ export default function EditarBodega({
     } finally {
       setLoading(false);
     }
-    console.log("Datos para editar:", formData, bodegas.idBodega);
+    console.log("Datos para editar:", dataParaEnviar, bodegas.idBodega);
   };
   const handleCerrar = () => {
-    setError(""); // <--- Limpia error al cerrar
+    setError("");
+    form.resetFields();
     handleClose();
   };
   return (
-    <Modal show={show} onHide={handleCerrar}>
-      <Modal.Header closeButton>
-        <Modal.Title>Editar Bodega {bodegas?.idBodega}</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {error && <Alert variant="danger">{error}</Alert>}
-        <Form onSubmit={handleSubmitEdicion}>
+    <Modal
+      open={show}
+      title={`Editar Bodega ${bodegas?.idBodega || ""}`}
+      onCancel={handleCerrar}
+      footer={[
+        <Button key="cancelar" onClick={handleCerrar}>
+          Cancelar
+        </Button>,
+        <Button
+          key="guardar"
+          type="primary"
+          loading={loading}
+          onClick={() => form.submit()}
+        >
+          {loading ? "Guardando..." : "Guardar cambios"}
+        </Button>,
+      ]}
+      width={600}
+    >
+      {error && (
+        <Alert
+          message={error}
+          type="error"
+          showIcon
+          closable
+          onClose={() => setError("")}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmitEdicion}
+        autoComplete="off"
+      >
+        <Form.Item
+          label="Nombre"
+          name="nombre"
+          rules={[{ required: true, message: "Por favor ingrese el nombre" }]}
+        >
+          <Input placeholder="Ingrese nombre" />
+        </Form.Item>
+
+        <Form.Item
+          label="Capacidad (m²)"
+          name="capacidad"
+          rules={[
+            { required: true, message: "Por favor ingrese la capacidad" },
+          ]}
+        >
+          <InputNumber
+            placeholder="Ingrese capacidad"
+            min={0}
+            max={10000}
+            style={{ width: "100%" }}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="Estado"
+          name="estado"
+          rules={[
+            { required: true, message: "Por favor seleccione un estado" },
+          ]}
+        >
+          <Select
+            placeholder="Seleccione un estado"
+            options={[
+              { value: "En Funcionamiento", label: "En Funcionamiento" },
+              { value: "En Mantenimiento", label: "En Mantenimiento" },
+              { value: "Fuera de Servicio", label: "Fuera de Servicio" },
+            ]}
+          />
+        </Form.Item>
+      </Form>
+      {/* <Form onSubmit={handleSubmitEdicion}>
           <Form.Group controlId="formNombre">
             <Form.Label>Nombre</Form.Label>
             <Form.Control
@@ -117,7 +198,7 @@ export default function EditarBodega({
         <Button type="submit" disabled={loading} onClick={handleSubmitEdicion}>
           {loading ? "Guardando..." : "Guardar cambios"}
         </Button>
-      </Modal.Footer>
+      </Modal.Footer> */}
     </Modal>
   );
 }

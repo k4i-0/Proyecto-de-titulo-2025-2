@@ -53,7 +53,7 @@ export async function editarBodega(datos, id) {
 
 export async function eliminarBodega(id) {
   try {
-    const response = await axios.delete(`${API_URL}/eliminar/${id}`, null, {
+    const response = await axios.delete(`${API_URL}/eliminar/${id}`, {
       withCredentials: true,
     });
     console.log("bodega eliminada:", response);

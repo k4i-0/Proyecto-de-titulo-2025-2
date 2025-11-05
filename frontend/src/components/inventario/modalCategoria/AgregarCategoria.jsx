@@ -1,41 +1,34 @@
-// src/components/modalCategorias/AgregarCategoria.jsx
-
 import { useState } from "react";
-import { Modal, Button, Form, Row, Col, Spinner, Alert } from "react-bootstrap";
+import { Modal, Button, Form, Alert, Input, Select, Spin } from "antd";
 import { crearCategoria } from "../../../services/inventario/Categorias.service";
+
+const { TextArea } = Input;
 
 export default function AgregarCategoria({
   show,
   handleClose,
   funcionBuscarCategorias,
 }) {
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState(false);
-  const [datos, setDatos] = useState({
-    nombre: "",
-    descripcion: "",
-    estado: "",
-  });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setDatos({ ...datos, [name]: value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (values) => {
     setLoading(true);
+    setMensaje("");
+    setError(false);
 
     try {
-      const resultado = await crearCategoria(datos);
+      const resultado = await crearCategoria(values);
       console.log("Respuesta al crear", resultado);
+
       if (resultado.status === 201) {
         setMensaje("Categoría creada exitosamente");
         setError(false);
         funcionBuscarCategorias();
         setTimeout(() => {
-          setDatos({ nombre: "", descripcion: "", estado: "" });
+          form.resetFields();
           handleClose();
           setMensaje("");
         }, 1200);
@@ -51,102 +44,77 @@ export default function AgregarCategoria({
       setLoading(false);
     }
   };
+
+  const handleCerrar = () => {
+    setMensaje("");
+    setError(false);
+    form.resetFields();
+    handleClose();
+  };
+
   return (
-    <Modal show={show} onHide={handleClose} centered size="lg">
-      {loading ? (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(255, 255, 255, 0.85)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 10,
-            borderRadius: "var(--bs-modal-border-radius)",
-          }}
-        >
-          <Spinner animation="grow" />
-          <p>Creando categoría...</p>
-        </div>
-      ) : null}
-      <Modal.Header closeButton>
-        <Modal.Title>Crear Nueva Categoría</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {mensaje && (
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              backgroundColor: "rgba(255, 255, 255, 0.85)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 10,
-              borderRadius: "var(--bs-modal-border-radius)",
-            }}
-          >
-            <Alert variant={error ? "danger" : "success"}>{mensaje}</Alert>
-          </div>
-        )}
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label>Nombre *</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Ingrese nombre de la categoría"
-              name="nombre"
-              value={datos.nombre}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Descripción</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              placeholder="Ingrese una descripción"
-              name="descripcion"
-              value={datos.descripcion}
-              onChange={handleChange}
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Estado *</Form.Label>
-            <Form.Control
-              as="select"
-              name="estado"
-              value={datos.estado}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccione estado</option>
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-            </Form.Control>
-          </Form.Group>
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={handleClose}>
+    <Modal
+      open={show}
+      title="Crear Nueva Categoría"
+      onCancel={handleCerrar}
+      footer={[
+        <Button key="cancelar" onClick={handleCerrar}>
           Cancelar
-        </Button>
-        <Button variant="primary" onClick={handleSubmit} disabled={loading}>
-          {loading ? "Creando..." : "Crear Categoría"}
-        </Button>
-      </Modal.Footer>
+        </Button>,
+        <Button
+          key="crear"
+          type="primary"
+          loading={loading}
+          onClick={() => form.submit()}
+        >
+          Crear Categoría
+        </Button>,
+      ]}
+      width={600}
+    >
+      <Spin spinning={loading} tip="Creando categoría...">
+        {mensaje && (
+          <Alert
+            message={mensaje}
+            type={error ? "error" : "success"}
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
+
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          autoComplete="off"
+        >
+          <Form.Item
+            label="Nombre"
+            name="nombre"
+            rules={[{ required: true, message: "Por favor ingrese el nombre" }]}
+          >
+            <Input placeholder="Ingrese nombre de la categoría" />
+          </Form.Item>
+
+          <Form.Item label="Subcategoría" name="subcategoria">
+            <Input placeholder="Ingrese una SubCategoría" />
+          </Form.Item>
+
+          <Form.Item
+            label="Estado"
+            name="estado"
+            rules={[
+              { required: true, message: "Por favor seleccione el estado" },
+            ]}
+          >
+            <Select placeholder="Seleccione estado">
+              <Select.Option value="Activo">Activo</Select.Option>
+              <Select.Option value="Inactivo">Inactivo</Select.Option>
+              <Select.Option value="Suspendido">Suspendido</Select.Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Spin>
     </Modal>
   );
 }

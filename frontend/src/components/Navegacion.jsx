@@ -1,75 +1,148 @@
-import React from "react";
+import { Layout, Menu } from "antd";
+import { useNavigate } from "react-router-dom";
+const { Sider } = Layout;
 import {
-  Container,
-  Row,
-  Col,
-  Button,
-  Navbar,
-  Nav,
-  NavDropdown,
-} from "react-bootstrap";
+  AreaChartOutlined,
+  ProductOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 
-export default function Navegacion({ nombreRol, onLogout, onCambiarVista }) {
-  //console.log("Usuario en Navegacion:", nombreRol);
+export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
+  const navigate = useNavigate();
   return (
-    <Navbar
-      className="justify-content-center"
-      style={{
-        padding: "10px",
-        paddingLeft: "100px",
-        paddingRight: "100px",
-        margin: "40px",
-      }}
-    >
-      <Container className="justify-content-left">
-        <Navbar.Brand href="/dashboard" onClick={() => onCambiarVista("home")}>
-          Negocios Rancaguinos
-        </Navbar.Brand>
-      </Container>
+    <>
+      <Sider collapsible width={200} style={{ background: colorBgContainer }}>
+        <Menu
+          mode="inline"
+          defaultSelectedKeys={["1"]}
+          defaultOpenKeys={["sub1"]}
+          style={{ height: "100%", borderInlineEnd: 0 }}
+          items={[
+            {
+              key: "Inventario",
+              icon: <ProductOutlined />,
+              label: "Inventario",
+              children: [
+                {
+                  key: "productos",
+                  label: "Productos",
+                  onClick: () => navigate("/productos"),
+                },
+                {
+                  key: "inventario",
+                  label: "Inventario",
+                  onClick: () => navigate("/inventario"),
+                },
+                {
+                  key: "sucursal",
+                  label: "Sucursal",
+                  onClick: () => navigate("/sucursal"),
+                },
+                {
+                  key: "proveedores",
+                  label: "Proveedores",
+                  onClick: () => navigate("/proveedores"),
+                },
+              ],
+            },
+            {
+              key: "ventas",
+              icon: <AreaChartOutlined />,
+              label: "Ventas",
+              disabled: true,
+              children: [
+                {
+                  key: "gestionar_ventas",
+                  label: "Gestionar Ventas",
+                  onClick: () => navigate("gestionar_ventas"),
+                },
+                {
+                  key: "clientes",
+                  label: "Clientes",
+                  onClick: () => navigate("clientes"),
+                },
+              ],
+            },
+            {
+              key: "1",
+              icon: <UserOutlined />,
+              label: `${nombreRol}`,
+              children: [
+                {
+                  key: "Perfil",
+                  label: "Perfil",
+                  disabled: true,
+                },
+                {
+                  key: "Cerrar_Sesion",
+                  label: "Cerrar Sesión",
+                  onClick: () => onLogout(),
+                },
+              ],
+            },
+          ]}
+        />
+      </Sider>
+    </>
 
-      <Navbar.Toggle aria-controls="basic-navbar-nav" />
-      <Navbar.Collapse id="basic-navbar-nav">
-        <Nav className="me-auto">
-          <Nav.Link onClick={() => onCambiarVista("home")}>Home</Nav.Link>
+    //</><Navbar
+    //   className="justify-content-center"
+    //   style={{
+    //     padding: "10px",
+    //     paddingLeft: "100px",
+    //     paddingRight: "100px",
+    //     margin: "40px",
+    //   }}
+    // >
+    //   <Container className="justify-content-left">
+    //     <Navbar.Brand href="/dashboard" onClick={() => onCambiarVista("home")}>
+    //       Negocios Rancaguinos
+    //     </Navbar.Brand>
+    //   </Container>
 
-          <NavDropdown title="Inventario" id="inventario-dropdown">
-            <NavDropdown.Item onClick={() => onCambiarVista("productos")}>
-              Productos
-            </NavDropdown.Item>
-            <NavDropdown.Item onClick={() => onCambiarVista("categorias")}>
-              Categorías
-            </NavDropdown.Item>
-            <NavDropdown.Item onClick={() => onCambiarVista("inventario")}>
-              Inventario
-            </NavDropdown.Item>
-            <NavDropdown.Item onClick={() => onCambiarVista("sucursal")}>
-              Sucursal
-            </NavDropdown.Item>
-            <NavDropdown.Item onClick={() => onCambiarVista("bodega")}>
-              Bodega
-            </NavDropdown.Item>
-          </NavDropdown>
+    //   <Navbar.Toggle aria-controls="basic-navbar-nav" />
+    //   <Navbar.Collapse id="basic-navbar-nav">
+    //     <Nav className="me-auto">
+    //       <Nav.Link onClick={() => onCambiarVista("home")}>Home</Nav.Link>
 
-          <NavDropdown title="Ventas" id="ventas-dropdown">
-            <NavDropdown.Item disabled onClick={() => onCambiarVista("ventas")}>
-              Gestionar Ventas
-            </NavDropdown.Item>
-            <NavDropdown.Item
-              disabled
-              onClick={() => onCambiarVista("clientes")}
-            >
-              Clientes
-            </NavDropdown.Item>
-          </NavDropdown>
-          <NavDropdown title={nombreRol} id="basic-nav-dropdown">
-            <NavDropdown.Item href="#action/3.1">Perfil</NavDropdown.Item>
-            <NavDropdown.Divider />
-            <NavDropdown.Item onClick={() => onLogout()}>
-              Cerrar Sesión
-            </NavDropdown.Item>
-          </NavDropdown>
-        </Nav>
-      </Navbar.Collapse>
-    </Navbar>
+    //       <NavDropdown title="Inventario" id="inventario-dropdown">
+    //         <NavDropdown.Item onClick={() => onCambiarVista("productos")}>
+    //           Productos
+    //         </NavDropdown.Item>
+    //         <NavDropdown.Item onClick={() => onCambiarVista("categorias")}>
+    //           Categorías
+    //         </NavDropdown.Item>
+    //         <NavDropdown.Item onClick={() => onCambiarVista("inventario")}>
+    //           Inventario
+    //         </NavDropdown.Item>
+    //         <NavDropdown.Item onClick={() => onCambiarVista("sucursal")}>
+    //           Sucursal
+    //         </NavDropdown.Item>
+    //         <NavDropdown.Item onClick={() => onCambiarVista("bodega")}>
+    //           Bodega
+    //         </NavDropdown.Item>
+    //       </NavDropdown>
+
+    //       <NavDropdown title="Ventas" id="ventas-dropdown">
+    //         <NavDropdown.Item disabled onClick={() => onCambiarVista("ventas")}>
+    //           Gestionar Ventas
+    //         </NavDropdown.Item>
+    //         <NavDropdown.Item
+    //           disabled
+    //           onClick={() => onCambiarVista("clientes")}
+    //         >
+    //           Clientes
+    //         </NavDropdown.Item>
+    //       </NavDropdown>
+    //       <NavDropdown title={nombreRol} id="basic-nav-dropdown">
+    //         <NavDropdown.Item href="#action/3.1">Perfil</NavDropdown.Item>
+    //         <NavDropdown.Divider />
+    //         <NavDropdown.Item onClick={() => onLogout()}>
+    //           Cerrar Sesión
+    //         </NavDropdown.Item>
+    //       </NavDropdown>
+    //     </Nav>
+    //   </Navbar.Collapse>
+    // </Navbar>
   );
 }

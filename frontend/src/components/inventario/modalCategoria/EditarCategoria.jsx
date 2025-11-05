@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Alert, Button, Form, Modal } from "react-bootstrap";
-
+import { useState, useEffect } from "react";
+import { Modal, Button, Form, Alert, Input, Select } from "antd";
 import { editarCategoria } from "../../../services/inventario/Categorias.service";
+
+const { TextArea } = Input;
 
 export default function EditarCategoria({
   Categoria,
@@ -9,115 +10,148 @@ export default function EditarCategoria({
   handleCerrarModal,
   funcionBuscarCategorias,
 }) {
-  const [formData, setFormData] = useState({
-    nombre: "",
-    descripcion: "",
-    estado: "",
-  });
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [mensaje, setMensaje] = useState("");
 
   useEffect(() => {
     if (Categoria) {
-      setFormData({
+      form.setFieldsValue({
+        idCategoria: Categoria.idCategoria || "",
         nombre: Categoria.nombre || "",
-        descripcion: Categoria.descripcion || "",
+        subcategoria: Categoria.subcategoria || "",
         estado: Categoria.estado || "",
       });
       setError("");
-    } else {
-      setError("");
+      setMensaje("");
     }
-  }, [Categoria]);
+  }, [Categoria, form]);
 
-  const handleChangeLocal = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-
-  const handleSubmitEdicion = async (e) => {
-    e.preventDefault();
+  const handleSubmitEdicion = async (values) => {
     setLoading(true);
     setError("");
+    setMensaje("");
+
+    const formData = {
+      nombre: values.nombre,
+      subcategoria: values.subcategoria,
+      estado: values.estado,
+    };
+
     try {
       const respuesta = await editarCategoria(formData, Categoria.idCategoria);
-      if (respuesta.status == 200) {
-        funcionBuscarCategorias();
-        handleCerrarModal();
+      if (respuesta.status === 200) {
+        setMensaje("Categoría actualizada exitosamente");
+        setTimeout(() => {
+          funcionBuscarCategorias();
+          handleCerrar();
+        }, 1200);
       } else {
-        setError(respuesta || "Error al editar la categoría");
+        setError(
+          respuesta.data?.message ||
+            respuesta.error ||
+            "Error al editar la categoría"
+        );
         console.log(respuesta);
       }
-    } catch (error) {
-      setError("Error al editar la categoría", error);
+    } catch (err) {
+      setError(err.response?.data?.message || "Error al editar la categoría");
+      console.error(err);
     } finally {
       setLoading(false);
     }
-    console.log("Datos para editar:", formData, Categoria.idCategoria);
+  };
+
+  const handleCerrar = () => {
+    setError("");
+    setMensaje("");
+    form.resetFields();
+    handleCerrarModal();
   };
 
   return (
-    <Modal show={modalEditar} onHide={handleCerrarModal}>
-      <Modal.Header closeButton onClick={handleCerrarModal}>
-        <Modal.Title>Editar Categoría {Categoria?.nombre}</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {error && <Alert variant="danger">{error}</Alert>}
-        <Form onSubmit={handleSubmitEdicion}>
-          <Form.Group controlId="formIdCategoria">
-            <Form.Label>ID Categoría</Form.Label>
-            <Form.Control
-              type="text"
-              name="idCategoria"
-              value={Categoria ? Categoria.idCategoria : ""}
-              readOnly
-            />
-          </Form.Group>
-          <Form.Group controlId="formNombre">
-            <Form.Label>Nombre</Form.Label>
-            <Form.Control
-              type="text"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleChangeLocal}
-              required
-            />
-          </Form.Group>
-          <Form.Group controlId="formDescripcion">
-            <Form.Label>Descripción</Form.Label>
-            <Form.Control
-              as="textarea"
-              name="descripcion"
-              value={formData.descripcion}
-              onChange={handleChangeLocal}
-              required
-            />
-          </Form.Group>
-          <Form.Group controlId="formEstado">
-            <Form.Label>Estado</Form.Label>
-            <Form.Control
-              as="select"
-              name="estado"
-              value={formData.estado}
-              onChange={handleChangeLocal}
-              required
-            >
-              <option value="">Seleccione un estado</option>
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-              <option value="eliminado">eliminado</option>
-            </Form.Control>
-          </Form.Group>
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button type="submit" disabled={loading} onClick={handleSubmitEdicion}>
-          {loading ? "Guardando..." : "Guardar cambios"}
-        </Button>
-      </Modal.Footer>
+    <Modal
+      open={modalEditar}
+      title={`Editar Categoría: ${Categoria?.nombre || ""}`}
+      onCancel={handleCerrar}
+      footer={[
+        <Button key="cancelar" onClick={handleCerrar}>
+          Cancelar
+        </Button>,
+        <Button
+          key="guardar"
+          type="primary"
+          loading={loading}
+          onClick={() => form.submit()}
+        >
+          Guardar cambios
+        </Button>,
+      ]}
+      width={600}
+    >
+      {error && (
+        <Alert
+          message={error}
+          type="error"
+          showIcon
+          closable
+          onClose={() => setError("")}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      {mensaje && (
+        <Alert
+          message={mensaje}
+          type="success"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmitEdicion}
+        autoComplete="off"
+      >
+        <Form.Item label="ID Categoría" name="idCategoria">
+          <Input disabled style={{ color: "rgba(0, 0, 0, 0.85)" }} />
+        </Form.Item>
+
+        <Form.Item
+          label="Nombre"
+          name="nombre"
+          rules={[{ required: true, message: "Por favor ingrese el nombre" }]}
+        >
+          <Input placeholder="Ingrese nombre de la categoría" />
+        </Form.Item>
+
+        <Form.Item
+          label="Subcategoría"
+          name="subcategoria"
+          rules={[
+            { required: true, message: "Por favor ingrese la subcategoría" },
+          ]}
+        >
+          <Input placeholder="Ingrese una subcategoría" />
+        </Form.Item>
+
+        <Form.Item
+          label="Estado"
+          name="estado"
+          rules={[
+            { required: true, message: "Por favor seleccione el estado" },
+          ]}
+        >
+          <Select placeholder="Seleccione un estado">
+            <Select.Option value="Activo">Activo</Select.Option>
+            <Select.Option value="Inactivo">Inactivo</Select.Option>
+            <Select.Option value="Depreciado">Depreciado</Select.Option>
+          </Select>
+        </Form.Item>
+      </Form>
     </Modal>
   );
 }

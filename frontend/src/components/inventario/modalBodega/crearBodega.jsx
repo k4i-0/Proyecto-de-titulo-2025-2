@@ -1,5 +1,15 @@
-import { useState } from "react";
-import { Row, Col, Button, Form, Modal, Alert, Spinner } from "react-bootstrap";
+import { useState, useEffect } from "react";
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  Button,
+  Alert,
+  Row,
+  Col,
+  InputNumber,
+} from "antd";
 
 import { crearBodega } from "../../../services/inventario/Bodega.service";
 // import obtenerSucursales from "../../../services/inventario/Sucursal.service";
@@ -9,16 +19,17 @@ export default function AgregarBodega({
   buscarBodegas,
   idSucursal,
 }) {
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState(false);
 
-  const [datos, setDatos] = useState({
-    nombre: "",
-    capacidad: "",
-    estado: "",
-    idSucursal: idSucursal || "",
-  });
+  // const [datos, setDatos] = useState({
+  //   nombre: "",
+  //   capacidad: "",
+  //   estado: "",
+  //   idSucursal: idSucursal || "",
+  // });
 
   // const buscarSucursales = async () => {
   //   try {
@@ -40,34 +51,49 @@ export default function AgregarBodega({
   // useEffect(() => {
   //   if (show) buscarSucursales();
   // }, [show]);
+  useEffect(() => {
+    if (show) {
+      form.setFieldsValue({
+        idSucursal: idSucursal || "",
+        nombre: "",
+        capacidad: null, // Usar null o undefined para placeholders numéricos
+        estado: "",
+      });
+      setMensaje("");
+      setError(false);
+    }
+  }, [show, idSucursal, form]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setDatos({ ...datos, [name]: value });
-  };
+  // const handleChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setDatos({ ...datos, [name]: value });
+  // };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (values) => {
+    // e.preventDefault();
     setLoading(true);
+    setMensaje("");
+    setError(false);
 
     try {
-      const resultado = await crearBodega(datos);
+      const resultado = await crearBodega(values);
       console.log("Respuesta al crear", resultado);
       if (resultado.status === 201) {
         setMensaje("Bodega creada exitosamente");
         setError(false);
         setTimeout(() => {
           buscarBodegas();
-          setDatos({
-            nombre: "",
-            ubicacion: "",
-            capacidad: "",
-            estado: "",
-            idSucursal: "",
-          });
+          handleCerrarModal();
+          // setDatos({
+          //   nombre: "",
+          //   ubicacion: "",
+          //   capacidad: "",
+          //   estado: "",
+          //   idSucursal: "",
+          // });
 
-          handleClose();
-          setMensaje("");
+          // handleClose();
+          // setMensaje("");
         }, 1200);
       } else {
         setError(true);
@@ -88,21 +114,106 @@ export default function AgregarBodega({
     }
   };
   const handleCerrarModal = () => {
+    form.resetFields();
     setMensaje("");
     setError(false);
-    setDatos({
-      nombre: "",
-      ubicacion: "",
-      capacidad: "",
-      estado: "",
-      idSucursal: "",
-    });
+    // setDatos({
+    //   nombre: "",
+    //   ubicacion: "",
+    //   capacidad: "",
+    //   estado: "",
+    //   idSucursal: "",
+    // });
     handleClose();
   };
 
   return (
-    <Modal show={show} onHide={handleCerrarModal}>
-      {loading ? (
+    <Modal
+      open={show}
+      title="Crear Nueva Bodega"
+      onCancel={handleCerrarModal}
+      footer={[
+        <Button key="cancelar" onClick={handleCerrarModal}>
+          Cancelar
+        </Button>,
+        <Button
+          key="guardar"
+          type="primary"
+          loading={loading}
+          onClick={() => form.submit()}
+        >
+          {loading ? "Creando..." : "Crear Bodega"}
+        </Button>,
+      ]}
+      width={600}
+    >
+      {mensaje && (
+        <Alert
+          message={mensaje}
+          type={error ? "error" : "success"}
+          showIcon
+          closable
+          onClose={() => setMensaje("")}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        autoComplete="off"
+      >
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label="Nombre"
+              name="nombre"
+              rules={[
+                { required: true, message: "Por favor ingrese el nombre" },
+              ]}
+            >
+              <Input placeholder="Ingrese nombre" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label="Capacidad"
+              name="capacidad"
+              rules={[
+                { required: true, message: "Por favor ingrese la capacidad" },
+              ]}
+            >
+              <InputNumber
+                placeholder="Ingrese capacidad"
+                style={{ width: "100%" }}
+                min={0}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Form.Item
+          label="Estado"
+          name="estado"
+          rules={[
+            { required: true, message: "Por favor seleccione un estado" },
+          ]}
+        >
+          <Select
+            placeholder="Seleccione un estado"
+            options={[
+              { value: "En Funcionamiento", label: "En Funcionamiento" },
+              { value: "En Mantenimiento", label: "En Mantenimiento" },
+              { value: "Fuera de Servicio", label: "Fuera de Servicio" },
+            ]}
+          />
+        </Form.Item>
+
+        <Form.Item label="Sucursal" name="idSucursal">
+          <Input placeholder="ID de Sucursal" disabled />
+        </Form.Item>
+      </Form>
+      {/* {loading ? (
         <div
           style={{
             position: "absolute",
@@ -214,7 +325,7 @@ export default function AgregarBodega({
         <Button variant="primary" onClick={handleSubmit} disabled={loading}>
           {loading ? "Creando..." : "Crear Bodega"}
         </Button>
-      </Modal.Footer>
+      </Modal.Footer> */}
     </Modal>
   );
 }

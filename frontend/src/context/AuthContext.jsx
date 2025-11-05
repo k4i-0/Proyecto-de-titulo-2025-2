@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
 
+import { miEstado } from "../services/Auth.services.js";
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -16,11 +18,28 @@ export const AuthProvider = ({ children }) => {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
         setIsAuthenticated(true);
+        miEstado()
+          .then((estado) => {
+            if (estado.status === 401 || estado.status === 498) {
+              logout(); // Borra los datos y redirige
+            } else if (
+              estado.status === 200 &&
+              estado.data.payload.role !== parsedUser.nombreRol
+            ) {
+              logout();
+            }
+          })
+          .catch(() => {
+            logout();
+          })
+          .finally(() => {
+            setInitializing(false);
+          });
       }
     } catch (error) {
       console.error("Error al parsear userData desde localStorage:", error);
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("userData");
+      logout();
+      setInitializing(false);
     } finally {
       setInitializing(false);
     }

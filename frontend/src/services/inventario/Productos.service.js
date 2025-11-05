@@ -8,7 +8,7 @@ export default async function obtenerProductos() {
     const response = await axios.get(`${API_URL}/buscar`, {
       withCredentials: true,
     });
-    console.log("Productos Status:", response.status);
+    //console.log("Productos Status:", response.status);
     return response;
   } catch (error) {
     //console.error("Error al obtener productos:", error.response.data.error);

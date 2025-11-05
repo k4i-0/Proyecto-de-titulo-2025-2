@@ -3,7 +3,7 @@ const { Op, where } = require("sequelize");
 
 const { crearBitacora } = require("../../services/bitacora.service");
 const jwt = require("jsonwebtoken");
-const bodega = require("../../models/inventario/Bodega");
+// const bodega = require("../../models/inventario/Bodega");
 
 exports.createBodega = async (req, res) => {
   const { nombre, capacidad, estado, idSucursal } = req.body;

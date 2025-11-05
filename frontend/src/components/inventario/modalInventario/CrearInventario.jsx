@@ -1,79 +1,82 @@
 // src/components/inventario/modalInventario/CrearInventario.jsx
 
 import { useState, useEffect } from "react";
-import { Row, Col, Button, Form, Modal, Alert, Spinner } from "react-bootstrap";
+import {
+  Row,
+  Col,
+  Button,
+  Form,
+  Modal,
+  Alert,
+  Spin, // Para la carga de dependencias
+  Select,
+  InputNumber, // Mejor para el stock
+  Input, // Para el lote, si es texto
+} from "antd";
 
 // Asumo que estos servicios existen y se pueden importar
 import { crearInventarios } from "../../../services/inventario/Inventario.service";
-import obtenerProductos from "../../../services/inventario/Productos.service"; // ¡Necesario!
+import obtenerProductos from "../../../services/inventario/Productos.service";
+// import obtenerLotes from "../../../services/inventario/Lotes.service"; // Probablemente necesites esto
 
 export default function CrearInventario({
   show,
   handleClose,
   buscarInventarios,
 }) {
-  const [loading, setLoading] = useState(false);
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false); // Para el envío del form
+  const [loadingDeps, setLoadingDeps] = useState(false); // Para cargar dropdowns
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState(false);
 
   // Estados para las listas de los 'selects'
   const [productos, setProductos] = useState([]);
-  const [lotes, setLotes] = useState([]);
+  const [lotes, setLotes] = useState([]); // El código original no carga lotes, este array estará vacío.
 
-  const estadoInicial = {
-    idProducto: "",
-    estado: "",
-    idLote: "",
-    stock: "",
-  };
-  const [datos, setDatos] = useState(estadoInicial);
-
-  // Carga productos y lotes cuando se abre el modal
+  // Carga productos cuando se abre el modal
   useEffect(() => {
     if (show) {
       const cargarDependencias = async () => {
-        setLoading(true);
+        setLoadingDeps(true);
         try {
-          // Carga ambas listas en paralelo
-          const [resProductos] = await Promise.all([obtenerProductos()]);
+          // Cargar productos
+          const resProductos = await obtenerProductos();
+          // Asumiendo que resProductos.data es el array
+          setProductos(resProductos.data || []);
 
-          setProductos(resProductos.length ? resProductos : []);
+          // NOTA: Tu código original no carga los lotes.
+          // Si necesitas cargarlos, descomenta la siguiente línea:
+          // const resLotes = await obtenerLotes();
+          // setLotes(resLotes.data || []);
         } catch (err) {
           setError(true);
-          setMensaje("Error al cargar productos o bodegas");
+          setMensaje("Error al cargar productos");
           console.error(err);
         } finally {
-          setLoading(false);
+          setLoadingDeps(false);
         }
       };
       cargarDependencias();
     }
   }, [show]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setDatos({ ...datos, [name]: value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Se llama con onFinish del Form
+  const handleSubmit = async (values) => {
     setLoading(true);
+    setMensaje("");
+    setError(false);
 
     try {
-      const datosAEnviar = {
-        ...datos,
-        stock: parseInt(datos.stock, 10), // Asegurar que el stock sea un número
-      };
-      const resultado = await crearInventarios(datosAEnviar);
+      // 'values' ya tiene los datos del form. 'stock' es un número por InputNumber.
+      const resultado = await crearInventarios(values);
 
       if (resultado.status === 201) {
         setMensaje("Stock asignado exitosamente");
         setError(false);
         setTimeout(() => {
           buscarInventarios();
-          setDatos(estadoInicial);
-          handleClose();
-          setMensaje("");
+          handleCerrarModal(); // Cierra y resetea
         }, 1200);
       } else {
         setError(true);
@@ -89,145 +92,148 @@ export default function CrearInventario({
   };
 
   const handleCerrarModal = () => {
+    form.resetFields();
     setMensaje("");
     setError(false);
-    setDatos(estadoInicial);
     setProductos([]);
-
+    setLotes([]);
     handleClose();
   };
 
   return (
-    <Modal show={show} onHide={handleCerrarModal} centered size="lg">
-      {loading ? (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(255, 255, 255, 0.85)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 10,
-            borderRadius: "var(--bs-modal-border-radius)",
-          }}
+    <Modal
+      open={show}
+      title="Asignar Stock a Bodega"
+      onCancel={handleCerrarModal}
+      width={700} // Un poco más ancho para los campos
+      footer={[
+        <Button key="cancelar" onClick={handleCerrarModal}>
+          Cancelar
+        </Button>,
+        <Button
+          key="guardar"
+          type="primary"
+          loading={loading} // Se usa el loading del submit
+          onClick={() => form.submit()}
         >
-          <Spinner animation="grow" />
-          <p>Cargando...</p>
-        </div>
-      ) : null}
-      <Modal.Header closeButton>
-        <Modal.Title>Asignar Stock a Bodega</Modal.Title>
-      </Modal.Header>
+          {loading ? "Asignando..." : "Asignar Stock"}
+        </Button>,
+      ]}
+    >
+      {/* Mensaje de Alerta */}
+      {mensaje && (
+        <Alert
+          message={mensaje}
+          type={error ? "error" : "success"}
+          showIcon
+          closable
+          onClose={() => setMensaje("")}
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
-      <Modal.Body>
-        {mensaje && !loading && (
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              backgroundColor: "rgba(255, 255, 255, 0.85)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 10,
-              borderRadius: "var(--bs-modal-border-radius)",
-            }}
-          >
-            <Alert variant={error ? "danger" : "success"}>{mensaje}</Alert>
-          </div>
-        )}
-        <Form onSubmit={handleSubmit} className="text-center">
-          <Row>
-            <Col>
-              <Form.Group className="mb-3 ">
-                <Form.Label>Producto *</Form.Label>
-                <Form.Select
-                  as="select"
-                  name="idProducto"
-                  value={datos.idProducto}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Seleccione un producto</option>
-                  {productos.map((p) => (
-                    <option key={p.idProducto} value={p.idProducto}>
-                      {p.nombre} (SKU: {p.codigo})
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
-            <Col>
-              <Form.Group className="mb-3">
-                <Form.Label>Stock *</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Ingrese stock"
-                  name="stock"
-                  value={datos.stock}
-                  onChange={handleChange}
-                  required
+      {/* Spinner mientras cargan los dropdowns */}
+      {loadingDeps ? (
+        <div style={{ textAlign: "center", padding: "30px 0" }}>
+          <Spin tip="Cargando datos..." />
+        </div>
+      ) : (
+        // Formulario de Ant Design
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          autoComplete="off"
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Producto"
+                name="idProducto"
+                rules={[
+                  {
+                    required: true,
+                    message: "Por favor seleccione un producto",
+                  },
+                ]}
+              >
+                <Select
+                  placeholder="Seleccione un producto"
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                  options={productos.map((p) => ({
+                    value: p.idProducto,
+                    label: ` (Codigo: ${p.codigo}) - ${p.nombre}`,
+                  }))}
                 />
-              </Form.Group>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Stock"
+                name="stock"
+                rules={[
+                  { required: true, message: "Por favor ingrese el stock" },
+                ]}
+              >
+                <InputNumber
+                  placeholder="Ingrese stock"
+                  min={0}
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
             </Col>
           </Row>
-          <Row>
-            <Col>
-              <Form.Group className="mb-3 ">
-                <Form.Label>Estado Producto *</Form.Label>
-                <Form.Select
-                  as="select"
-                  name="estado"
-                  value={datos.estado}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Seleccione estado</option>
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
-                </Form.Select>
-              </Form.Group>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Estado Producto"
+                name="estado"
+                rules={[
+                  { required: true, message: "Por favor seleccione un estado" },
+                ]}
+              >
+                <Select
+                  placeholder="Seleccione estado"
+                  options={[
+                    { value: "Activo", label: "Activo" },
+                    { value: "Inactivo", label: "Inactivo" },
+                  ]}
+                />
+              </Form.Item>
             </Col>
-            <Col>
-              <Form.Group className="mb-3">
-                <Form.Label>Lote *</Form.Label>
-                <Form.Select
-                  as="select"
-                  name="idLote"
-                  value={datos.idLote}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Seleccione un lote</option>
-                  {lotes.map((l) => (
-                    <option key={l.idLote} value={l.idLote}>
-                      {l.nombre} (SKU: {l.codigo})
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
+            <Col span={12}>
+              <Form.Item
+                label="Lote"
+                name="idLote"
+                rules={[
+                  { required: true, message: "Por favor seleccione un lote" },
+                ]}
+              >
+                {/* NOTA: Tu código original no carga 'lotes'. 
+                  Si 'lotes' se carga, este Select funcionará.
+                  Si 'idLote' es un texto, cambia <Select> por <Input />
+                */}
+                <Select
+                  placeholder="Seleccione un lote"
+                  options={lotes.map((l) => ({
+                    value: l.idLote,
+                    label: `${l.nombre} (Código: ${l.codigo})`,
+                  }))}
+                  disabled={lotes.length === 0} // Deshabilitado si no hay lotes cargados
+                />
+                {/* Si 'idLote' es un campo de texto, usa esto en su lugar:
+                <Input placeholder="Ingrese el código de lote" />
+                */}
+              </Form.Item>
             </Col>
           </Row>
         </Form>
-      </Modal.Body>
-
-      <Modal.Footer>
-        <Button variant="secondary" onClick={handleCerrarModal}>
-          Cancelar
-        </Button>
-        <Button variant="primary" onClick={handleSubmit} disabled={loading}>
-          {loading ? "Asignando..." : "Asignar Stock"}
-        </Button>
-      </Modal.Footer>
+      )}
     </Modal>
   );
 }

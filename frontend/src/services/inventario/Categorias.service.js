@@ -5,11 +5,11 @@ const API_URL = `${URL}/categorias`;
 
 export default async function obtenerCategoria() {
   try {
-    const response = await axios.get(`${API_URL}/buscar`, null, {
+    const response = await axios.get(`${API_URL}/buscar`, {
       withCredentials: true,
     });
-    //console.log("Categorías obtenidas:", response);
-    return response.data;
+    //console.log("Categorías obtenidas:", response.data);
+    return response;
   } catch (error) {
     //console.error("Error al obtener categorias:", error.response.data.error);
     return error.response.data;
@@ -44,7 +44,7 @@ export async function editarCategoria(datos, id) {
 
 export async function eliminarCategoria(id) {
   try {
-    const response = await axios.delete(`${API_URL}/eliminar/${id}`, null, {
+    const response = await axios.delete(`${API_URL}/eliminar/${id}`, {
       withCredentials: true,
     });
     console.log("categoria eliminada:", response);

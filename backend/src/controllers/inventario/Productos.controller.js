@@ -10,21 +10,25 @@ const jwt = require("jsonwebtoken");
 exports.createProducto = async (req, res) => {
   try {
     const {
+      idProducto,
       codigo,
       nombre,
+      marca,
       precioCompra,
       precioVenta,
       peso,
-      descripcion,
       estado,
+      descripcion,
       nameCategoria,
     } = req.body;
     if (
+      !idProducto ||
       !codigo ||
       !nombre ||
+      !marca ||
       !precioCompra ||
+      !peso ||
       !precioVenta ||
-      !estado ||
       !nameCategoria
     ) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
@@ -39,13 +43,16 @@ exports.createProducto = async (req, res) => {
     }
 
     const nuevoProducto = await Producto.create({
+      idProducto,
       codigo,
       nombre,
+      marca,
+      estado,
       precioCompra,
       precioVenta,
       peso,
+      fechaCreacion: new Date(),
       descripcion,
-      estado,
       idCategoria: categoriaExistente[0].dataValues.idCategoria,
     });
     if (nuevoProducto && req.cookies.token) {
@@ -91,6 +98,7 @@ exports.getAllProductos = async (req, res) => {
       // },
       include: [{ model: Categoria }],
     });
+    // console.log(productos);
     if (productos.length === 0 || !productos) {
       await crearBitacora({
         nombre: `consulta de productos`,
@@ -237,13 +245,11 @@ exports.deleteProducto = async (req, res) => {
     if (!req.params.id) {
       return res.status(422).json({ error: "ID de producto es obligatorio" });
     }
-    const busquedaProducto = await Producto.findByPk(req.params.id);
+    const busquedaProducto = await Producto.destroy({
+      where: { idProducto: req.params.id },
+    });
 
     if (busquedaProducto) {
-      busquedaProducto.estado = "eliminado";
-
-      await busquedaProducto.save();
-
       return res.status(200).json({
         message: "Producto eliminado (estado actualizado a 'eliminado')",
       });

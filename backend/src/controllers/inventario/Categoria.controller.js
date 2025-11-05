@@ -6,15 +6,15 @@ const jwt = require("jsonwebtoken");
 
 // Crear una nueva categoria
 exports.createCategoria = async (req, res) => {
-  const { nombre, descripcion, estado } = req.body;
-  if (!nombre || !descripcion || !estado) {
+  const { nombre, subcategoria, estado } = req.body;
+  if (!nombre || !subcategoria || !estado) {
     return res.status(422).json({ error: "Faltan datos obligatorios" });
   }
   //Validacion de datos con Joi
   try {
     const nuevaCategoria = await Categoria.create({
       nombre,
-      descripcion,
+      subcategoria,
       estado,
     });
     await crearBitacora({
