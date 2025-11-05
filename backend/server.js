@@ -182,10 +182,14 @@ const startServer = async () => {
 
     //Crear usuarios iniciales
     await createUsers();
-
-    https.createServer(sslOptions, app).listen(process.env.PORT, () => {
-      console.log(`Servidor HTTPS en https://localhost:${process.env.PORT}`);
+    app.listen(process.env.PORT, () => {
+      console.log(
+        `Servidor escuchando en http://localhost:${process.env.PORT}`
+      );
     });
+    // https.createServer(sslOptions, app).listen(process.env.PORT, () => {
+    //   console.log(`Servidor HTTPS en https://localhost:${process.env.PORT}`);
+    // });
   } catch (error) {
     console.error("Error al iniciar el servidor:", error);
     process.exit(1);

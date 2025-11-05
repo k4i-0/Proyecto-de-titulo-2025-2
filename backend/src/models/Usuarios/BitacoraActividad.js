@@ -13,7 +13,7 @@ const BitacoraActividad = sequelize.define(
     idBitacora: {
       type: DataTypes.INTEGER,
       references: {
-        model: "bitacoras",
+        model: "bitacora",
         key: "idBitacora",
       },
     },
