@@ -9,19 +9,19 @@ const jwt = require("jsonwebtoken");
 exports.createSucursal = async (req, res) => {
   const { nombre, direccion, estado } = req.body;
 
-  // const { token } = req.cookies;
+  const { token } = req.cookies;
   //return res.status(201).send("prueba");
   if (!nombre || !direccion || !estado) {
     return res.status(422).json({ error: "Faltan datos obligatorios" });
   }
-  // if (!token) {
-  //   return res.status(498).json({ error: "Token no proporcionado" });
-  // }
+  if (!token) {
+    return res.status(498).json({ error: "Token no proporcionado" });
+  }
 
-  // const userData = jwt.verify(token, process.env.JWT_SECRET);
-  // if (!userData || userData == undefined || userData == null) {
-  //   return res.status(498).json({ error: "Token inválido" });
-  // }
+  const userData = jwt.verify(token, process.env.JWT_SECRET);
+  if (!userData || userData == undefined || userData == null) {
+    return res.status(498).json({ error: "Token inválido" });
+  }
 
   const usuarioCreador = await Funcionario.findOne({
     where: { email: userData.email },
@@ -60,31 +60,11 @@ exports.createSucursal = async (req, res) => {
       estado,
       idFuncionario: usuarioCreador.dataValues.idFuncionario,
     });
-    // await crearBitacora({
-    //   nombre: `crear Sucursal ${nombre}`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Se creó la Sucursal: ${nombre}`,
-    //   funcionOcupo: "createSucursal controller",
-    //   usuariosCreador: ` Sistema por ${
-    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-    //     "error de lectura cookie"
-    //   } `,
-    //   nivelAlerta: "Bajo",
-    // });
+
     res.status(201).json(nuevaSucursal);
   } catch (error) {
     console.error("Error al crear la sucursal:", error);
-    // await crearBitacora({
-    //   nombre: `error al crear sucursal ${nombre}`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Error al crear la sucursal: ${nombre}`,
-    //   funcionOcupo: "createSucursal controller",
-    //   usuariosCreador: ` Sistema por ${
-    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-    //     "error de lectura cookie"
-    //   } `,
-    //   nivelAlerta: "Alto",
-    // });
+
     res.status(500).json({ error: "Error al crear la sucursal" });
   }
 };

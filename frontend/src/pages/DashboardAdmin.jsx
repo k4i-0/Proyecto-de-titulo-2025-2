@@ -5,7 +5,7 @@ import Navegacion from "../components/Navegacion";
 // import Home from "../components/Home";
 import { finSesion } from "../services/Auth.services";
 
-import { Layout, theme, Typography, Button } from "antd";
+import { Layout, theme, Typography, Image, Menu } from "antd";
 
 const { Title } = Typography;
 
@@ -34,7 +34,7 @@ function Dashboard() {
   return (
     <>
       <Layout style={{ width: "100%", height: "100vh", margin: 0, padding: 0 }}>
-        <Header style={{ display: "flex", alignItems: "center" }}>
+        {/* <Header style={{ display: "flex", alignItems: "center" }}>
           <Button
             type="link"
             onClick={() => navigate("/")}
@@ -44,6 +44,30 @@ function Dashboard() {
               Panel de Administración
             </Title>
           </Button>
+        </Header> */}
+        <Header style={{ display: "flex", alignItems: "center" }}>
+          <div className="demo-logo" />
+          {/* <Menu
+            theme="dark"
+            mode="horizontal"
+            defaultSelectedKeys={["2"]}
+            items={[
+              {
+                key: "1",
+                label: "Inicio",
+                onClick: () => navigate("/"),
+              },
+              {
+                key: "2",
+                label: "Proveedores",
+              },
+              {
+                key: "3",
+                label: "Inventario",
+              },
+            ]}
+            style={{ flex: 1, minWidth: 0, marginLeft: 200 }}
+          /> */}
         </Header>
 
         <Layout>

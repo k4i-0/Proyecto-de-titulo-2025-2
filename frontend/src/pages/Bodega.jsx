@@ -54,6 +54,7 @@ export default function Bodega() {
     setListaBodegas([]);
     try {
       const respuesta = await obtenerBodegasPorSucursal(idSucursal);
+      //console.log("Respuesta al obtener bodegas:", respuesta);
       if (respuesta.status === 200) {
         setListaBodegas(respuesta.data);
       } else if (respuesta.status === 204) {
@@ -234,7 +235,9 @@ export default function Bodega() {
           <Spin
             indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
             tip="Cargando bodegas..."
-          />
+          >
+            <div style={{ padding: 50 }} /> {/* Contenido vacío */}
+          </Spin>
         </div>
       );
     }
@@ -322,6 +325,10 @@ export default function Bodega() {
   return (
     <>
       <Title level={3}>Gestión de Bodegas</Title>
+      <Button type="primary" onClick={() => navigate("/sucursal")}>
+        Volver
+      </Button>
+
       <Row
         justify="center"
         gutter={24}

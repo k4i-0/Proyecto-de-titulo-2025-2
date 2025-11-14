@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { Layout, Menu } from "antd";
 import { useNavigate } from "react-router-dom";
 const { Sider } = Layout;
@@ -8,10 +9,17 @@ import {
 } from "@ant-design/icons";
 
 export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
+  const [collapsed, setCollapsed] = useState(true);
   const navigate = useNavigate();
   return (
     <>
-      <Sider collapsible width={200} style={{ background: colorBgContainer }}>
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
+        width={200}
+        style={{ background: colorBgContainer }}
+      >
         <Menu
           mode="inline"
           defaultSelectedKeys={["1"]}
@@ -19,9 +27,27 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
           style={{ height: "100%", borderInlineEnd: 0 }}
           items={[
             {
-              key: "Inventario",
-              icon: <ProductOutlined />,
-              label: "Inventario",
+              key: "Ventas",
+              icon: <AreaChartOutlined />,
+              label: "Ventas",
+              disabled: true,
+              children: [
+                {
+                  key: "gestionar_ventas",
+                  label: "Gestionar Ventas",
+                  onClick: () => navigate("gestionar_ventas"),
+                },
+                {
+                  key: "clientes",
+                  label: "Clientes",
+                  onClick: () => navigate("clientes"),
+                },
+              ],
+            },
+            {
+              key: "Configuracion",
+              icon: <AreaChartOutlined />,
+              label: "Configuración",
               children: [
                 {
                   key: "productos",
@@ -42,24 +68,6 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                   key: "proveedores",
                   label: "Proveedores",
                   onClick: () => navigate("/proveedores"),
-                },
-              ],
-            },
-            {
-              key: "ventas",
-              icon: <AreaChartOutlined />,
-              label: "Ventas",
-              disabled: true,
-              children: [
-                {
-                  key: "gestionar_ventas",
-                  label: "Gestionar Ventas",
-                  onClick: () => navigate("gestionar_ventas"),
-                },
-                {
-                  key: "clientes",
-                  label: "Clientes",
-                  onClick: () => navigate("clientes"),
                 },
               ],
             },

@@ -21,7 +21,7 @@ import obtenerSucursales, {
   eliminarSucursal,
 } from "../services/inventario/Sucursal.service";
 
-import VerBodegas from "../components/inventario/modalBodega/verBodegas";
+//import VerBodegas from "../components/inventario/modalBodega/verBodegas";
 
 export default function Sucursal() {
   const navigate = useNavigate();
@@ -32,13 +32,13 @@ export default function Sucursal() {
   const [loading, setLoading] = useState(false);
 
   const [sucursalSelect, setSucursalSelect] = useState(null);
-  const [bodegaSelect, setBodegaSelect] = useState(null);
+  //const [bodegaSelect, setBodegaSelect] = useState(null);
 
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
-  const [modalBodegaVer, setModalBodegaVer] = useState(false);
+  //const [modalBodegaVer, setModalBodegaVer] = useState(false);
 
-  console.log("Sucursal seleccionada:", sucursalSelect);
+  //console.log("Sucursal seleccionada:", sucursalSelect);
   const buscarSucursales = async () => {
     try {
       setLoading(true);
@@ -47,12 +47,9 @@ export default function Sucursal() {
       const respuesta = await obtenerSucursales();
       //console.log("Respuesta sucursales:", respuesta.data[0]);
       if (respuesta.status == 204) {
-        // setError(true);
-        //setModalCrear(true);
         setMensaje(
           "No hay sucursales disponibles, por favor crea una sucursal"
         );
-        // setSucursales([]);
       } else {
         if (respuesta.status === 200) {
           setMensaje("");
@@ -75,9 +72,6 @@ export default function Sucursal() {
   const handleCerrarModal = () => {
     setModalCrear(false);
     setModalEditar(false);
-    setModalBodegaVer(false);
-    //setSucursalSelect(null);
-    // setDatos({ nombre: "", descripcion: "", estado: "" });
   };
 
   const handleCrear = () => {
@@ -86,13 +80,6 @@ export default function Sucursal() {
     setModalCrear(true);
   };
 
-  // const handleEditar = (sucursal) => {
-  //   console.log("Editar sucursal seleccionada:", sucursalSelect);
-  //   setError(false);
-  //   setSucursalSelect(sucursal);
-  //   setMensaje("");
-  //   setModalEditar(true);
-  // };
   const handleEditar = () => {
     if (!sucursalSelect) {
       setError(true);
@@ -133,11 +120,6 @@ export default function Sucursal() {
     }
   };
 
-  // const handleVer = (bodega) => {
-  //   setBodegaSelect(bodega);
-  //   //setModalBodegaVer(true);
-  // };
-
   const handleSeleccionarFila = (record) => {
     if (sucursalSelect?.idSucursal === record.idSucursal) {
       setSucursalSelect(null);
@@ -146,30 +128,12 @@ export default function Sucursal() {
     }
   };
   const handleVerBodegas = (idSucursal, e) => {
-    if (e) e.stopPropagation(); // Evita que se seleccione la fila
-    //setBodegaSelect(idSucursal);
+    if (e) e.stopPropagation();
+
     navigate("/bodega/" + idSucursal);
-    //setModalBodegaVer(true);
   };
 
   const columns = [
-    {
-      title: "Cod. Sucursal",
-      dataIndex: "idSucursal",
-      key: "idSucursal",
-      align: "center",
-      width: 150,
-    },
-    {
-      title: "Nombre",
-      dataIndex: "nombre",
-      key: "nombre",
-    },
-    {
-      title: "Dirección",
-      dataIndex: "direccion",
-      key: "direccion",
-    },
     {
       title: "Estado",
       dataIndex: "estado",
@@ -200,6 +164,24 @@ export default function Sucursal() {
         );
       },
     },
+    {
+      title: "Cod. Sucursal",
+      dataIndex: "idSucursal",
+      key: "idSucursal",
+      align: "center",
+      width: 150,
+    },
+    {
+      title: "Nombre",
+      dataIndex: "nombre",
+      key: "nombre",
+    },
+    {
+      title: "Dirección",
+      dataIndex: "direccion",
+      key: "direccion",
+    },
+
     {
       title: "Bodegas",
       key: "bodegas",
@@ -368,161 +350,12 @@ export default function Sucursal() {
         sucursal={sucursalSelect}
         funcionBuscarSucursales={buscarSucursales}
       />
-      <VerBodegas
+      {/* <VerBodegas
         show={modalBodegaVer}
         handleClose={handleCerrarModal}
-        bodega={bodegaSelect}
+        //bodega={bodegaSelect}
         buscarSucursales={buscarSucursales}
-      />
+      /> */}
     </>
   );
-
-  // return (
-  //   <>
-  //     <Row justify="center" align="middle">
-  //       <Col span={24} style={{ textAlign: "center" }}>
-  //         <Title>Gestión de Sucursales</Title>
-  //         <Title level={5}>Aquí puedes gestionar tus sucursales</Title>
-  //         {mensaje && (
-  //           <Alert
-  //             type={error ? "warning" : "success"}
-  //             showIcon
-  //             message={mensaje}
-  //             closable
-  //           />
-  //         )}
-  //       </Col>
-  //     </Row>
-  //     {sucursales.length <= 0 ? (
-  //       <CrearSucursal
-  //         show={modalCrear}
-  //         handleClose={handleCerrarModal}
-  //         buscarSucursales={buscarSucursales}
-  //       />
-  //     ) : (
-  //       // <Card
-  //       //   title="Crear tu primera sucursal"
-  //       //    onFinish={handleSubmit}
-  //       //   style={{
-  //       //     width: 400,
-  //       //     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-  //       //     borderRadius: "8px",
-  //       //   }}
-  //       // >
-  //       //   <Form>
-  //       //     <Form.Item label="Nombre">
-  //       //       <Input />
-  //       //     </Form.Item>
-  //       //     <Form.Item label="Dirección">
-  //       //       <Input />
-  //       //     </Form.Item>
-  //       //     <Form.Item label="Estado">
-  //       //       <Select>
-  //       //         <Select.Option value="activo">Activo</Select.Option>
-  //       //         <Select.Option value="inactivo">Inactivo</Select.Option>
-  //       //       </Select>
-  //       //     </Form.Item>
-  //       //     <Form.Item>
-  //       //       <Button type="primary" htmlType="submit">
-  //       //         Crear Sucursal
-  //       //       </Button>
-  //       //     </Form.Item>
-  //       //   </Form>
-  //       // </Card>
-  //       <>
-  //         <Row className="mb-4">
-  //           <Col md={3}>
-  //             <Button
-  //               variant="primary"
-  //               onClick={handleCrear}
-  //               disabled={loading}
-  //               className="w-60"
-  //             >
-  //               Crear Sucursal
-  //             </Button>
-  //           </Col>
-  //         </Row>
-
-  //         <Table striped bordered hover className="text-center">
-  //           <thead>
-  //             <tr>
-  //               <th>Cod. Sucursal</th>
-  //               <th>Nombre</th>
-  //               <th>Direccion</th>
-  //               <th>Estado</th>
-
-  //               <th>Acciones</th>
-  //             </tr>
-  //           </thead>
-  //           <tbody>
-  //             {sucursales.length > 0 ? (
-  //               sucursales.map((sucursal) => (
-  //                 <tr
-  //                   key={sucursal.idSucursal}
-  //                   onClick={() => handleVer(sucursal.idSucursal)}
-  //                 >
-  //                   <td>{sucursal.idSucursal}</td>
-  //                   <td>{sucursal.nombre}</td>
-  //                   <td>{sucursal.direccion}</td>
-  //                   <td>{sucursal.estado}</td>
-
-  //                   <td>
-  //                     <Button
-  //                       variant="warning"
-  //                       onClick={() => handleEditar(sucursal)}
-  //                       disabled={loading}
-  //                       style={{ margin: "5px" }}
-  //                     >
-  //                       Editar
-  //                     </Button>
-  //                     <Button
-  //                       variant="danger"
-  //                       onClick={() => handleEliminar(sucursal.idSucursal)}
-  //                       disabled={loading}
-  //                       style={{ margin: "5px" }}
-  //                     >
-  //                       Eliminar
-  //                     </Button>
-  //                     {/* <Button
-  //                   variant="info"
-  //                   onClick={() => handleVer(sucursal.idSucursal)}
-  //                   disabled={loading}
-  //                   style={{ margin: "5px" }}
-  //                 >
-  //                   Bodegas
-  //                 </Button> */}
-  //                   </td>
-  //                 </tr>
-  //               ))
-  //             ) : (
-  //               <tr>
-  //                 <td colSpan="6" className="text-center">
-  //                   No hay sucursales disponibles
-  //                 </td>
-  //               </tr>
-  //             )}
-  //           </tbody>
-  //         </Table>
-
-  //         <CrearSucursal
-  //           show={modalCrear}
-  //           handleClose={handleCerrarModal}
-  //           buscarSucursales={buscarSucursales}
-  //         />
-  //         <EditarSucursal
-  //           show={modalEditar}
-  //           handleClose={handleCerrarModal}
-  //           sucursal={sucursalSelect}
-  //           funcionBuscarSucursales={buscarSucursales}
-  //         />
-  //         <VerBodegas
-  //           show={modalBodegaVer}
-  //           handleClose={handleCerrarModal}
-  //           bodega={bodegaSelect}
-  //           buscarSucursales={buscarSucursales}
-  //         />
-  //       </>
-  //     )}
-  //   </>
-  // );
 }

@@ -9,13 +9,13 @@ export default function EditarSucursal({
   handleClose,
   funcionBuscarSucursales,
 }) {
-  console.log("Sucursal para editar recibida en el modal:", sucursal);
+  //console.log("Sucursal para editar recibida en el modal:", sucursal);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    console.log("Sucursal para editar cambiada:", sucursal);
+    //console.log("Sucursal para editar cambiada:", sucursal);
 
     if (sucursal) {
       form.setFieldsValue({

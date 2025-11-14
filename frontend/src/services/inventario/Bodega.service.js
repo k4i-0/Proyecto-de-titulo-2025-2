@@ -12,10 +12,10 @@ export default async function obtenerBodegas() {
     return response;
   } catch (error) {
     //console.error("Error al obtener bodegas:", error.response.data.error);
-    if (error.response.data.error == undefined) {
+    if (error.response?.data?.error == undefined) {
       return { code: 500, error: "Error del servidor" };
     }
-    return error.response.data;
+    return error.response?.data;
   }
 }
 
@@ -28,10 +28,10 @@ export async function crearBodega(datos) {
     return response;
   } catch (error) {
     console.error("Error al crear bodegas:", error.response.data.error);
-    if (error.response.data.error == undefined) {
+    if (error.response?.data?.error == undefined) {
       return { code: 500, error: "Error del servidor" };
     }
-    return error.response.data;
+    return error.response?.data;
   }
 }
 
@@ -43,11 +43,11 @@ export async function editarBodega(datos, id) {
     console.log("bodegas obtenidas:", response);
     return response;
   } catch (error) {
-    console.error("Error al editar bodegas:", error.response.data.error);
-    if (error.response.data.error == undefined) {
+    console.error("Error al editar bodegas:", error.response?.data?.error);
+    if (error.response?.data.error == undefined) {
       return { code: 500, error: "Error del servidor" };
     }
-    return error.response.data;
+    return error.response?.data;
   }
 }
 
@@ -59,8 +59,8 @@ export async function eliminarBodega(id) {
     console.log("bodega eliminada:", response);
     return response;
   } catch (error) {
-    console.error("Error al eliminar bodega:", error.response.data.error);
-    if (error.response.data.error == undefined) {
+    console.error("Error al eliminar bodega:", error.response?.data?.error);
+    if (error.response?.data.error == undefined) {
       return { code: 500, error: "Error del servidor" };
     }
     return error.response.data;
@@ -75,13 +75,22 @@ export async function obtenerBodegasPorSucursal(idSucursal) {
     //console.log("bodegas obtenidas por sucursal:", response);
     return response;
   } catch (error) {
+    console.log("idSucursal en el error:", error);
+    if (!error.response) {
+      console.error("Error de red o configuración:", error.message);
+      return {
+        code: 500,
+        error: "Error de conexión con el servidor",
+        details: error.message,
+      };
+    }
     console.error(
       "Error al obtener bodegas por sucursal:",
-      error.response.data.error
+      error.response?.data?.error
     );
     if (error.response.data.error == undefined) {
       return { code: 500, error: "Error del servidor" };
     }
-    return error.response.data;
+    return error.response?.data;
   }
 }

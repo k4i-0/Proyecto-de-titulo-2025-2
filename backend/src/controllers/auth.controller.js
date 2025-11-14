@@ -78,7 +78,7 @@ async function login(req, res) {
 }
 
 async function logout(req, res) {
-  console.log("antes de", req.cookies);
+  // console.log("antes de", req.cookies);
   const { token } = req.cookies;
   if (!token) {
     res.status(203).send({ message: "Sin cookies" });

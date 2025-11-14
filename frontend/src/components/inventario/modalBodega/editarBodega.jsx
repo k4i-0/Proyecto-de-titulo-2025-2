@@ -9,13 +9,13 @@ export default function EditarBodega({
   handleClose,
   buscarBodegas,
 }) {
-  console.log("Bodega a editar:", bodegas?.capacidad);
+  //console.log("Bodega a editar:", bodegas?.capacidad);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (bodegas) {
+    if (show && bodegas) {
       form.setFieldsValue({
         nombre: bodegas.nombre || "",
         capacidad: bodegas.capacidad || null,
@@ -25,29 +25,9 @@ export default function EditarBodega({
       form.resetFields();
     }
     setError("");
-  }, [bodegas, form]);
-  // useEffect(() => {
-  //   if (bodegas) {
-  //     setFormData({
-  //       nombre: bodegas.nombre || "",
-  //       capacidad: bodegas.capacidad || "",
-  //       estado: bodegas.estado || "",
-  //       idSucursal: bodegas.idSucursal || "",
-  //     });
-  //   }
-  //   setError("");
-  // }, [bodegas]);
-
-  // const handleChangeLocal = (e) => {
-  //   const { name, value } = e.target;
-  //   setFormData({
-  //     ...formData,
-  //     [name]: value,
-  //   });
-  // };
+  }, [show, bodegas, form]);
 
   const handleSubmitEdicion = async (values) => {
-    // e.preventDefault();
     setLoading(true);
     setError("");
     const dataParaEnviar = {
@@ -56,7 +36,7 @@ export default function EditarBodega({
     };
     try {
       const respuesta = await editarBodega(dataParaEnviar, bodegas.idBodega);
-      if (respuesta.status == 200) {
+      if (respuesta.status === 200) {
         buscarBodegas();
         handleCerrar();
       } else {
