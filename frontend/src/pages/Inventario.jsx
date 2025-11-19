@@ -10,6 +10,7 @@ import {
   Popconfirm,
   Empty,
   Spin,
+  message,
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
@@ -34,36 +35,37 @@ export default function Inventario() {
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
 
-  const buscarInventarios = async () => {
+  const cargarInventarios = async () => {
     try {
       setLoading(true);
-      setError(false);
-      setMensaje("");
-      setInventarioSelect(null);
-      const respuesta = await obtenerInventarios();
-      console.log("Respuesta inventarios:", respuesta);
-      if (respuesta.code) {
-        setError(true);
-        setMensaje(respuesta.error);
-      } else {
-        if (respuesta.length === 0) {
-          setMensaje(
-            "No hay stock registrado, por favor crea una entrada de inventario"
-          );
-        }
-        setInventarios(respuesta);
+      const response = await obtenerInventarios();
+
+      if (!response) {
+        message.error("Error al obtener inventarios");
+        setInventarios([]);
+        return;
       }
+
+      if (response.status === 422) {
+        message.warning("No hay productos en el inventario");
+        setInventarios([]);
+        return;
+      }
+
+      // Asumiendo que la respuesta tiene la data en response.data
+      const data = response.data || response;
+      setInventarios(Array.isArray(data) ? data : []);
     } catch (error) {
-      setError(true);
-      setMensaje("Error al cargar datos de inventario");
-      console.error(error);
+      console.error("Error al obtener inventarios:", error);
+      message.error("No se pudieron cargar los productos");
+      setInventarios([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    buscarInventarios();
+    cargarInventarios();
   }, []);
 
   const handleCerrarModal = () => {
@@ -106,7 +108,7 @@ export default function Inventario() {
         setMensaje("Entrada de inventario eliminada exitosamente");
         setError(false);
         setInventarioSelect(null);
-        await buscarInventarios();
+        await cargarInventarios();
       } else {
         setError(true);
         setMensaje(respuesta.error || "Error al eliminar la entrada.");
@@ -327,13 +329,13 @@ export default function Inventario() {
       <CrearInventario
         show={modalCrear}
         handleClose={handleCerrarModal}
-        buscarInventarios={buscarInventarios}
+        buscarInventarios={cargarInventarios}
       />
       <EditarInventario
         show={modalEditar}
         handleClose={handleCerrarModal}
         inventario={inventarioSelect}
-        buscarInventarios={buscarInventarios}
+        buscarInventarios={cargarInventarios}
       />
     </div>
   );

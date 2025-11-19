@@ -9,13 +9,13 @@ export default async function obtenerInventarios() {
       withCredentials: true,
     });
     //console.log("inventarios obtenidas:", response);
-    return response.data;
+    return response;
   } catch (error) {
-    //console.error("Error al obtener inventarios:", error.response.data.error);
-    if (error.response.data.error == undefined) {
+    console.error("Error al obtener inventarios:", error.response.data.error);
+    if (error.response?.data?.error == undefined) {
       return { code: 500, error: "Error del servidor" };
     }
-    return error.response.data;
+    return error.response;
   }
 }
 

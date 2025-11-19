@@ -28,7 +28,7 @@ export default function Editar({
 
   useEffect(() => {
     if (Producto) {
-      console.log("Cargando producto en el formulario de edición:", Producto);
+      // console.log("Cargando producto en el formulario de edición:", Producto);
       form.setFieldsValue({
         idProducto: Producto.idProducto || "",
         marca: Producto.marca || "",
@@ -50,7 +50,7 @@ export default function Editar({
     setLoading(true);
     setError("");
     setMensaje("");
-
+    // console.log("Valores enviados para edición:", values);
     try {
       const respuesta = await editarProducto(values, Producto.idProducto);
       if (respuesta.status === 200) {

@@ -1,4 +1,4 @@
-const { where, Op } = require("sequelize");
+const { where, Op, json } = require("sequelize");
 const Producto = require("../../models/inventario/Productos");
 const Categoria = require("../../models/inventario/Categoria");
 
@@ -188,13 +188,23 @@ exports.updateProducto = async (req, res) => {
       peso,
       descripcion,
       estado,
-      idcategoria,
+      nameCategoria,
     } = req.body;
     const busquedaProducto = await Producto.findByPk(req.params.id);
+
     if (!busquedaProducto) {
       return res.status(422).json({ error: "Producto no encontrado" });
     }
-    const respuesta = await Producto.update(
+    const categoriaExistente = await Categoria.findOne({
+      where: { nombre: nameCategoria },
+    });
+
+    if (!categoriaExistente) {
+      return res
+        .status(422)
+        .json({ error: "Categoría asociada no encontrada" });
+    }
+    await Producto.update(
       {
         codigo,
         nombre,
@@ -203,7 +213,7 @@ exports.updateProducto = async (req, res) => {
         precioVenta,
         peso,
         estado,
-        idcategoria,
+        idCategoria: categoriaExistente.idCategoria,
       },
       {
         where: { idProducto: req.params.id },
@@ -211,17 +221,13 @@ exports.updateProducto = async (req, res) => {
     );
 
     const updatedProducto = await Producto.findByPk(req.params.id);
-    // await crearBitacora({
-    //   nombre: `actualización de producto ID: ${req.params.id}`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Se actualizó el producto con ID: ${req.params.id}`,
-    //   funcionOcupo: "updateProducto controller",
-    //   usuariosCreador: ` Sistema por ${
-    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-    //     "error de lectura cookie"
-    //   } `,
-    //   nivelAlerta: "Bajo",
-    // });
+    console.log("Producto después" + JSON.stringify(updatedProducto));
+    if (!updatedProducto) {
+      return res
+        .status(422)
+        .json({ error: "Producto no encontrado después de la actualización" });
+    }
+
     res.status(200).json(updatedProducto);
   } catch (error) {
     console.log("Error al actualizar el producto:", error);
@@ -268,18 +274,7 @@ exports.deleteProducto = async (req, res) => {
 
     return res.status(204).json({ error: "Producto no encontrado" });
   } catch (error) {
-    //console.log("Error al eliminar el producto:", error);
-    // await crearBitacora({
-    //   nombre: `error al eliminar producto ID: ${req.params.id}`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Error al eliminar el producto con ID: ${req.params.id}`,
-    //   funcionOcupo: "deleteProducto controller",
-    //   usuariosCreador: ` Sistema por ${
-    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-    //     "error de lectura cookie"
-    //   } `,
-    //   nivelAlerta: "Alto",
-    // });
+    console.error("Error al eliminar el producto:", error);
     res.status(500).json({ error: "Error al eliminar el producto" });
   }
 };

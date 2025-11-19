@@ -45,6 +45,19 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
               ],
             },
             {
+              key: "Inventario",
+              icon: <AreaChartOutlined />,
+              label: "Inventario",
+
+              children: [
+                {
+                  key: "Compra_Proveedores",
+                  label: "Gestionar Compras",
+                  onClick: () => navigate("/aprovisionamiento"),
+                },
+              ],
+            },
+            {
               key: "Configuracion",
               icon: <AreaChartOutlined />,
               label: "Configuración",
@@ -52,22 +65,22 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                 {
                   key: "productos",
                   label: "Productos",
-                  onClick: () => navigate("/productos"),
+                  onClick: () => navigate("productos"),
                 },
                 {
                   key: "inventario",
                   label: "Inventario",
-                  onClick: () => navigate("/inventario"),
+                  onClick: () => navigate("inventario"),
                 },
                 {
                   key: "sucursal",
                   label: "Sucursal",
-                  onClick: () => navigate("/sucursal"),
+                  onClick: () => navigate("sucursal"),
                 },
                 {
                   key: "proveedores",
                   label: "Proveedores",
-                  onClick: () => navigate("/proveedores"),
+                  onClick: () => navigate("proveedores"),
                 },
               ],
             },

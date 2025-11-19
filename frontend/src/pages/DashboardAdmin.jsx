@@ -1,6 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 // import { useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import Navegacion from "../components/Navegacion";
 // import Home from "../components/Home";
 import { finSesion } from "../services/Auth.services";
@@ -13,7 +13,7 @@ function Dashboard() {
   const { user, logout } = useAuth();
   // const [vistaActual, setVistaActual] = useState("home");
   const { Content, Header } = Layout;
-  const navigate = useNavigate();
+
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();

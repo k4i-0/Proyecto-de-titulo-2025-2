@@ -23,14 +23,18 @@ const Login = () => {
   const [showAlert, setShowAlert] = useState(false);
 
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     if (token || isAuthenticated) {
-      navigate("/");
+      if (user && user.rol === "Administrador") {
+        navigate("/admin");
+      } else if (user && user.rol === "Vendedor") {
+        navigate("/vendedor");
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, user]);
 
   useEffect(() => {
     if (showAlert) {
