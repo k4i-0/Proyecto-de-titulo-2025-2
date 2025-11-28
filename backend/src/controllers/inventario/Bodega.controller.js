@@ -1,4 +1,5 @@
 const Bodega = require("../../models/inventario/Bodega");
+const Estante = require("../../models/inventario/Estante");
 const { Op, where } = require("sequelize");
 
 const { crearBitacora } = require("../../services/bitacora.service");
@@ -100,16 +101,32 @@ exports.deleteBodega = async (req, res) => {
     if (!req.params.id) {
       return res.status(422).json({ error: "ID de bodega es obligatorio" });
     }
-    const busquedaBodega = await Bodega.findByPk(req.params.id);
-    if (busquedaBodega) {
-      busquedaBodega.estado = "Eliminado";
-      await busquedaBodega.save();
-
-      return res.status(200).json({
-        message: "Bodega eliminada (estado actualizado a 'Eliminado')",
+    //Evita que se borre todas las bodegas
+    const bodegasSucursal = await Bodega.findOne({
+      where: { idBodega: req.params.id },
+    });
+    const todasBodegas = await Bodega.findAll({
+      where: { idSucursal: bodegasSucursal.idSucursal },
+    });
+    if (todasBodegas.length <= 1) {
+      return res.status(400).json({
+        error: "No se puede eliminar la última bodega de esta sucursal",
       });
     }
-    return res.status(422).json({ error: "Bodega no encontrada" });
+    //eliminar Estantes
+    await Estante.destroy({
+      where: { idBodega: req.params.id },
+    });
+    //eliminar Bodega
+    const busquedaBodega = await Bodega.destroy({
+      where: { idBodega: req.params.id },
+    });
+    if (busquedaBodega) {
+      return res
+        .status(200)
+        .json({ message: "Bodega eliminada correctamente" });
+    }
+    return res.status(404).json({ error: "Bodega no encontrada" });
   } catch (error) {
     res.status(500).json({ error: "Error al eliminar la bodega" });
   }

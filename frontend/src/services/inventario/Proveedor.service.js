@@ -8,6 +8,7 @@ export async function getAllProveedores() {
     const response = await axios.get(`${API_URL}/buscar`, {
       withCredentials: true,
     });
+    console.log("Proveedores obtenidos:", response);
     return response;
   } catch (error) {
     console.error("Error al obtener los proveedores:", error);

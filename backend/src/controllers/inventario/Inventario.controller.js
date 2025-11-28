@@ -1,4 +1,6 @@
 const Inventario = require("../../models/inventario/Inventario");
+const Estante = require("../../models/inventario/Estante");
+const Lote = require("../../models/inventario/Lote");
 const { Op } = require("sequelize");
 
 exports.createInventario = async (req, res) => {
@@ -38,19 +40,25 @@ exports.createInventario = async (req, res) => {
 exports.getAllInventario = async (req, res) => {
   try {
     const inventarios = await Inventario.findAll({
-      // where: {
-      //   estado: {
-      //     [Op.ne]: "Eliminado",
-      //   },
-      // },
+      include: [
+        {
+          model: Estante,
+        },
+        {
+          model: Lote,
+        },
+      ],
     });
+
     if (inventarios.length === 0 || !inventarios) {
       return res
-        .status(422)
+        .status(204)
         .json({ code: 1113, error: "No hay inventarios disponibles" });
     }
+
     res.status(200).json(inventarios);
   } catch (error) {
+    console.error("Error al obtener los inventarios:", error);
     res.status(500).json({ error: "Error al obtener los inventarios" });
   }
 };

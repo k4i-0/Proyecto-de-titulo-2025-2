@@ -325,9 +325,9 @@ export default function Bodega() {
   return (
     <>
       <Title level={3}>Gestión de Bodegas</Title>
-      <Button type="primary" onClick={() => navigate("/sucursal")}>
+      {/* <Button type="primary" onClick={() => navigate("/admin/sucursal")}>
         Volver
-      </Button>
+      </Button> */}
 
       <Row
         justify="center"
@@ -338,7 +338,7 @@ export default function Bodega() {
           <Card
             title={`Gestión de Bodegas (Sucursal ${idSucursal})`}
             extra={
-              <Button type="link" onClick={() => navigate("/sucursal")}>
+              <Button type="link" onClick={() => navigate("/admin/sucursal")}>
                 Volver a Sucursales
               </Button>
             }

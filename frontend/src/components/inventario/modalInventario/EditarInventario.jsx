@@ -1,54 +1,47 @@
 // src/components/inventario/modalInventario/EditarInventario.jsx
-
 import { useState, useEffect } from "react";
-import { Alert, Button, Form, Modal, Spinner } from "react-bootstrap";
-
-// Asumo que tienes un servicio 'editarInventario'
+import { Modal, Form, Input, Button, Alert, Spin, Flex } from "antd";
 import { editarInventario } from "../../../services/inventario/Inventario.service";
 
 export default function EditarInventario({
-  inventario, // El item de inventario seleccionado
+  inventario,
   show,
   handleClose,
   buscarInventarios,
 }) {
-  const [formData, setFormData] = useState({ stock: "" });
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (inventario) {
-      setFormData({
+    if (inventario && show) {
+      form.setFieldsValue({
+        nombre: inventario.nombre || "",
+        producto: inventario.idProducto || "Cargando...",
+        bodega: inventario.bodega?.nombre || "Cargando...",
         stock: inventario.stock || "",
       });
       setError("");
     }
-  }, [inventario]);
+  }, [inventario, show, form]);
 
-  const handleChangeLocal = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSubmitEdicion = async (e) => {
-    e.preventDefault();
+  const handleSubmitEdicion = async (values) => {
     setLoading(true);
     setError("");
+
     try {
       const datosAEnviar = {
-        ...formData,
-        stock: parseInt(formData.stock, 10), // Asegurar que sea número
+        stock: parseInt(values.stock, 10),
       };
 
-      // Asumo que editarInventario acepta (id, datos)
       const respuesta = await editarInventario(
         inventario.idInventario,
         datosAEnviar
       );
 
-      if (respuesta.status == 200) {
+      if (respuesta.status === 200) {
         buscarInventarios();
-        handleClose();
+        handleCerrar();
       } else {
         setError(respuesta.data?.message || "Error al editar el stock.");
       }
@@ -61,75 +54,89 @@ export default function EditarInventario({
 
   const handleCerrar = () => {
     setError("");
+    form.resetFields();
     handleClose();
   };
 
   return (
-    <Modal show={show} onHide={handleCerrar}>
-      <Modal.Header closeButton>
-        <Modal.Title>Editar Inventario</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {error && <Alert variant="danger">{error}</Alert>}
-
-        {/* Muestra un spinner si el inventario no ha cargado */}
-        {!inventario ? (
-          <Spinner animation="border" />
-        ) : (
-          <Form onSubmit={handleSubmitEdicion}>
-            <Form.Group className="mb-3">
-              <Form.Label>Nombre *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Ingrese nombre"
-                name="nombre"
-                value={inventario?.nombre}
-                required
-              />
-            </Form.Group>
-            <Form.Group controlId="formProducto" className="mb-3">
-              <Form.Label>Producto</Form.Label>
-              <Form.Control
-                type="text"
-                value={inventario?.idProducto || "Cargando..."}
-                readOnly
-                disabled
-              />
-            </Form.Group>
-
-            <Form.Group controlId="formBodega" className="mb-3">
-              <Form.Label>Bodega</Form.Label>
-              <Form.Control
-                type="text"
-                value={inventario.bodega?.nombre || "Cargando..."}
-                readOnly
-                disabled
-              />
-            </Form.Group>
-
-            <Form.Group controlId="formStock" className="mb-3">
-              <Form.Label>Nuevo Stock *</Form.Label>
-              <Form.Control
-                type="number"
-                name="stock"
-                value={formData.stock}
-                onChange={handleChangeLocal}
-                required
-                min="0"
-                autoFocus // Pone el cursor aquí
-              />
-            </Form.Group>
-          </Form>
-        )}
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={handleCerrar}>
+    <Modal
+      title="Editar Inventario"
+      open={show}
+      onCancel={handleCerrar}
+      footer={[
+        <Button key="cancel" onClick={handleCerrar}>
           Cancelar
-        </Button>
-        <Button type="submit" disabled={loading} onClick={handleSubmitEdicion}>
-          {loading ? "Guardando..." : "Guardar Cambios"}
-        </Button>
-      </Modal.Footer>
+        </Button>,
+        <Button
+          key="submit"
+          type="primary"
+          loading={loading}
+          onClick={() => form.submit()}
+        >
+          Guardar Cambios
+        </Button>,
+      ]}
+      width={600}
+      destroyOnClose
+    >
+      {error && (
+        <Alert
+          message={error}
+          type="error"
+          closable
+          onClose={() => setError("")}
+          style={{ marginBottom: 16 }}
+          showIcon
+        />
+      )}
+
+      {!inventario ? (
+        <Flex justify="center" align="center" style={{ padding: "40px 0" }}>
+          <Spin size="large" />
+        </Flex>
+      ) : (
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmitEdicion}
+          autoComplete="off"
+        >
+          <Form.Item
+            label="Nombre"
+            name="nombre"
+            rules={[{ required: true, message: "Por favor ingrese el nombre" }]}
+          >
+            <Input placeholder="Ingrese nombre" disabled />
+          </Form.Item>
+
+          <Form.Item label="Producto" name="producto">
+            <Input disabled />
+          </Form.Item>
+
+          <Form.Item label="Bodega" name="bodega">
+            <Input disabled />
+          </Form.Item>
+
+          <Form.Item
+            label="Nuevo Stock"
+            name="stock"
+            rules={[
+              { required: true, message: "Por favor ingrese el stock" },
+              {
+                pattern: /^\d+$/,
+                message: "Debe ser un número válido",
+              },
+            ]}
+          >
+            <Input
+              type="number"
+              placeholder="Ingrese cantidad de stock"
+              min={0}
+              autoFocus
+            />
+          </Form.Item>
+        </Form>
+      )}
     </Modal>
   );
 }

@@ -14,6 +14,10 @@ const estante = sequelize.define(
       type: DataTypes.STRING(50),
       allowNull: false,
     },
+    capacidad: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     tipo: {
       type: DataTypes.ENUM("Maquina", "Estante", "Lugar de Piso", "Otro"),
       allowNull: false,

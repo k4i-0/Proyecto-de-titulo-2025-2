@@ -17,31 +17,11 @@ exports.createCategoria = async (req, res) => {
       subcategoria,
       estado,
     });
-    // await crearBitacora({
-    //   nombre: `crear categoria ${nombre}`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Se creó la categoria: ${nombre}`,
-    //   funcionOcupo: "createCategoria controller",
-    //   usuariosCreador: ` Sistema por ${
-    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-    //     "error de lectura cookie"
-    //   } `,
-    //   nivelAlerta: "Bajo",
-    // });
+
     res.status(201).json(nuevaCategoria);
   } catch (error) {
     console.error("Error al crear la categoria:", error);
-    // await crearBitacora({
-    //   nombre: `error al crear categoria ${nombre}`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Error al crear la categoria: ${nombre}`,
-    //   funcionOcupo: "createCategoria controller",
-    //   usuariosCreador: ` Sistema por ${
-    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-    //     "error de lectura cookie"
-    //   } `,
-    //   nivelAlerta: "Alto",
-    // });
+
     res.status(500).json({ error: "Error al crear la categoria" });
   }
 };
@@ -50,52 +30,20 @@ exports.createCategoria = async (req, res) => {
 exports.getAllCategorias = async (req, res) => {
   try {
     const categorias = await Categoria.findAll({
-      where: {
-        estado: {
-          [Op.ne]: "eliminado",
-        },
-      },
+      // where: {
+      //   estado: {
+      //     [Op.ne]: "eliminado",
+      //   },
+      // },
     });
     if (categorias.length === 0 || !categorias) {
-      // await crearBitacora({
-      //   nombre: `consulta de categorias`,
-      //   fechaCreacion: new Date(),
-      //   descripcion: `Se consultaron vacia de categorias`,
-      //   funcionOcupo: "getAllCategorias controller",
-      //   usuariosCreador: ` Sistema por ${
-      //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-      //     "error de lectura cookie"
-      //   } `,
-      //   nivelAlerta: "Bajo",
-      // });
       return res.status(204).json({ error: "No hay categorias disponibles" });
     }
-    // await crearBitacora({
-    //   nombre: `consulta de categorias`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Se consultaron todas las categorias`,
-    //   funcionOcupo: "getAllCategorias controller",
-    //   usuariosCreador: ` Sistema por ${
-    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-    //     "error de lectura cookie"
-    //   } `,
-    //   nivelAlerta: "Bajo",
-    // });
+
     res.status(200).json(categorias);
   } catch (error) {
     console.error("Error al obtener las categorias:", error);
-    // await crearBitacora({
-    //   nombre: `error al consultar categorias`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Error al consultar las categorias`,
-    //   funcionOcupo: "getAllCategorias controller",
 
-    //   usuariosCreador: ` Sistema por ${
-    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-    //     "error de lectura cookie"
-    //   } `,
-    //   nivelAlerta: "Alto",
-    // });
     res.status(500).json({ error: "Error al obtener las categorias" });
   }
 };

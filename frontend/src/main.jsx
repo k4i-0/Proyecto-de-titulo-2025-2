@@ -18,6 +18,7 @@ import Bodega from "./pages/Bodega.jsx";
 import "./styles/main.css";
 import Inicio from "./pages/Inicio.jsx";
 import Sucursal from "./pages/Sucursal.jsx";
+import SucursalDetalle from "./pages/SucursalDetalle.jsx";
 import Productos from "./pages/Productos.jsx";
 import Inventario from "./pages/Inventario.jsx";
 import Categoria from "./pages/Categoria.jsx";
@@ -49,6 +50,7 @@ createRoot(document.getElementById("root")).render(
           >
             <Route index element={<Inicio />} />
             <Route path="sucursal" element={<Sucursal />} />
+            <Route path="sucursal/:idSucursal" element={<SucursalDetalle />} />
             <Route path="bodega/:idSucursal" element={<Bodega />} />
             <Route path="productos" element={<Productos />} />
             <Route path="inventario" element={<Inventario />} />
@@ -57,7 +59,10 @@ createRoot(document.getElementById("root")).render(
             <Route path="proveedores" element={<Proveedor />} />
             <Route path="vendedores/:rutProveedor" element={<Vendedores />} />
 
-            <Route path="aprovisionamiento" element={<Aprovisionamiento />} />
+            <Route
+              path="aprovisionamiento/:idSucursal"
+              element={<Aprovisionamiento />}
+            />
           </Route>
 
           <Route

@@ -11,7 +11,10 @@ import {
   Empty,
   Spin,
   message,
+  Input,
 } from "antd";
+
+const { Search } = Input;
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
 // Servicios
@@ -35,11 +38,22 @@ export default function Inventario() {
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
 
+  const [searchText, setSearchText] = useState("");
+  const inventariosFiltrados = inventarios.filter((item) => {
+    const searchLower = searchText.toLowerCase();
+    return (
+      item.producto?.idProducto?.toString().includes(searchLower) ||
+      item.producto?.nombre?.toLowerCase().includes(searchLower) ||
+      item.lote?.codigo?.toString().includes(searchLower) ||
+      item.cantidad?.toString().includes(searchLower)
+    );
+  });
+
   const cargarInventarios = async () => {
     try {
       setLoading(true);
       const response = await obtenerInventarios();
-
+      console.log("Respuesta inventarios:", response);
       if (!response) {
         message.error("Error al obtener inventarios");
         setInventarios([]);
@@ -122,6 +136,14 @@ export default function Inventario() {
     }
   };
   const handleSeleccionarFila = (record) => {
+    // console.log(record?.producto?.idProducto?.toString().startsWith("20"));
+    // if (record?.idInventario?.toString().startsWith("20")) {
+    //   console.log(inventarioSelect?.idInventario?.toString().startsWith("20"));
+    //   message.warning("Registro solo de lectura");
+    //   setMensaje("Registro solo de lectura");
+    //   setInventarioSelect(null);
+    //   return;
+    // }
     if (inventarioSelect?.idInventario === record.idInventario) {
       setInventarioSelect(null);
     } else {
@@ -135,47 +157,50 @@ export default function Inventario() {
       dataIndex: "idInventario",
       key: "idInventario",
       align: "center",
-      width: 80,
+      //width: 80,
+    },
+    {
+      title: "Cod Producto",
+      dataIndex: "idProducto",
+      key: "idProducto",
     },
     {
       title: "Producto",
-      dataIndex: "nombre", // Asumiendo que 'nombre' viene en el objeto
-      key: "nombre",
+      dataIndex: "producto",
+      key: "producto",
+      align: "center",
+      render: (producto) => producto?.nombre || "N/A",
     },
     {
-      title: "Cod. Bodega",
-      dataIndex: "idBodega",
-      key: "idBodega",
+      title: "Cod Lote",
+      dataIndex: "lote",
+      key: "lote",
       align: "center",
-      width: 120,
+      //width: 120,
+      render: (lote) => lote?.idLote || "N/A",
     },
     {
       title: "Stock",
       dataIndex: "stock",
       key: "stock",
       align: "center",
-      width: 100,
+      //width: 100,
     },
     {
       title: "Estado",
       dataIndex: "estado",
       key: "estado",
       align: "center",
-      width: 150,
+      //width: 150,
+      render: (estado) => <span style={{ color: "green" }}>{estado}</span>,
     },
-    {
-      title: "Encargado",
-      dataIndex: "encargado",
-      key: "encargado",
-    },
-    // Puedes añadir más columnas como 'Lote', 'idProducto', etc.
   ];
 
   const renderContenido = () => {
     if (loading && inventarios.length === 0) {
       return (
         <div style={{ textAlign: "center", padding: "50px 0" }}>
-          <Spin size="large" tip="Cargando inventario..." />
+          <Spin size="large" tip="Cargando inventario..." fullscreen />
         </div>
       );
     }
@@ -216,7 +241,7 @@ export default function Inventario() {
           <Col flex="auto">
             {inventarioSelect && (
               <Alert
-                message={`Registro seleccionado: ID ${inventarioSelect.idInventario} (${inventarioSelect.nombre})`}
+                message={`Registro seleccionado: ID ${inventarioSelect.idInventario} (${inventarioSelect.producto.nombre})`}
                 type="info"
                 showIcon
                 closable
@@ -269,9 +294,22 @@ export default function Inventario() {
           </Col>
         </Row>
 
+        <Space direction="vertical" style={{ width: "100%", marginBottom: 16 }}>
+          <Search
+            placeholder="Buscar por producto, lote o cantidad..."
+            allowClear
+            enterButton
+            size="large"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onSearch={(value) => setSearchText(value)}
+            style={{ maxWidth: 400 }}
+          />
+        </Space>
+
         <Table
           columns={columns}
-          dataSource={inventarios}
+          dataSource={inventariosFiltrados}
           rowKey="idInventario"
           loading={loading}
           pagination={{

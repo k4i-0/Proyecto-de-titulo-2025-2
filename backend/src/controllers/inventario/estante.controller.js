@@ -88,12 +88,29 @@ exports.updateEstante = async (req, res) => {
 
 exports.deleteEstante = async (req, res) => {
   try {
-    const estante = await Estante.findByPk(req.params.id);
-    if (!estante) {
-      return res.status(404).json({ error: "Estante no encontrado" });
+    const estante = await Estante.findOne({
+      where: { idEstante: req.params.id },
+    });
+    const estantesBodega = await Estante.findAll({
+      where: { idBodega: estante.dataValues.idBodega },
+    });
+    if (estantesBodega.length <= 1) {
+      return res
+        .status(400)
+        .json({
+          error: "No se puede eliminar el último estante de esta bodega",
+        });
     }
-    await estante.destroy();
-    res.status(200).json("ok");
+    const estanteEliminar = await Estante.destroy({
+      where: { idEstante: req.params.id },
+    });
+    if (estanteEliminar) {
+      return res
+        .status(200)
+        .json({ message: "Estante eliminado correctamente" });
+    }
+
+    res.status(400).json({ error: "No se pudo eliminar el estante" });
   } catch (error) {
     console.error("Error al eliminar el estante:", error);
     res.status(500).json({ error: "Error al eliminar el estante" });

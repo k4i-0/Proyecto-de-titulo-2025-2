@@ -294,7 +294,7 @@ export default function Agregar({
             {categorias.map((categoria) => (
               <Select.Option
                 key={categoria.idCategoria}
-                value={categoria.nombre}
+                value={categoria.nombreCategoria}
               >
                 {categoria.nombre}
               </Select.Option>

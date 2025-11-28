@@ -1,6 +1,8 @@
 const { where, Op, json } = require("sequelize");
 const Producto = require("../../models/inventario/Productos");
 const Categoria = require("../../models/inventario/Categoria");
+const Lote = require("../../models/inventario/Lote");
+const Inventario = require("../../models/inventario/Inventario");
 
 //bitacora
 const { crearBitacora } = require("../../services/bitacora.service");
@@ -33,9 +35,12 @@ exports.createProducto = async (req, res) => {
     ) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
     }
+    if (!req.cookies.token) {
+      res.status(401).json({ error: "No autenticado" });
+    }
     //Validacion de datos con Joi
     const categoriaExistente = await Categoria.findAll({
-      where: { nombre: nameCategoria },
+      where: { nombreCategoria: nameCategoria },
     });
     //console.log(categoriaExistente[0].dataValues.idCategoria);
     if (!categoriaExistente) {
@@ -55,33 +60,14 @@ exports.createProducto = async (req, res) => {
       descripcion,
       idCategoria: categoriaExistente[0].dataValues.idCategoria,
     });
-    if (nuevoProducto && req.cookies.token) {
-      // await crearBitacora({
-      //   nombre: `crear producto ${nombre}`,
-      //   fechaCreacion: new Date(),
-      //   descripcion: `Se creó el producto: ${nombre}`,
-      //   funcionOcupo: "createProducto controller",
-      //   usuariosCreador: ` Sistema por ${
-      //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-      //     "error de lectura cookie"
-      //   } `,
-      //   nivelAlerta: "Bajo",
-      // });
-      res.status(201).json(nuevoProducto);
+    if (!nuevoProducto) {
+      res.status(500).json({ error: "Error al crear el producto" });
     }
+
+    res.status(201).json(nuevoProducto);
   } catch (error) {
     console.error("Error al crear el producto:", error);
-    // await crearBitacora({
-    //   nombre: `error al crear producto`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Error al crear el producto`,
-    //   funcionOcupo: "createProducto controller",
-    //   usuariosCreador: ` Sistema por ${
-    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-    //     "error de lectura cookie"
-    //   } `,
-    //   nivelAlerta: "Alto",
-    // });
+
     res.status(500).json({ error: "Error al crear el producto" });
   }
 };
@@ -183,6 +169,7 @@ exports.updateProducto = async (req, res) => {
     const {
       codigo,
       nombre,
+      marca,
       precioCompra,
       precioVenta,
       peso,
@@ -190,24 +177,26 @@ exports.updateProducto = async (req, res) => {
       estado,
       nameCategoria,
     } = req.body;
+    //console.log("Producto antes" + JSON.stringify(req.params.id));
     const busquedaProducto = await Producto.findByPk(req.params.id);
 
     if (!busquedaProducto) {
       return res.status(422).json({ error: "Producto no encontrado" });
     }
     const categoriaExistente = await Categoria.findOne({
-      where: { nombre: nameCategoria },
+      where: { nombreCategoria: nameCategoria },
     });
 
     if (!categoriaExistente) {
       return res
-        .status(422)
+        .status(204)
         .json({ error: "Categoría asociada no encontrada" });
     }
     await Producto.update(
       {
         codigo,
         nombre,
+        marca,
         descripcion,
         precioCompra,
         precioVenta,
@@ -231,16 +220,7 @@ exports.updateProducto = async (req, res) => {
     res.status(200).json(updatedProducto);
   } catch (error) {
     console.log("Error al actualizar el producto:", error);
-    // await crearBitacora({
-    //   nombre: `error al actualizar producto ID: ${req.params.id}`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Error al actualizar el producto con ID: ${req.params.id}`,
-    //   funcionOcupo: "updateProducto controller",
-    //   usuariosCreador: ` Sistema por ${
-    //     req.usuario.email ?? "error de lectura cookie"
-    //   }`,
-    //   nivelAlerta: "Alto",
-    // });
+
     res.status(500).json({ error: "Error al actualizar el producto" });
   }
 };

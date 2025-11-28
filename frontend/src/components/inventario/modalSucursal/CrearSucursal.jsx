@@ -164,7 +164,6 @@ export default function AgregarSucursal({
                     { value: "Abierta", label: "Abierta" },
                     { value: "Cerrada", label: "Cerrada" },
                     { value: "Mantencion", label: "Mantencion" },
-                    { value: "Eliminada", label: "Eliminada" },
                   ]}
                 />
               </Form.Item>

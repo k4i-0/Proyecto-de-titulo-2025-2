@@ -19,6 +19,7 @@ import {
   DeleteOutlined,
   ShoppingOutlined,
   LoadingOutlined,
+  ArrowLeftOutlined,
 } from "@ant-design/icons";
 
 import Agregar from "../components/inventario/modalProductos/Agregar";
@@ -94,7 +95,7 @@ export default function Productos({ onCambiarVista }) {
       setError(true);
       setMensaje("No hay categorías disponibles. Redirigiendo a Categorías...");
       setTimeout(() => {
-        navigate("/categorias");
+        navigate("/admin/categorias");
       }, 2000);
       return;
     }
@@ -149,6 +150,7 @@ export default function Productos({ onCambiarVista }) {
   const handleCerrarModal = () => {
     setModalCrear(false);
     setModalEditar(false);
+    productosSelect && setProductoSelect(null);
     // setModalEliminar(false); // Ya no se usa
   };
 
@@ -212,15 +214,39 @@ export default function Productos({ onCambiarVista }) {
     },
     {
       title: "Categoría",
-      dataIndex: ["categoria", "nombre"],
+      dataIndex: ["categoria", "nombreCategoria"],
       key: "categoria",
+      filters: [
+        { text: "Abarrotes", value: "Abarrotes" },
+        { text: "Bebidas", value: "Bebidas" },
+        { text: "Licores", value: "Licores" },
+        { text: "Lácteos", value: "Lácteos" },
+        { text: "Congelados", value: "Congelados" },
+        { text: "Carnes", value: "Carnes" },
+        { text: "Embutidos", value: "Embutidos" },
+        { text: "Frutas y Vegetales", value: "Frutas y Vegetales" },
+        { text: "Mascotas", value: "Mascotas" },
+        { text: "Panadería", value: "Panadería" },
+        { text: "Higiene Personal", value: "Higiene Personal" },
+        { text: "Limpieza del Hogar", value: "Limpieza del Hogar" },
+        { text: "Farmacéuticos", value: "Farmacéuticos" },
+        { text: "Otros", value: "Otros" },
+      ],
+      onFilter: (value, record) => {
+        return record.categoria?.nombreCategoria === value;
+      },
+      sorter: (a, b) => {
+        const catA = a.categoria?.nombreCategoria || "";
+        const catB = b.categoria?.nombreCategoria || "";
+        return catA.localeCompare(catB);
+      },
       render: (categoriaNombre) =>
         categoriaNombre ? (
           <Tag color="blue">{categoriaNombre}</Tag>
         ) : (
           <Text type="secondary">-</Text>
         ),
-      width: 100,
+      width: 150,
     },
     {
       title: "Precio Venta",
@@ -283,12 +309,15 @@ export default function Productos({ onCambiarVista }) {
   const renderContenido = () => {
     if (loading && productos.length === 0) {
       return (
-        <Col span={24} style={{ textAlign: "center", padding: "60px 0" }}>
+        <Col span={24} style={{ textAlign: "center", margin: "60px 0" }}>
           <Spin
+            spinning={loading}
             indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
             tip="Cargando productos..."
             size="large"
-          />
+          >
+            <div style={{ minHeight: 200 }}></div>
+          </Spin>
         </Col>
       );
     }
@@ -310,7 +339,7 @@ export default function Productos({ onCambiarVista }) {
                   type="primary"
                   size="large"
                   icon={<PlusOutlined />}
-                  onClick={() => navigate("/categorias")}
+                  onClick={() => navigate("/admin/categorias")}
                 >
                   Ir a Crear Categoría
                 </Button>
@@ -385,6 +414,15 @@ export default function Productos({ onCambiarVista }) {
     <div style={{ padding: "24px" }}>
       <Row justify="center" style={{ marginBottom: 24 }}>
         <Col span={24} style={{ textAlign: "center" }}>
+          <div style={{ textAlign: "left" }}>
+            <Button
+              type="primary"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+            >
+              Volver
+            </Button>
+          </div>
           <Title level={2} style={{ marginBottom: 8 }}>
             <ShoppingOutlined style={{ marginRight: 8 }} />
             Gestión de Productos
@@ -428,7 +466,7 @@ export default function Productos({ onCambiarVista }) {
               <Button
                 type="default"
                 icon={<EditOutlined />}
-                onClick={() => navigate("/categorias")}
+                onClick={() => navigate("/admin/categorias")}
                 disabled={loading}
               >
                 Gestionar Categorias

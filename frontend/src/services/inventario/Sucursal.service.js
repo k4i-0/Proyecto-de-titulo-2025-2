@@ -8,10 +8,22 @@ export default async function obtenerSucursales() {
     const response = await axios.get(`${API_URL}/buscar`, null, {
       withCredentials: true,
     });
-    //console.log("Sucursales obtenidas:", response.status);
+    // console.log("Sucursales obtenidas:", response.status);
     return response;
   } catch (error) {
     console.error("Error al obtener sucursales:", error.response);
+    return error.response.data;
+  }
+}
+
+export async function obtenerSucursalPorId(id) {
+  try {
+    const response = await axios.get(`${API_URL}/buscar/${id}`, {
+      withCredentials: true,
+    });
+    return response;
+  } catch (error) {
+    console.error("Error al obtener sucursal por ID:", error.response);
     return error.response.data;
   }
 }

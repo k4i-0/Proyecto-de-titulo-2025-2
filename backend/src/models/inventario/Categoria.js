@@ -10,11 +10,7 @@ const categoria = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    nombre: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    subcategoria: {
+    nombreCategoria: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },

@@ -19,6 +19,10 @@ const lote = sequelize.define(
       type: DataTypes.DATE,
       allowNull: false,
     },
+    cantidad: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     fechaVencimiento: {
       type: DataTypes.DATE,
       allowNull: false,

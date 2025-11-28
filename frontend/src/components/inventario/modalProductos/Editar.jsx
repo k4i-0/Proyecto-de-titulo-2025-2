@@ -39,7 +39,7 @@ export default function Editar({
         peso: Producto.peso || "",
         descripcion: Producto.descripcion || "",
         estado: Producto.estado || "",
-        nameCategoria: Producto.categoria?.nombre || "",
+        nameCategoria: Producto.categoria?.nombreCategoria || "",
       });
       setError("");
       setMensaje("");

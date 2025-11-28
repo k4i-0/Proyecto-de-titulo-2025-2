@@ -1,5 +1,6 @@
 const Proveedor = require("../../models/inventario/Proveedor");
 const Vendedor = require("../../models/inventario/VendedorProveedor");
+const { Op } = require("sequelize");
 
 exports.getAllProveedores = async (req, res) => {
   try {
@@ -47,6 +48,13 @@ exports.createProveedor = async (req, res) => {
       .json({ error: "Faltan datos obligatorios para crear el proveedor" });
   }
   try {
+    //encontar si el proveedor ya existe
+    const proveedorExistente = await Proveedor.findOne({ where: { rut: rut } });
+    if (proveedorExistente) {
+      return res
+        .status(409)
+        .json({ error: "RUT ya registrado como proveedor" });
+    }
     const nuevoProveedor = await Proveedor.create({
       rut,
       nombre,
@@ -117,6 +125,21 @@ exports.createProveedorVendedor = async (req, res) => {
 
   if (!proveedor) {
     return res.status(404).json({ error: "Proveedor no encontrado" });
+  }
+  const vendedorExistente = await Vendedor.findOne({
+    where: {
+      [Op.and]: [
+        { idProveedor: proveedor.dataValues.idProveedor },
+        {
+          [Op.or]: [{ rut: rut }, { email: email }],
+        },
+      ],
+    },
+  });
+  if (vendedorExistente) {
+    return res.status(409).json({
+      error: "RUT o email ya registrado con un vendedor de este proveedor",
+    });
   }
   try {
     const nuevoVendedor = await Vendedor.create({

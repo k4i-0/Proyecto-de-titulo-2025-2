@@ -159,27 +159,30 @@ export default function Categoria() {
       title: "ID",
       dataIndex: "idCategoria",
       key: "idCategoria",
-      width: 100,
+
       align: "center",
     },
     {
       title: "Nombre",
-      dataIndex: "nombre",
-      key: "nombre",
-      sorter: (a, b) => a.nombre.localeCompare(b.nombre),
-    },
-    {
-      title: "Subcategoría",
-      dataIndex: "subcategoria",
-      key: "subcategoria",
-      render: (sub) => sub || <Text type="secondary">N/A</Text>,
+      dataIndex: "nombreCategoria",
+      key: "nombreCategoria",
+      sorter: (a, b) => a.nombreCategoria.localeCompare(b.nombreCategoria),
     },
     {
       title: "Estado",
       dataIndex: "estado",
       key: "estado",
       align: "center",
-      width: 120,
+      filters: [
+        { text: "Activo", value: "Activo" },
+        { text: "Inactivo", value: "Inactivo" },
+        { text: "Suspendido", value: "Suspendido" },
+      ],
+      onFilter: (value, record) => record.estado === value,
+      sorter: (a, b) => {
+        const orden = { Activo: 1, Suspendido: 2, Inactivo: 3 };
+        return orden[a.estado] - orden[b.estado];
+      },
       render: (estado) => (
         <Tag color={getEstadoColor(estado)}>{estado || "N/A"}</Tag>
       ),
@@ -294,7 +297,7 @@ export default function Categoria() {
             <Button
               type="default"
               icon={<RollbackOutlined />}
-              onClick={() => navigate("/productos")}
+              onClick={() => navigate("/admin/productos")}
             >
               Volver a Productos
             </Button>

@@ -87,24 +87,14 @@ exports.getAllSucursal = async (req, res) => {
 exports.getSucursalById = async (req, res) => {
   try {
     const sucursal = await Sucursal.findByPk(req.params.id);
+
     if (sucursal) {
       res.status(200).json(sucursal);
     } else {
-      res.status(404).json({ error: "Sucursal no encontrada" });
+      res.status(204).json({ error: "Sucursal no encontrada" });
     }
   } catch (error) {
-    // await crearBitacora({
-    //   nombre: `error al consultar Sucursal`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Error al consultar las Sucursal`,
-    //   funcionOcupo: "getAllSucursal controller",
-
-    //   usuariosCreador: ` Sistema por ${
-    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-    //     "error de lectura cookie"
-    //   } `,
-    //   nivelAlerta: "Alto",
-    // });
+    console.error("Error al obtener la sucursal:", error);
     res.status(500).json({ error: "Error al obtener la sucursal" });
   }
 };
@@ -121,7 +111,6 @@ exports.updateSucursal = async (req, res) => {
       {
         nombre,
         direccion,
-
         estado,
       },
       {
@@ -130,31 +119,11 @@ exports.updateSucursal = async (req, res) => {
     );
 
     const updatedSucursal = await Sucursal.findByPk(req.params.id);
-    // await crearBitacora({
-    //   nombre: `actualización de sucursal ID: ${req.params.id}`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Se actualizó la sucursal con ID: ${req.params.id}`,
-    //   funcionOcupo: "updatesucursal controller",
-    //   usuariosCreador: ` Sistema por ${
-    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-    //     "error de lectura cookie"
-    //   } `,
-    //   nivelAlerta: "Bajo",
-    // });
+
     res.status(200).json(updatedSucursal);
   } catch (error) {
     console.log("Error al actualizar la sucursal:", error);
-    // await crearBitacora({
-    //   nombre: `error al actualizar Sucursal ID: ${req.params.id}`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Error al actualizar la Sucursal con ID: ${req.params.id}`,
-    //   funcionOcupo: "updateSucursal controller",
-    //   usuariosCreador: ` Sistema por ${
-    //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-    //     "error de lectura cookie"
-    //   } `,
-    //   nivelAlerta: "Alto",
-    // });
+
     res.status(500).json({ error: "Error al actualizar la sucursal" });
   }
 };
@@ -165,21 +134,31 @@ exports.deleteSucursal = async (req, res) => {
     if (!req.params.id) {
       return res.status(400).json({ error: "ID de sucursal es obligatorio" });
     }
+    //Mantiene simpre al menos 1 sucursal en el sistema
+    const todasSucursales = await Sucursal.findAll();
+    if (todasSucursales.length <= 1) {
+      return res
+        .status(400)
+        .json({ error: "No se puede eliminar la última sucursal" });
+    }
+    const bodegasSucursal = await Bodega.findAll({
+      where: { idSucursal: req.params.id },
+    });
+    for (const bodega of bodegasSucursal) {
+      //eliminar Estantes de la bodega
+      await Estante.destroy({
+        where: { idBodega: bodega.dataValues.idBodega },
+      });
+    }
+    //eliminar Bodegas de la sucursal
+    await Bodega.destroy({
+      where: { idSucursal: req.params.id },
+    });
+    //eliminar Sucursal
     const busquedaSucursal = await Sucursal.destroy({
       where: { idSucursal: req.params.id },
     });
     if (busquedaSucursal) {
-      // await crearBitacora({
-      //   nombre: `eliminación de Sucursal ID: ${req.params.id}`,
-      //   fechaCreacion: new Date(),
-      //   descripcion: `Se eliminó la Sucursal con ID: ${req.params.id}`,
-      //   funcionOcupo: "deleteSucursal controller",
-      //   usuariosCreador: ` Sistema por ${
-      //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-      //     "error de lectura cookie"
-      //   } `,
-      //   nivelAlerta: "Bajo",
-      // });
       return res.status(200).json({
         message: "Sucursal eliminada (estado actualizado a 'Eliminado')",
       });
@@ -187,14 +166,7 @@ exports.deleteSucursal = async (req, res) => {
     return res.status(404).json({ error: "Sucursal no encontrada" });
   } catch (error) {
     console.log("Error al eliminar la sucursal:", error);
-    // await crearBitacora({
-    //   nombre: `error al eliminar Sucursal ID: ${req.params.id}`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Error al eliminar la Sucursal con ID: ${req.params.id}`,
-    //   funcionOcupo: "deleteSucursal controller",
-    //   usuariosCreador: "Sistema por",
-    //   nivelAlerta: "Alto",
-    // });
+
     res.status(500).json({ error: "Error al eliminar la sucursal" });
   }
 };

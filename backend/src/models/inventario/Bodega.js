@@ -22,8 +22,7 @@ const bodega = sequelize.define(
       type: DataTypes.ENUM(
         "En Funcionamiento",
         "En Mantenimiento",
-        "Fuera de Servicio",
-        "Eliminado"
+        "Fuera de Servicio"
       ),
       allowNull: false,
       defaultValue: "En Funcionamiento",

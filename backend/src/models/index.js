@@ -47,11 +47,11 @@ Estante.belongsTo(Bodega, {
 });
 
 // inventario -> estante (1:N)
-Inventario.hasMany(Estante, {
-  foreignKey: "idInventario",
+Estante.hasMany(Inventario, {
+  foreignKey: "idEstante",
 });
-Estante.belongsTo(Inventario, {
-  foreignKey: "idInventario",
+Inventario.belongsTo(Estante, {
+  foreignKey: "idEstante",
 });
 
 // Categoria -> Productos (1:N)
@@ -63,12 +63,12 @@ Productos.belongsTo(Categoria, {
 });
 
 // Productos -> Inventario (1:N)
-Productos.hasMany(Inventario, {
-  foreignKey: "idProducto",
-});
-Inventario.belongsTo(Productos, {
-  foreignKey: "idProducto",
-});
+// Productos.hasMany(Inventario, {
+//   foreignKey: "idProducto",
+// });
+// Inventario.belongsTo(Productos, {
+//   foreignKey: "idProducto",
+// });
 
 // Productos -> Lote (1:N)
 Productos.hasMany(Lote, {

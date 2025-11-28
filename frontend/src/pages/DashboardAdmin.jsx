@@ -1,19 +1,17 @@
 import { useAuth } from "../context/AuthContext";
-// import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import Navegacion from "../components/Navegacion";
-// import Home from "../components/Home";
 import { finSesion } from "../services/Auth.services";
+import { Layout, theme, Typography, Button, Badge, Avatar } from "antd";
+import { BellOutlined, UserOutlined } from "@ant-design/icons";
+import { HomeOutlined } from "@ant-design/icons";
 
-import { Layout, theme, Typography, Image, Menu } from "antd";
-
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 function Dashboard() {
   const { user, logout } = useAuth();
-  // const [vistaActual, setVistaActual] = useState("home");
+  const navigate = useNavigate();
   const { Content, Header } = Layout;
-
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -28,61 +26,57 @@ function Dashboard() {
     }
   };
 
-  // const cambiarVista = (nuevaVista) => {
-  // setVistaActual(nuevaVista);
-  // };
   return (
     <>
-      <Layout style={{ width: "100%", height: "100vh", margin: 0, padding: 0 }}>
-        {/* <Header style={{ display: "flex", alignItems: "center" }}>
-          <Button
-            type="link"
-            onClick={() => navigate("/")}
-            style={{ color: "white", padding: 0 }}
-          >
-            <Title level={4} style={{ color: "white", margin: 0 }}>
-              Panel de Administración
-            </Title>
-          </Button>
-        </Header> */}
+      <Layout
+        style={{
+          width: "100%",
+          maxWidth: "auto",
+          maxHeight: "auto",
+          height: "100vh",
+          margin: 0,
+          padding: 0,
+        }}
+      >
         <Header style={{ display: "flex", alignItems: "center" }}>
-          <div className="demo-logo" />
-          {/* <Menu
-            theme="dark"
-            mode="horizontal"
-            defaultSelectedKeys={["2"]}
-            items={[
-              {
-                key: "1",
-                label: "Inicio",
-                onClick: () => navigate("/"),
-              },
-              {
-                key: "2",
-                label: "Proveedores",
-              },
-              {
-                key: "3",
-                label: "Inventario",
-              },
-            ]}
-            style={{ flex: 1, minWidth: 0, marginLeft: 200 }}
-          /> */}
+          {/* Logo y título del sistema */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
+            <Button
+              type="link"
+              onClick={() => navigate("/admin")}
+              style={{
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <div>
+                <HomeOutlined style={{ fontSize: "24px", color: "white" }} />
+              </div>
+            </Button>
+          </div>
         </Header>
 
         <Layout>
           <Navegacion
             nombreRol={user.nombreRol}
             onLogout={cerrarSesion}
-            // onCambiarVista={cambiarVista}
             colorBgContainer={colorBgContainer}
           />
           <Content
             style={{
-              margin: "24px 16px",
+              marginLeft: "15px",
+              marginRight: "15px",
               padding: 24,
               minHeight: 280,
-              background: colorBgContainer,
+              background: "white",
               borderRadius: borderRadiusLG,
               overflow: "auto",
             }}

@@ -2,13 +2,18 @@
 const bcrypt = require("bcrypt");
 const Funcionario = require("../models/Usuarios/Funcionario");
 const Rol = require("../models/Usuarios/Rol");
+const Categoria = require("../models/inventario/Categoria");
+const Sucursal = require("../models/inventario/Sucursal");
+const Bodega = require("../models/inventario/Bodega");
+const Estante = require("../models/inventario/Estante");
+
 const { crearBitacora } = require("../services/bitacora.service");
+
 async function createUsers() {
   try {
-    console.log("🔄 Iniciando creación de usuarios iniciales...");
-
     const adminPassword = await bcrypt.hash("admin123", 10);
     const userPassword = await bcrypt.hash("user123", 10);
+    console.log(" Iniciando creación de roles...");
 
     // Crear roles si no existen
     const [sistemaRole, sistemaCreated] = await Rol.findOrCreate({
@@ -58,7 +63,7 @@ async function createUsers() {
       },
     });
 
-    console.log("✅ Roles verificados/creados:");
+    console.log(" Roles verificados/creados:");
     console.log(
       `  - Sistema (ID: ${sistemaRole.idRol}) ${
         sistemaCreated ? "[NUEVO]" : "[EXISTENTE]"
@@ -79,7 +84,7 @@ async function createUsers() {
         vendedorCreated ? "[NUEVO]" : "[EXISTENTE]"
       }`
     );
-
+    console.log(" Iniciando creación de usuarios iniciales...");
     // Crear usuarios (await agregado y campo corregido)
     const [sistemaUser, sistemaUserCreated] = await Funcionario.findOrCreate({
       where: { rut: "00000000-0" },
@@ -148,7 +153,7 @@ async function createUsers() {
       },
     });
 
-    console.log("✅ Usuarios verificados/creados:");
+    console.log(" Usuarios verificados/creados:");
     console.log(
       `  - Admin (${admin.email}) ${
         adminUserCreated ? "[NUEVO]" : "[EXISTENTE]"
@@ -202,11 +207,77 @@ async function createUsers() {
       fechaCreacion: new Date(),
       idFuncionario: sistemaUser.dataValues.idFuncionario,
     });
-    console.log("✅ Bitacoras iniciales creadas");
+    console.log(" Bitacoras iniciales creadas");
 
-    console.log("🎉 Usuarios iniciales verificados/creados exitosamente");
+    console.log(" Usuarios iniciales verificados/creados exitosamente");
+
+    const categorias = [
+      "Abarrotes",
+      "Bebidas",
+      "Licores",
+      "Lácteos",
+      "Congelados",
+      "Carnes",
+      "Embutidos",
+      "Frutas y Vegetales",
+      "Mascotas",
+      "Panadería",
+      "Higiene Personal",
+      "Limpieza del Hogar",
+      "Farmacéuticos",
+      "Otros",
+    ];
+    for (const nombreCategoria of categorias) {
+      await Categoria.findOrCreate({
+        where: { nombreCategoria },
+        defaults: {
+          nombreCategoria,
+          estado: "Activo",
+        },
+      });
+    }
+    console.log(" Categorías iniciales verificadas/creadas exitosamente");
+
+    //Crear sucursales iniciales si no existen 3 digitos
+    console.log(" Creando sucursales y bodegas iniciales...");
+    const [sucursal1, sucursal1Created] = await Sucursal.findOrCreate({
+      where: { idSucursal: 100 },
+      defaults: {
+        idSucursal: 100,
+        nombre: "Casa Matriz",
+        direccion: "Calle Dos 522, Chiguayante",
+        estado: "Abierta",
+        idFuncionario: admin.idFuncionario,
+      },
+    });
+    //Crear bodegas iniciales si no existen
+    const [bodega1, bodega1Created] = await Bodega.findOrCreate({
+      where: { idBodega: 1000 },
+      defaults: {
+        idBodega: 1000,
+        nombre: "Bodega Central",
+        capacidad: 400,
+        estado: "En Funcionamiento",
+        idSucursal: sucursal1.idSucursal,
+      },
+    });
+    //Crear estantes iniciales si no existen
+    for (let i = 1; i <= 5; i++) {
+      await Estante.findOrCreate({
+        where: { codigo: `EST-${1000 + i}` },
+        defaults: {
+          codigo: `EST-${1000 + i}`,
+
+          capacidad: 80,
+          tipo: "Estante",
+          estado: "Habilitado",
+          idBodega: bodega1.idBodega,
+        },
+      });
+    }
+    //console.log(bodega1);
   } catch (error) {
-    console.error("❌ Error al crear usuarios iniciales:", error);
+    console.error(" Error al crear usuarios iniciales:", error);
     return;
   }
 }

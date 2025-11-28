@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+//import React, { useState } from "react";
 import { Layout, Menu } from "antd";
 import { useNavigate } from "react-router-dom";
 const { Sider } = Layout;
@@ -6,17 +6,18 @@ import {
   AreaChartOutlined,
   ProductOutlined,
   UserOutlined,
+  HomeOutlined,
 } from "@ant-design/icons";
 
 export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
-  const [collapsed, setCollapsed] = useState(true);
+  //const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   return (
     <>
       <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
+        ///collapsible
+        collapsed={false}
+        //onCollapse={(value) => setCollapsed(value)}
         width={200}
         style={{ background: colorBgContainer }}
       >
@@ -26,6 +27,12 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
           defaultOpenKeys={["sub1"]}
           style={{ height: "100%", borderInlineEnd: 0 }}
           items={[
+            {
+              key: "Inicio",
+              icon: <HomeOutlined />,
+              label: "Inicio",
+              onClick: () => navigate("/admin"),
+            },
             {
               key: "Ventas",
               icon: <AreaChartOutlined />,
@@ -53,7 +60,7 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                 {
                   key: "Compra_Proveedores",
                   label: "Gestionar Compras",
-                  onClick: () => navigate("/aprovisionamiento"),
+                  onClick: () => navigate("aprovisionamiento"),
                 },
               ],
             },
@@ -61,28 +68,29 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
               key: "Configuracion",
               icon: <AreaChartOutlined />,
               label: "Configuración",
-              children: [
-                {
-                  key: "productos",
-                  label: "Productos",
-                  onClick: () => navigate("productos"),
-                },
-                {
-                  key: "inventario",
-                  label: "Inventario",
-                  onClick: () => navigate("inventario"),
-                },
-                {
-                  key: "sucursal",
-                  label: "Sucursal",
-                  onClick: () => navigate("sucursal"),
-                },
-                {
-                  key: "proveedores",
-                  label: "Proveedores",
-                  onClick: () => navigate("proveedores"),
-                },
-              ],
+              onClick: () => navigate("sucursal"),
+              // children: [
+              //   {
+              //     key: "productos",
+              //     label: "Productos",
+              //     onClick: () => navigate("productos"),
+              //   },
+              //   {
+              //     key: "inventario",
+              //     label: "Inventario",
+              //     onClick: () => navigate("inventario"),
+              //   },
+              //   {
+              //     key: "sucursal",
+              //     label: "Sucursal",
+              //     onClick: () => navigate("sucursal"),
+              //   },
+              //   {
+              //     key: "proveedores",
+              //     label: "Proveedores",
+              //     onClick: () => navigate("proveedores"),
+              //   },
+              // ],
             },
             {
               key: "1",
