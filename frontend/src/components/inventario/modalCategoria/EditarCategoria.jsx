@@ -10,6 +10,7 @@ export default function EditarCategoria({
   handleCerrarModal,
   funcionBuscarCategorias,
 }) {
+  // console.log("Categoria a editar:", Categoria);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,8 +20,8 @@ export default function EditarCategoria({
     if (Categoria) {
       form.setFieldsValue({
         idCategoria: Categoria.idCategoria || "",
-        nombre: Categoria.nombre || "",
-        subcategoria: Categoria.subcategoria || "",
+        nombre: Categoria.nombreCategoria || "",
+        // subcategoria: Categoria.subcategoria || "",
         estado: Categoria.estado || "",
       });
       setError("");
@@ -35,7 +36,7 @@ export default function EditarCategoria({
 
     const formData = {
       nombre: values.nombre,
-      subcategoria: values.subcategoria,
+      // subcategoria: values.subcategoria,
       estado: values.estado,
     };
 
@@ -127,7 +128,7 @@ export default function EditarCategoria({
         >
           <Input placeholder="Ingrese nombre de la categoría" />
         </Form.Item>
-
+        {/* 
         <Form.Item
           label="Subcategoría"
           name="subcategoria"
@@ -136,7 +137,7 @@ export default function EditarCategoria({
           ]}
         >
           <Input placeholder="Ingrese una subcategoría" />
-        </Form.Item>
+        </Form.Item> */}
 
         <Form.Item
           label="Estado"

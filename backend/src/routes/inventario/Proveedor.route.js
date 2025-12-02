@@ -17,7 +17,7 @@ router.post("/crear-vendedor", proveedorController.createProveedorVendedor);
 router.get("/buscar-vendedores", proveedorController.getAllVendedores);
 
 router.put(
-  "/actualizar-vendedor/:idVendedor",
+  "/actualizar-vendedor/:idProveedor",
   proveedorController.updateVendedor
 );
 

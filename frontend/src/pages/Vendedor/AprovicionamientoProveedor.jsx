@@ -15,6 +15,12 @@ import {
   message,
   Popconfirm,
   Empty,
+  Spin,
+  Typography,
+  Modal,
+  Form,
+  Select,
+  Divider,
 } from "antd";
 
 import {
@@ -25,417 +31,505 @@ import {
   SendOutlined,
 } from "@ant-design/icons";
 
+const { Title } = Typography;
+
 import obtenerInventarios from "../../services/inventario/Inventario.service";
 
-const AprovicionamientoProveedor = () => {
-  const [productos, setProductos] = useState([
-    // {
-    //   id: 1,
-    //   codigo: "PROD001",
-    //   nombre: "Laptop HP",
-    //   categoria: "Electrónica",
-    //   stock: 5,
-    //   stockMinimo: 10,
-    //   precio: 850000,
-    // },
-    // {
-    //   id: 2,
-    //   codigo: "PROD002",
-    //   nombre: "Mouse Logitech",
-    //   categoria: "Accesorios",
-    //   stock: 15,
-    //   stockMinimo: 20,
-    //   precio: 25000,
-    // },
-    // {
-    //   id: 3,
-    //   codigo: "PROD003",
-    //   nombre: "Teclado Mecánico",
-    //   categoria: "Accesorios",
-    //   stock: 2,
-    //   stockMinimo: 8,
-    //   precio: 75000,
-    // },
-    // {
-    //   id: 4,
-    //   codigo: "PROD004",
-    //   nombre: 'Monitor Samsung 24"',
-    //   categoria: "Electrónica",
-    //   stock: 0,
-    //   stockMinimo: 5,
-    //   precio: 180000,
-    // },
-    // {
-    //   id: 5,
-    //   codigo: "PROD005",
-    //   nombre: "Webcam HD",
-    //   categoria: "Accesorios",
-    //   stock: 8,
-    //   stockMinimo: 10,
-    //   precio: 45000,
-    // },
-  ]);
+import {
+  getAllProveedores,
+  getAllProveedoresVendedor,
+} from "../../services/inventario/Proveedor.service";
 
-  const [filtroTexto, setFiltroTexto] = useState("");
-  const [productosSolicitud, setProductosSolicitud] = useState([]);
-  const [drawerVisible, setDrawerVisible] = useState(false);
+import obtenerProductos from "../../services/inventario/Productos.service";
+
+const AprovicionamientoProveedor = () => {
+  // const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [inventario, setInventario] = useState([]);
+  const [productos, setProductos] = useState([]);
+  const [proveedores, setProveedores] = useState([]);
+  const [vendedores, setVendedores] = useState([]);
+  const [
+    productosSeleccionadosOrdenCompra,
+    setProductosSeleccionadosOrdenCompra,
+  ] = useState([]);
+
+  const [visibleCompraNueva, setVisibleCompraNueva] = useState(false);
+  const [drawerSelectProductoOrdenCompra, setDrawerSelectProductoOrdenCompra] =
+    useState(false);
   const [loading, setLoading] = useState(false);
 
-  //obtener inventarios
-  useEffect(() => {
-    const cargarInventarios = async () => {
-      try {
-        setLoading(true);
-        const response = await obtenerInventarios();
+  //Formulario
+  const [formOrdenCompra] = Form.useForm();
+  const [formSeleccionarProducto] = Form.useForm();
 
-        if (!response) {
-          message.error("Error al obtener inventarios");
-          setProductos([]);
-          return;
-        }
-
-        if (response.status === 422) {
-          message.warning("No hay productos en el inventario");
-          setProductos([]);
-          return;
-        }
-
-        // Asumiendo que la respuesta tiene la data en response.data
-        const data = response.data || response;
-        setProductos(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Error al obtener inventarios:", error);
-        message.error("No se pudieron cargar los productos");
-        setProductos([]);
-      } finally {
+  const buscarInventario = async () => {
+    try {
+      setLoading(true);
+      const respuesta = await obtenerInventarios();
+      console.log("Respuesta del inventario:", respuesta.data);
+      if (respuesta.status === 200) {
+        message.success("Inventarios obtenidos con éxito");
+        setInventario(respuesta.data);
         setLoading(false);
+        return;
       }
-    };
+      if (respuesta.status === 204) {
+        message.info("No existe productos en el inventario");
+        setInventario([]);
+        setLoading(false);
+        // return;
+      }
+      message.error(respuesta.error || "Error al obtener el inventario");
+    } catch (error) {
+      message.error("Error al obtener el inventario");
+      console.error("Error al obtener el inventario:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    cargarInventarios();
+  const obtenerProveedores = async () => {
+    try {
+      setLoading(true);
+      const respuesta = await getAllProveedores();
+      // console.log("Respuesta del inventario:", respuesta.data);
+      if (respuesta.status === 200) {
+        message.success("Inventarios obtenidos con éxito");
+        setProveedores(respuesta.data);
+        setLoading(false);
+        return;
+      }
+      if (respuesta.status === 204) {
+        message.info("No existe productos en el inventario");
+        setProveedores([]);
+        setLoading(false);
+        // return;
+      }
+      message.error(respuesta.error || "Error al obtener el inventario");
+    } catch (error) {
+      message.error("Error al obtener el inventario");
+      console.error("Error al obtener el inventario:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buscarVenedoresPorProveedor = async (rutProveedor) => {
+    try {
+      setLoading(true);
+
+      const respuesta = await getAllProveedoresVendedor(rutProveedor);
+
+      if (respuesta.status === 200) {
+        message.success("Inventarios obtenidos con éxito");
+        setVendedores(respuesta.data);
+        setLoading(false);
+        return;
+      }
+      if (respuesta.status === 204) {
+        message.info("No existe productos en el inventario");
+        setVendedores([]);
+        setLoading(false);
+        // return;
+      }
+      message.error(respuesta.error || "Error al obtener el inventario");
+    } catch (error) {
+      message.error("Error al obtener el inventario");
+      console.error("Error al obtener el inventario:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buscarProductos = async () => {
+    try {
+      setLoading(true);
+
+      const respuesta = await obtenerProductos();
+      console.log("Respuesta del productos:", respuesta.data);
+      if (respuesta.status === 200) {
+        message.success("Productos obtenidos con éxito");
+        setProductos(respuesta.data);
+        setLoading(false);
+        return;
+      }
+      if (respuesta.status === 204) {
+        message.info("No existe productos en el inventario");
+        setProductos([]);
+        setLoading(false);
+        // return;
+      }
+      message.error(respuesta.error || "Error al obtener los productos");
+    } catch (error) {
+      message.error("Error al obtener los productos");
+      console.error("Error al obtener los productos:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    buscarInventario();
   }, []);
 
-  // Filtrar productos por código o nombre
-  const productosFiltrados = productos.filter(
-    (producto) =>
-      producto.codigo.toLowerCase().includes(filtroTexto.toLowerCase()) ||
-      producto.nombre.toLowerCase().includes(filtroTexto.toLowerCase())
-  );
-
-  // Agregar producto a la solicitud
-  const agregarASolicitud = (producto) => {
-    const existe = productosSolicitud.find((p) => p.id === producto.id);
-
-    if (existe) {
-      message.warning("Este producto ya está en la solicitud");
-      return;
-    }
-
-    const nuevoProducto = {
-      ...producto,
-      cantidadSolicitada: 1,
-    };
-
-    setProductosSolicitud([...productosSolicitud, nuevoProducto]);
-    message.success(`${producto.nombre} agregado a la solicitud`);
+  const handleCerrarCompraNueva = () => {
+    formOrdenCompra.resetFields();
+    formSeleccionarProducto.resetFields();
+    setProductosSeleccionadosOrdenCompra([]);
+    setVendedores([]);
+    setVisibleCompraNueva(false);
   };
 
-  // Actualizar cantidad solicitada
-  const actualizarCantidad = (id, cantidad) => {
-    if (cantidad < 1) return;
+  const handleAbrirCompraNueva = async () => {
+    await obtenerProveedores();
+    setVisibleCompraNueva(true);
+  };
 
-    setProductosSolicitud(
-      productosSolicitud.map((p) =>
-        p.id === id ? { ...p, cantidadSolicitada: cantidad } : p
-      )
+  const seleccionProveedor = async (idProveedorSeleccionado) => {
+    const proveedorSeleccionado = proveedores.find(
+      (p) => p.idProveedor === idProveedorSeleccionado
     );
-  };
+    if (proveedorSeleccionado) {
+      // console.log("Proveedor seleccionado:", proveedorSeleccionado);
 
-  // Eliminar producto de la solicitud
-  const eliminarDeSolicitud = (id) => {
-    setProductosSolicitud(productosSolicitud.filter((p) => p.id !== id));
-    message.info("Producto eliminado de la solicitud");
-  };
-
-  // Enviar solicitud
-  const enviarSolicitud = () => {
-    if (productosSolicitud.length === 0) {
-      message.error("Debes agregar al menos un producto");
-      return;
+      await buscarVenedoresPorProveedor(proveedorSeleccionado.rut);
+    } else {
+      console.warn(
+        "Proveedor no encontrado para el ID:",
+        idProveedorSeleccionado
+      );
     }
-
-    console.log("Solicitud a enviar:", productosSolicitud);
-    // Aquí harías la petición a tu API
-    message.success("Solicitud de stock enviada correctamente");
-    setProductosSolicitud([]);
-    setDrawerVisible(false);
   };
 
-  // Calcular total de la solicitud
-  const calcularTotal = () => {
-    return productosSolicitud.reduce(
-      (total, p) => total + p.precio * p.cantidadSolicitada,
-      0
-    );
+  const handleAgregarProductoOrdenCompra = async () => {
+    await buscarProductos();
+    setDrawerSelectProductoOrdenCompra(true);
   };
 
-  // Columnas de la tabla
+  const AgregarProductoOrdenCompra = (values) => {
+    console.log("Valores del formulario:", values);
+    setProductosSeleccionadosOrdenCompra((prevProductos) => {
+      const maxKey =
+        prevProductos.length > 0
+          ? Math.max(...prevProductos.map((p) => p.key))
+          : 0;
+
+      const newKey = maxKey + 1;
+
+      return [
+        ...prevProductos,
+        {
+          ...values,
+          key: newKey,
+        },
+      ];
+    });
+    formSeleccionarProducto.resetFields();
+    setDrawerSelectProductoOrdenCompra(false);
+  };
+
+  const enviarOrdenCompra = (values) => {
+    console.log("Enviar orden de compra", values);
+    console.log("Productos seleccionados:", productosSeleccionadosOrdenCompra);
+  };
+
   const columnas = [
     {
-      title: "Código",
-      dataIndex: "codigo",
-      key: "codigo",
-      width: 120,
+      title: "ID",
+      dataIndex: "idInventario",
+      key: "idInventario",
     },
     {
-      title: "Producto",
-      dataIndex: "nombre",
-      key: "nombre",
-    },
-    {
-      title: "Stock Actual",
+      title: "Stock",
       dataIndex: "stock",
       key: "stock",
-      //   width: 120,
-      align: "center",
-      render: (stock, record) => {
-        let color = "green";
-        if (stock === 0) color = "red";
-        else if (stock < record.stockMinimo) color = "orange";
-
-        return <Tag color={color}>{stock}</Tag>;
-      },
     },
-    // {
-    //   title: "Stock Mínimo",
-    //   dataIndex: "stockMinimo",
-    //   key: "stockMinimo",
-    //   width: 130,
-    //   align: "center",
-    // },
-    // {
-    //   title: "Precio",
-    //   dataIndex: "precio",
-    //   key: "precio",
-    //   width: 120,
-    //   render: (precio) => `$${precio.toLocaleString("es-CL")}`,
-    // },
     {
-      title: "Acción",
-      key: "accion",
-      width: 100,
-      align: "center",
-      render: (_, record) => (
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => agregarASolicitud(record)}
-          size="small"
-        >
-          Solicitar
-        </Button>
-      ),
+      title: "Estado",
+      dataIndex: "estado",
+      key: "estado",
+    },
+    {
+      title: "Estante",
+      dataIndex: "idEstante",
+      key: "idEstante",
+    },
+    {
+      title: "Lote",
+      dataIndex: "idLote",
+      key: "idLote",
     },
   ];
 
-  if (loading) {
-    return (
-      <div style={{ textAlign: "center", padding: "100px" }}>
-        <Spin size="large" tip="Cargando productos..." />
-      </div>
-    );
-  }
-
+  // const rowSelection = {
+  //   type: "checkbox",
+  //   selectedRowKeys,
+  //   onChange: (selectedRows) => {
+  //     setSelectedRowKeys(selectedRows);
+  //     // console.log("Keys seleccionadas:", selectedRowKeys);
+  //     console.log("Filas seleccionadas:", selectedRows);
+  //   },
+  // };
   return (
     <>
-      <div style={{ padding: "24px" }}>
-        {productos.length > 0 ? (
-          <>
-            <Row gutter={[16, 16]}>
-              <Col span={24}>
-                <Card
-                  title="Solicitud de Stock"
-                  extra={
-                    <Badge count={productosSolicitud.length} showZero>
-                      <Button
-                        type="primary"
-                        icon={<ShoppingCartOutlined />}
-                        onClick={() => setDrawerVisible(true)}
-                      >
-                        Ver Solicitud
-                      </Button>
-                    </Badge>
+      <Title level={2}>Inventario</Title>
+      <Spin spinning={loading} tip="Cargando tabla...">
+        <Row gutter={16}>
+          <Col>
+            <Button
+              type="primary"
+              icon={<ShoppingCartOutlined />}
+              onClick={handleAbrirCompraNueva}
+            >
+              Crear Oden de Compra
+            </Button>
+          </Col>
+          <Col>
+            <Button disabled={inventario.length === 0}>
+              Crear Lista de productos faltantes
+            </Button>
+          </Col>
+        </Row>
+        <Row>
+          <Col span={24} style={{ marginTop: 16 }}>
+            <Card>
+              <Title level={4}>Productos en Inventario</Title>
+              <Table
+                // rowSelection={rowSelection}
+                columns={columnas}
+                dataSource={inventario}
+              />
+            </Card>
+          </Col>
+        </Row>
+        {/* Modal Nueva Orden de Compra */}
+        <Modal
+          title="Nueva Orden de Compra"
+          open={visibleCompraNueva}
+          onCancel={handleCerrarCompraNueva}
+          footer={[
+            <Button key="cancel" onClick={handleCerrarCompraNueva}>
+              Cancelar
+            </Button>,
+            <Button
+              key="submit"
+              type="primary"
+              onClick={() => formOrdenCompra.submit()}
+            >
+              Crear Orden de Compra
+            </Button>,
+          ]}
+        >
+          <Form
+            form={formOrdenCompra}
+            layout="vertical"
+            onFinish={enviarOrdenCompra}
+          >
+            {/*Funcionario - Sucursal disabled */}
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="Funcionario"
+                  name="funcionario"
+                  rules={
+                    [
+                      // { required: true, message: "Funcionario es obligatorio" },
+                    ]
                   }
                 >
-                  <Space
-                    direction="vertical"
-                    style={{ width: "100%" }}
-                    size="large"
-                  >
-                    {/* Filtro de búsqueda */}
-                    <Input
-                      placeholder="Buscar por código o nombre del producto"
-                      prefix={<SearchOutlined />}
-                      value={filtroTexto}
-                      onChange={(e) => setFiltroTexto(e.target.value)}
-                      allowClear
-                      size="large"
-                    />
-
-                    {/* Tabla de productos */}
-                    <Table
-                      columns={columnas}
-                      dataSource={productosFiltrados}
-                      rowKey="id"
-                      pagination={{
-                        pageSize: 10,
-                        showTotal: (total) => `Total: ${total} productos`,
-                      }}
-                      scroll={{ x: 1000 }}
-                    />
-                  </Space>
-                </Card>
+                  <Input disabled placeholder="Funcionario" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="Sucursal"
+                  name="sucursal"
+                  rules={
+                    [
+                      // { required: true, message: "Sucursal es obligatorio" },
+                    ]
+                  }
+                >
+                  <Input disabled placeholder="Sucursal" />
+                </Form.Item>
+              </Col>
+            </Row>
+            {/*Proveedor - Vendedor */}
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="Proveedor"
+                  name="proveedor"
+                  rules={[
+                    { required: true, message: "Proveedor es obligatorio" },
+                  ]}
+                >
+                  <Select
+                    options={proveedores.map((proveedor) => ({
+                      value: proveedor.idProveedor,
+                      label: `${proveedor.rut} - ${proveedor.nombre}`,
+                    }))}
+                    onChange={seleccionProveedor}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="Vendedor"
+                  name="vendedor"
+                  dependencies={["proveedor"]}
+                  rules={[
+                    {
+                      required: vendedores.length > 0,
+                      message: "Vendedor es Requerido",
+                    },
+                  ]}
+                >
+                  <Select
+                    placeholder={
+                      vendedores.length > 0
+                        ? "Seleccione un vendedor"
+                        : "Seleccione un proveedor primero"
+                    }
+                    disabled={vendedores.length === 0}
+                    options={vendedores.map((vendedor) => ({
+                      value: vendedor.idVendedorProveedor,
+                      label: vendedor.nombre,
+                    }))}
+                  />
+                </Form.Item>
               </Col>
             </Row>
 
-            {/* Drawer con productos solicitados */}
-            <Drawer
-              title="Productos a Solicitar"
-              placement="right"
-              width={500}
-              onClose={() => setDrawerVisible(false)}
-              open={drawerVisible}
-              extra={
-                <Space>
-                  <Button onClick={() => setDrawerVisible(false)}>
-                    Cancelar
-                  </Button>
-                  <Popconfirm
-                    title="¿Confirmar solicitud?"
-                    description="Se enviará la solicitud de stock al proveedor"
-                    onConfirm={enviarSolicitud}
-                    okText="Sí"
-                    cancelText="No"
-                  >
-                    <Button type="primary" icon={<SendOutlined />}>
-                      Enviar Solicitud
-                    </Button>
-                  </Popconfirm>
-                </Space>
-              }
-            >
-              {productosSolicitud.length === 0 ? (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "50px 0",
-                    color: "#999",
-                  }}
-                >
-                  No hay productos en la solicitud
-                </div>
-              ) : (
-                <>
-                  <List
-                    dataSource={productosSolicitud}
-                    renderItem={(producto) => (
-                      <List.Item
-                        actions={[
-                          <Popconfirm
-                            title="¿Eliminar producto?"
-                            onConfirm={() => eliminarDeSolicitud(producto.id)}
-                            okText="Sí"
-                            cancelText="No"
-                          >
-                            <Button
-                              type="text"
-                              danger
-                              icon={<DeleteOutlined />}
-                              size="small"
-                            />
-                          </Popconfirm>,
-                        ]}
-                      >
-                        <List.Item.Meta
-                          title={producto.nombre}
-                          description={
-                            <Space direction="vertical" size="small">
-                              <div>Código: {producto.codigo}</div>
-                              <div>Stock actual: {producto.stock}</div>
-                              <div>
-                                Precio: $
-                                {producto.precio.toLocaleString("es-CL")}
-                              </div>
-                              <Space>
-                                <span>Cantidad:</span>
-                                <InputNumber
-                                  min={1}
-                                  value={producto.cantidadSolicitada}
-                                  onChange={(value) =>
-                                    actualizarCantidad(producto.id, value)
-                                  }
-                                  size="small"
-                                />
-                              </Space>
-                              <div style={{ fontWeight: "bold" }}>
-                                Subtotal: $
-                                {(
-                                  producto.precio * producto.cantidadSolicitada
-                                ).toLocaleString("es-CL")}
-                              </div>
-                            </Space>
-                          }
-                        />
-                      </List.Item>
-                    )}
-                  />
+            <Divider />
 
-                  <div
-                    style={{
-                      marginTop: "20px",
-                      padding: "15px",
-                      background: "#f5f5f5",
-                      borderRadius: "8px",
-                    }}
-                  >
-                    <Row
-                      justify="space-between"
-                      style={{ fontSize: "16px", fontWeight: "bold" }}
-                    >
-                      <Col>Total:</Col>
-                      <Col>${calcularTotal().toLocaleString("es-CL")}</Col>
-                    </Row>
-                    <Row justify="space-between" style={{ marginTop: "10px" }}>
-                      <Col>Productos:</Col>
-                      <Col>{productosSolicitud.length}</Col>
-                    </Row>
-                    <Row justify="space-between">
-                      <Col>Unidades totales:</Col>
-                      <Col>
-                        {productosSolicitud.reduce(
-                          (sum, p) => sum + p.cantidadSolicitada,
-                          0
-                        )}
-                      </Col>
-                    </Row>
-                  </div>
-                </>
-              )}
+            <Button
+              type="dashed"
+              icon={<PlusOutlined />}
+              onClick={() => handleAgregarProductoOrdenCompra()}
+            >
+              Agregar Producto
+            </Button>
+            <Drawer
+              title="Seleccionar Producto"
+              width={350}
+              onClose={() => setDrawerSelectProductoOrdenCompra(false)}
+              open={drawerSelectProductoOrdenCompra}
+            >
+              <Title level={4}>Seleccionar Producto</Title>
+              <Form
+                layout="vertical"
+                form={formSeleccionarProducto}
+                onFinish={AgregarProductoOrdenCompra}
+              >
+                <Form.Item
+                  label="Producto"
+                  name="productoSeleccionado"
+                  rules={[
+                    { required: true, message: "Producto es obligatorio" },
+                  ]}
+                >
+                  <Select
+                    showSearch
+                    placeholder={
+                      productos.length > 0
+                        ? "Seleccione un producto"
+                        : "No hay productos disponibles"
+                    }
+                    disabled={productos.length === 0}
+                    options={productos.map((producto) => ({
+                      value: producto.idProducto,
+                      label: `${producto.nombre} - ${producto.marca}`,
+                    }))}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="Cantidad"
+                  name="cantidadProducto"
+                  rules={[
+                    { required: true, message: "Cantidad es obligatoria" },
+                  ]}
+                  initialValue={1}
+                >
+                  <InputNumber min={1} style={{ width: "100%" }} />
+                </Form.Item>
+
+                <Form.Item
+                  label="Valor Unitario"
+                  name="valorUnitarioProducto"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Valor Unitario es obligatorio",
+                    },
+                  ]}
+                  initialValue={0}
+                >
+                  <InputNumber
+                    min={0}
+                    step="0.01"
+                    precision={0}
+                    style={{ width: "100%" }}
+                  />
+                </Form.Item>
+
+                <Form.Item>
+                  <Button type="primary" htmlType="submit">
+                    Agregar a la Orden
+                  </Button>
+                </Form.Item>
+              </Form>
             </Drawer>
-          </>
-        ) : (
-          <Row gutter={[16, 16]}>
-            <Col span={24}>
-              <Card title="Solicitud de Stock">
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="No hay productos disponibles para solicitar"
-                ></Empty>
-              </Card>
-            </Col>
-          </Row>
-        )}
-      </div>
+
+            <Table
+              // rowSelection={rowSelection}
+              columns={[
+                {
+                  title: "ID",
+                  dataIndex: "key",
+                  key: "key",
+                },
+                {
+                  title: "Producto",
+                  dataIndex: "productoSeleccionado",
+                  key: "productoSeleccionado",
+                  render: (id) => {
+                    const prod = productos.find((p) => p.idProducto === id);
+                    return prod ? `${prod.nombre} - ${prod.marca}` : id;
+                  },
+                },
+                {
+                  title: "Cantidad",
+                  dataIndex: "cantidadProducto",
+                  key: "cantidadProducto",
+                },
+                {
+                  title: "Valor Unitario",
+                  dataIndex: "valorUnitarioProducto",
+                  key: "valorUnitarioProducto",
+                },
+                {
+                  title: "Total",
+                  dataIndex: "total",
+                  key: "total",
+                  render: (_, record) => {
+                    const cantidad = record.cantidadProducto || 0;
+                    const valor = record.valorUnitarioProducto || 0; // Corregido el nombre de la propiedad
+                    return cantidad * valor;
+                  },
+                },
+              ]}
+              dataSource={productosSeleccionadosOrdenCompra}
+            />
+            {/* <Form.Item>
+              <Button type="primary" htmlType="submit">
+                Crear Orden de Compra
+              </Button>
+            </Form.Item> */}
+          </Form>
+        </Modal>
+      </Spin>
     </>
   );
 };

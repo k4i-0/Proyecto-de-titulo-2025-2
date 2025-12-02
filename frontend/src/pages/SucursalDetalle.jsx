@@ -229,10 +229,10 @@ export default function SucursalDetalle() {
     navigate("/admin/productos");
   };
 
-  const handleVerProveedores = async () => {
-    await obtenerProveedores();
-    setVerProveedores(!verProveedores);
-  };
+  // const handleVerProveedores = async () => {
+  //   await obtenerProveedores();
+  //   setVerProveedores(!verProveedores);
+  // };
 
   return (
     <>
@@ -240,7 +240,7 @@ export default function SucursalDetalle() {
         <Col span={24}>
           <Button
             icon={<ArrowLeftOutlined />}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/admin/sucursales")}
             type="primary"
           >
             Volver

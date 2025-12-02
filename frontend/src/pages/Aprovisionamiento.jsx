@@ -20,7 +20,7 @@ import {
   Space,
   Popconfirm,
   Drawer,
-  List,
+  Table,
 } from "antd";
 
 import {
@@ -31,9 +31,19 @@ import {
   UserOutlined,
   MailOutlined,
   PhoneOutlined,
+  IdcardOutlined,
+  FileTextOutlined,
+  CalendarOutlined,
+  ShopOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 
 const { Title } = Typography;
+const { TextArea } = Input;
+
+const { Option } = Select;
+
+// import dayjs from "dayjs";
 
 //codigo SII
 import girosSII from "../services/codigoSII.js";
@@ -45,10 +55,14 @@ import {
   eliminarProveedor,
   getAllProveedoresVendedor,
   crearVendedor,
+  eliminarVendedor,
+  editarVendedor,
 } from "../services/inventario/Proveedor.service.js";
 import Alert from "antd/es/alert/Alert.js";
 
 export default function Aprovisionamiento() {
+  // const funcionario = JSON.parse(localStorage.getItem("userData"));
+  // console.log("Funcionario desde localStorage:", funcionario.nombre);
   const navigator = useNavigate();
   const { idSucursal } = useParams();
   const [proveedores, setProveedores] = useState([]);
@@ -58,8 +72,16 @@ export default function Aprovisionamiento() {
   const [verModalEditar, setVerModalEditar] = useState(false);
   const [verDrawerVendedores, setVerDrawerVendedores] = useState(false);
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState(null);
+  const [proveedorEditar, setProveedorEditar] = useState(null);
+  const [modalEditarVendedorProveedor, setModalEditarVendedorProveedor] =
+    useState(false);
+  const [vendedorEditarProveedor, setVendedorEditarProveedor] = useState({});
   const [form] = Form.useForm();
+  const [formEditar] = Form.useForm();
+  const [formOrdenCompra] = Form.useForm();
+
   const [formVendedor] = Form.useForm();
+  const [formVendedorEditar] = Form.useForm();
 
   const [childrenDrawer, setChildrenDrawer] = useState(false);
 
@@ -112,12 +134,47 @@ export default function Aprovisionamiento() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     obtenerProveedores();
   }, []);
 
-  const handelCrearProveedor = () => {
-    setVerModalCrear(true);
+  const handelSubmitEditarProveedor = async (values) => {
+    console.log(
+      "Datos para editar proveedor handelSubmitEditarProveedor:",
+      formEditar
+    );
+    try {
+      setLoading(true);
+      const respuesta = await editarProveedor(
+        values,
+        proveedorEditar.idProveedor
+      );
+      console.log("Respuesta editar proveedor:", respuesta);
+      if (respuesta.status === 200) {
+        message.success("Proveedor editado exitosamente");
+        setVerModalEditar(false);
+        formEditar.resetFields();
+        obtenerProveedores();
+        setLoading(false);
+        return;
+      }
+      if (respuesta.status === 422) {
+        message.info("Faltan datos obligatorios para editar el proveedor");
+        setLoading(false);
+        return;
+      }
+      message.error(
+        respuesta.error || "Error en el servidor al editar el proveedor"
+      );
+    } catch (error) {
+      message.error("Error al editar el proveedor");
+      console.error("Error al editar el proveedor:", error);
+    } finally {
+      setLoading(false);
+    }
+
+    //setVerModalCrear(true);
   };
 
   const handleSubmitVendedor = async (values) => {
@@ -129,7 +186,7 @@ export default function Aprovisionamiento() {
         rutProveedor: proveedorSeleccionado.rut,
       };
       const respuesta = await crearVendedor(vendedorData);
-      console.log("Respuesta crear vendedor:", respuesta);
+      // console.log("Respuesta crear vendedor:", respuesta);
       if (respuesta.status === 200) {
         message.success("Vendedor creado exitosamente");
         formVendedor.resetFields();
@@ -151,7 +208,32 @@ export default function Aprovisionamiento() {
     }
   };
 
-  const handleSubmitCrear = async (values) => {
+  const handelEliminarVendedor = async (idVendedorProveedor) => {
+    try {
+      setLoading(true);
+      // console.log("ID Vendedor a eliminar:", vendedor);
+      const respuesta = await eliminarVendedor(idVendedorProveedor);
+      if (respuesta.status === 200) {
+        message.success("Vendedor eliminado exitosamente");
+        buscarVendedoresSucursal(proveedorSeleccionado.rut);
+        return;
+      }
+      if (respuesta.status === 404) {
+        message.error("Vendedor no encontrado");
+        return;
+      }
+      message.error(
+        respuesta.message || "Error en el servidor al eliminar el vendedor"
+      );
+      setLoading(false);
+    } catch (error) {
+      message.error("Error al eliminar el vendedor");
+      console.error("Error al eliminar el vendedor:", error);
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitCrearProveedor = async (values) => {
     try {
       setLoading(true);
       // Formatear la fecha si es necesario
@@ -172,6 +254,7 @@ export default function Aprovisionamiento() {
       }
       if (response.status === 422) {
         message.info("Faltan datos obligatorios para crear el proveedor");
+        form.resetFields();
         return;
       }
 
@@ -187,10 +270,39 @@ export default function Aprovisionamiento() {
       setLoading(false);
     }
   };
+
+  const handelEliminarProveedor = async (idProveedor) => {
+    try {
+      setLoading(true);
+      const respuesta = await eliminarProveedor(idProveedor);
+      if (respuesta.status === 200) {
+        message.success("Proveedor eliminado exitosamente");
+        obtenerProveedores();
+        setLoading(false);
+        return;
+      }
+      message.error(
+        respuesta.error || "Error en el servidor al eliminar el proveedor"
+      );
+      setLoading(false);
+    } catch (error) {
+      message.error("Error al eliminar el proveedor");
+      console.error("Error al eliminar el proveedor:", error);
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCancel = () => {
     setVerModalCrear(false);
     setVerModalEditar(false);
+    setModalEditarVendedorProveedor(false);
+    setVendedorEditarProveedor({});
+    formVendedorEditar.resetFields();
     form.resetFields();
+    formEditar.resetFields();
+    formOrdenCompra.resetFields();
     setProveedorSeleccionado(null);
   };
 
@@ -198,6 +310,7 @@ export default function Aprovisionamiento() {
     buscarVendedoresSucursal(proveedorSeleccionado.rut);
     setVerDrawerVendedores(true);
   };
+
   const handleCrearProveedor = () => {
     setVerModalCrear(true);
   };
@@ -215,11 +328,56 @@ export default function Aprovisionamiento() {
     setChildrenDrawer(!childrenDrawer);
   };
 
-  const handelEditarProveedor = (recibido) => {
-    console.log("Proveedor a editar:", recibido);
-    //setProveedorSeleccionado(recibido);
+  const handleEditarProveedor = (recibido) => {
+    // console.log("Proveedor a editar handelEditarProveedor:", recibido);
+    setProveedorEditar(recibido);
     setVerModalEditar(!verModalEditar);
   };
+
+  const handelEditarVendedorProveedor = (vendedor) => {
+    setVendedorEditarProveedor(vendedor);
+    console.log(
+      "Vendedor a editar handelEditarVendedorProveedor:",
+      vendedorEditarProveedor
+    );
+    setModalEditarVendedorProveedor(true);
+  };
+
+  const handelEditarVendedorProveedorSubmit = async (values) => {
+    console.log(
+      "Datos para editar vendedor handelEditarVendedorProveedorSubmit:",
+      values
+    );
+    try {
+      setLoading(true);
+      const respuesta = await editarVendedor(
+        values,
+        vendedorEditarProveedor.idProveedor
+      );
+      if (respuesta.status === 200) {
+        message.success("Vendedor editado exitosamente");
+        formVendedorEditar.resetFields();
+        buscarVendedoresSucursal(proveedorSeleccionado.rut);
+        setVendedorEditarProveedor({});
+        setModalEditarVendedorProveedor(false);
+        return;
+      }
+      if (respuesta.status === 422) {
+        message.info("Faltan datos obligatorios para editar el vendedor");
+        return;
+      }
+      if (respuesta.status === 404) {
+        message.error("Vendedor no encontrado");
+        return;
+      }
+    } catch (error) {
+      message.error("Error al editar el vendedor");
+      console.error("Error al editar el vendedor:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <div style={{ textAlign: "left" }}>
@@ -237,7 +395,19 @@ export default function Aprovisionamiento() {
         </Col>
       </Row>
       <Divider />
+      <Row style={{ marginBottom: 20 }}>
+        <Col>
+          {proveedorSeleccionado && (
+            <Alert
+              message={`Proveedor Seleccionado: ${proveedorSeleccionado.nombre}`}
+              type="info"
+              showIcon
+            />
+          )}
+        </Col>
+      </Row>
 
+      {/* BOTONES ACCIONES */}
       <Row gutter={16}>
         <Col>
           <Button type="primary" onClick={handleCrearProveedor}>
@@ -254,15 +424,16 @@ export default function Aprovisionamiento() {
             Gestionar Vendedores
           </Button>
         </Col>
-        <Col>
-          {proveedorSeleccionado && (
-            <Alert
-              message={`Proveedor Seleccionado: ${proveedorSeleccionado.nombre}`}
-              type="info"
-              showIcon
-            />
-          )}
-        </Col>
+        {/* <Col>
+          <Button
+            type="default"
+            icon={<FileTextOutlined />}
+            onClick={openDrawerOrdenCompra}
+            disabled={loading || !proveedorSeleccionado}
+          >
+            Orden de Compra
+          </Button>
+        </Col> */}
       </Row>
       <Divider />
 
@@ -286,11 +457,13 @@ export default function Aprovisionamiento() {
                 actions={[
                   <EditOutlined
                     key="edit"
-                    onClick={() => handelEditarProveedor(proveedor)}
+                    onClick={() => handleEditarProveedor(proveedor)}
                   />,
                   <Popconfirm
                     title="¿Está seguro de eliminar este proveedor?"
-                    onConfirm={() => handleCancel(proveedor.idProveedor)}
+                    onConfirm={() =>
+                      handelEliminarProveedor(proveedor.idProveedor)
+                    }
                     okText="Sí"
                     cancelText="No"
                   >
@@ -340,7 +513,7 @@ export default function Aprovisionamiento() {
         <Form
           form={form}
           layout="vertical"
-          onFinish={handleSubmitCrear}
+          onFinish={handleSubmitCrearProveedor}
           autoComplete="off"
         >
           <Form.Item
@@ -461,22 +634,22 @@ export default function Aprovisionamiento() {
       {/* MODAL EDITAR PROVEEDOR */}
       <Modal
         open={verModalEditar}
-        onCancel={handelEditarProveedor}
+        onCancel={handleCancel}
         footer={null}
         width={600}
         title="Editar Proveedor"
       >
         <Divider />
         <Form
-          form={form}
+          form={formEditar}
           layout="vertical"
-          onFinish={handleCancel}
+          onFinish={handelSubmitEditarProveedor}
           autoComplete="off"
         >
           <Form.Item
             label="RUT"
             name="rut"
-            initialValue={proveedorSeleccionado?.rut}
+            initialValue={proveedorEditar?.rut}
             rules={[
               { required: true, message: "Por favor ingrese el RUT" },
               {
@@ -491,7 +664,7 @@ export default function Aprovisionamiento() {
           <Form.Item
             label="Nombre"
             name="nombre"
-            initialValue={proveedorSeleccionado?.nombre}
+            initialValue={proveedorEditar?.nombre}
             rules={[{ required: true, message: "Por favor ingrese el nombre" }]}
           >
             <Input placeholder="Nombre del proveedor" />
@@ -500,7 +673,7 @@ export default function Aprovisionamiento() {
           <Form.Item
             label="Teléfono"
             name="telefono"
-            initialValue={proveedorSeleccionado?.telefono}
+            initialValue={proveedorEditar?.telefono}
             rules={[
               { required: true, message: "Por favor ingrese el teléfono" },
               { pattern: /^[0-9]{9}$/, message: "Debe tener 9 dígitos" },
@@ -512,7 +685,7 @@ export default function Aprovisionamiento() {
           <Form.Item
             label="Email"
             name="email"
-            initialValue={proveedorSeleccionado?.email}
+            initialValue={proveedorEditar?.email}
             rules={[
               { required: true, message: "Por favor ingrese el email" },
               { type: "email", message: "Email inválido" },
@@ -522,20 +695,9 @@ export default function Aprovisionamiento() {
           </Form.Item>
 
           <Form.Item
-            label="Fecha de Ingreso"
-            name="fechaIngreso"
-            initialValue={proveedorSeleccionado?.fechaIngreso}
-            rules={[
-              { required: true, message: "Por favor seleccione la fecha" },
-            ]}
-          >
-            <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
-          </Form.Item>
-
-          <Form.Item
             label="Rubro"
             name="rubro"
-            initialValue={proveedorSeleccionado?.rubro}
+            initialValue={proveedorEditar?.rubro}
             rules={[{ required: true, message: "Por favor ingrese el rubro" }]}
           >
             <Input placeholder="Ej: Alimentos, Tecnología, etc." />
@@ -544,7 +706,7 @@ export default function Aprovisionamiento() {
           <Form.Item
             label="Giro"
             name="giro"
-            initialValue={proveedorSeleccionado?.giro}
+            initialValue={proveedorEditar?.giro}
             rules={[
               { required: true, message: "Por favor seleccione el giro" },
             ]}
@@ -569,7 +731,7 @@ export default function Aprovisionamiento() {
           <Form.Item
             label="Estado"
             name="estado"
-            initialValue={proveedorSeleccionado?.estado}
+            initialValue={proveedorEditar?.estado}
             rules={[
               { required: true, message: "Por favor seleccione el estado" },
             ]}
@@ -601,7 +763,7 @@ export default function Aprovisionamiento() {
         placement="right"
         onClose={() => setVerDrawerVendedores(false)}
         open={verDrawerVendedores}
-        width={500}
+        width={450}
       >
         <Button onClick={showChildrenDrawer}>Agregar Nuevo Vendedor</Button>
         {/* DRAWER HIJO CREAR VENDEDOR */}
@@ -673,6 +835,7 @@ export default function Aprovisionamiento() {
         <Divider />
 
         <Title level={3}>Vendedores Actuales</Title>
+
         {loading ? (
           <Spin tip="Cargando..." fullscreen />
         ) : vendedores.length > 0 ? (
@@ -680,22 +843,36 @@ export default function Aprovisionamiento() {
             {vendedores.map((vendedor) => (
               <Card
                 key={vendedor.idVendedor}
-                title={"Vendedor: " + vendedor.nombre}
+                style={{ width: "60%" }}
+                title={
+                  <>
+                    {"Vendedor: "} <UserOutlined /> {vendedor.nombre}
+                  </>
+                }
                 size="small"
                 extra={
-                  <Popconfirm
-                    title="¿Eliminar este vendedor?"
-                    onConfirm={() => handleCancel(vendedor.idVendedor)}
-                    okText="Sí"
-                    cancelText="No"
-                  >
+                  <>
                     <Button
                       type="text"
-                      danger
-                      icon={<DeleteOutlined />}
-                      size="small"
+                      icon={<EditOutlined />}
+                      onClick={() => handelEditarVendedorProveedor(vendedor)}
                     />
-                  </Popconfirm>
+                    <Popconfirm
+                      title="¿Eliminar este vendedor?"
+                      onConfirm={() =>
+                        handelEliminarVendedor(vendedor.idVendedorProveedor)
+                      }
+                      okText="Sí"
+                      cancelText="No"
+                    >
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        size="small"
+                      />
+                    </Popconfirm>
+                  </>
                 }
               >
                 <Space
@@ -703,12 +880,17 @@ export default function Aprovisionamiento() {
                   style={{ width: "100%" }}
                   size="small"
                 >
-                  <div style={{ fontSize: "16px", fontWeight: "bold" }}>
-                    <UserOutlined /> {vendedor.nombre}
+                  <div style={{ fontSize: "13px" }}>
+                    <IdcardOutlined /> {vendedor.rut}
                   </div>
                   <div style={{ fontSize: "13px" }}>
                     <MailOutlined style={{ color: "#1890ff" }} />{" "}
-                    {vendedor.email}
+                    <a
+                      href={`mailto:${vendedor.email}`}
+                      style={{ color: "#1890ff" }}
+                    >
+                      {vendedor.email}
+                    </a>
                   </div>
                   <div style={{ fontSize: "13px" }}>
                     <PhoneOutlined style={{ color: "#52c41a" }} />{" "}
@@ -721,208 +903,90 @@ export default function Aprovisionamiento() {
         ) : (
           <Empty description="No hay vendedores registrados" />
         )}
+
+        <Drawer
+          title="Editar Vendedor"
+          width={450}
+          closable={false}
+          open={modalEditarVendedorProveedor}
+          onClose={() => {
+            setModalEditarVendedorProveedor(false);
+            setVendedorEditarProveedor({});
+          }}
+        >
+          <Form
+            form={formVendedorEditar}
+            layout="vertical"
+            onFinish={handelEditarVendedorProveedorSubmit}
+            width={400}
+            style={{ margin: 10 }}
+          >
+            <Form.Item
+              label="ID Vendedor"
+              name="idVendedorProveedor"
+              initialValue={vendedorEditarProveedor?.idVendedorProveedor}
+              hidden
+            >
+              <Input disabled />
+            </Form.Item>
+            <Form.Item
+              label="Nombre"
+              name="nombre"
+              initialValue={vendedorEditarProveedor?.nombre}
+              rules={[{ required: true, message: "Ingrese el nombre" }]}
+            >
+              <Input placeholder={vendedorEditarProveedor?.nombre} />
+            </Form.Item>
+            <Form.Item
+              label="Rut"
+              name="rut"
+              initialValue={vendedorEditarProveedor?.rut}
+              rules={[{ required: true, message: "Ingrese el rut" }]}
+            >
+              <Input placeholder={vendedorEditarProveedor?.rut} />
+            </Form.Item>
+
+            <Form.Item
+              label="Teléfono"
+              name="telefono"
+              initialValue={vendedorEditarProveedor?.telefono}
+              rules={[
+                { required: true, message: "Ingrese el teléfono" },
+                { pattern: /^[0-9]{9}$/, message: "Debe tener 9 dígitos" },
+              ]}
+            >
+              <Input
+                placeholder={vendedorEditarProveedor?.telefono}
+                maxLength={9}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Email"
+              name="email"
+              initialValue={vendedorEditarProveedor?.email}
+              rules={[
+                { required: true, message: "Ingrese el email" },
+                { type: "email", message: "Email inválido" },
+              ]}
+            >
+              <Input placeholder={vendedorEditarProveedor?.email} />
+            </Form.Item>
+
+            <Form.Item>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                icon={<UserAddOutlined />}
+                block
+              >
+                Editar Vendedor
+              </Button>
+            </Form.Item>
+          </Form>
+        </Drawer>
       </Drawer>
     </>
   );
-  // return (
-  //   <>
-  //     <div style={{ textAlign: "left" }}>
-  //       <Button
-  //         type="primary"
-  //         onClick={() => navigator("/admin/sucursal/" + idSucursal)}
-  //       >
-  //         Volver
-  //       </Button>
-  //     </div>
-  //     <Row justify="center" align="middle">
-  //       <Col>
-  //         <Title level={2}>Aprovisionamiento Sucursal {idSucursal}</Title>
-  //       </Col>
-  //     </Row>
-  //     <Divider />
-  //     <Row gutter={16}>
-  //       <Col>
-  //         <Button type="primary" onClick={() => handelCrearProveedor()}>
-  //           Agregar Proveedor
-  //         </Button>
-  //       </Col>
-  //     </Row>
-  //     <Row justify="center">
-  //       {loading ? (
-  //         <Spin tip="Loading" size="large" fullscreen>
-  //           Cargando...
-  //         </Spin>
-  //       ) : proveedores.length > 0 ? (
-  //         proveedores.map((proveedor) => (
-  //           <Col key={proveedor.idProveedor} span={8} style={{ padding: 8 }}>
-  //             <Card
-  //               title={proveedor.nombre}
-  //               hoverable
-  //               extra={
-  //                 <Tag color={proveedor.estado === "Activo" ? "green" : "red"}>
-  //                   {proveedor.estado}
-  //                 </Tag>
-  //               }
-  //             >
-  //               <p>
-  //                 <strong>RUT:</strong> {proveedor.rut}
-  //               </p>
-  //               <p>
-  //                 <strong>Teléfono:</strong> {proveedor.telefono}
-  //               </p>
-  //               <p>
-  //                 <strong>Email:</strong> {proveedor.email}
-  //               </p>
-  //               <p>
-  //                 <strong>Rubro:</strong> {proveedor.rubro}
-  //               </p>
-  //               <p>
-  //                 <strong>Giro:</strong> {proveedor.giro}
-  //               </p>
-  //               <p>
-  //                 <strong>Fecha Ingreso:</strong>{" "}
-  //                 {new Date(proveedor.fechaIngreso).toLocaleDateString("es-CL")}
-  //               </p>
-  //             </Card>
-  //           </Col>
-  //         ))
-  //       ) : (
-  //         <>
-  //           <Empty
-  //             description="No hay proveedores registrados"
-  //             image={Empty.PRESENTED_IMAGE_SIMPLE}
-  //           />
-  //         </>
-  //       )}
-  //     </Row>
-  //     <Modal
-  //       open={verModalCrear}
-  //       onCancel={handleCancel}
-  //       footer={null}
-  //       width={600}
-  //     >
-  //       <Title level={4}>Crear Nuevo Proveedor</Title>
-  //       <Divider />
-  //       <Form
-  //         form={form}
-  //         layout="vertical"
-  //         onFinish={handleSubmit}
-  //         autoComplete="off"
-  //       >
-  //         <Form.Item
-  //           label="RUT"
-  //           name="rut"
-  //           rules={[
-  //             { required: true, message: "Por favor ingrese el RUT" },
-  //             {
-  //               pattern: /^[0-9]+-[0-9kK]{1}$/,
-  //               message: "Formato de RUT inválido (ej: 12345678-9)",
-  //             },
-  //           ]}
-  //         >
-  //           <Input placeholder="12345678-9" />
-  //         </Form.Item>
-
-  //         <Form.Item
-  //           label="Nombre"
-  //           name="nombre"
-  //           rules={[{ required: true, message: "Por favor ingrese el nombre" }]}
-  //         >
-  //           <Input placeholder="Nombre del proveedor" />
-  //         </Form.Item>
-
-  //         <Form.Item
-  //           label="Teléfono"
-  //           name="telefono"
-  //           rules={[
-  //             { required: true, message: "Por favor ingrese el teléfono" },
-  //             { pattern: /^[0-9]{9}$/, message: "Debe tener 9 dígitos" },
-  //           ]}
-  //         >
-  //           <Input placeholder="912345678" maxLength={9} />
-  //         </Form.Item>
-
-  //         <Form.Item
-  //           label="Email"
-  //           name="email"
-  //           rules={[
-  //             { required: true, message: "Por favor ingrese el email" },
-  //             { type: "email", message: "Email inválido" },
-  //           ]}
-  //         >
-  //           <Input placeholder="proveedor@ejemplo.com" />
-  //         </Form.Item>
-
-  //         <Form.Item
-  //           label="Fecha de Ingreso"
-  //           name="fechaIngreso"
-  //           rules={[
-  //             { required: true, message: "Por favor seleccione la fecha" },
-  //           ]}
-  //         >
-  //           <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
-  //         </Form.Item>
-
-  //         <Form.Item
-  //           label="Rubro"
-  //           name="rubro"
-  //           rules={[{ required: true, message: "Por favor ingrese el rubro" }]}
-  //         >
-  //           <Input placeholder="Ej: Alimentos, Tecnología, etc." />
-  //         </Form.Item>
-
-  //         <Form.Item
-  //           label="Giro"
-  //           name="giro"
-  //           virtual="false"
-  //           rules={[
-  //             { required: true, message: "Por favor seleccione el giro" },
-  //           ]}
-  //         >
-  //           <Select
-  //             placeholder="Seleccione el giro del proveedor"
-  //             showSearch
-  //             optionFilterProp="children"
-  //             filterOption={(input, option) =>
-  //               (option?.label ?? "")
-  //                 .toLowerCase()
-  //                 .includes(input.toLowerCase())
-  //             }
-  //             options={girosSII.map((giro) => ({
-  //               value: giro.codigo,
-  //               label: `${giro.codigo} - ${giro.nombre}`,
-  //             }))}
-  //           />
-  //         </Form.Item>
-
-  //         <Form.Item
-  //           label="Estado"
-  //           name="estado"
-  //           rules={[
-  //             { required: true, message: "Por favor seleccione el estado" },
-  //           ]}
-  //           initialValue="Activo"
-  //         >
-  //           <Select placeholder="Seleccione el estado">
-  //             <Select.Option value="Activo">Activo</Select.Option>
-  //             <Select.Option value="Inactivo">Inactivo</Select.Option>
-  //           </Select>
-  //         </Form.Item>
-
-  //         <Form.Item>
-  //           <Row gutter={8} justify="end">
-  //             <Col>
-  //               <Button onClick={handleCancel}>Cancelar</Button>
-  //             </Col>
-  //             <Col>
-  //               <Button type="primary" htmlType="submit" loading={loading}>
-  //                 Crear Proveedor
-  //               </Button>
-  //             </Col>
-  //           </Row>
-  //         </Form.Item>
-  //       </Form>
-  //     </Modal>
-  //   </>
-  // );
 }

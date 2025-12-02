@@ -32,7 +32,7 @@ import obtenerCategoria, {
 
 export default function Categoria() {
   const { Title, Text } = Typography;
-  const navigate = useNavigate(); // Cambiado de 'navigator' a 'navigate'
+  const navigate = useNavigate();
 
   const [categorias, setCategorias] = useState([]);
   const [modalCrear, setModalCrear] = useState(false);
@@ -297,9 +297,9 @@ export default function Categoria() {
             <Button
               type="default"
               icon={<RollbackOutlined />}
-              onClick={() => navigate("/admin/productos")}
+              onClick={() => navigate(-1)}
             >
-              Volver a Productos
+              Volver
             </Button>
           </Col>
 
@@ -307,7 +307,7 @@ export default function Categoria() {
             <Space wrap>
               {categoriaSelect && (
                 <Alert
-                  message={`Seleccionada: ${categoriaSelect.nombre}`}
+                  message={`Seleccionada: ${categoriaSelect.nombreCategoria}`}
                   type="info"
                   showIcon
                   closable

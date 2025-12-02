@@ -30,6 +30,16 @@ const compraproveedor = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
+
+    estado: {
+      type: DataTypes.ENUM("pendiente", "aprobada", "recibida", "cancelada"),
+      allowNull: false,
+      defaultValue: "pendiente",
+    },
+    observaciones: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     // idLote: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,

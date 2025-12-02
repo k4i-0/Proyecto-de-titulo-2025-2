@@ -105,7 +105,6 @@ export default function Productos({ onCambiarVista }) {
     setModalCrear(true);
   };
 
-  // Modificado: ya no recibe 'producto', usa 'productosSelect'
   const handleEditar = () => {
     if (!productosSelect) {
       setError(true);
@@ -114,10 +113,9 @@ export default function Productos({ onCambiarVista }) {
     }
     setError(false);
     setMensaje("");
-    setModalEditar(true); // El modal <Editar> ya usa 'productosSelect'
+    setModalEditar(true);
   };
 
-  // NUEVO: Manejador de eliminación en línea (como en Sucursal)
   const handleEliminar = async () => {
     if (!productosSelect) {
       setError(true);
@@ -132,8 +130,8 @@ export default function Productos({ onCambiarVista }) {
       if (respuesta.status === 200) {
         setMensaje("Producto eliminado exitosamente");
         setError(false);
-        setProductoSelect(null); // Deseleccionar
-        await buscarProducto(); // Recargar
+        setProductoSelect(null);
+        await buscarProducto();
       } else {
         setError(true);
         setMensaje(respuesta.error || "Error al eliminar el producto.");
@@ -151,19 +149,17 @@ export default function Productos({ onCambiarVista }) {
     setModalCrear(false);
     setModalEditar(false);
     productosSelect && setProductoSelect(null);
-    // setModalEliminar(false); // Ya no se usa
+    // setModalEliminar(false);
   };
 
-  // NUEVO: Manejador para la selección de fila (como en Sucursal)
   const handleSeleccionarFila = (record) => {
     if (productosSelect?.idProducto === record.idProducto) {
-      setProductoSelect(null); // Deseleccionar si se hace clic de nuevo
+      setProductoSelect(null);
     } else {
-      setProductoSelect(record); // Seleccionar nueva fila
+      setProductoSelect(record);
     }
   };
 
-  // --- getEstadoColor (Sin cambios) ---
   const getEstadoColor = (estado) => {
     const estadoLower = estado?.toLowerCase() || "";
     switch (estadoLower) {
@@ -182,9 +178,7 @@ export default function Productos({ onCambiarVista }) {
     }
   };
 
-  // --- Definición de Columnas (Modificada) ---
   const columns = [
-    // ... (todas las columnas NPI, Código, Nombre, etc. se mantienen igual)
     {
       title: "NPI",
       dataIndex: "idProducto",
@@ -430,6 +424,16 @@ export default function Productos({ onCambiarVista }) {
           <Text type="secondary">
             Aquí puedes gestionar los productos de tu inventario
           </Text>
+          <div style={{ textAlign: "right", justifyContent: "right" }}>
+            <Button
+              type="default"
+              icon={<EditOutlined />}
+              onClick={() => navigate("/admin/categorias")}
+              disabled={loading}
+            >
+              Gestionar Categorias
+            </Button>
+          </div>
         </Col>
       </Row>
 
@@ -463,14 +467,14 @@ export default function Productos({ onCambiarVista }) {
 
           <Col>
             <Space wrap>
-              <Button
+              {/* <Button
                 type="default"
                 icon={<EditOutlined />}
                 onClick={() => navigate("/admin/categorias")}
                 disabled={loading}
               >
                 Gestionar Categorias
-              </Button>
+              </Button> */}
               <Button
                 type="primary"
                 icon={<PlusOutlined />}

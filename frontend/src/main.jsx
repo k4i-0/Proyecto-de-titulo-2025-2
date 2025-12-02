@@ -49,7 +49,7 @@ createRoot(document.getElementById("root")).render(
             }
           >
             <Route index element={<Inicio />} />
-            <Route path="sucursal" element={<Sucursal />} />
+            <Route path="sucursales" element={<Sucursal />} />
             <Route path="sucursal/:idSucursal" element={<SucursalDetalle />} />
             <Route path="bodega/:idSucursal" element={<Bodega />} />
             <Route path="productos" element={<Productos />} />

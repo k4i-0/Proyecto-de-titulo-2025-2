@@ -8,7 +8,7 @@ export async function getAllProveedores() {
     const response = await axios.get(`${API_URL}/buscar`, {
       withCredentials: true,
     });
-    console.log("Proveedores obtenidos:", response);
+    //console.log("Proveedores obtenidos:", response);
     return response;
   } catch (error) {
     console.error("Error al obtener los proveedores:", error);
@@ -21,6 +21,7 @@ export async function getAllProveedores() {
 
 export async function getAllProveedoresVendedor(rutProveedor) {
   try {
+    // console.log("ID proveedor recibido:", rutProveedor);
     const response = await axios.get(`${API_URL}/buscar/${rutProveedor}`, {
       withCredentials: true,
     });
@@ -132,10 +133,10 @@ export async function eliminarVendedor(id) {
   }
 }
 
-export async function editarVendedor(vendedorData, idVendedor) {
+export async function editarVendedor(vendedorData, idProveedor) {
   try {
     const response = await axios.put(
-      `${API_URL}/actualizar-vendedor/${idVendedor}`,
+      `${API_URL}/actualizar-vendedor/${idProveedor}`,
       vendedorData,
       {
         withCredentials: true,

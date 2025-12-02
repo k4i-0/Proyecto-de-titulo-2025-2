@@ -60,7 +60,7 @@ export async function eliminarProducto(id) {
     const response = await axios.delete(`${API_URL}/eliminar/${id}`, null, {
       withCredentials: true,
     });
-    console.log("Productos obtenidos:", response);
+    // console.log("Productos obtenidos:", response);
     return response;
   } catch (error) {
     console.error("Error al editar productos:", error.response.data.error);

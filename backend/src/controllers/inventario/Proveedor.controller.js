@@ -25,7 +25,7 @@ exports.getProveedorVendedor = async (req, res) => {
     });
     // console.log("Proveedor encontrado:", proveedor);
     const vendedor = await Vendedor.findAll({
-      where: { idProveedor: proveedor.dataValues.idProveedor },
+      where: { idProveedor: proveedor.idProveedor },
     });
     // console.log("Vendedores encontrados:", vendedor);
     if (!vendedor || vendedor.length === 0) {
@@ -100,7 +100,14 @@ exports.updateProveedor = async (req, res) => {
 
 exports.deleteProveedor = async (req, res) => {
   try {
-    const deleted = await Proveedor.destroy({ where: { id: req.params.id } });
+    //eliminar vendedores de ese proveedor primero
+    await Vendedor.destroy({
+      where: { idProveedor: req.params.id },
+    });
+    //luego eliminar el proveedor
+    const deleted = await Proveedor.destroy({
+      where: { idProveedor: req.params.id },
+    });
     if (!deleted) {
       return res.status(404).json({ error: "Proveedor no encontrado" });
     }
@@ -186,14 +193,16 @@ exports.deleteVendedor = async (req, res) => {
 };
 
 exports.updateVendedor = async (req, res) => {
-  const { nombre, rut, telefono, email, idProveedor } = req.body;
+  const { idVendedorProveedor, nombre, rut, telefono, email } = req.body;
+  const { idProveedor } = req.params;
+  // console.log("datos:", idVendedorProveedor);
   if (!nombre || !rut || !telefono || !email || !idProveedor) {
     return res.status(422).json({
       error: "Faltan datos obligatorios para actualizar el vendedor",
     });
   }
   try {
-    const vendedor = await Vendedor.findByPk(req.params.idVendedor);
+    const vendedor = await Vendedor.findByPk(idVendedorProveedor);
     if (!vendedor) {
       return res.status(404).json({ error: "Vendedor no encontrado" });
     }

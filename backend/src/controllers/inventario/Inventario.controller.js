@@ -1,6 +1,7 @@
 const Inventario = require("../../models/inventario/Inventario");
 const Estante = require("../../models/inventario/Estante");
 const Lote = require("../../models/inventario/Lote");
+const Bodega = require("../../models/inventario/Bodega");
 const { Op } = require("sequelize");
 
 exports.createInventario = async (req, res) => {
@@ -43,6 +44,11 @@ exports.getAllInventario = async (req, res) => {
       include: [
         {
           model: Estante,
+          include: [
+            {
+              model: Bodega, // Include anidado
+            },
+          ],
         },
         {
           model: Lote,

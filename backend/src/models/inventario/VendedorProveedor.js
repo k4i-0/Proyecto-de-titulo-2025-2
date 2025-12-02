@@ -13,7 +13,6 @@ const vendedorProveedor = sequelize.define(
     nombre: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      unique: true,
     },
     rut: {
       type: DataTypes.STRING(12),

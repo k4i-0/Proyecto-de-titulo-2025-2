@@ -68,7 +68,7 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
               key: "Configuracion",
               icon: <AreaChartOutlined />,
               label: "Configuración",
-              onClick: () => navigate("sucursal"),
+              onClick: () => navigate("sucursales"),
               // children: [
               //   {
               //     key: "productos",

@@ -86,40 +86,15 @@ exports.getAllProductos = async (req, res) => {
     });
     // console.log(productos);
     if (productos.length === 0 || !productos) {
-      // await crearBitacora({
-      //   nombre: `consulta de productos`,
-      //   fechaCreacion: new Date(),
-      //   descripcion: `Base de datos sin productos disponibles`,
-      //   funcionOcupo: "getAllProductos controller",
-      //   usuariosCreador:
-      //     jwt.verify(req.cookies.token, process.env.JWT_SECRET).email ??
-      //     "error de lectura cookie",
-      //   nivelAlerta: "Bajo",
-      // });
       return res
         .status(204)
         .json({ code: 1212, error: "No hay productos disponibles" });
     }
-    // await crearBitacora({
-    //   nombre: `consulta de productos`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Se consultaron todos los productos`,
-    //   funcionOcupo: "getAllProductos controller",
-    //   usuariosCreador: "desconocido",
-    //   nivelAlerta: "Bajo",
-    // });
+
     res.status(200).json(productos);
   } catch (error) {
     console.error("Error al obtener los productos:", error);
-    // await crearBitacora({
-    //   nombre: `error al consultar productos`,
-    //   fechaCreacion: new Date(),
-    //   descripcion: `Error al consultar los productos`,
-    //   funcionOcupo: "getAllProductos controller",
-    //   usuariosCreador: `error de ${error}
-    //   } `,
-    //   nivelAlerta: "Alto",
-    // });
+
     res
       .status(500)
       .json({ code: 500, error: "Error al obtener los productos" });

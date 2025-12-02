@@ -115,13 +115,14 @@ export default function Sucursal() {
   };
 
   const handleSeleccionarCard = (record) => {
-    if (sucursalSelect?.idSucursal === record.idSucursal) {
-      setSucursalSelect(null);
-    } else {
-      setSucursalSelect(record);
-      //console.log("Navegando a detalles de sucursal:", record);
-      navigate("/admin/sucursal/" + record.idSucursal);
-    }
+    navigate("/admin/sucursal/" + record.idSucursal);
+    // if (sucursalSelect?.idSucursal === record.idSucursal) {
+    //   setSucursalSelect(null);
+    // } else {
+    //   setSucursalSelect(record);
+    //   //console.log("Navegando a detalles de sucursal:", record);
+    //   navigate("/admin/sucursal/" + record.idSucursal);
+    // }
   };
 
   const handleVerBodegas = (idSucursal, e) => {
@@ -154,7 +155,7 @@ export default function Sucursal() {
       {/* Estadísticas generales */}
       {sucursales.length > 0 && (
         <Row gutter={16} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={6}>
             <Card>
               <Statistic
                 title="Total Sucursales"
@@ -164,7 +165,7 @@ export default function Sucursal() {
               />
             </Card>
           </Col>
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={6}>
             <Card>
               <Statistic
                 title="Sucursales Abiertas"
@@ -174,7 +175,17 @@ export default function Sucursal() {
               />
             </Card>
           </Col>
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={6}>
+            <Card>
+              <Statistic
+                title="Sucursales Cerradas"
+                value={sucursales.filter((s) => s.estado === "Cerrada").length}
+                prefix={<ShopOutlined />}
+                valueStyle={{ color: "#ff491bff" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={6}>
             <Card>
               <Statistic
                 title="En Mantenimiento"
@@ -237,7 +248,7 @@ export default function Sucursal() {
             style={{ marginBottom: 16 }}
           >
             <Col>
-              {sucursalSelect && (
+              {/* {sucursalSelect && (
                 <Alert
                   message={`Sucursal seleccionada: ${sucursalSelect.nombre}`}
                   type="info"
@@ -246,7 +257,7 @@ export default function Sucursal() {
                   onClose={() => setSucursalSelect(null)}
                   style={{ marginBottom: 0 }}
                 />
-              )}
+              )} */}
             </Col>
             <Col>
               <Space>
