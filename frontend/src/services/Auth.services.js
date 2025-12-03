@@ -20,10 +20,10 @@ export default async function inicioSesion(email, password) {
     ) {
       return "No se recibió respuesta del servidor";
     }
-    return response.data;
+    return response?.data;
   } catch (error) {
     console.log(error);
-    return error.response.data;
+    return error?.response;
   }
 }
 

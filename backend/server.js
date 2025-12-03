@@ -49,7 +49,7 @@ app.use(express.urlencoded({ extended: true })); // req.body para formularios
 app.use(cookieParser());
 app.use(helmet());
 const corsOptions = {
-  origin: "http://localhost:5173",
+  origin: true,
   credentials: true,
 };
 
