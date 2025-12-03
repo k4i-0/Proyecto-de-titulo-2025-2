@@ -137,7 +137,7 @@ export default function Editar({
               name="idProducto"
               rules={[{ required: true, message: "Por favor ingrese el NPI" }]}
             >
-              <Input placeholder="Ingrese NPI del producto" />
+              <Input disabled={true} placeholder="Ingrese NPI del producto" />
             </Form.Item>
           </Col>
           <Col span={12}>

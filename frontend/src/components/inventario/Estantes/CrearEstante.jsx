@@ -56,7 +56,8 @@ export default function CrearEstante({
       codigo: values.codigo,
       tipo: values.tipo,
       estado: values.estado,
-      idBodega: idBodega, // El ID de la bodega viene de props
+      capacidad: values.capacidad || 0,
+      idBodega: idBodega,
     };
 
     try {
@@ -65,8 +66,8 @@ export default function CrearEstante({
         setMensaje("Estante creado exitosamente");
         setError(false);
         setTimeout(() => {
-          estantesCargarBodega(); // Llama a la función de recarga del padre
-          handleCerrarModal(); // Cierra y resetea
+          estantesCargarBodega();
+          handleCerrarModal();
         }, 1200);
       } else if (resultado.status === 422) {
         setMensaje(
@@ -99,7 +100,6 @@ export default function CrearEstante({
       open={show}
       title="Crear Nuevo Estante"
       onCancel={handleCerrarModal}
-      // Footer personalizado
       footer={[
         <Button key="cancelar" onClick={handleCerrarModal}>
           Cancelar
@@ -108,7 +108,7 @@ export default function CrearEstante({
           key="guardar"
           type="primary"
           loading={loading}
-          onClick={() => form.submit()} // Dispara el onFinish del Form
+          onClick={() => form.submit()}
         >
           {loading ? "Creando..." : "Crear Estante"}
         </Button>,
@@ -153,6 +153,10 @@ export default function CrearEstante({
               </Option>
             ))}
           </Select>
+        </Form.Item>
+
+        <Form.Item label="Capacidad" name="capacidad">
+          <Input placeholder="Capacidad del estante" />
         </Form.Item>
 
         <Form.Item

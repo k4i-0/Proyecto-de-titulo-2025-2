@@ -12,6 +12,7 @@ import {
   Card,
   Row,
   Col,
+  notification,
 } from "antd";
 
 import {
@@ -57,8 +58,18 @@ export default function Bodega() {
       //console.log("Respuesta al obtener bodegas:", respuesta);
       if (respuesta.status === 200) {
         setListaBodegas(respuesta.data);
+        notification.success({
+          message: "Éxito",
+          description: "Bodegas cargadas exitosamente",
+          placement: "topRight",
+          duration: 4.5,
+        });
       } else if (respuesta.status === 204) {
         setListaBodegas([]);
+        notification.info({
+          message: "Información",
+          description: "Esta sucursal no tiene bodegas registradas.",
+        });
         setError(true);
         setMensaje("Esta sucursal no tiene bodegas registradas.");
       } else {
@@ -68,6 +79,10 @@ export default function Bodega() {
     } catch (error) {
       setError(true);
       setMensaje("Error de conexión al buscar bodegas.");
+      notification.error({
+        message: "Error",
+        description: error.mensaje || "Error de conexión al buscar bodegas.",
+      });
       console.error(error);
     } finally {
       setLoading(false);
@@ -115,16 +130,32 @@ export default function Bodega() {
       const respuesta = await eliminarBodega(id);
       if (respuesta.status === 200) {
         setMensaje("Bodega eliminada exitosamente");
+        notification.success({
+          message: "Éxito",
+          description: "Bodega eliminada exitosamente",
+          placement: "topRight", // topLeft, topRight, bottomLeft, bottomRight
+          duration: 4.5,
+        });
         setError(false);
         setBodegaParaEstantesId(null);
         await cargarDatosBodega();
       } else {
         setError(true);
+        notification.error({
+          message: "Error",
+          description: respuesta.error || "Error al eliminar la bodega.",
+        });
         setMensaje(respuesta.error || "Error al eliminar la bodega.");
       }
     } catch (error) {
       setError(true);
       setMensaje("Error de conexión al eliminar la bodega.");
+      notification.error({
+        message: "Error",
+        description:
+          error?.response?.data?.message ||
+          "Error de conexión al eliminar la bodega.",
+      });
       console.error(error);
     } finally {
       setLoading(false);
@@ -137,26 +168,27 @@ export default function Bodega() {
       dataIndex: "idBodega",
       key: "idBodega",
       align: "center",
-      width: 80,
+      responsive: ["sm"],
     },
     {
       title: "Nombre",
       dataIndex: "nombre",
       key: "nombre",
+      responsive: ["sm"],
     },
     {
       title: "Capacidad m²",
       dataIndex: "capacidad",
       key: "capacidad",
       align: "center",
-      width: 120,
+      responsive: ["sm"],
     },
     {
       title: "Estado",
       dataIndex: "estado",
       key: "estado",
       align: "center",
-      width: 150,
+      responsive: ["sm"],
       render: (estado) => {
         const colores = {
           "En Funcionamiento": "#52c41a",
@@ -174,7 +206,7 @@ export default function Bodega() {
       title: "Estantes",
       key: "estantes",
       align: "center",
-      width: 100,
+      responsive: ["sm"],
       render: (_, record) => (
         <Button
           type="link"
@@ -192,7 +224,7 @@ export default function Bodega() {
       title: "Acciones",
       key: "acciones",
       align: "center",
-      width: 120,
+      responsive: ["sm"],
       render: (_, record) => (
         <Space size="small">
           <Button
@@ -286,7 +318,7 @@ export default function Bodega() {
             Crear Bodega
           </Button>
 
-          {mensaje && !error && (
+          {/* {mensaje && !error && (
             <Alert
               message={mensaje}
               type="success"
@@ -295,7 +327,7 @@ export default function Bodega() {
               closable
               onClose={() => setMensaje("")}
             />
-          )}
+          )} */}
         </div>
 
         <Table
@@ -308,6 +340,7 @@ export default function Bodega() {
             showSizeChanger: false,
             showTotal: (total) => `Total: ${total} bodegas`,
           }}
+          scroll={{ x: 500 }}
           onRow={(record) => ({
             style: {
               cursor: "pointer",
@@ -338,10 +371,14 @@ export default function Bodega() {
           <Card
             title={`Gestión de Bodegas (Sucursal ${idSucursal})`}
             extra={
-              <Button type="link" onClick={() => navigate("/admin/sucursal")}>
+              <Button
+                type="primary"
+                onClick={() => navigate("/admin/sucursales")}
+              >
                 Volver a Sucursales
               </Button>
             }
+            width={bodegaParaEstantesId ? "100%" : "80%"}
           >
             {renderContenido()}
           </Card>

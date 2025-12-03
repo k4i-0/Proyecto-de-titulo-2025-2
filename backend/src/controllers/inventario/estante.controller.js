@@ -19,7 +19,7 @@ exports.getEstanteByIdBodega = async (req, res) => {
     const estante = await Estante.findAll({
       where: { idBodega: req.params.idBodega },
     });
-    console.log("Estante encontrado:", estante.dataValues);
+    console.log("Estante encontrado:", estante.codigo);
     if (!estante) {
       return res
         .status(204)
@@ -33,7 +33,8 @@ exports.getEstanteByIdBodega = async (req, res) => {
 };
 
 exports.createEstante = async (req, res) => {
-  const { codigo, tipo, estado, idBodega } = req.body;
+  const { codigo, tipo, estado, capacidad, idBodega } = req.body;
+  // console.log(req.body);
   if (!codigo || !tipo || !estado || !idBodega) {
     return res
       .status(422)
@@ -44,6 +45,7 @@ exports.createEstante = async (req, res) => {
       codigo,
       tipo,
       estado,
+      capacidad,
       idBodega,
     });
     res.status(201).json(nuevoEstante);
@@ -54,8 +56,9 @@ exports.createEstante = async (req, res) => {
 };
 
 exports.updateEstante = async (req, res) => {
-  const { codigo, tipo, estado, idBodega } = req.body;
-  if (!codigo || !tipo || !estado || !idBodega) {
+  const { codigo, tipo, estado, capacidad, idBodega } = req.body;
+  console.log(req.body);
+  if (!codigo || !tipo || !estado || !idBodega || !capacidad) {
     return res
       .status(422)
       .json({ error: "Faltan datos obligatorios para crear el estante" });
@@ -69,16 +72,18 @@ exports.updateEstante = async (req, res) => {
     if (!estante) {
       return res.status(404).json({ error: "Estante no encontrado" });
     }
-    const updatedEstante = await estante.update(
+    const updatedEstante = await Estante.update(
       {
         codigo,
         tipo,
         estado,
+        capacidad,
         idBodega,
         idInventario: estante.dataValues.idInventario,
       },
       { where: { idEstante: id } }
     );
+    console.log("Estante actualizado:", updatedEstante);
     res.status(200).json(updatedEstante);
   } catch (error) {
     console.error("Error al actualizar el estante:", error);
@@ -95,11 +100,9 @@ exports.deleteEstante = async (req, res) => {
       where: { idBodega: estante.dataValues.idBodega },
     });
     if (estantesBodega.length <= 1) {
-      return res
-        .status(400)
-        .json({
-          error: "No se puede eliminar el último estante de esta bodega",
-        });
+      return res.status(400).json({
+        error: "No se puede eliminar el último estante de esta bodega",
+      });
     }
     const estanteEliminar = await Estante.destroy({
       where: { idEstante: req.params.id },

@@ -85,6 +85,23 @@ exports.updateBodega = async (req, res) => {
       return res.status(422).json({ error: "Bodega no encontrada" });
     }
 
+    const respuesta = await Bodega.update(
+      {
+        nombre,
+        capacidad,
+        estado,
+        idSucursal,
+      },
+      {
+        where: { idBodega: req.params.id },
+      }
+    );
+    if (!respuesta[0]) {
+      return res
+        .status(422)
+        .json({ error: "No se realizaron cambios en la bodega" });
+    }
+
     const updatedBodega = await Bodega.findByPk(req.params.id);
 
     res.status(200).json(updatedBodega);

@@ -1,6 +1,7 @@
 const Sucursal = require("../../models/inventario/Sucursal");
 const Funcionario = require("../../models/Usuarios/Funcionario");
 const Bodega = require("../../models/inventario/Bodega");
+const Estante = require("../../models/inventario/Estante");
 const { Op } = require("sequelize");
 
 const { crearBitacora } = require("../../services/bitacora.service");

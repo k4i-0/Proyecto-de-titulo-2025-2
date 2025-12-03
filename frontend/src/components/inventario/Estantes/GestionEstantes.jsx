@@ -11,6 +11,7 @@ import {
   Row,
   Col,
   Divider,
+  notification,
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
@@ -25,8 +26,8 @@ import EditarEstante from "./EditarEstante";
 export default function GestionEstantes({ bodegaId }) {
   const { Text } = Typography;
   const [loading, setLoading] = useState(false);
-  const [mensaje, setMensaje] = useState("");
-  const [error, setError] = useState(false);
+  // const [mensaje, setMensaje] = useState("");
+  // const [error, setError] = useState(false);
   const [modalCrearEstante, setModalCrearEstante] = useState(false);
   const [modalEditarEstante, setModalEditarEstante] = useState(false);
   const [estantes, setEstantes] = useState([]);
@@ -39,8 +40,8 @@ export default function GestionEstantes({ bodegaId }) {
 
     try {
       setLoading(true);
-      setError(false);
-      setMensaje("");
+      // setError(false);
+      // setMensaje("");
       const respuesta = await getAllEstantesBodega(bodegaId);
 
       //   console.log("Respuesta completa:", respuesta);
@@ -53,17 +54,34 @@ export default function GestionEstantes({ bodegaId }) {
           : [respuesta.data];
 
         setEstantes(estantesData);
-        setMensaje("");
+        notification.success({
+          message: "Éxito",
+          description: "Los estantes se cargaron correctamente",
+          placement: "topRight",
+          duration: 4.5,
+        });
+        // setMensaje("");
       } else if (respuesta.status === 204) {
         setEstantes([]);
-        setMensaje("No hay estantes disponibles para esta bodega.");
+        notification.success({
+          message: "Éxito",
+          description: "No hay estantes disponibles para esta bodega.",
+          placement: "topRight",
+          duration: 4.5,
+        });
+        //setMensaje("No hay estantes disponibles para esta bodega.");
       } else {
-        setError(true);
-        setMensaje("Error del servidor al cargar los estantes.");
+        // setError(true);
+        notification.error({
+          message: "Error",
+          description:
+            respuesta.error || "Error del servidor al cargar los estantes.",
+        });
+        //setMensaje("Error del servidor al cargar los estantes.");
       }
     } catch (error) {
-      setError(true);
-      setMensaje("Error al cargar los estantes.");
+      // setError(true);
+      // setMensaje("Error al cargar los estantes.");
       console.error("Error al cargar los estantes:", error);
       setEstantes([]);
     } finally {
@@ -76,52 +94,75 @@ export default function GestionEstantes({ bodegaId }) {
   }, [estantesCargarBodega]);
 
   const handleCrear = () => {
-    setError(false);
-    setMensaje("");
+    // setError(false);
+    // setMensaje("");
     setEstanteSeleccionado(null);
     setModalCrearEstante(true);
   };
 
   const handleEditar = () => {
     if (!estanteSeleccionado) {
-      setError(true);
-      setMensaje("Por favor seleccione un estante de la tabla");
+      // setError(true);
+      // setMensaje("Por favor seleccione un estante de la tabla");
+      notification.error({
+        message: "Error",
+        description: "Por favor seleccione un estante de la tabla",
+      });
       return;
     }
-    setError(false);
-    setMensaje("");
+    // setError(false);
+    // setMensaje("");
     setModalEditarEstante(true);
   };
 
   const handleEliminar = async () => {
     if (!estanteSeleccionado) {
-      setError(true);
-      setMensaje("Por favor seleccione un estante de la tabla");
+      // setError(true);
+      notification.error({
+        message: "Error",
+        description: "Por favor seleccione un estante de la tabla",
+      });
+      // setMensaje("Por favor seleccione un estante de la tabla");
       return;
     }
 
     setLoading(true);
-    setError(false);
-    setMensaje("");
+    // setError(false);
+    // setMensaje("");
 
     try {
       const respuesta = await eliminarEstante(estanteSeleccionado.idEstante);
 
       if (respuesta.status === 200) {
         await estantesCargarBodega();
-        setMensaje("Estante eliminado exitosamente");
-        setError(false);
+        // setMensaje("Estante eliminado exitosamente");
+        notification.success({
+          message: "Éxito",
+          description: "La operación se completó correctamente",
+          placement: "topRight",
+          duration: 4.5,
+        });
+        // setError(false);
         setEstanteSeleccionado(null);
       } else if (respuesta.status === 404) {
-        setError(true);
-        setMensaje("Estante no encontrado");
+        // setError(true);
+        notification.error({
+          message: "Error",
+          description: "Hubo un problema al procesar la solicitud",
+        });
+        // setMensaje("Estante no encontrado");
       } else {
-        setError(true);
-        setMensaje(respuesta.error || "Error al eliminar el estante");
+        // setError(true);
+        notification.error({
+          message: "Error",
+          description:
+            respuesta.error || "Hubo un problema al procesar la solicitud",
+        });
+        // setMensaje(respuesta.error || "Error al eliminar el estante");
       }
     } catch (err) {
-      setError(true);
-      setMensaje("Error de conexión al eliminar.");
+      // setError(true);
+      // setMensaje("Error de conexión al eliminar.");
       console.error("Error al eliminar el estante:", err);
     } finally {
       setLoading(false);
@@ -151,6 +192,11 @@ export default function GestionEstantes({ bodegaId }) {
       title: "Tipo",
       dataIndex: "tipo",
       key: "tipo",
+    },
+    {
+      title: "Capacidad",
+      dataIndex: "capacidad",
+      key: "capacidad",
     },
     {
       title: "Estado",
@@ -184,7 +230,7 @@ export default function GestionEstantes({ bodegaId }) {
 
   return (
     <div style={{ padding: "0 8px" }}>
-      {mensaje && (
+      {/* {mensaje && (
         <Alert
           type={error ? "error" : "success"}
           showIcon
@@ -193,7 +239,7 @@ export default function GestionEstantes({ bodegaId }) {
           onClose={() => setMensaje("")}
           style={{ marginBottom: 12, fontSize: "12px" }}
         />
-      )}
+      )} */}
 
       {estanteSeleccionado && (
         <Alert

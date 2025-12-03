@@ -49,8 +49,16 @@ app.use(express.urlencoded({ extended: true })); // req.body para formularios
 app.use(cookieParser());
 app.use(helmet());
 const corsOptions = {
-  origin: true,
+  origin: [
+    "http://localhost:1768",
+    "https://localhost:1768",
+    "http://localhost:443",
+    "https://localhost:443",
+    "http://146.83.194.142:1768",
+    "https://146.83.194.142:1768",
+  ],
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 };
 
 app.use(cors(corsOptions));

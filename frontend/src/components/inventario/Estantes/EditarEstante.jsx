@@ -26,18 +26,18 @@ export default function EditarEstante({
   // Efecto para poblar el formulario cuando el modal se abre
   useEffect(() => {
     if (show && estante) {
-      // Pone los datos del 'estante' en los campos del formulario
       form.setFieldsValue({
         codigo: estante.codigo,
         tipo: estante.tipo,
         estado: estante.estado,
+        capacidad: estante.capacidad,
         idBodega: estante.idBodega,
       });
     } else if (!show) {
       form.resetFields();
       setError("");
     }
-  }, [show, estante, form]); // Depende de estas variables
+  }, [show, estante, form]);
 
   // Se llama cuando el formulario se envía
   const handleSubmitEdicion = async (values) => {
@@ -45,12 +45,17 @@ export default function EditarEstante({
     setError("");
 
     // Datos que se enviarán a la API
+
     const formData = {
       codigo: values.codigo,
       tipo: values.tipo,
       estado: values.estado,
-      idBodega: estante.idBodega,
+      capacidad: Number(values.capacidad),
+      idBodega: values.idBodega,
     };
+    // console.log("Datos para editar el estante:", formData);
+    // setLoading(false);
+    // return;
 
     try {
       // Llama al servicio con los datos y el ID del estante
@@ -81,6 +86,7 @@ export default function EditarEstante({
   const handleCerrar = () => {
     setError("");
     form.resetFields();
+    setLoading(false);
     handleClose();
   };
 
@@ -142,6 +148,9 @@ export default function EditarEstante({
               </Option>
             ))}
           </Select>
+        </Form.Item>
+        <Form.Item label="Capacidad" name="capacidad">
+          <Input placeholder="Ingrese Capacidad" />
         </Form.Item>
 
         <Form.Item
