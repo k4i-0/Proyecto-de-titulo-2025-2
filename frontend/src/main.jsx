@@ -31,6 +31,9 @@ import DashboardVendedor from "./pages/Vendedor/DashboardVendedor.jsx";
 import InicioVendedor from "./pages/Vendedor/InicioVendedor.jsx";
 import AprovisionamientoProveedor from "./pages/Vendedor/AprovicionamientoProveedor.jsx";
 
+//Gestiones admin
+import GestionColaborador from "./pages/Gestion/GestionColaborador.jsx";
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
@@ -59,6 +62,11 @@ createRoot(document.getElementById("root")).render(
             <Route path="proveedores" element={<Proveedor />} />
             <Route path="vendedores/:rutProveedor" element={<Vendedores />} />
 
+            {/* Gestiones */}
+            <Route
+              path="gestion/colaboradores/:idSucursal"
+              element={<GestionColaborador />}
+            />
             <Route
               path="aprovisionamiento/:idSucursal"
               element={<Aprovisionamiento />}

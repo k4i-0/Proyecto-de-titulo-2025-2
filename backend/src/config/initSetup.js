@@ -91,7 +91,7 @@ async function createUsers() {
       defaults: {
         rut: "00000000-0",
         nombre: "Sistema",
-        apellido: "User",
+        apellido: "1",
         email: "sistema@sistema.dev",
         password: adminPassword,
         passwordCaja: adminPassword,
@@ -107,7 +107,7 @@ async function createUsers() {
       defaults: {
         rut: "11111111-1",
         nombre: "Admin",
-        apellido: "User",
+        apellido: "1",
         email: "admin@sistema.dev",
         password: adminPassword,
         passwordCaja: adminPassword,
@@ -124,7 +124,7 @@ async function createUsers() {
       defaults: {
         rut: "22222222-2",
         nombre: "Cajero",
-        apellido: "Test",
+        apellido: "1",
         email: "cajero@sistema.dev",
         password: userPassword,
         passwordCaja: userPassword,
@@ -141,7 +141,7 @@ async function createUsers() {
       defaults: {
         rut: "33333333-3",
         nombre: "Vendedor",
-        apellido: "Test",
+        apellido: "1",
         email: "vendedor@sistema.dev",
         password: userPassword,
         passwordCaja: userPassword,

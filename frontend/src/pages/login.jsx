@@ -52,7 +52,7 @@ const Login = () => {
 
   const handleSubmit = async (values) => {
     const usuario = await inicioSesion(values.email, values.password);
-    console.log("Usuario dentro de login", usuario);
+    // console.log("Usuario dentro de login", usuario);
     if (usuario.code) {
       setShowAlert(true);
       setFlag(usuario.message);

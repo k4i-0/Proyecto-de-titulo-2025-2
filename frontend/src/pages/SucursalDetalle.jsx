@@ -115,31 +115,31 @@ export default function SucursalDetalle() {
       return;
     }
   }, [idSucursal]);
-  const obtenerProveedores = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllProveedores();
-      console.log("Respuesta proveedores:", response);
-      if (response.status === 200) {
-        console.log("Proveedores:", response.data);
-        setProveedores(response.data);
-        setLoading(false);
-        return;
-      }
-      if (response.status === 204) {
-        message.info("No hay proveedores registrados");
-        setProveedores([]);
-        setLoading(false);
-        return;
-      }
-      message.error("Error en el servidor al obtener los proveedores");
-      setLoading(false);
-    } catch (error) {
-      message.error("Error al obtener los proveedores");
-      console.error("Error al obtener los proveedores:", error);
-      setLoading(false);
-    }
-  };
+  // const obtenerProveedores = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const response = await getAllProveedores();
+  //     console.log("Respuesta proveedores:", response);
+  //     if (response.status === 200) {
+  //       console.log("Proveedores:", response.data);
+  //       setProveedores(response.data);
+  //       setLoading(false);
+  //       return;
+  //     }
+  //     if (response.status === 204) {
+  //       message.info("No hay proveedores registrados");
+  //       setProveedores([]);
+  //       setLoading(false);
+  //       return;
+  //     }
+  //     message.error("Error en el servidor al obtener los proveedores");
+  //     setLoading(false);
+  //   } catch (error) {
+  //     message.error("Error al obtener los proveedores");
+  //     console.error("Error al obtener los proveedores:", error);
+  //     setLoading(false);
+  //   }
+  // };
 
   useEffect(() => {
     cargarInventarios();
@@ -348,7 +348,14 @@ export default function SucursalDetalle() {
       </Row>
       <Row gutter={16}>
         <Col>
-          <Button type="primary">Administrar Colaboradores</Button>
+          <Button
+            type="primary"
+            onClick={() =>
+              navigate("/admin/gestion/colaboradores/" + idSucursal)
+            }
+          >
+            Administrar Colaboradores
+          </Button>
         </Col>
         <Col>
           <Button

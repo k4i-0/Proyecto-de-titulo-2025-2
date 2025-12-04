@@ -27,6 +27,7 @@ const VentaCliente = require("./ventas/VentaCliente");
 const BitacoraActividad = require("./Usuarios/BitacoraActividad");
 const DetalleDescuento = require("./ventas/DetalleDescuento");
 const DescuentoSobre = require("./ventas/DescuentoSobre");
+const CompraProveedorDetalle = require("./inventario/CompraProveedorDetalle");
 
 // ========== ASOCIACIONES PRINCIPALES ==========
 
@@ -176,6 +177,16 @@ CompraProveedor.belongsTo(Sucursal, { foreignKey: "idSucursal" });
 CompraProveedor.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
 CompraProveedor.belongsTo(Proveedor, { foreignKey: "idProveedor" });
 
+//CompraProveedorDetalle
+CompraProveedor.hasMany(CompraProveedorDetalle, {
+  foreignKey: "idCompraProveedor",
+});
+CompraProveedorDetalle.belongsTo(CompraProveedor, {
+  foreignKey: "idCompraProveedor",
+});
+CompraProveedorDetalle.belongsTo(Productos, { foreignKey: "idProducto" });
+Productos.hasMany(CompraProveedorDetalle, { foreignKey: "idProducto" });
+
 // Caja-Funcionario-Sucursal (Caja asignada a funcionario)
 Funcionario.hasMany(CajaFuncionario, { foreignKey: "idFuncionario" });
 Caja.hasMany(CajaFuncionario, { foreignKey: "idCaja" });
@@ -228,6 +239,14 @@ Funcionario.belongsToMany(Sucursal, {
   foreignKey: "idFuncionario",
 });
 
+ContratoFuncionario.belongsTo(Funcionario, {
+  foreignKey: "idFuncionario",
+});
+
+ContratoFuncionario.belongsTo(Sucursal, {
+  foreignKey: "idSucursal",
+});
+
 module.exports = {
   Bodega,
   Inventario,
@@ -256,4 +275,5 @@ module.exports = {
   BitacoraActividad,
   DetalleDescuento,
   DescuentoSobre,
+  CompraProveedorDetalle,
 };

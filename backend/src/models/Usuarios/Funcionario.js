@@ -45,7 +45,14 @@ const funcionario = sequelize.define(
       allowNull: true,
     },
     cargo: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.ENUM(
+        "Sistema",
+        "Gerente",
+        "Administrador",
+        "Vendedor",
+        "Cajero",
+        "Otro"
+      ),
       allowNull: false,
     },
     estado: {

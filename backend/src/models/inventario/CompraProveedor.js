@@ -15,26 +15,15 @@ const compraproveedor = sequelize.define(
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
-    cantidad: {
-      type: DataTypes.INTEGER,
+    estado: {
+      type: DataTypes.ENUM("pendiente", "aprobada", "recibida", "cancelada"),
       allowNull: false,
-      defaultValue: 1,
-    },
-    precioUnitario: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
+      defaultValue: "pendiente",
     },
     total: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
-    },
-
-    estado: {
-      type: DataTypes.ENUM("pendiente", "aprobada", "recibida", "cancelada"),
-      allowNull: false,
-      defaultValue: "pendiente",
     },
     observaciones: {
       type: DataTypes.TEXT,

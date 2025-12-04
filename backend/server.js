@@ -37,6 +37,7 @@ const {
   BitacoraActividad,
   DetalleDescuento,
   DescuentoSobre,
+  CompraProveedorDetalle,
 } = require("./src/models");
 const { allowedNodeEnvironmentFlags } = require("process");
 
@@ -172,6 +173,9 @@ async function syncDataBase() {
 
     await DescuentoSobre.sync(syncOptions);
     console.log("  ✓ DescuentoSobre");
+
+    await CompraProveedorDetalle.sync(syncOptions);
+    console.log("  ✓ CompraProveedorDetalle");
 
     console.log("✅ Todas las tablas sincronizadas correctamente");
   } catch (error) {

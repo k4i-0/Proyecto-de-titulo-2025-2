@@ -19,7 +19,7 @@ exports.getEstanteByIdBodega = async (req, res) => {
     const estante = await Estante.findAll({
       where: { idBodega: req.params.idBodega },
     });
-    console.log("Estante encontrado:", estante.codigo);
+
     if (!estante) {
       return res
         .status(204)

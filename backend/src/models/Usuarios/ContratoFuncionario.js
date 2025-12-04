@@ -19,6 +19,15 @@ const contratoFuncionario = sequelize.define(
       allowNull: false,
       defaultValue: "Plazo Fijo",
     },
+    fechaTermino: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    estado: {
+      type: DataTypes.ENUM("Activo", "Inactivo"),
+      allowNull: false,
+      defaultValue: "Activo",
+    },
     // idFuncionario: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,

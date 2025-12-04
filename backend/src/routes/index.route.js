@@ -10,6 +10,8 @@ const bodegaRoutes = require("./inventario/bodega.route");
 const estanteRoutes = require("./inventario/estante.route");
 const proveedorRoutes = require("./inventario/Proveedor.route");
 
+const funcionarioRoutes = require("./usuarios/funcionario.route");
+
 //Autenticacion
 router.use("/auth", AuthRoutes);
 
@@ -33,5 +35,8 @@ router.use("/estantes", estanteRoutes);
 
 //Rutas Proveedores
 router.use("/proveedores", proveedorRoutes);
+
+//Funcionarios
+router.use("/funcionarios", funcionarioRoutes);
 
 module.exports = router;
