@@ -68,7 +68,7 @@ createRoot(document.getElementById("root")).render(
               element={<GestionColaborador />}
             />
             <Route
-              path="aprovisionamiento/:idSucursal"
+              path="proveedores/:idSucursal"
               element={<Aprovisionamiento />}
             />
           </Route>

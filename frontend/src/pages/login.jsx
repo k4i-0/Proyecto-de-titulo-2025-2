@@ -13,13 +13,14 @@ import {
   Alert,
   Row,
   Col,
+  notification,
 } from "antd";
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
 
 const Login = () => {
-  const [flag, setFlag] = useState(false);
+  // const [flag, setFlag] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
 
   const navigate = useNavigate();
@@ -51,18 +52,41 @@ const Login = () => {
   };
 
   const handleSubmit = async (values) => {
-    const usuario = await inicioSesion(values.email, values.password);
-    // console.log("Usuario dentro de login", usuario);
-    if (usuario.code) {
-      setShowAlert(true);
-      setFlag(usuario.message);
-      //alert(usuario.message);
-      return;
+    try {
+      const usuario = await inicioSesion(values.email, values.password);
+      // console.log("Usuario dentro de login", usuario.data.token);
+      if (usuario.status === 200) {
+        login(usuario.data.datos, usuario.data.token);
+        notification.success({
+          message: "Inicio de sesión exitoso",
+          description: `Bienvenido, ${usuario.data.datos.nombre}`,
+          placement: "topRight",
+        });
+        navigate("/");
+        return;
+      }
+      notification.error({
+        message: "Error de inicio de sesión",
+        description: usuario.data.message || "Credenciales inválidas",
+        placement: "topRight",
+      });
+    } catch (error) {
+      console.error("Error durante el inicio de sesión:", error);
+      notification.error({
+        message: "Error de inicio de sesión",
+        description:
+          "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
+        placement: "topRight",
+      });
     }
+    // if (usuario.code) {
+    //   setShowAlert(true);
+    //   setFlag(usuario.message);
+    //   //alert(usuario.message);
+    //   return;
+    // }
     //console.log(usuario.token.token);
-    login(usuario.datos, usuario.token.token);
     // Redirigir a la página de inicio después del inicio de sesión
-    navigate("/");
   };
 
   return (
@@ -90,11 +114,11 @@ const Login = () => {
             >
               Acceso
             </Title>
-            {showAlert && (
+            {/* {showAlert && (
               <div>
                 <Alert message={flag} type="error" showIcon />
               </div>
-            )}
+            )} */}
 
             <Form
               onFinish={handleSubmit}

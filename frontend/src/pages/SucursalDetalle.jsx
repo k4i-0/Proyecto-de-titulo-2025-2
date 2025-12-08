@@ -360,7 +360,7 @@ export default function SucursalDetalle() {
         <Col>
           <Button
             type="primary"
-            onClick={() => navigate("/admin/aprovisionamiento/" + idSucursal)}
+            onClick={() => navigate("/admin/proveedores/" + idSucursal)}
           >
             Ver Proveedores
           </Button>

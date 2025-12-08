@@ -247,8 +247,8 @@ export default function Sucursal() {
             align="middle"
             style={{ marginBottom: 16 }}
           >
-            <Col>
-              {/* {sucursalSelect && (
+            {/* <Col>
+              {sucursalSelect && (
                 <Alert
                   message={`Sucursal seleccionada: ${sucursalSelect.nombre}`}
                   type="info"
@@ -257,8 +257,8 @@ export default function Sucursal() {
                   onClose={() => setSucursalSelect(null)}
                   style={{ marginBottom: 0 }}
                 />
-              )} */}
-            </Col>
+              )}
+            </Col> */}
             <Col>
               <Space>
                 <Button
@@ -271,6 +271,11 @@ export default function Sucursal() {
                 </Button>
               </Space>
             </Col>
+            {/* <Col>
+              <Space>
+                <Button>Proveedores</Button>
+              </Space>
+            </Col> */}
           </Row>
 
           {/* Grid de Cards */}

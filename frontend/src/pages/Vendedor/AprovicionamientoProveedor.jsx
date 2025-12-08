@@ -21,6 +21,7 @@ import {
   Form,
   Select,
   Divider,
+  Alert,
 } from "antd";
 
 import {
@@ -31,7 +32,9 @@ import {
   SendOutlined,
 } from "@ant-design/icons";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
+
+import { useNavigate } from "react-router-dom";
 
 import obtenerInventarios from "../../services/inventario/Inventario.service";
 
@@ -43,6 +46,8 @@ import {
 import obtenerProductos from "../../services/inventario/Productos.service";
 
 const AprovicionamientoProveedor = () => {
+  const navigate = useNavigate();
+
   // const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [inventario, setInventario] = useState([]);
   const [productos, setProductos] = useState([]);
@@ -66,7 +71,7 @@ const AprovicionamientoProveedor = () => {
     try {
       setLoading(true);
       const respuesta = await obtenerInventarios();
-      console.log("Respuesta del inventario:", respuesta.data);
+      // console.log("Respuesta del inventario:", respuesta.data);
       if (respuesta.status === 200) {
         message.success("Inventarios obtenidos con éxito");
         setInventario(respuesta.data);
@@ -75,9 +80,24 @@ const AprovicionamientoProveedor = () => {
       }
       if (respuesta.status === 204) {
         message.info("No existe productos en el inventario");
-        setInventario([]);
+        setInventario([
+          {
+            idInventario: 1,
+            estado: "Bueno",
+            stock: 100,
+            idEstante: 1,
+            lote: {
+              idLote: 1,
+              codigo: 203050,
+              fechaVencimiento: "2024-12-31",
+              cantidad: 500,
+              fechaIngreso: "2024-01-15",
+              idProducto: 1,
+            },
+          },
+        ]);
         setLoading(false);
-        // return;
+        return;
       }
       message.error(respuesta.error || "Error al obtener el inventario");
     } catch (error) {
@@ -103,7 +123,7 @@ const AprovicionamientoProveedor = () => {
         message.info("No existe productos en el inventario");
         setProveedores([]);
         setLoading(false);
-        // return;
+        return;
       }
       message.error(respuesta.error || "Error al obtener el inventario");
     } catch (error) {
@@ -240,6 +260,11 @@ const AprovicionamientoProveedor = () => {
       key: "idInventario",
     },
     {
+      title: "Producto",
+      dataIndex: "lote",
+      key: "idProducto",
+    },
+    {
       title: "Stock",
       dataIndex: "stock",
       key: "stock",
@@ -270,266 +295,317 @@ const AprovicionamientoProveedor = () => {
   //     console.log("Filas seleccionadas:", selectedRows);
   //   },
   // };
+
   return (
     <>
-      <Title level={2}>Inventario</Title>
-      <Spin spinning={loading} tip="Cargando tabla...">
-        <Row gutter={16}>
-          <Col>
-            <Button
-              type="primary"
-              icon={<ShoppingCartOutlined />}
-              onClick={handleAbrirCompraNueva}
-            >
-              Crear Oden de Compra
-            </Button>
-          </Col>
-          <Col>
-            <Button disabled={inventario.length === 0}>
-              Crear Lista de productos faltantes
-            </Button>
-          </Col>
-        </Row>
-        <Row>
-          <Col span={24} style={{ marginTop: 16 }}>
-            <Card>
-              <Title level={4}>Productos en Inventario</Title>
-              <Table
-                // rowSelection={rowSelection}
-                columns={columnas}
-                dataSource={inventario}
-              />
-            </Card>
-          </Col>
-        </Row>
-        {/* Modal Nueva Orden de Compra */}
-        <Modal
-          title="Nueva Orden de Compra"
-          open={visibleCompraNueva}
-          onCancel={handleCerrarCompraNueva}
-          footer={[
-            <Button key="cancel" onClick={handleCerrarCompraNueva}>
-              Cancelar
-            </Button>,
-            <Button
-              key="submit"
-              type="primary"
-              onClick={() => formOrdenCompra.submit()}
-            >
-              Crear Orden de Compra
-            </Button>,
-          ]}
-        >
-          <Form
-            form={formOrdenCompra}
-            layout="vertical"
-            onFinish={enviarOrdenCompra}
-          >
-            {/*Funcionario - Sucursal disabled */}
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  label="Funcionario"
-                  name="funcionario"
-                  rules={
-                    [
-                      // { required: true, message: "Funcionario es obligatorio" },
-                    ]
-                  }
-                >
-                  <Input disabled placeholder="Funcionario" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  label="Sucursal"
-                  name="sucursal"
-                  rules={
-                    [
-                      // { required: true, message: "Sucursal es obligatorio" },
-                    ]
-                  }
-                >
-                  <Input disabled placeholder="Sucursal" />
-                </Form.Item>
-              </Col>
-            </Row>
-            {/*Proveedor - Vendedor */}
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  label="Proveedor"
-                  name="proveedor"
-                  rules={[
-                    { required: true, message: "Proveedor es obligatorio" },
-                  ]}
-                >
-                  <Select
-                    options={proveedores.map((proveedor) => ({
-                      value: proveedor.idProveedor,
-                      label: `${proveedor.rut} - ${proveedor.nombre}`,
-                    }))}
-                    onChange={seleccionProveedor}
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  label="Vendedor"
-                  name="vendedor"
-                  dependencies={["proveedor"]}
-                  rules={[
-                    {
-                      required: vendedores.length > 0,
-                      message: "Vendedor es Requerido",
-                    },
-                  ]}
-                >
-                  <Select
-                    placeholder={
-                      vendedores.length > 0
-                        ? "Seleccione un vendedor"
-                        : "Seleccione un proveedor primero"
-                    }
-                    disabled={vendedores.length === 0}
-                    options={vendedores.map((vendedor) => ({
-                      value: vendedor.idVendedorProveedor,
-                      label: vendedor.nombre,
-                    }))}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
+      {/* Titulo */}
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col justify="start" style={{ textAlign: "left" }}>
+          <Button onClick={() => navigate("/vendedor")}>Volver</Button>
+        </Col>
+        <Col justify="center" style={{ flex: 1, textAlign: "center" }}>
+          <Title level={2}>Compra Proveedor</Title>
+        </Col>
+      </Row>
 
-            <Divider />
+      <Divider />
 
-            <Button
-              type="dashed"
-              icon={<PlusOutlined />}
-              onClick={() => handleAgregarProductoOrdenCompra()}
-            >
-              Agregar Producto
-            </Button>
-            <Drawer
-              title="Seleccionar Producto"
-              width={350}
-              onClose={() => setDrawerSelectProductoOrdenCompra(false)}
-              open={drawerSelectProductoOrdenCompra}
-            >
-              <Title level={4}>Seleccionar Producto</Title>
-              <Form
-                layout="vertical"
-                form={formSeleccionarProducto}
-                onFinish={AgregarProductoOrdenCompra}
-              >
-                <Form.Item
-                  label="Producto"
-                  name="productoSeleccionado"
-                  rules={[
-                    { required: true, message: "Producto es obligatorio" },
-                  ]}
-                >
-                  <Select
-                    showSearch
-                    placeholder={
-                      productos.length > 0
-                        ? "Seleccione un producto"
-                        : "No hay productos disponibles"
-                    }
-                    disabled={productos.length === 0}
-                    options={productos.map((producto) => ({
-                      value: producto.idProducto,
-                      label: `${producto.nombre} - ${producto.marca}`,
-                    }))}
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  label="Cantidad"
-                  name="cantidadProducto"
-                  rules={[
-                    { required: true, message: "Cantidad es obligatoria" },
-                  ]}
-                  initialValue={1}
-                >
-                  <InputNumber min={1} style={{ width: "100%" }} />
-                </Form.Item>
-
-                <Form.Item
-                  label="Valor Unitario"
-                  name="valorUnitarioProducto"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Valor Unitario es obligatorio",
-                    },
-                  ]}
-                  initialValue={0}
-                >
-                  <InputNumber
-                    min={0}
-                    step="0.01"
-                    precision={0}
-                    style={{ width: "100%" }}
-                  />
-                </Form.Item>
-
-                <Form.Item>
-                  <Button type="primary" htmlType="submit">
-                    Agregar a la Orden
-                  </Button>
-                </Form.Item>
-              </Form>
-            </Drawer>
-
+      <Row>
+        <Col span={24} style={{ marginTop: 16 }}>
+          <Card>
             <Table
+              title={() => (
+                <div style={{ marginBottom: 8 }}>
+                  <Row
+                    justify="space-between"
+                    align="middle"
+                    gutter={16}
+                    style={{ marginBottom: 12 }}
+                  >
+                    <Col>
+                      <Title level={4} style={{ margin: 0 }}>
+                        Productos en Inventario
+                      </Title>
+                    </Col>
+                    <Col>
+                      <Text type="secondary">
+                        Total: {inventario.length} productos
+                      </Text>
+                    </Col>
+                  </Row>
+                  <Row gutter={8}>
+                    <Col>
+                      <Button
+                        type="primary"
+                        icon={<ShoppingCartOutlined />}
+                        onClick={handleAbrirCompraNueva}
+                      >
+                        Crear Oden de Compra
+                      </Button>
+                    </Col>
+                    <Col>
+                      <Button disabled={inventario.length === 0}>
+                        Crear Lista de productos faltantes
+                      </Button>
+                    </Col>
+                  </Row>
+                </div>
+              )}
               // rowSelection={rowSelection}
-              columns={[
-                {
-                  title: "ID",
-                  dataIndex: "key",
-                  key: "key",
-                },
-                {
-                  title: "Producto",
-                  dataIndex: "productoSeleccionado",
-                  key: "productoSeleccionado",
-                  render: (id) => {
-                    const prod = productos.find((p) => p.idProducto === id);
-                    return prod ? `${prod.nombre} - ${prod.marca}` : id;
-                  },
-                },
-                {
-                  title: "Cantidad",
-                  dataIndex: "cantidadProducto",
-                  key: "cantidadProducto",
-                },
-                {
-                  title: "Valor Unitario",
-                  dataIndex: "valorUnitarioProducto",
-                  key: "valorUnitarioProducto",
-                },
-                {
-                  title: "Total",
-                  dataIndex: "total",
-                  key: "total",
-                  render: (_, record) => {
-                    const cantidad = record.cantidadProducto || 0;
-                    const valor = record.valorUnitarioProducto || 0; // Corregido el nombre de la propiedad
-                    return cantidad * valor;
-                  },
-                },
-              ]}
-              dataSource={productosSeleccionadosOrdenCompra}
+              columns={columnas}
+              pagination={{ pageSize: 10 }}
+              dataSource={inventario}
+              loading={loading}
             />
-            {/* <Form.Item>
+          </Card>
+        </Col>
+      </Row>
+      {/* Modal Nueva Orden de Compra */}
+      <Modal
+        title="Nueva Orden de Compra"
+        open={visibleCompraNueva}
+        onCancel={handleCerrarCompraNueva}
+        footer={[
+          <Button key="cancel" onClick={handleCerrarCompraNueva}>
+            Cancelar
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            disabled={
+              proveedores.length === 0 ||
+              productosSeleccionadosOrdenCompra.length === 0 ||
+              productos.length === 0
+            }
+            onClick={() => formOrdenCompra.submit()}
+          >
+            Crear Orden de Compra
+          </Button>,
+        ]}
+      >
+        <Form
+          form={formOrdenCompra}
+          layout="vertical"
+          onFinish={enviarOrdenCompra}
+        >
+          {proveedores.length === 0 && (
+            <Alert
+              message="Debes Solicitar la creación de proveedores antes de crear una orden de compra."
+              type="warning"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+          )}
+          {/*Funcionario - Sucursal disabled */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Funcionario"
+                name="funcionario"
+                rules={
+                  [
+                    // { required: true, message: "Funcionario es obligatorio" },
+                  ]
+                }
+              >
+                <Input disabled placeholder="Funcionario" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Sucursal"
+                name="sucursal"
+                rules={
+                  [
+                    // { required: true, message: "Sucursal es obligatorio" },
+                  ]
+                }
+              >
+                <Input disabled placeholder="Sucursal" />
+              </Form.Item>
+            </Col>
+          </Row>
+          {/*Proveedor - Vendedor */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Proveedor"
+                name="proveedor"
+                rules={[
+                  { required: true, message: "Proveedor es obligatorio" },
+                ]}
+              >
+                <Select
+                  disabled={proveedores.length === 0}
+                  options={proveedores.map((proveedor) => ({
+                    value: proveedor.idProveedor,
+                    label: `${proveedor.rut} - ${proveedor.nombre}`,
+                  }))}
+                  onChange={seleccionProveedor}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Vendedor"
+                name="vendedor"
+                dependencies={["proveedor"]}
+                rules={[
+                  {
+                    required: vendedores.length > 0,
+                    message: "Vendedor es Requerido",
+                  },
+                ]}
+              >
+                <Select
+                  placeholder={
+                    vendedores.length > 0
+                      ? "Seleccione un vendedor"
+                      : "Seleccione un proveedor primero"
+                  }
+                  disabled={vendedores.length === 0}
+                  options={vendedores.map((vendedor) => ({
+                    value: vendedor.idVendedorProveedor,
+                    label: vendedor.nombre,
+                  }))}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Divider />
+
+          <Button
+            type="dashed"
+            icon={<PlusOutlined />}
+            // disabled={productos.length === 0}
+            onClick={() => handleAgregarProductoOrdenCompra()}
+          >
+            Agregar Producto
+          </Button>
+          <Drawer
+            title="Seleccionar Producto"
+            width={350}
+            onClose={() => setDrawerSelectProductoOrdenCompra(false)}
+            open={drawerSelectProductoOrdenCompra}
+          >
+            <Title level={4}>Seleccionar Producto</Title>
+            {productos.length === 0 && (
+              <Alert
+                message="Debes Solicitar la creación de productos antes de agregar a la orden de compra."
+                type="warning"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
+            <Form
+              layout="vertical"
+              form={formSeleccionarProducto}
+              onFinish={AgregarProductoOrdenCompra}
+            >
+              <Form.Item
+                label="Producto"
+                name="productoSeleccionado"
+                rules={[{ required: true, message: "Producto es obligatorio" }]}
+              >
+                <Select
+                  showSearch
+                  placeholder={
+                    productos.length > 0
+                      ? "Seleccione un producto"
+                      : "No hay productos disponibles"
+                  }
+                  disabled={productos.length === 0}
+                  options={productos.map((producto) => ({
+                    value: producto.idProducto,
+                    label: `${producto.nombre} - ${producto.marca}`,
+                  }))}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Cantidad"
+                name="cantidadProducto"
+                rules={[{ required: true, message: "Cantidad es obligatoria" }]}
+                initialValue={1}
+              >
+                <InputNumber min={1} style={{ width: "100%" }} />
+              </Form.Item>
+
+              <Form.Item
+                label="Valor Unitario"
+                name="valorUnitarioProducto"
+                rules={[
+                  {
+                    required: true,
+                    message: "Valor Unitario es obligatorio",
+                  },
+                ]}
+                initialValue={0}
+              >
+                <InputNumber
+                  min={0}
+                  step="0.01"
+                  precision={0}
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
+
+              <Form.Item>
+                <Button type="primary" htmlType="submit">
+                  Agregar a la Orden
+                </Button>
+              </Form.Item>
+            </Form>
+          </Drawer>
+
+          <Table
+            // rowSelection={rowSelection}
+            columns={[
+              {
+                title: "ID",
+                dataIndex: "key",
+                key: "key",
+              },
+              {
+                title: "Producto",
+                dataIndex: "productoSeleccionado",
+                key: "productoSeleccionado",
+                render: (id) => {
+                  const prod = productos.find((p) => p.idProducto === id);
+                  return prod ? `${prod.nombre} - ${prod.marca}` : id;
+                },
+              },
+              {
+                title: "Cantidad",
+                dataIndex: "cantidadProducto",
+                key: "cantidadProducto",
+              },
+              {
+                title: "Valor Unitario",
+                dataIndex: "valorUnitarioProducto",
+                key: "valorUnitarioProducto",
+              },
+              {
+                title: "Total",
+                dataIndex: "total",
+                key: "total",
+                render: (_, record) => {
+                  const cantidad = record.cantidadProducto || 0;
+                  const valor = record.valorUnitarioProducto || 0; // Corregido el nombre de la propiedad
+                  return cantidad * valor;
+                },
+              },
+            ]}
+            dataSource={productosSeleccionadosOrdenCompra}
+          />
+          {/* <Form.Item>
               <Button type="primary" htmlType="submit">
                 Crear Orden de Compra
               </Button>
             </Form.Item> */}
-          </Form>
-        </Modal>
-      </Spin>
+        </Form>
+      </Modal>
     </>
   );
 };

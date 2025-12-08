@@ -1,4 +1,4 @@
-import { Layout, theme, Typography, Image, Menu } from "antd";
+import { Layout, theme, Typography, Image, Menu, notification } from "antd";
 
 const { Title } = Typography;
 
@@ -20,7 +20,11 @@ export default function DashboardVendedor() {
   const cerrarSesion = async () => {
     try {
       const response = await finSesion();
-      console.log(response);
+      notification.success({
+        message: "Éxito",
+        description: response.message || "Sesión cerrada correctamente.",
+        placement: "topRight",
+      });
       logout();
     } catch (error) {
       console.log(error);

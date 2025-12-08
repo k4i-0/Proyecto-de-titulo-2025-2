@@ -18,7 +18,7 @@ import {
   DeleteOutlined,
   TeamOutlined,
   LoadingOutlined,
-  RollbackOutlined,
+  ArrowLeftOutlined,
 } from "@ant-design/icons";
 
 import { useNavigate } from "react-router-dom";
@@ -326,8 +326,8 @@ export default function Proveedores() {
           <Col>
             <Button
               type="default"
-              icon={<RollbackOutlined />}
-              onClick={() => navigate("/productos")} // O a donde necesites
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate("/productos")}
               size="large"
             >
               Volver a Productos

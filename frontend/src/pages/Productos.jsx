@@ -101,7 +101,7 @@ export default function Productos({ onCambiarVista }) {
     }
     setError(false);
     setMensaje("");
-    setProductoSelect(null); // Deseleccionar al crear
+    setProductoSelect(null);
     setModalCrear(true);
   };
 

@@ -43,7 +43,7 @@ const { TextArea } = Input;
 
 const { Option } = Select;
 
-// import dayjs from "dayjs";
+import dayjs from "dayjs";
 
 //codigo SII
 import girosSII from "../services/codigoSII.js";
@@ -440,7 +440,7 @@ export default function Aprovisionamiento() {
       {/* LISTA DE PROVEEDORES */}
       <Row gutter={[16, 16]}>
         {loading ? (
-          <Col span={24} style={{ textAlign: "center", padding: "50px 0" }}>
+          <Col span={24} style={{ textAlign: "center", padding: "50px" }}>
             <Spin tip="Cargando proveedores..." size="large" fullscreen />
           </Col>
         ) : proveedores.length > 0 ? (
@@ -495,7 +495,7 @@ export default function Aprovisionamiento() {
             </Col>
           ))
         ) : (
-          <Col span={24}>
+          <Col span={24} style={{ padding: "24px" }}>
             <Empty description="No hay proveedores registrados" />
           </Col>
         )}
@@ -523,7 +523,7 @@ export default function Aprovisionamiento() {
               { required: true, message: "Por favor ingrese el RUT" },
               {
                 pattern: /^[0-9]+-[0-9kK]{1}$/,
-                message: "Formato de RUT inválido (ej: 12345678-9)",
+                message: " 12345678-9",
               },
             ]}
           >
@@ -533,7 +533,13 @@ export default function Aprovisionamiento() {
           <Form.Item
             label="Nombre"
             name="nombre"
-            rules={[{ required: true, message: "Por favor ingrese el nombre" }]}
+            rules={[
+              { required: true, message: "Por favor ingrese el nombre" },
+              {
+                pattern: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+                message: "Solo se permiten letras",
+              },
+            ]}
           >
             <Input placeholder="Nombre del proveedor" />
           </Form.Item>
@@ -561,13 +567,22 @@ export default function Aprovisionamiento() {
           </Form.Item>
 
           <Form.Item
+            hidden
             label="Fecha de Ingreso"
             name="fechaIngreso"
+            initialValue={dayjs()}
             rules={[
               { required: true, message: "Por favor seleccione la fecha" },
             ]}
           >
-            <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
+            <DatePicker
+              style={{ width: "100%" }}
+              format="DD/MM/YYYY"
+              disabledDate={(current) => {
+                // Deshabilitar fechas futuras
+                return current && current > dayjs().endOf("day");
+              }}
+            />
           </Form.Item>
 
           <Form.Item
