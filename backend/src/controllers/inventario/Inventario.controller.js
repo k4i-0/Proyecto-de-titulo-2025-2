@@ -46,7 +46,7 @@ exports.getAllInventario = async (req, res) => {
           model: Estante,
           include: [
             {
-              model: Bodega, // Include anidado
+              model: Bodega,
             },
           ],
         },

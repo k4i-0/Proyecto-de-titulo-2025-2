@@ -50,3 +50,36 @@ export async function obtenerColaboradoresSucursal(idSucursal) {
     return error.response?.data;
   }
 }
+
+export async function desvincularFuncionario(idContratoFuncionario) {
+  try {
+    const response = await axios.delete(
+      `${API_URL}/desvincular/${idContratoFuncionario}`,
+      { withCredentials: true }
+    );
+    //console.log("funcionario desvinculado:", response);
+    return response;
+  } catch (error) {
+    //console.error("Error al desvincular funcionario:", error.response.data.error);
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response?.data;
+  }
+}
+
+export async function obtenerQuienSoy() {
+  try {
+    const response = await axios.get(`${API_URL}/quienSoy`, {
+      withCredentials: true,
+    });
+    //console.log("quienSoy obtenido:", response);
+    return response;
+  } catch (error) {
+    //console.error("Error al obtener quienSoy:", error.response.data.error);
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response?.data;
+  }
+}

@@ -17,4 +17,10 @@ router.post(
   /*authMiddleware, roleMiddleware(['admin']),*/ funcionarioController.contratarFuncionario
 );
 
+router.delete(
+  "/desvincular/:idContratoFuncionario",
+  /*authMiddleware, roleMiddleware(['admin']),*/ funcionarioController.desvincularFuncionario
+);
+router.get("/quienSoy", funcionarioController.quienSoy);
+
 module.exports = router;

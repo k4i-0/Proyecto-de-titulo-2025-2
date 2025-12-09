@@ -10,6 +10,10 @@ const compraproveedor = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
+    nombreOrden: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     fechaCompra: {
       type: DataTypes.DATE,
       allowNull: false,

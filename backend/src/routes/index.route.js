@@ -11,6 +11,7 @@ const estanteRoutes = require("./inventario/estante.route");
 const proveedorRoutes = require("./inventario/Proveedor.route");
 
 const funcionarioRoutes = require("./usuarios/funcionario.route");
+const compraProveedorRoutes = require("./inventario/compraProveedor.route");
 
 //Autenticacion
 router.use("/auth", AuthRoutes);
@@ -38,5 +39,8 @@ router.use("/proveedores", proveedorRoutes);
 
 //Funcionarios
 router.use("/funcionarios", funcionarioRoutes);
+
+//Rutas Compra a Proveedor
+router.use("/compra-proveedor", compraProveedorRoutes);
 
 module.exports = router;

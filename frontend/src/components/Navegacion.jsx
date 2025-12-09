@@ -52,15 +52,15 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
               ],
             },
             {
-              key: "Inventario",
+              key: "Proveedores",
               icon: <AreaChartOutlined />,
-              label: "Inventario",
+              label: "Proveedores",
 
               children: [
                 {
                   key: "Compra_Proveedores",
-                  label: "Gestionar Compras",
-                  onClick: () => navigate("aprovisionamiento"),
+                  label: "Ordenes de Compra",
+                  onClick: () => navigate("gestion/ordenes_compra"),
                 },
               ],
             },

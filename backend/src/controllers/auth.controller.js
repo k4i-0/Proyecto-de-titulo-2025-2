@@ -126,7 +126,7 @@ async function miEstado(req, res) {
       res.clearCookie("token", { httpOnly: true, secure: true });
       return res.status(401).json({ message: "No autorizado" });
     }
-    //console.log("Payload decodificado:", decodedPayload);
+    // console.log("Payload decodificado:", decodedPayload);
     return res
       .status(200)
       .send({ message: "Token válido", payload: decodedPayload });

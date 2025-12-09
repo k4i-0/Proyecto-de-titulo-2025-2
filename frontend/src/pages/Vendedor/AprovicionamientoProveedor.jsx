@@ -12,7 +12,7 @@ import {
   Badge,
   Drawer,
   List,
-  message,
+  notification,
   Popconfirm,
   Empty,
   Spin,
@@ -22,6 +22,7 @@ import {
   Select,
   Divider,
   Alert,
+  Descriptions,
 } from "antd";
 
 import {
@@ -36,8 +37,6 @@ const { Title, Text } = Typography;
 
 import { useNavigate } from "react-router-dom";
 
-import obtenerInventarios from "../../services/inventario/Inventario.service";
-
 import {
   getAllProveedores,
   getAllProveedoresVendedor,
@@ -45,11 +44,18 @@ import {
 
 import obtenerProductos from "../../services/inventario/Productos.service";
 
+import { obtenerQuienSoy } from "../../services/usuario/funcionario.service";
+
+import crearOrdenCompraProveedor, {
+  obtenerOrdenesCompraProveedores,
+} from "../../services/inventario/CompraProveedor.service";
+
 const AprovicionamientoProveedor = () => {
   const navigate = useNavigate();
 
   // const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [inventario, setInventario] = useState([]);
+  const [miDatos, setMiDatos] = useState([]);
+  const [ordenesCompra, setOrdenesCompra] = useState([]);
   const [productos, setProductos] = useState([]);
   const [proveedores, setProveedores] = useState([]);
   const [vendedores, setVendedores] = useState([]);
@@ -57,6 +63,11 @@ const AprovicionamientoProveedor = () => {
     productosSeleccionadosOrdenCompra,
     setProductosSeleccionadosOrdenCompra,
   ] = useState([]);
+
+  const [modalDetalle, setModalDetalle] = useState({
+    visible: false,
+    compraProveedor: null,
+  });
 
   const [visibleCompraNueva, setVisibleCompraNueva] = useState(false);
   const [drawerSelectProductoOrdenCompra, setDrawerSelectProductoOrdenCompra] =
@@ -67,42 +78,86 @@ const AprovicionamientoProveedor = () => {
   const [formOrdenCompra] = Form.useForm();
   const [formSeleccionarProducto] = Form.useForm();
 
-  const buscarInventario = async () => {
+  //Funciones de Api
+
+  const buscarMiDatos = async () => {
     try {
       setLoading(true);
-      const respuesta = await obtenerInventarios();
-      // console.log("Respuesta del inventario:", respuesta.data);
+      const respuesta = await obtenerQuienSoy();
+      // console.log(respuesta);
       if (respuesta.status === 200) {
-        message.success("Inventarios obtenidos con éxito");
-        setInventario(respuesta.data);
+        notification.success({
+          message: "Datos obtenidos con éxito",
+          duration: 3.5,
+        });
+        setMiDatos(respuesta.data);
         setLoading(false);
         return;
       }
       if (respuesta.status === 204) {
-        message.info("No existe productos en el inventario");
-        setInventario([
-          {
-            idInventario: 1,
-            estado: "Bueno",
-            stock: 100,
-            idEstante: 1,
-            lote: {
-              idLote: 1,
-              codigo: 203050,
-              fechaVencimiento: "2024-12-31",
-              cantidad: 500,
-              fechaIngreso: "2024-01-15",
-              idProducto: 1,
-            },
-          },
-        ]);
+        notification.info({
+          message: "No hay datos disponibles",
+          duration: 3.5,
+        });
+        setMiDatos([]);
         setLoading(false);
         return;
       }
-      message.error(respuesta.error || "Error al obtener el inventario");
+      notification.error({
+        message: respuesta.error || "Error al obtener los datos",
+        duration: 3.5,
+      });
     } catch (error) {
-      message.error("Error al obtener el inventario");
-      console.error("Error al obtener el inventario:", error);
+      notification.error({
+        message: "Error al obtener los datos",
+        duration: 3.5,
+      });
+      console.error("Error al obtener los datos:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const buscarOrdenesCompraProveedores = async () => {
+    try {
+      setLoading(true);
+      const respuesta = await obtenerOrdenesCompraProveedores();
+      // console.log(
+      //   "Respuesta del ordenes de compra a proveedores:",
+      //   respuesta.data
+      // );
+      if (respuesta.status === 200) {
+        notification.success({
+          message: "Ordenes de compra a proveedores obtenidas con éxito",
+          duration: 3.5,
+        });
+        setOrdenesCompra(respuesta.data);
+        setLoading(false);
+        return;
+      }
+      if (respuesta.status === 204) {
+        notification.info({
+          message: "No existe ordenes de compra a proveedores",
+          duration: 3.5,
+        });
+        setOrdenesCompra([]);
+        setLoading(false);
+        return;
+      }
+      notification.error({
+        message:
+          respuesta.error ||
+          "Error al obtener las ordenes de compra a proveedores",
+        duration: 3.5,
+      });
+    } catch (error) {
+      notification.error({
+        message: "Error al obtener las ordenes de compra a proveedores",
+        duration: 3.5,
+      });
+      console.error(
+        "Error al obtener las ordenes de compra a proveedores:",
+        error
+      );
     } finally {
       setLoading(false);
     }
@@ -114,20 +169,32 @@ const AprovicionamientoProveedor = () => {
       const respuesta = await getAllProveedores();
       // console.log("Respuesta del inventario:", respuesta.data);
       if (respuesta.status === 200) {
-        message.success("Inventarios obtenidos con éxito");
+        notification.success({
+          message: "Inventarios obtenidos con éxito",
+          duration: 3.5,
+        });
         setProveedores(respuesta.data);
         setLoading(false);
         return;
       }
       if (respuesta.status === 204) {
-        message.info("No existe productos en el inventario");
+        notification.info({
+          message: "No existe productos en el inventario",
+          duration: 3.5,
+        });
         setProveedores([]);
         setLoading(false);
         return;
       }
-      message.error(respuesta.error || "Error al obtener el inventario");
+      notification.error({
+        message: respuesta.error || "Error al obtener el inventario",
+        duration: 3.5,
+      });
     } catch (error) {
-      message.error("Error al obtener el inventario");
+      notification.error({
+        message: "Error al obtener el inventario",
+        duration: 3.5,
+      });
       console.error("Error al obtener el inventario:", error);
     } finally {
       setLoading(false);
@@ -141,20 +208,32 @@ const AprovicionamientoProveedor = () => {
       const respuesta = await getAllProveedoresVendedor(rutProveedor);
 
       if (respuesta.status === 200) {
-        message.success("Inventarios obtenidos con éxito");
+        notification.success({
+          message: "Inventarios obtenidos con éxito",
+          duration: 3.5,
+        });
         setVendedores(respuesta.data);
         setLoading(false);
         return;
       }
       if (respuesta.status === 204) {
-        message.info("No existe productos en el inventario");
+        notification.info({
+          message: "No existe productos en el inventario",
+          duration: 3.5,
+        });
         setVendedores([]);
         setLoading(false);
         // return;
       }
-      message.error(respuesta.error || "Error al obtener el inventario");
+      notification.error({
+        message: respuesta.error || "Error al obtener el inventario",
+        duration: 3.5,
+      });
     } catch (error) {
-      message.error("Error al obtener el inventario");
+      notification.error({
+        message: "Error al obtener el inventario",
+        duration: 3.5,
+      });
       console.error("Error al obtener el inventario:", error);
     } finally {
       setLoading(false);
@@ -166,22 +245,34 @@ const AprovicionamientoProveedor = () => {
       setLoading(true);
 
       const respuesta = await obtenerProductos();
-      console.log("Respuesta del productos:", respuesta.data);
+      // console.log("Respuesta del productos:", respuesta.data);
       if (respuesta.status === 200) {
-        message.success("Productos obtenidos con éxito");
+        notification.success({
+          message: "Productos obtenidos con éxito",
+          duration: 3.5,
+        });
         setProductos(respuesta.data);
         setLoading(false);
         return;
       }
       if (respuesta.status === 204) {
-        message.info("No existe productos en el inventario");
+        notification.info({
+          message: "No existe productos en el inventario",
+          duration: 3.5,
+        });
         setProductos([]);
         setLoading(false);
         // return;
       }
-      message.error(respuesta.error || "Error al obtener los productos");
+      notification.error({
+        message: respuesta.error || "Error al obtener los productos",
+        duration: 3.5,
+      });
     } catch (error) {
-      message.error("Error al obtener los productos");
+      notification.error({
+        message: "Error al obtener los productos",
+        duration: 3.5,
+      });
       console.error("Error al obtener los productos:", error);
     } finally {
       setLoading(false);
@@ -189,7 +280,7 @@ const AprovicionamientoProveedor = () => {
   };
 
   useEffect(() => {
-    buscarInventario();
+    buscarOrdenesCompraProveedores();
   }, []);
 
   const handleCerrarCompraNueva = () => {
@@ -201,6 +292,7 @@ const AprovicionamientoProveedor = () => {
   };
 
   const handleAbrirCompraNueva = async () => {
+    await buscarMiDatos();
     await obtenerProveedores();
     setVisibleCompraNueva(true);
   };
@@ -225,9 +317,25 @@ const AprovicionamientoProveedor = () => {
     await buscarProductos();
     setDrawerSelectProductoOrdenCompra(true);
   };
+  const eliminarProductoOrdenCompra = (key) => {
+    setProductosSeleccionadosOrdenCompra(
+      productosSeleccionadosOrdenCompra.filter((item) => item.key !== key)
+    );
+    notification.success({ message: "Producto eliminado de la orden" });
+  };
 
   const AgregarProductoOrdenCompra = (values) => {
-    console.log("Valores del formulario:", values);
+    // console.log("Valores del formulario:", values);
+    const productoExiste = productosSeleccionadosOrdenCompra.some(
+      (item) => item.productoSeleccionado === values.productoSeleccionado
+    );
+
+    if (productoExiste) {
+      notification.warning({
+        message: "Este producto ya está en la orden de compra",
+      });
+      return;
+    }
     setProductosSeleccionadosOrdenCompra((prevProductos) => {
       const maxKey =
         prevProductos.length > 0
@@ -248,53 +356,111 @@ const AprovicionamientoProveedor = () => {
     setDrawerSelectProductoOrdenCompra(false);
   };
 
-  const enviarOrdenCompra = (values) => {
-    console.log("Enviar orden de compra", values);
-    console.log("Productos seleccionados:", productosSeleccionadosOrdenCompra);
+  const enviarOrdenCompra = async (values) => {
+    try {
+      const ordenCompleta = {
+        ...values,
+        productos: productosSeleccionadosOrdenCompra,
+      };
+      // console.log("Orden de compra completa:", ordenCompleta);
+      setLoading(true);
+      const respuesta = await crearOrdenCompraProveedor(ordenCompleta);
+      if (respuesta.status === 201) {
+        notification.success({
+          message: "Orden de compra creada con éxito",
+          duration: 3.5,
+        });
+        handleCerrarCompraNueva();
+        buscarOrdenesCompraProveedores();
+        setLoading(false);
+        return;
+      }
+      notification.error({
+        message: respuesta.error || "Error al crear la orden de compra",
+        duration: 3.5,
+      });
+      setLoading(false);
+    } catch (error) {
+      notification.error({
+        message: "Error al crear la orden de compra",
+        duration: 3.5,
+      });
+      console.error("Error al crear la orden de compra:", error);
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const columnas = [
     {
       title: "ID",
-      dataIndex: "idInventario",
-      key: "idInventario",
+      dataIndex: "idCompraProveedor",
+      key: "idCompraProveedor",
     },
     {
-      title: "Producto",
-      dataIndex: "lote",
-      key: "idProducto",
+      title: " Orden Compra",
+      dataIndex: "nombreOrden",
+      key: "nombreOrden",
     },
     {
-      title: "Stock",
-      dataIndex: "stock",
-      key: "stock",
+      title: "Proveedor",
+      dataIndex: ["proveedor", "nombre"],
+      key: "proveedor.nombre",
     },
     {
-      title: "Estado",
+      title: "Fecha Compra",
+      dataIndex: "fechaCompra",
+      key: "fechaCompra",
+      render: (fecha) => new Date(fecha).toLocaleDateString(),
+    },
+    {
+      title: "Hora",
+      dataIndex: "fechaCompra",
+      key: "fechaCompra",
+      render: (fecha) =>
+        new Date(fecha).toLocaleTimeString("es-CL", {
+          hour12: false,
+        }),
+    },
+    {
+      title: "Estados",
       dataIndex: "estado",
       key: "estado",
+      render: (estado) => {
+        let color = "gray";
+        if (estado === "pendiente") {
+          color = "yellow";
+        } else if (estado === "aprobada") {
+          color = "blue";
+        } else if (estado === "recibida") {
+          color = "green";
+        } else if (estado === "cancelada") {
+          color = "red";
+        }
+        return <Tag color={color}>{estado.toUpperCase()}</Tag>;
+      },
     },
     {
-      title: "Estante",
-      dataIndex: "idEstante",
-      key: "idEstante",
+      title: "Total Compra",
+      dataIndex: "total",
+      key: "total",
     },
     {
-      title: "Lote",
-      dataIndex: "idLote",
-      key: "idLote",
+      title: "Ver detalles",
+      key: "detalles",
+      render: (_, record) => (
+        <Button type="link" onClick={() => handleAbrirModalDetalles(record)}>
+          Ver Detalles
+        </Button>
+      ),
     },
   ];
 
-  // const rowSelection = {
-  //   type: "checkbox",
-  //   selectedRowKeys,
-  //   onChange: (selectedRows) => {
-  //     setSelectedRowKeys(selectedRows);
-  //     // console.log("Keys seleccionadas:", selectedRowKeys);
-  //     console.log("Filas seleccionadas:", selectedRows);
-  //   },
-  // };
+  const handleAbrirModalDetalles = (compraProveedor) => {
+    // console.log("Detalles de la compra proveedor:", compraProveedor);
+    setModalDetalle({ visible: true, compraProveedor: compraProveedor });
+  };
 
   return (
     <>
@@ -309,7 +475,7 @@ const AprovicionamientoProveedor = () => {
       </Row>
 
       <Divider />
-
+      {/* Tabla de Ordenes de Compra */}
       <Row>
         <Col span={24} style={{ marginTop: 16 }}>
           <Card>
@@ -324,12 +490,12 @@ const AprovicionamientoProveedor = () => {
                   >
                     <Col>
                       <Title level={4} style={{ margin: 0 }}>
-                        Productos en Inventario
+                        Ordenes de compra
                       </Title>
                     </Col>
                     <Col>
                       <Text type="secondary">
-                        Total: {inventario.length} productos
+                        Total: {ordenesCompra.length} Ordenes De Compra
                       </Text>
                     </Col>
                   </Row>
@@ -343,18 +509,18 @@ const AprovicionamientoProveedor = () => {
                         Crear Oden de Compra
                       </Button>
                     </Col>
-                    <Col>
-                      <Button disabled={inventario.length === 0}>
+                    {/* <Col>
+                      <Button disabled={ordenesCompra.length === 0}>
                         Crear Lista de productos faltantes
                       </Button>
-                    </Col>
+                    </Col> */}
                   </Row>
                 </div>
               )}
-              // rowSelection={rowSelection}
+              rowKey="idCompraProveedor"
               columns={columnas}
               pagination={{ pageSize: 10 }}
-              dataSource={inventario}
+              dataSource={ordenesCompra}
               loading={loading}
             />
           </Card>
@@ -377,11 +543,14 @@ const AprovicionamientoProveedor = () => {
               productosSeleccionadosOrdenCompra.length === 0 ||
               productos.length === 0
             }
-            onClick={() => formOrdenCompra.submit()}
+            onClick={() => {
+              formOrdenCompra.submit();
+            }}
           >
             Crear Orden de Compra
           </Button>,
         ]}
+        width={800}
       >
         <Form
           form={formOrdenCompra}
@@ -400,28 +569,20 @@ const AprovicionamientoProveedor = () => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                label="Funcionario"
-                name="funcionario"
-                rules={
-                  [
-                    // { required: true, message: "Funcionario es obligatorio" },
-                  ]
-                }
+                label="CodFuncionario"
+                name="idFuncionario"
+                initialValue={miDatos.idFuncionario}
               >
-                <Input disabled placeholder="Funcionario" />
+                <Input disabled placeholder="CodFuncionario" />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
-                label="Sucursal"
-                name="sucursal"
-                rules={
-                  [
-                    // { required: true, message: "Sucursal es obligatorio" },
-                  ]
-                }
+                label="CodSucursal"
+                name="idSucursal"
+                initialValue={miDatos.idSucursal}
               >
-                <Input disabled placeholder="Sucursal" />
+                <Input disabled placeholder="CodSucursal" />
               </Form.Item>
             </Col>
           </Row>
@@ -430,7 +591,7 @@ const AprovicionamientoProveedor = () => {
             <Col span={12}>
               <Form.Item
                 label="Proveedor"
-                name="proveedor"
+                name="idProveedor"
                 rules={[
                   { required: true, message: "Proveedor es obligatorio" },
                 ]}
@@ -448,8 +609,8 @@ const AprovicionamientoProveedor = () => {
             <Col span={12}>
               <Form.Item
                 label="Vendedor"
-                name="vendedor"
-                dependencies={["proveedor"]}
+                name="idVendedorProveedor"
+                dependencies={["idProveedor"]}
                 rules={[
                   {
                     required: vendedores.length > 0,
@@ -474,15 +635,24 @@ const AprovicionamientoProveedor = () => {
           </Row>
 
           <Divider />
+          <Row gutter={16} align="middle" style={{ marginBottom: 16 }}>
+            <Col>
+              <Button
+                type="default"
+                icon={<PlusOutlined />}
+                // disabled={productos.length === 0}
+                onClick={() => handleAgregarProductoOrdenCompra()}
+              >
+                Agregar Producto
+              </Button>
+            </Col>
+            <Col>
+              <Button type="default" disabled={ordenesCompra.length === 0}>
+                Crear Lista de productos faltantes
+              </Button>
+            </Col>
+          </Row>
 
-          <Button
-            type="dashed"
-            icon={<PlusOutlined />}
-            // disabled={productos.length === 0}
-            onClick={() => handleAgregarProductoOrdenCompra()}
-          >
-            Agregar Producto
-          </Button>
           <Drawer
             title="Seleccionar Producto"
             width={350}
@@ -596,15 +766,215 @@ const AprovicionamientoProveedor = () => {
                   return cantidad * valor;
                 },
               },
+              {
+                title: "Acciones",
+                key: "acciones",
+                render: (_, record) => (
+                  <Popconfirm
+                    title="¿Eliminar producto?"
+                    description="¿Está seguro de eliminar este producto de la orden?"
+                    onConfirm={() => eliminarProductoOrdenCompra(record.key)}
+                    okText="Sí"
+                    cancelText="No"
+                  >
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                    ></Button>
+                  </Popconfirm>
+                ),
+              },
             ]}
             dataSource={productosSeleccionadosOrdenCompra}
+            scroll={{ x: 400 }}
           />
+          <Form.Item
+            label="Observaciones"
+            name="observaciones"
+            rules={[
+              { required: true, message: "Observaciones son obligatorias" },
+            ]}
+          >
+            <Input.TextArea rows={4} placeholder="Observaciones adicionales" />
+          </Form.Item>
           {/* <Form.Item>
               <Button type="primary" htmlType="submit">
                 Crear Orden de Compra
               </Button>
             </Form.Item> */}
         </Form>
+      </Modal>
+
+      {/* Modal Detalles Orden de Compra */}
+      <Modal
+        title="Detalles de la Orden de Compra"
+        open={modalDetalle.visible}
+        onCancel={() =>
+          setModalDetalle({ visible: false, compraProveedor: null })
+        }
+        footer={[
+          <Button
+            key="close"
+            onClick={() =>
+              setModalDetalle({ visible: false, compraProveedor: null })
+            }
+          >
+            Cerrar
+          </Button>,
+        ]}
+        width={800}
+      >
+        {modalDetalle.compraProveedor && (
+          <>
+            {/* Información General */}
+            <Descriptions
+              bordered
+              column={2}
+              size="small"
+              style={{ marginBottom: 16 }}
+            >
+              <Descriptions.Item label="Sucursal" span={2}>
+                {modalDetalle.compraProveedor.sucursal?.nombre} -{" "}
+                {modalDetalle.compraProveedor.sucursal?.direccion}
+              </Descriptions.Item>
+              <Descriptions.Item label="N° Orden">
+                {modalDetalle.compraProveedor.idCompraProveedor}
+              </Descriptions.Item>
+              <Descriptions.Item label="Nombre Orden">
+                {modalDetalle.compraProveedor.nombreOrden}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Fecha">
+                {new Date(
+                  modalDetalle.compraProveedor.fechaCompra
+                ).toLocaleDateString("es-CL")}
+              </Descriptions.Item>
+              <Descriptions.Item label="Hora">
+                {new Date(
+                  modalDetalle.compraProveedor.fechaCompra
+                ).toLocaleTimeString("es-CL", {
+                  hour12: false,
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Proveedor">
+                {modalDetalle.compraProveedor.proveedor?.nombre}
+              </Descriptions.Item>
+              <Descriptions.Item label="RUT Proveedor">
+                {modalDetalle.compraProveedor.proveedor?.rut}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Funcionario">
+                {modalDetalle.compraProveedor.funcionario?.nombre}
+              </Descriptions.Item>
+              <Descriptions.Item label="Email Funcionario">
+                {modalDetalle.compraProveedor.funcionario?.email}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Estado">
+                <Tag
+                  color={
+                    modalDetalle.compraProveedor.estado === "pendiente"
+                      ? "orange"
+                      : "green"
+                  }
+                >
+                  {modalDetalle.compraProveedor.estado?.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Total">
+                <Text strong style={{ fontSize: 16, color: "#1890ff" }}>
+                  ${modalDetalle.compraProveedor.total?.toLocaleString("es-CL")}
+                </Text>
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Observaciones" span={2}>
+                {modalDetalle.compraProveedor.observaciones ||
+                  "Sin observaciones"}
+              </Descriptions.Item>
+            </Descriptions>
+
+            {/* Detalles de Productos */}
+            <Divider>Productos</Divider>
+
+            {modalDetalle.compraProveedor.compraproveedordetalles?.length >
+            0 ? (
+              <Table
+                dataSource={
+                  modalDetalle.compraProveedor.compraproveedordetalles
+                }
+                rowKey="idCompraProveedorDetalle"
+                pagination={false}
+                size="small"
+                columns={[
+                  {
+                    title: "Producto",
+                    key: "producto",
+                    render: (_, record) => (
+                      <div>
+                        <Text strong>{record.producto?.nombre}</Text>
+                        <br />
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {record.producto?.marca}
+                        </Text>
+                      </div>
+                    ),
+                  },
+                  {
+                    title: "Descripción",
+                    dataIndex: ["producto", "descripcion"],
+                    key: "descripcion",
+                  },
+                  {
+                    title: "Cantidad",
+                    dataIndex: "cantidad",
+                    key: "cantidad",
+                    align: "center",
+                  },
+                  {
+                    title: "Precio Unitario",
+                    dataIndex: "precioUnitario",
+                    key: "precioUnitario",
+                    align: "right",
+                    render: (precio) => `$${precio?.toLocaleString("es-CL")}`,
+                  },
+                  {
+                    title: "Total",
+                    dataIndex: "total",
+                    key: "total",
+                    align: "right",
+                    render: (total) => (
+                      <Text strong>${total?.toLocaleString("es-CL")}</Text>
+                    ),
+                  },
+                ]}
+                summary={(pageData) => {
+                  const totalGeneral = pageData.reduce(
+                    (sum, record) => sum + (record.total || 0),
+                    0
+                  );
+                  return (
+                    <Table.Summary.Row style={{ backgroundColor: "#fafafa" }}>
+                      <Table.Summary.Cell colSpan={4} align="right">
+                        <Text strong>Total General:</Text>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell align="right">
+                        <Text strong style={{ fontSize: 16, color: "#1890ff" }}>
+                          ${totalGeneral.toLocaleString("es-CL")}
+                        </Text>
+                      </Table.Summary.Cell>
+                    </Table.Summary.Row>
+                  );
+                }}
+              />
+            ) : (
+              <Empty description="No hay productos en esta orden" />
+            )}
+          </>
+        )}
       </Modal>
     </>
   );

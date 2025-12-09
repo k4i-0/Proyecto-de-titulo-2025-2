@@ -167,12 +167,12 @@ Despacho.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
 Despacho.belongsTo(Proveedor, { foreignKey: "idProveedor" });
 
 //Compra
-Productos.hasMany(CompraProveedor, { foreignKey: "idProducto" });
+// Productos.hasMany(CompraProveedor, { foreignKey: "idProducto" });
 Sucursal.hasMany(CompraProveedor, { foreignKey: "idSucursal" });
 Funcionario.hasMany(CompraProveedor, { foreignKey: "idFuncionario" });
 Proveedor.hasMany(CompraProveedor, { foreignKey: "idProveedor" });
 
-CompraProveedor.belongsTo(Productos, { foreignKey: "idProducto" });
+// CompraProveedor.belongsTo(Productos, { foreignKey: "idProducto" });
 CompraProveedor.belongsTo(Sucursal, { foreignKey: "idSucursal" });
 CompraProveedor.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
 CompraProveedor.belongsTo(Proveedor, { foreignKey: "idProveedor" });

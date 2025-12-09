@@ -33,6 +33,7 @@ import AprovisionamientoProveedor from "./pages/Vendedor/AprovicionamientoProvee
 
 //Gestiones admin
 import GestionColaborador from "./pages/Gestion/GestionColaborador.jsx";
+import OrdenesCompra from "./pages/Gestion/OrdenesCompra.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -71,6 +72,7 @@ createRoot(document.getElementById("root")).render(
               path="proveedores/:idSucursal"
               element={<Aprovisionamiento />}
             />
+            <Route path="gestion/ordenes_compra" element={<OrdenesCompra />} />
           </Route>
 
           <Route

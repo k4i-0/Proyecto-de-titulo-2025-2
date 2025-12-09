@@ -15,7 +15,7 @@ const contratoFuncionario = sequelize.define(
       allowNull: false,
     },
     tipoContrato: {
-      type: DataTypes.ENUM("Indefinido", "Plazo Fijo", "Por Proyecto"),
+      type: DataTypes.ENUM("Indefinido", "Plazo Fijo", "Honorarios"),
       allowNull: false,
       defaultValue: "Plazo Fijo",
     },
