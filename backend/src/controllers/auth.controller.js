@@ -104,7 +104,7 @@ async function logout(req, res) {
       nivelAlerta: "Bajo",
     });
 
-    res.clearCookie("token", { httpOnly: true, secure: true });
+    res.clearCookie("token", { httpOnly: true, secure: false });
     res.status(200).json({ message: "Sesión cerrada" });
   } catch (error) {
     res.status(500).json({ message: "Error interno" });
@@ -117,16 +117,16 @@ async function miEstado(req, res) {
     const { token } = req.cookies;
     //console.log("Token recibido en miEstado:", token);
     if (!token) {
-      res.clearCookie("token", { httpOnly: true, secure: true });
+      res.clearCookie("token", { httpOnly: true, secure: false });
       return res.status(401).json({ message: "No autorizado" });
     }
 
     const decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
+    //console.log("Payload decodificado:", decodedPayload);
     if (!decodedPayload) {
-      res.clearCookie("token", { httpOnly: true, secure: true });
+      res.clearCookie("token", { httpOnly: true, secure: false });
       return res.status(401).json({ message: "No autorizado" });
     }
-    // console.log("Payload decodificado:", decodedPayload);
     return res
       .status(200)
       .send({ message: "Token válido", payload: decodedPayload });

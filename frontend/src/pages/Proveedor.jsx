@@ -1,29 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
-  Typography,
-  Button,
-  Alert,
-  Space,
-  Empty,
-  Spin,
   Row,
   Col,
-  Tag,
-  Table,
+  Button,
+  Alert,
+  Typography,
+  Card,
+  Space,
   Popconfirm,
+  Empty,
+  Tag,
+  Statistic,
+  Table,
+  Input,
+  Select,
 } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   TeamOutlined,
-  LoadingOutlined,
-  ArrowLeftOutlined,
+  SearchOutlined,
+  FilterOutlined,
+  ReloadOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  ShopOutlined,
 } from "@ant-design/icons";
 
 import { useNavigate } from "react-router-dom";
 
-// 1. Asumiendo que estos son los nombres de tus nuevos componentes y servicios
 import AgregarProveedor from "../components/inventario/modalProveedor/AgregarProveedor";
 import EditarProveedor from "../components/inventario/modalProveedor/EditarProveedor";
 
@@ -33,45 +39,44 @@ import {
 } from "../services/inventario/Proveedor.service";
 
 export default function Proveedores() {
-  const { Title, Text } = Typography;
   const navigate = useNavigate();
-
-  // 2. Renombrar estados para 'proveedor'
+  const { Title, Text } = Typography;
   const [proveedores, setProveedores] = useState([]);
-  const [modalCrear, setModalCrear] = useState(false);
-  const [modalEditar, setModalEditar] = useState(false);
-  const [proveedorSelect, setProveedorSelect] = useState(null); // Estado de selección
-
   const [error, setError] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 3. Adaptar la lógica de búsqueda
+  const [proveedorSelect, setProveedorSelect] = useState(null);
+
+  const [modalCrear, setModalCrear] = useState(false);
+  const [modalEditar, setModalEditar] = useState(false);
+
+  // Estados para filtros
+  const [searchText, setSearchText] = useState("");
+  const [filterEstado, setFilterEstado] = useState(null);
+  const [filterRubro, setFilterRubro] = useState(null);
+
   const buscarProveedores = async () => {
     try {
       setLoading(true);
       setError(false);
       setMensaje("");
-      const respuesta = await getAllProveedores(); // Usar nuevo servicio
-      console.log("Respuesta al cargar proveedores:", respuesta);
+      const respuesta = await getAllProveedores();
+
       if (respuesta.status === 500) {
         setError(true);
         setMensaje("Error en el servidor");
         setProveedores([]);
-        return;
-      }
-      if (respuesta.status === 204) {
+      } else if (respuesta.status === 204) {
         setProveedores([]);
-      } else if (respuesta.data) {
+      } else if (respuesta.status === 200) {
+        setMensaje("");
         setProveedores(respuesta.data);
-      } else if (Array.isArray(respuesta)) {
-        setProveedores(respuesta);
       }
-    } catch (err) {
+    } catch (error) {
       setError(true);
-      setMensaje("Error de conexión al cargar los proveedores.");
-      console.error(err);
-      setProveedores([]);
+      setMensaje("Error al cargar datos");
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -81,44 +86,35 @@ export default function Proveedores() {
     buscarProveedores();
   }, []);
 
-  // --- Handlers Adaptados ---
+  const handleCerrarModal = () => {
+    setModalCrear(false);
+    setModalEditar(false);
+  };
+
   const handleCrear = () => {
     setError(false);
     setMensaje("");
-    setProveedorSelect(null); // Limpiar selección
     setModalCrear(true);
   };
 
-  const handleAbrirModalEditar = () => {
-    if (!proveedorSelect) {
-      setError(true);
-      setMensaje("Por favor seleccione un proveedor de la tabla");
-      return;
-    }
+  const handleEditar = (proveedor) => {
+    setProveedorSelect(proveedor);
     setError(false);
     setMensaje("");
     setModalEditar(true);
   };
 
-  const handleEliminarConfirmado = async () => {
-    if (!proveedorSelect) {
-      setError(true);
-      setMensaje("Por favor seleccione un proveedor para eliminar");
-      return;
-    }
-
+  const handleEliminar = async (proveedor) => {
     setLoading(true);
     setError(false);
     setMensaje("");
-
     try {
-      // Usar servicio de eliminar proveedor y el ID correcto
-      const respuesta = await eliminarProveedor(proveedorSelect.idProveedor);
+      const respuesta = await eliminarProveedor(proveedor.idProveedor);
       if (respuesta.status === 200) {
         setMensaje("Proveedor eliminado exitosamente");
         setError(false);
         setProveedorSelect(null);
-        await buscarProveedores(); // Recargar
+        await buscarProveedores();
       } else {
         setError(true);
         setMensaje(respuesta.error || "Error al eliminar el proveedor.");
@@ -132,13 +128,7 @@ export default function Proveedores() {
     }
   };
 
-  const handleCerrarModal = () => {
-    setModalCrear(false);
-    setModalEditar(false);
-  };
-
-  const handleSeleccionarFila = (record) => {
-    // Usar el ID del proveedor
+  const handleSeleccionarCard = (record) => {
     if (proveedorSelect?.idProveedor === record.idProveedor) {
       setProveedorSelect(null);
     } else {
@@ -146,266 +136,401 @@ export default function Proveedores() {
     }
   };
 
-  const getEstadoColor = (estado) => {
-    // Asumiendo estados 'Activo' e 'Inactivo'
-    const estadoLower = estado?.toLowerCase() || "";
-    switch (estadoLower) {
-      case "activo":
-        return "success";
-      case "inactivo":
-        return "error";
-      default:
-        return "default";
-    }
+  const handleVerVendedores = (rut, e) => {
+    if (e) e.stopPropagation();
+    navigate("/vendedores/" + rut);
   };
 
-  // 4. Definición de Columnas para Proveedores
-  const columns = [
-    {
-      title: "ID",
-      dataIndex: "idProveedor",
-      key: "idProveedor",
-      width: 80,
-      align: "center",
-    },
-    {
-      title: "RUT",
-      dataIndex: "rut",
-      key: "rut",
-      width: 120,
-    },
-    {
-      title: "Nombre",
-      dataIndex: "nombre",
-      key: "nombre",
-      sorter: (a, b) => a.nombre.localeCompare(b.nombre),
-    },
-    {
-      title: "Teléfono",
-      dataIndex: "telefono",
-      key: "telefono",
-      width: 130,
-    },
-    {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-    },
-    {
-      title: "Rubro",
-      dataIndex: "rubro",
-      key: "rubro",
-    },
-    {
-      title: "Giro",
-      dataIndex: "giro",
-      key: "giro",
-    },
-    {
-      title: "Estado",
-      dataIndex: "estado",
-      key: "estado",
-      align: "center",
-      width: 100,
-      render: (estado) => (
-        <Tag color={getEstadoColor(estado)}>{estado || "N/A"}</Tag>
-      ),
-    },
-  ];
-
-  // 5. Lógica de Renderizado (adaptando textos)
-  const renderContenido = () => {
-    if (loading && proveedores.length === 0) {
-      return (
-        <Col span={24} style={{ textAlign: "center", padding: "60px 0" }}>
-          <Spin
-            indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
-            tip="Cargando proveedores..."
-            size="large"
-          />
-        </Col>
-      );
-    }
-
-    if (proveedores.length === 0 && !loading) {
-      return (
-        <Col span={24}>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <Space direction="vertical" size="large">
-                <div>
-                  <Title level={4}>No hay proveedores disponibles</Title>
-                  <Text type="secondary">
-                    Comienza agregando tu primer proveedor
-                  </Text>
-                </div>
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<PlusOutlined />}
-                  onClick={handleCrear}
-                >
-                  Crear Primer Proveedor
-                </Button>
-              </Space>
-            }
-          />
-        </Col>
-      );
-    }
-
-    // Renderizar la TABLA
-    return (
-      <Col span={24}>
-        <Table
-          columns={columns}
-          dataSource={proveedores}
-          rowKey="idProveedor" // Usar el ID de proveedor
-          loading={loading}
-          pagination={{ pageSize: 10, showSizeChanger: true }}
-          scroll={{ x: "max-content" }}
-          onRow={(record) => ({
-            onClick: () => handleSeleccionarFila(record),
-            style: {
-              cursor: "pointer",
-              backgroundColor:
-                proveedorSelect?.idProveedor === record.idProveedor
-                  ? "#e6f4ff"
-                  : "transparent",
-              transition: "background-color 0.3s ease",
-            },
-          })}
-          locale={{
-            emptyText: "No hay proveedores para mostrar",
-          }}
-        />
-      </Col>
-    );
+  const getEstadoConfig = (estado) => {
+    const configs = {
+      Activo: {
+        color: "success",
+        icon: "✓",
+        text: "Activo",
+      },
+      Inactivo: {
+        color: "error",
+        icon: "✗",
+        text: "Inactivo",
+      },
+    };
+    return configs[estado] || { color: "default", icon: "", text: estado };
   };
 
-  // 6. Renderizado del Componente (adaptando textos y acciones)
+  // Función para limpiar filtros
+  const handleLimpiarFiltros = () => {
+    setSearchText("");
+    setFilterEstado(null);
+    setFilterRubro(null);
+  };
+
+  // Obtener rubros únicos para el filtro
+  const rubrosUnicos = useMemo(() => {
+    const rubros = [
+      ...new Set(proveedores.map((p) => p.rubro).filter(Boolean)),
+    ];
+    return rubros.map((rubro) => ({ value: rubro, label: rubro }));
+  }, [proveedores]);
+
+  // Datos filtrados
+  const proveedoresFiltrados = useMemo(() => {
+    return proveedores.filter((proveedor) => {
+      // Filtro por texto de búsqueda
+      const matchesSearch =
+        !searchText ||
+        proveedor.nombre?.toLowerCase().includes(searchText.toLowerCase()) ||
+        proveedor.rut?.toLowerCase().includes(searchText.toLowerCase()) ||
+        proveedor.email?.toLowerCase().includes(searchText.toLowerCase()) ||
+        proveedor.telefono?.includes(searchText);
+
+      // Filtro por estado
+      const matchesEstado = !filterEstado || proveedor.estado === filterEstado;
+
+      // Filtro por rubro
+      const matchesRubro = !filterRubro || proveedor.rubro === filterRubro;
+
+      return matchesSearch && matchesEstado && matchesRubro;
+    });
+  }, [proveedores, searchText, filterEstado, filterRubro]);
+
   return (
     <div style={{ padding: "24px" }}>
-      {/* Encabezado */}
-      <Row justify="center" style={{ marginBottom: 24 }}>
-        <Col span={18} style={{ textAlign: "center" }}>
-          <Title level={2} style={{ marginBottom: 8 }}>
-            <TeamOutlined style={{ marginRight: 8 }} />
-            Gestión de Proveedores
-          </Title>
-          <Text type="secondary">
-            Aquí puedes gestionar los proveedores de tu negocio
-          </Text>
+      <Row justify="center" align="top" style={{ marginBottom: 24 }}>
+        {/* Título */}
+        <Col span={12}>
+          <Title>Gestión de Proveedores</Title>
+        </Col>
+        <Col span={12}>
+          {/* Estadísticas generales */}
+          {proveedores.length > 0 && (
+            <Row
+              gutter={16}
+              justify="end"
+              align="middle"
+              style={{ textAlign: "center" }}
+            >
+              <Col xs={24} sm={8}>
+                <Card style={{ height: 140, width: 150 }}>
+                  <Statistic
+                    title="Total Proveedores"
+                    value={proveedores.length}
+                    prefix={<TeamOutlined />}
+                    valueStyle={{ color: "#1890ff" }}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={8}>
+                <Card style={{ height: 140, width: 150 }}>
+                  <Statistic
+                    title="Proveedores Activos"
+                    value={
+                      proveedores.filter((p) => p.estado === "Activo").length
+                    }
+                    prefix={<TeamOutlined />}
+                    valueStyle={{ color: "#52c41a" }}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={8}>
+                <Card style={{ height: 140, width: 150 }}>
+                  <Statistic
+                    title="Proveedores Inactivos"
+                    value={
+                      proveedores.filter((p) => p.estado === "Inactivo").length
+                    }
+                    prefix={<TeamOutlined />}
+                    valueStyle={{ color: "#ff4d4f" }}
+                  />
+                </Card>
+              </Col>
+            </Row>
+          )}
         </Col>
       </Row>
 
-      {/* Alerta de Mensajes */}
+      {/* Alertas */}
       {mensaje && (
-        <Row style={{ marginBottom: 16 }}>
+        <Alert
+          type={error ? "error" : "success"}
+          showIcon
+          message={mensaje}
+          closable
+          onClose={() => setMensaje("")}
+          style={{ marginBottom: 24 }}
+        />
+      )}
+
+      {proveedores.length === 0 && !loading ? (
+        <Row justify="center" style={{ marginTop: 48 }}>
           <Col span={24}>
-            <Alert
-              message={mensaje}
-              type={error ? "error" : "success"}
-              showIcon
-              closable
-              onClose={() => setMensaje("")}
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                <Space direction="vertical" size="large">
+                  <div>
+                    <Title level={4}>No hay proveedores disponibles</Title>
+                    <p style={{ color: "#8c8c8c" }}>
+                      Crea tu primer proveedor para comenzar
+                    </p>
+                  </div>
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<PlusOutlined />}
+                    onClick={handleCrear}
+                  >
+                    Crear Primer Proveedor
+                  </Button>
+                </Space>
+              }
             />
           </Col>
         </Row>
-      )}
-
-      {/* Barra de Acciones */}
-      {!loading && proveedores.length > 0 && (
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{ marginBottom: 24 }}
-        >
-          {/* Botón Volver (Opcional, siguiendo tu patrón) */}
-          <Col>
-            <Button
-              type="default"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/productos")}
-              size="large"
+      ) : (
+        <>
+          {/* Tabla de Proveedores */}
+          <Card
+            style={{
+              borderRadius: "12px",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+            }}
+          >
+            {/* Botones de la tabla */}
+            <Row
+              justify="space-between"
+              align="middle"
+              style={{ marginBottom: 16 }}
             >
-              Volver a Productos
-            </Button>
-          </Col>
+              <Col>
+                <Space>
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={buscarProveedores}
+                    loading={loading}
+                  >
+                    Actualizar
+                  </Button>
+                </Space>
+              </Col>
+              <Col>
+                <Space>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={handleCrear}
+                    disabled={loading}
+                  >
+                    Crear Proveedor
+                  </Button>
+                </Space>
+              </Col>
+            </Row>
 
-          {/* Acciones */}
-          <Col>
-            <Space wrap>
-              {/* Alerta de Selección */}
-              {proveedorSelect && (
-                <Alert
-                  message={`Seleccionado: ${proveedorSelect.nombre}`}
-                  type="info"
-                  showIcon
-                  closable
-                  onClose={() => setProveedorSelect(null)}
+            {/* Filtros de la tabla */}
+            <Row
+              justify="start"
+              align="middle"
+              gutter={16}
+              style={{ marginBottom: 16 }}
+            >
+              <Col xs={24} sm={12} md={8}>
+                <Input
+                  placeholder="Buscar por nombre, RUT, email o teléfono..."
+                  prefix={<SearchOutlined />}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  allowClear
                 />
-              )}
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleCrear}
-                disabled={loading}
-                size="large"
-              >
-                Agregar Proveedor
-              </Button>
-              <Button
-                icon={<EditOutlined />}
-                onClick={handleAbrirModalEditar}
-                disabled={loading || !proveedorSelect}
-                size="large"
-              >
-                Editar
-              </Button>
-              <Popconfirm
-                title="¿Eliminar proveedor?"
-                description={`Se eliminará: ${proveedorSelect?.nombre || ""}`}
-                onConfirm={handleEliminarConfirmado}
-                okText="Sí, eliminar"
-                cancelText="Cancelar"
-                okButtonProps={{ danger: true }}
-                disabled={!proveedorSelect || loading}
-              >
+              </Col>
+              <Col xs={12} sm={6} md={4}>
+                <Select
+                  placeholder="Estado"
+                  style={{ width: "100%" }}
+                  value={filterEstado}
+                  onChange={setFilterEstado}
+                  allowClear
+                  options={[
+                    { value: "Activo", label: "Activo" },
+                    { value: "Inactivo", label: "Inactivo" },
+                  ]}
+                />
+              </Col>
+              <Col xs={12} sm={6} md={4}>
+                <Select
+                  placeholder="Rubro"
+                  style={{ width: "100%" }}
+                  value={filterRubro}
+                  onChange={setFilterRubro}
+                  allowClear
+                  options={rubrosUnicos}
+                />
+              </Col>
+              <Col xs={12} sm={6} md={4}>
                 <Button
-                  icon={<DeleteOutlined />}
-                  disabled={loading || !proveedorSelect}
-                  danger
-                  size="large"
+                  icon={<FilterOutlined />}
+                  onClick={handleLimpiarFiltros}
+                  block
                 >
-                  Eliminar
+                  Limpiar Filtros
                 </Button>
-              </Popconfirm>
-              <Button
-                icon={<TeamOutlined />}
-                disabled={loading || !proveedorSelect}
-                size="large"
-                onClick={() => navigate("/vendedores/" + proveedorSelect.rut)}
-              >
-                Gestion Vendedores
-              </Button>
-            </Space>
-          </Col>
-        </Row>
+              </Col>
+              {(searchText || filterEstado || filterRubro) && (
+                <Col span={24}>
+                  <Text type="secondary">
+                    Mostrando {proveedoresFiltrados.length} de{" "}
+                    {proveedores.length} proveedores
+                  </Text>
+                </Col>
+              )}
+            </Row>
+
+            <Table
+              dataSource={proveedoresFiltrados}
+              rowKey="idProveedor"
+              loading={loading}
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showTotal: (total) => `Total ${total} proveedores`,
+              }}
+              onRow={(record) => ({
+                onClick: () => handleSeleccionarCard(record),
+                style: {
+                  cursor: "pointer",
+                  background:
+                    proveedorSelect?.idProveedor === record.idProveedor
+                      ? "#e6f7ff"
+                      : "white",
+                },
+              })}
+              columns={[
+                {
+                  title: "Proveedor",
+                  dataIndex: "nombre",
+                  key: "nombre",
+                  width: "20%",
+                  render: (text, record) => (
+                    <Space direction="vertical" size={0}>
+                      <Text strong style={{ fontSize: "15px" }}>
+                        {text}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: "12px" }}>
+                        RUT: {record.rut}
+                      </Text>
+                    </Space>
+                  ),
+                },
+                {
+                  title: "Contacto",
+                  key: "contacto",
+                  width: "25%",
+                  render: (_, record) => (
+                    <Space direction="vertical" size={4}>
+                      <Space>
+                        <PhoneOutlined style={{ color: "#8c8c8c" }} />
+                        <Text>{record.telefono}</Text>
+                      </Space>
+                      <Space>
+                        <MailOutlined style={{ color: "#8c8c8c" }} />
+                        <Text>{record.email}</Text>
+                      </Space>
+                    </Space>
+                  ),
+                },
+                {
+                  title: "Rubro",
+                  dataIndex: "rubro",
+                  key: "rubro",
+                  width: "15%",
+                },
+                {
+                  title: "Giro",
+                  dataIndex: "giro",
+                  key: "giro",
+                  width: "15%",
+                },
+                {
+                  title: "Estado",
+                  dataIndex: "estado",
+                  key: "estado",
+                  width: "10%",
+                  align: "center",
+                  render: (estado) => {
+                    const estadoConfig = getEstadoConfig(estado);
+                    return (
+                      <Tag
+                        color={estadoConfig.color}
+                        style={{ fontWeight: 600 }}
+                      >
+                        {estadoConfig.text}
+                      </Tag>
+                    );
+                  },
+                },
+                {
+                  title: "Vendedores",
+                  key: "vendedores",
+                  width: "15%",
+                  align: "center",
+                  render: (_, record) => (
+                    <Button
+                      type="link"
+                      icon={<TeamOutlined />}
+                      onClick={(e) => handleVerVendedores(record.rut, e)}
+                    >
+                      Ver Vendedores
+                    </Button>
+                  ),
+                },
+                {
+                  title: "Acciones",
+                  key: "acciones",
+                  width: "10%",
+                  align: "center",
+                  render: (_, record) => (
+                    <Space size="small">
+                      <Button
+                        type="text"
+                        icon={<EditOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditar(record);
+                        }}
+                      />
+                      <Popconfirm
+                        title="¿Está seguro de eliminar este proveedor?"
+                        description={`Se eliminará el proveedor: ${record.nombre}`}
+                        onConfirm={(e) => {
+                          e?.stopPropagation();
+                          handleEliminar(record);
+                        }}
+                        okText="Sí, eliminar"
+                        cancelText="Cancelar"
+                        okButtonProps={{ danger: true }}
+                      >
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </Popconfirm>
+                    </Space>
+                  ),
+                },
+              ]}
+            />
+          </Card>
+        </>
       )}
 
-      {/* Contenido (Tabla o Empty/Loading) */}
-      <Row gutter={[16, 16]}>{renderContenido()}</Row>
-
-      {/* Modales */}
       <AgregarProveedor
         show={modalCrear}
         handleClose={handleCerrarModal}
         funcionBuscarProveedores={buscarProveedores}
       />
       <EditarProveedor
-        Proveedor={proveedorSelect} // Prop 'Proveedor'
+        Proveedor={proveedorSelect}
         modalEditar={modalEditar}
         handleCerrarModal={handleCerrarModal}
         funcionBuscarProveedores={buscarProveedores}

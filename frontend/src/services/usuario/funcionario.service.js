@@ -35,6 +35,20 @@ export async function crearFuncionario(datos) {
   }
 }
 
+export async function editarFuncionario(datos) {
+  try {
+    const respuesta = await axios.put(`${API_URL}/editar`, datos, {
+      withCredentials: true,
+    });
+    return respuesta;
+  } catch (error) {
+    console.error("Error al editar funcionario:", error.response.data.error);
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+  }
+}
+
 export async function obtenerColaboradoresSucursal(idSucursal) {
   try {
     const response = await axios.get(`${API_URL}/colaboradores/${idSucursal}`, {
@@ -51,10 +65,10 @@ export async function obtenerColaboradoresSucursal(idSucursal) {
   }
 }
 
-export async function desvincularFuncionario(idContratoFuncionario) {
+export async function eliminarFuncionario(idFuncionario) {
   try {
     const response = await axios.delete(
-      `${API_URL}/desvincular/${idContratoFuncionario}`,
+      `${API_URL}/eliminar/${idFuncionario}`,
       { withCredentials: true }
     );
     //console.log("funcionario desvinculado:", response);

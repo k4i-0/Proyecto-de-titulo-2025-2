@@ -19,12 +19,17 @@ const contratoFuncionario = sequelize.define(
       allowNull: false,
       defaultValue: "Plazo Fijo",
     },
+    turno: {
+      type: DataTypes.ENUM("Mañana", "Tarde", "Noche", "Rotativo"),
+      allowNull: false,
+      defaultValue: "Mañana",
+    },
     fechaTermino: {
       type: DataTypes.DATE,
       allowNull: true,
     },
     estado: {
-      type: DataTypes.ENUM("Activo", "Inactivo"),
+      type: DataTypes.ENUM("Activo", "Inactivo", "Eliminado"),
       allowNull: false,
       defaultValue: "Activo",
     },

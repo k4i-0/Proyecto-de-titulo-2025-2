@@ -9,7 +9,11 @@ import {
   Spin,
   Input,
   Select,
+  Checkbox,
+  Divider,
+  Space,
 } from "antd";
+import { PlusOutlined, MinusCircleOutlined } from "@ant-design/icons";
 
 import { crearSucursal } from "../../../services/inventario/Sucursal.service";
 import { crearBodega } from "../../../services/inventario/Bodega.service";
@@ -19,11 +23,11 @@ export default function AgregarSucursal({
   handleClose,
   buscarSucursales,
 }) {
-  //console.log("Renderizando CrearSucursal");
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState(false);
+  const [agregarBodega, setAgregarBodega] = useState(false); // Estado para controlar si se agrega bodega
 
   const handleSubmit = async (values) => {
     setLoading(true);
@@ -36,40 +40,46 @@ export default function AgregarSucursal({
       estado: values.estadoSucursal,
     };
 
-    const datosBodega = {
-      nombre: values.nombreBodega,
-      capacidad: values.capacidad,
-      estado: values.estadoBodega,
-    };
     try {
       const resultado = await crearSucursal(datosSucursal);
-      //console.log("Respuesta al crear", resultado);
+
       if (resultado.status === 201) {
-        const resultadoBodega = await crearBodega({
-          ...datosBodega,
-          idSucursal: resultado.data.idSucursal,
-        });
-        //console.log("Respuesta al crear bodega", resultadoBodega);
-        if (resultadoBodega.status == 201) {
-          setMensaje("Sucursal creada exitosamente");
-          setError(false);
-          setTimeout(() => {
-            buscarSucursales();
-            form.resetFields();
-            handleClose();
-            setMensaje("");
-          }, 1200);
-        } else {
-          if (resultadoBodega.status === 422) {
+        // Si el usuario eligió agregar bodega
+        if (agregarBodega) {
+          const datosBodega = {
+            nombre: values.nombreBodega,
+            capacidad: values.capacidad,
+            estado: values.estadoBodega,
+            idSucursal: resultado.data.idSucursal,
+          };
+
+          const resultadoBodega = await crearBodega(datosBodega);
+
+          if (resultadoBodega.status === 201) {
+            setMensaje("Sucursal y bodega creadas exitosamente");
+            setError(false);
+          } else {
             setMensaje(
-              "Sucursal creada, pero error al crear bodega principal: " +
+              "Sucursal creada, pero error al crear bodega: " +
                 (resultadoBodega.data?.message ||
                   resultadoBodega.error ||
                   "Error desconocido.")
             );
             setError(true);
           }
+        } else {
+          // Solo se creó la sucursal
+          setMensaje("Sucursal creada exitosamente");
+          setError(false);
         }
+
+        setTimeout(() => {
+          buscarSucursales();
+          form.resetFields();
+          setAgregarBodega(false);
+          handleClose();
+          setMensaje("");
+        }, 1200);
       } else {
         setError(true);
         setMensaje(
@@ -92,6 +102,7 @@ export default function AgregarSucursal({
   const handleCerrarModal = () => {
     setMensaje("");
     setError(false);
+    setAgregarBodega(false);
     form.resetFields();
     handleClose();
   };
@@ -184,86 +195,127 @@ export default function AgregarSucursal({
             </Col>
           </Row>
 
-          {/* Datos de la Bodega Principal */}
-          <div
-            style={{
-              marginBottom: 16,
-              fontWeight: 600,
-              fontSize: 16,
-              marginTop: 24,
-            }}
-          >
-            Bodega Principal
-          </div>
+          <Divider />
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Nombre Bodega Principal"
-                name="nombreBodega"
-                rules={[
-                  {
-                    required: true,
-                    message: "Por favor ingrese el nombre de la bodega",
-                  },
-                ]}
-              >
-                <Input placeholder="Ingrese nombre" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Capacidad Bodega (m²)"
-                name="capacidad"
-                rules={[
-                  {
-                    required: true,
-                    message: "Por favor ingrese la capacidad",
-                  },
-                  {
-                    type: "number",
-                    min: 0,
-                    max: 10000,
-                    message: "La capacidad debe estar entre 0 y 10000",
-                    transform: (value) => Number(value),
-                  },
-                ]}
-              >
-                <Input
-                  type="number"
-                  min={0}
-                  max={10000}
-                  placeholder="Ingrese capacidad"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+          {/* Checkbox para agregar bodega */}
+          <Form.Item>
+            <Checkbox
+              checked={agregarBodega}
+              onChange={(e) => {
+                setAgregarBodega(e.target.checked);
+                // Limpiar campos de bodega si se desmarca
+                if (!e.target.checked) {
+                  form.setFieldsValue({
+                    nombreBodega: undefined,
+                    capacidad: undefined,
+                    estadoBodega: undefined,
+                  });
+                }
+              }}
+            >
+              <Space>
+                <PlusOutlined />
+                <span style={{ fontWeight: 600 }}>
+                  Agregar Bodega Principal
+                </span>
+              </Space>
+            </Checkbox>
+          </Form.Item>
 
-          <Row>
-            <Col span={24}>
-              <Form.Item
-                label="Estado Bodega"
-                name="estadoBodega"
-                rules={[
-                  {
-                    required: true,
-                    message: "Por favor seleccione un estado para la bodega",
-                  },
-                ]}
+          {/* Datos de la Bodega Principal (condicional) */}
+          {agregarBodega && (
+            <>
+              <div
+                style={{
+                  marginBottom: 16,
+                  fontWeight: 600,
+                  fontSize: 16,
+                  marginTop: 16,
+                }}
               >
-                <Select
-                  allowClear
-                  placeholder="Seleccione un estado"
-                  options={[
-                    { value: "En Funcionamiento", label: "En Funcionamiento" },
-                    { value: "En Mantenimiento", label: "En Mantenimiento" },
-                    { value: "Fuera de Servicio", label: "Fuera de Servicio" },
-                    { value: "Eliminado", label: "Eliminado" },
-                  ]}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+                Bodega Principal
+              </div>
+
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    label="Nombre Bodega Principal"
+                    name="nombreBodega"
+                    rules={[
+                      {
+                        required: agregarBodega,
+                        message: "Por favor ingrese el nombre de la bodega",
+                      },
+                    ]}
+                  >
+                    <Input placeholder="Ingrese nombre" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    label="Capacidad Bodega (m²)"
+                    name="capacidad"
+                    rules={[
+                      {
+                        required: agregarBodega,
+                        message: "Por favor ingrese la capacidad",
+                      },
+                      {
+                        type: "number",
+                        min: 0,
+                        max: 10000,
+                        message: "La capacidad debe estar entre 0 y 10000",
+                        transform: (value) => Number(value),
+                      },
+                    ]}
+                  >
+                    <Input
+                      type="number"
+                      min={0}
+                      max={10000}
+                      placeholder="Ingrese capacidad"
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row>
+                <Col span={24}>
+                  <Form.Item
+                    label="Estado Bodega"
+                    name="estadoBodega"
+                    initialValue="En Funcionamiento"
+                    rules={[
+                      {
+                        required: agregarBodega,
+                        message:
+                          "Por favor seleccione un estado para la bodega",
+                      },
+                    ]}
+                  >
+                    <Select
+                      allowClear
+                      placeholder="Seleccione un estado"
+                      options={[
+                        {
+                          value: "En Funcionamiento",
+                          label: "En Funcionamiento",
+                        },
+                        {
+                          value: "En Mantenimiento",
+                          label: "En Mantenimiento",
+                        },
+                        {
+                          value: "Fuera de Servicio",
+                          label: "Fuera de Servicio",
+                        },
+                      ]}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </>
+          )}
         </Form>
       </Spin>
     </Modal>

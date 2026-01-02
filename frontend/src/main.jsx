@@ -35,6 +35,9 @@ import AprovisionamientoProveedor from "./pages/Vendedor/AprovicionamientoProvee
 import GestionColaborador from "./pages/Gestion/GestionColaborador.jsx";
 import OrdenesCompra from "./pages/Gestion/OrdenesCompra.jsx";
 
+//Pruebas
+import Pruebas from "./pages/Pruebas.jsx";
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
@@ -65,14 +68,19 @@ createRoot(document.getElementById("root")).render(
 
             {/* Gestiones */}
             <Route
-              path="gestion/colaboradores/:idSucursal"
+              path="gestion/colaboradores"
               element={<GestionColaborador />}
+            />
+            <Route
+              path="gestion/colaboradores/contratos"
+              element={<Pruebas />}
             />
             <Route
               path="proveedores/:idSucursal"
               element={<Aprovisionamiento />}
             />
             <Route path="gestion/ordenes_compra" element={<OrdenesCompra />} />
+            <Route path="pruebas" element={<Pruebas />} />
           </Route>
 
           <Route

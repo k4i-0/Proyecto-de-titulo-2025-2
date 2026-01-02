@@ -14,12 +14,17 @@ router.get(
 
 router.post(
   "/crear",
-  /*authMiddleware, roleMiddleware(['admin']),*/ funcionarioController.contratarFuncionario
+  /*authMiddleware, roleMiddleware(['admin']),*/ funcionarioController.crearFuncionario
+);
+
+router.put(
+  "/editar",
+  /*authMiddleware, roleMiddleware(['admin']),*/ funcionarioController.editarFuncionario
 );
 
 router.delete(
-  "/desvincular/:idContratoFuncionario",
-  /*authMiddleware, roleMiddleware(['admin']),*/ funcionarioController.desvincularFuncionario
+  "/eliminar/:idFuncionario",
+  /*authMiddleware, roleMiddleware(['admin']),*/ funcionarioController.eliminarFuncionario
 );
 router.get("/quienSoy", funcionarioController.quienSoy);
 

@@ -97,7 +97,7 @@ async function createUsers() {
         passwordCaja: adminPassword,
         telefono: "+56900000000",
         direccion: "collao 1202, concepcion",
-        cargo: "Sistema",
+
         estado: "Activo",
         idRol: sistemaRole.idRol,
       },
@@ -113,7 +113,7 @@ async function createUsers() {
         passwordCaja: adminPassword,
         telefono: "+56912345678",
         direccion: "collao 1202, concepcion",
-        cargo: "Administrador",
+
         estado: "Activo",
         idRol: adminRole.idRol,
       },
@@ -130,7 +130,7 @@ async function createUsers() {
         passwordCaja: userPassword,
         telefono: "+56987654321",
         direccion: "collao 1202, concepcion",
-        cargo: "Cajero",
+
         estado: "Activo",
         idRol: cajeroRole.idRol,
       },
@@ -147,7 +147,7 @@ async function createUsers() {
         passwordCaja: userPassword,
         telefono: "+56987654321",
         direccion: "collao 1202, concepcion",
-        cargo: "Vendedor",
+
         estado: "Activo",
         idRol: vendedorRole.idRol,
       },

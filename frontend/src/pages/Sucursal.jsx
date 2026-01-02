@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Row,
   Col,
@@ -11,14 +11,22 @@ import {
   Empty,
   Tag,
   Statistic,
+  Table,
+  Input,
+  Select,
 } from "antd";
 import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ToolOutlined,
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   ShopOutlined,
   EnvironmentOutlined,
   InboxOutlined,
+  SearchOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
 
 import { useNavigate } from "react-router-dom";
@@ -32,7 +40,7 @@ import obtenerSucursales, {
 
 export default function Sucursal() {
   const navigate = useNavigate();
-  const { Title } = Typography;
+  const { Title, Text } = Typography;
   const [sucursales, setSucursales] = useState([]);
   const [error, setError] = useState(false);
   const [mensaje, setMensaje] = useState("");
@@ -42,6 +50,9 @@ export default function Sucursal() {
 
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
+
+  const [searchText, setSearchText] = useState("");
+  const [filterEstado, setFilterEstado] = useState(null);
 
   const buscarSucursales = async () => {
     try {
@@ -131,76 +142,131 @@ export default function Sucursal() {
     navigate("/admin/bodega/" + idSucursal);
   };
 
-  const getEstadoColor = (estado) => {
-    const colores = {
-      Abierta: "success",
-      Cerrada: "error",
-      Mantencion: "warning",
-      Eliminada: "default",
+  // const getEstadoColor = (estado) => {
+  //   const colores = {
+  //     Abierta: "success",
+  //     Cerrada: "error",
+  //     Mantencion: "warning",
+  //     Eliminada: "default",
+  //   };
+  //   return colores[estado] || "default";
+  // };
+  const getEstadoConfig = (estado) => {
+    const configs = {
+      Abierta: {
+        color: "success",
+        icon: <CheckCircleOutlined />,
+        text: "Abierta",
+      },
+      Cerrada: {
+        color: "error",
+        icon: <CloseCircleOutlined />,
+        text: "Cerrada",
+      },
+      Mantencion: {
+        color: "warning",
+        icon: <ToolOutlined />,
+        text: "Mantenimiento",
+      },
+      Eliminada: {
+        color: "default",
+        icon: <DeleteOutlined />,
+        text: "Eliminada",
+      },
     };
-    return colores[estado] || "default";
+    return configs[estado] || configs.Eliminada;
   };
 
+  const handleLimpiarFiltros = () => {
+    setSearchText("");
+    setFilterEstado(null);
+  };
+
+  const sucursalesFiltradas = useMemo(() => {
+    return sucursales.filter((sucursal) => {
+      const matchesSearch =
+        !searchText ||
+        sucursal.nombre?.toLowerCase().includes(searchText.toLowerCase()) ||
+        // sucursal.direccion?.toLowerCase().includes(searchText.toLowerCase()) ||
+        sucursal.idSucursal?.toString().includes(searchText);
+
+      const matchesEstado = !filterEstado || sucursal.estado === filterEstado;
+
+      return matchesSearch && matchesEstado;
+    });
+  }, [sucursales, searchText, filterEstado]);
+
   return (
-    <>
-      <Row justify="center" style={{ marginBottom: 24 }}>
-        <Col span={24} style={{ textAlign: "center" }}>
+    <div style={{ padding: "24px" }}>
+      <Row justify="center" align="top" style={{ marginBottom: 24 }}>
+        {/* Título y descripción */}
+        <Col span={12}>
           <Title>Gestión de Sucursales</Title>
-          <Title level={5} style={{ color: "#8c8c8c", fontWeight: 400 }}>
+          {/* <Title level={5} style={{ color: "#8c8c8c", fontWeight: 400 }}>
             Aquí puedes gestionar tus sucursales
-          </Title>
+          </Title> */}
+        </Col>
+        <Col span={12}>
+          {/* Estadísticas generales */}
+          {sucursales.length > 0 && (
+            <Row
+              gutter={16}
+              justify="end"
+              align="middle"
+              style={{ textAlign: "center" }}
+            >
+              <Col xs={24} sm={6}>
+                <Card style={{ height: 140, width: 150 }}>
+                  <Statistic
+                    title="Total De Sucursales"
+                    value={sucursales.length}
+                    prefix={<ShopOutlined />}
+                    valueStyle={{ color: "#1890ff" }}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={6}>
+                <Card style={{ height: 140, width: 150 }}>
+                  <Statistic
+                    title="Sucursales Abiertas"
+                    value={
+                      sucursales.filter((s) => s.estado === "Abierta").length
+                    }
+                    prefix={<ShopOutlined />}
+                    valueStyle={{ color: "#52c41a" }}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={6}>
+                <Card style={{ height: 140, width: 150 }}>
+                  <Statistic
+                    title="Sucursales Cerradas"
+                    value={
+                      sucursales.filter((s) => s.estado === "Cerrada").length
+                    }
+                    prefix={<ShopOutlined />}
+                    valueStyle={{ color: "#ff491bff" }}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={6}>
+                <Card style={{ height: 140, width: 150 }}>
+                  <Statistic
+                    title="En Mantenimiento"
+                    value={
+                      sucursales.filter((s) => s.estado === "Mantencion").length
+                    }
+                    prefix={<ShopOutlined />}
+                    valueStyle={{ color: "#faad14" }}
+                  />
+                </Card>
+              </Col>
+            </Row>
+          )}
         </Col>
       </Row>
 
-      {/* Estadísticas generales */}
-      {sucursales.length > 0 && (
-        <Row gutter={16} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={6}>
-            <Card>
-              <Statistic
-                title="Total Sucursales"
-                value={sucursales.length}
-                prefix={<ShopOutlined />}
-                valueStyle={{ color: "#1890ff" }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={6}>
-            <Card>
-              <Statistic
-                title="Sucursales Abiertas"
-                value={sucursales.filter((s) => s.estado === "Abierta").length}
-                prefix={<ShopOutlined />}
-                valueStyle={{ color: "#52c41a" }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={6}>
-            <Card>
-              <Statistic
-                title="Sucursales Cerradas"
-                value={sucursales.filter((s) => s.estado === "Cerrada").length}
-                prefix={<ShopOutlined />}
-                valueStyle={{ color: "#ff491bff" }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={6}>
-            <Card>
-              <Statistic
-                title="En Mantenimiento"
-                value={
-                  sucursales.filter((s) => s.estado === "Mantencion").length
-                }
-                prefix={<ShopOutlined />}
-                valueStyle={{ color: "#faad14" }}
-              />
-            </Card>
-          </Col>
-        </Row>
-      )}
-
-      {mensaje && (
+      {/* {mensaje && (
         <Row style={{ marginBottom: 16 }}>
           <Col span={24}>
             <Alert
@@ -212,7 +278,7 @@ export default function Sucursal() {
             />
           </Col>
         </Row>
-      )}
+      )} */}
 
       {sucursales.length === 0 && !loading ? (
         <Row justify="center" style={{ marginTop: 48 }}>
@@ -242,12 +308,21 @@ export default function Sucursal() {
         </Row>
       ) : (
         <>
-          <Row
-            justify="space-between"
-            align="middle"
-            style={{ marginBottom: 16 }}
+          {/* Tabla de Sucursales */}
+          <Card
+            style={{
+              borderRadius: "12px",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+            }}
           >
-            {/* <Col>
+            {/*botones de la tabla */}
+            <Row
+              justify="end"
+              align="middle"
+              gutter={16}
+              style={{ marginBottom: 16 }}
+            >
+              {/* <Col>
               {sucursalSelect && (
                 <Alert
                   message={`Sucursal seleccionada: ${sucursalSelect.nombre}`}
@@ -259,140 +334,191 @@ export default function Sucursal() {
                 />
               )}
             </Col> */}
-            <Col>
-              <Space>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={handleCrear}
-                  disabled={loading}
-                >
-                  Crear Sucursal
-                </Button>
-              </Space>
-            </Col>
-            {/* <Col>
-              <Space>
-                <Button>Proveedores</Button>
-              </Space>
-            </Col> */}
-          </Row>
-
-          {/* Grid de Cards */}
-          <Row gutter={[16, 16]}>
-            {sucursales.map((sucursal) => (
-              <Col xs={24} sm={12} lg={8} xl={6} key={sucursal.idSucursal}>
-                <Card
-                  hoverable
-                  loading={loading}
-                  onClick={() => handleSeleccionarCard(sucursal)}
-                  style={{
-                    borderColor:
-                      sucursalSelect?.idSucursal === sucursal.idSucursal
-                        ? "#1890ff"
-                        : "#d9d9d9",
-                    borderWidth:
-                      sucursalSelect?.idSucursal === sucursal.idSucursal
-                        ? 2
-                        : 1,
-                    transition: "all 0.3s ease",
-                  }}
-                  actions={[
-                    <Button
-                      type="text"
-                      icon={<EditOutlined />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditar(sucursal);
-                      }}
-                      key="edit"
-                    >
-                      Editar
-                    </Button>,
-                    <Popconfirm
-                      title="¿Está seguro de eliminar esta sucursal?"
-                      description={`Se eliminará la sucursal: ${sucursal.nombre}`}
-                      onConfirm={(e) => {
-                        e?.stopPropagation();
-                        handleEliminar(sucursal);
-                      }}
-                      okText="Sí, eliminar"
-                      cancelText="Cancelar"
-                      okButtonProps={{ danger: true }}
-                      key="delete"
-                    >
-                      <Button
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Eliminar
-                      </Button>
-                    </Popconfirm>,
-                  ]}
-                >
-                  <Space
-                    direction="vertical"
-                    style={{ width: "100%" }}
-                    size="middle"
+              <Col>
+                <Space>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={handleCrear}
+                    disabled={loading}
                   >
-                    {/* Header con estado */}
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <ShopOutlined
-                        style={{ fontSize: "24px", color: "#1890ff" }}
-                      />
-                      <Tag color={getEstadoColor(sucursal.estado)}>
-                        {sucursal.estado}
+                    Crear Sucursal
+                  </Button>
+                </Space>
+              </Col>
+              <Col>
+                <Space>
+                  <Button
+                    icon={<PlusOutlined />}
+                    disabled={loading}
+                    type="primary"
+                    onClick={() => navigate("/admin/proveedores")}
+                  >
+                    Proveedores
+                  </Button>
+                </Space>
+              </Col>
+            </Row>
+            {/*filtro de la tabla */}
+            <Row
+              justify="start"
+              align="middle"
+              gutter={16}
+              style={{ marginBottom: 16 }}
+            >
+              <Col span={7}>
+                <Input
+                  placeholder="Buscar sucursal por nombre, dirección o ID"
+                  prefix={<SearchOutlined />}
+                  allowClear
+                  onChange={(e) => setSearchText(e.target.value)}
+                />
+              </Col>
+              <Col span={3}>
+                <Select
+                  placeholder="Estado"
+                  style={{ width: "100%" }}
+                  allowClear
+                  options={[
+                    { value: "Abierta", label: "Abierta" },
+                    { value: "Cerrada", label: "Cerrada" },
+                    { value: "Mantencion", label: "Mantenimiento" },
+                  ]}
+                  onChange={setFilterEstado}
+                />
+              </Col>
+              <Col span={3}>
+                <Button
+                  icon={<FilterOutlined />}
+                  onClick={handleLimpiarFiltros}
+                  block
+                >
+                  Limpiar Filtros
+                </Button>
+              </Col>
+            </Row>
+
+            <Table
+              dataSource={sucursalesFiltradas}
+              rowKey="idSucursal"
+              loading={loading}
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showTotal: (total) => `Total ${total} sucursales`,
+              }}
+              onRow={(record) => ({
+                onClick: () => handleSeleccionarCard(record),
+                style: {
+                  cursor: "pointer",
+                  background:
+                    sucursalSelect?.idSucursal === record.idSucursal
+                      ? "#e6f7ff"
+                      : "white",
+                },
+              })}
+              columns={[
+                {
+                  title: "Sucursal",
+                  dataIndex: "nombre",
+                  key: "nombre",
+                  width: "25%",
+                  render: (text, record) => (
+                    <Space direction="vertical" size={0}>
+                      <Text strong style={{ fontSize: "15px" }}>
+                        {text}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: "12px" }}>
+                        ID: {record.idSucursal}
+                      </Text>
+                    </Space>
+                  ),
+                },
+                {
+                  title: "Dirección",
+                  dataIndex: "direccion",
+                  key: "direccion",
+                  width: "30%",
+                  render: (text) => (
+                    <Space>
+                      <EnvironmentOutlined style={{ color: "#8c8c8c" }} />
+                      <Text>{text}</Text>
+                    </Space>
+                  ),
+                },
+                {
+                  title: "Estado",
+                  dataIndex: "estado",
+                  key: "estado",
+                  width: "15%",
+                  align: "center",
+                  render: (estado) => {
+                    const estadoConfig = getEstadoConfig(estado);
+                    return (
+                      <Tag
+                        icon={estadoConfig.icon}
+                        color={estadoConfig.color}
+                        style={{ fontWeight: 600 }}
+                      >
+                        {estadoConfig.text}
                       </Tag>
-                    </div>
-
-                    {/* Nombre y código */}
-                    <div>
-                      <Title level={4} style={{ margin: 0 }}>
-                        {sucursal.nombre}
-                      </Title>
-                      <span style={{ color: "#8c8c8c", fontSize: "12px" }}>
-                        Código: {sucursal.idSucursal}
-                      </span>
-                    </div>
-
-                    {/* Dirección */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: "8px",
-                      }}
-                    >
-                      <EnvironmentOutlined
-                        style={{ color: "#8c8c8c", marginTop: "4px" }}
-                      />
-                      <span style={{ color: "#595959", fontSize: "14px" }}>
-                        {sucursal.direccion}
-                      </span>
-                    </div>
-
-                    {/* Botón ver bodegas */}
+                    );
+                  },
+                },
+                {
+                  title: "Bodegas",
+                  key: "bodegas",
+                  width: "15%",
+                  align: "center",
+                  render: (_, record) => (
                     <Button
                       type="link"
                       icon={<InboxOutlined />}
-                      onClick={(e) => handleVerBodegas(sucursal.idSucursal, e)}
-                      style={{ padding: 0 }}
+                      onClick={(e) => handleVerBodegas(record.idSucursal, e)}
                     >
                       Ver Bodegas
                     </Button>
-                  </Space>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+                  ),
+                },
+                {
+                  title: "Acciones",
+                  key: "acciones",
+                  width: "15%",
+                  align: "center",
+                  render: (_, record) => (
+                    <Space size="small">
+                      <Button
+                        type="text"
+                        icon={<EditOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditar(record);
+                        }}
+                      />
+                      <Popconfirm
+                        title="¿Está seguro de eliminar esta sucursal?"
+                        description={`Se eliminará la sucursal: ${record.nombre}`}
+                        onConfirm={(e) => {
+                          e?.stopPropagation();
+                          handleEliminar(record);
+                        }}
+                        okText="Sí, eliminar"
+                        cancelText="Cancelar"
+                        okButtonProps={{ danger: true }}
+                      >
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </Popconfirm>
+                    </Space>
+                  ),
+                },
+              ]}
+            />
+          </Card>
         </>
       )}
 
@@ -407,6 +533,6 @@ export default function Sucursal() {
         sucursal={sucursalSelect}
         funcionBuscarSucursales={buscarSucursales}
       />
-    </>
+    </div>
   );
 }

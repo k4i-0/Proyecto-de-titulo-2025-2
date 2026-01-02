@@ -1,675 +1,306 @@
-// import React, { useState, useEffect } from "react";
-
-// import { useParams } from "react-router-dom";
-
-// import {
-//   Typography,
-//   Table,
-//   Card,
-//   Row,
-//   Col,
-//   Button,
-//   Drawer,
-//   notification,
-//   Spin,
-//   List,
-//   Avatar,
-//   Tag,
-//   Space,
-// } from "antd";
-// const { Title } = Typography;
-
-// //importaciones
-// import obtenerTodosFuncionarios, {
-//   crearFuncionario,
-//   obtenerColaboradoresSucursal,
-// } from "../../services/usuario/funcionario.service.js";
-
-// export default function GestionColaborador() {
-//   const { idSucursal } = useParams();
-//   const [colaboradores, setColaboradores] = useState([]); // Lista de colaboradores
-//   const [funcionarios, setFuncionarios] = useState([]); // Lista de funcionarios disponibles para agregar
-
-//   //Componentes de estado
-//   const [loading, setLoading] = useState(false);
-//   //Drawer Estados
-//   const [drawerAgregarFuncionario, setDrawerAgregarFuncionario] =
-//     useState(false);
-
-//   //Funciones para obtener datos (colaboradores y funcionarios)
-
-//   const obtenerFuncionarios = async () => {
-//     try {
-//       setLoading(true);
-//       const respuesta = await obtenerTodosFuncionarios();
-//       if (respuesta.status === 200) {
-//         console.log("Funcionarios obtenidos:", respuesta.data);
-//         setFuncionarios(respuesta.data);
-//         notification.success({
-//           message: "Éxito",
-//           description: "Funcionarios obtenidos correctamente.",
-//           placement: "topRight",
-//         });
-//         setLoading(false);
-//         return;
-//       }
-//       if (respuesta.status === 204) {
-//         setFuncionarios([]);
-//         notification.info({
-//           message: "Información",
-//           description: "No hay funcionarios disponibles para mostrar.",
-//           placement: "topRight",
-//         });
-//         setLoading(false);
-//         return;
-//       }
-//       notification.error({
-//         message: "Error",
-//         description: respuesta.error || "Error al obtener los funcionarios.",
-//         placement: "topRight",
-//       });
-//     } catch (error) {
-//       console.error("Error al obtener los funcionarios:", error);
-//       notification.error({
-//         message: "Error",
-//         description: error.message || "Error al obtener los funcionarios.",
-//         placement: "topRight",
-//       });
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const crearContratoFuncionario = async (datos) => {
-//     try {
-//       setLoading(true);
-//       const respuesta = await crearFuncionario(datos);
-//       if (respuesta.status === 200) {
-//         notification.success({
-//           message: "Éxito",
-//           description: "Funcionario creado correctamente.",
-//           placement: "topRight",
-//         });
-//         setLoading(false);
-//         return;
-//       }
-//       if (respuesta.status === 422) {
-//         notification.warning({
-//           message: "Advertencia",
-//           description:
-//             respuesta.error || "Datos incompletos para crear el funcionario.",
-//           placement: "topRight",
-//         });
-//         setLoading(false);
-//         return;
-//       }
-//       if (respuesta.status === 409) {
-//         notification.warning({
-//           message: "Advertencia",
-//           description:
-//             respuesta.error ||
-//             "El funcionario ya existe y no se puede crear duplicado.",
-//           placement: "topRight",
-//         });
-//         setLoading(false);
-//         return;
-//       }
-//       notification.error({
-//         message: "Error",
-//         description: respuesta.error || "Error al crear el funcionario.",
-//         placement: "topRight",
-//       });
-//     } catch (error) {
-//       console.error("Error al crear el funcionario:", error);
-//       notification.error({
-//         message: "Error",
-//         description: error.message || "Error al crear el funcionario.",
-//         placement: "topRight",
-//       });
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const obtenerColaboradores = async (idSucursal) => {
-//     try {
-//       setLoading(true);
-//       const respuesta = await obtenerColaboradoresSucursal(idSucursal);
-//       if (respuesta.status === 200) {
-//         console.log("Colaboradores obtenidos:", respuesta.data);
-//         notification.success({
-//           message: "Éxito",
-//           description: "Colaboradores obtenidos correctamente.",
-//           placement: "topRight",
-//         });
-//         setColaboradores(respuesta.data);
-//         setLoading(false);
-//         return;
-//       }
-//       if (respuesta.status === 204) {
-//         notification.info({
-//           message: "Información",
-//           description: "No hay colaboradores registrados para esta sucursal.",
-//           placement: "topRight",
-//         });
-//         setColaboradores([]);
-//         setLoading(false);
-//         return;
-//       }
-//       if (respuesta.status === 422) {
-//         notification.warning({
-//           message: "Advertencia",
-//           description: respuesta.error || "Falta el ID de la sucursal.",
-//           placement: "topRight",
-//         });
-//         setLoading(false);
-//         return;
-//       }
-//       notification.error({
-//         message: "Error",
-//         description: respuesta.error || "Error al obtener los colaboradores.",
-//         placement: "topRight",
-//       });
-//     } catch (error) {
-//       console.error("Error al obtener los colaboradores:", error);
-//       notification.error({
-//         message: "Error",
-//         description: error.message || "Error al obtener los colaboradores.",
-//         placement: "topRight",
-//       });
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     obtenerColaboradores(idSucursal);
-//   }, [idSucursal]);
-
-//   //Funciones para manejar acciones
-//   const handleOpenDrawerAgregarFuncionario = async () => {
-//     await obtenerFuncionarios();
-//     setDrawerAgregarFuncionario(true);
-//   };
-
-//   const handleCloseDrawerAgregarFuncionario = () => {
-//     setDrawerAgregarFuncionario(false);
-//   };
-
-//   const handleAgregarFuncionario = async (funcionario) => {
-//     const datosContrato = {
-//       idSucursal: idSucursal,
-//       idFuncionario: funcionario.idFuncionario,
-//     };
-//     await crearContratoFuncionario(datosContrato);
-//     setDrawerAgregarFuncionario(false);
-//     await obtenerColaboradores(idSucursal);
-//   };
-
-//   const columns = [
-//     {
-//       title: "Nombre",
-//       dataIndex: ["funcionario", "nombre"],
-//       key: "nombre",
-//     },
-
-//     {
-//       title: "RUT",
-//       dataIndex: ["funcionario", "rut"],
-//       key: "rut",
-//     },
-//     {
-//       title: "Cargo",
-//       dataIndex: ["funcionario", "role", "nombreRol"],
-//       key: "cargo",
-//     },
-//     {
-//       title: "Tipo Contrato",
-//       dataIndex: "tipoContrato",
-//       key: "tipoContrato",
-//     },
-//     {
-//       title: "Fecha Ingreso",
-//       dataIndex: "fechaIngreso",
-//       key: "fechaIngreso",
-//       render: (fecha) => new Date(fecha).toLocaleDateString("es-CL"),
-//     },
-//     {
-//       title: "Fecha Término",
-//       dataIndex: "fechaTermino",
-//       key: "fechaTermino",
-//       render: (fecha) => new Date(fecha).toLocaleDateString("es-CL"),
-//     },
-//     {
-//       title: "Estado",
-//       dataIndex: "estado",
-//       key: "estado",
-//       render: (estado) => (
-//         <Tag color={estado === "Activo" ? "green" : "red"}>{estado}</Tag>
-//       ),
-//     },
-//     {
-//       title: "Acciones",
-//       key: "acciones",
-//       render: () => (
-//         <Space>
-//           <Button type="primary" size="small">
-//             Ver
-//           </Button>
-//           <Button danger size="small">
-//             Eliminar
-//           </Button>
-//         </Space>
-//       ),
-//     },
-//   ];
-
-//   return (
-//     <>
-//       <Spin spinning={loading} size="large" tip="Cargando..." fullscreen />
-//       <Row>
-//         <Col style={{ textAlign: "left" }}>
-//           <Button onClick={() => navigator("/admin/sucursal/" + idSucursal)}>
-
-//             Volver
-//           </Button>
-//         </Col>
-//       </Row>
-//       <Row>
-//         <Col style={{ textAlign: "center", width: "100%", marginTop: 20 }}>
-//           <Title level={2}>Gestión de Colaboradores</Title>
-//         </Col>
-//       </Row>
-//       <Card
-//         style={{ marginBottom: 20 }}
-//         title={`Colaboradores sucursal ${idSucursal}`}
-//       >
-//         <Row gutter={16} justify="end" style={{ marginBottom: 16 }}>
-//           <Col>
-//             <Button onClick={handleOpenDrawerAgregarFuncionario}>
-//               Agregar Funcionario
-//             </Button>
-//           </Col>
-//           <Col>
-//             <Button>Ver Funcionarios</Button>
-//           </Col>
-//         </Row>
-//         <Table
-//           dataSource={colaboradores}
-//           columns={columns}
-//           scroll={{ x: 600 }}
-//           rowKey="idContratoFuncionario"
-//         />
-//       </Card>
-
-//       {/* Drawer para agregar funcionarios */}
-//       <Drawer
-//         title="Agregar Funcionario"
-//         width={500}
-//         onClose={handleCloseDrawerAgregarFuncionario}
-//         open={drawerAgregarFuncionario}
-//       >
-//         {funcionarios.length === 0 ? (
-//           <p>No hay funcionarios disponibles para agregar.</p>
-//         ) : (
-//           <>
-//             {/* {funcionarios.map((funcionario) => (
-//               <Card
-//                 key={funcionario.idFuncionario}
-//                 type="inner"
-//                 title={`Nombre: ${funcionario.nombre} ${funcionario.apellido}`}
-//                 width="100%"
-//                 style={{ marginBottom: 16 }}
-//               > */}
-//             <List
-//               dataSource={funcionarios}
-//               renderItem={(funcionario) => (
-//                 <List.Item>
-//                   <List.Item.Meta
-//                     avatar={<Avatar>{funcionario.nombre[0]}</Avatar>}
-//                     title={funcionario.nombre}
-//                     description={`${funcionario.rut || "Sin RUT"} - ${
-//                       funcionario.role?.nombreRol || "Sin rol"
-//                     }`}
-//                   />
-//                   <Button onClick={() => handleAgregarFuncionario(funcionario)}>
-//                     Agregar
-//                   </Button>
-//                 </List.Item>
-//               )}
-//             />
-
-//             {/* </Card> */}
-//             {/* ))} */}
-//           </>
-//         )}
-//       </Drawer>
-//     </>
-//   );
-// }
-
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  Typography,
   Table,
+  Button,
+  Space,
+  Tag,
+  Drawer,
+  Form,
+  Input,
+  Select,
+  DatePicker,
+  Upload,
+  Avatar,
   Card,
   Row,
   Col,
-  Button,
-  Drawer,
-  notification,
-  Spin,
-  List,
-  Avatar,
-  Tag,
-  Space,
-  Input,
-  Empty,
-  Popconfirm,
+  Statistic,
   Modal,
   Descriptions,
-  Select,
-  Form,
-  DatePicker,
+  Badge,
+  Divider,
+  Popconfirm,
+  Tooltip,
+  Typography,
+  InputNumber,
+  notification,
 } from "antd";
 import {
-  ArrowLeftOutlined,
   UserAddOutlined,
-  SearchOutlined,
-  EyeOutlined,
+  EditOutlined,
   DeleteOutlined,
-  FilterOutlined,
+  EyeOutlined,
+  UploadOutlined,
+  UserOutlined,
+  TeamOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  HomeOutlined,
+  IdcardOutlined,
+  CalendarOutlined,
+  DollarOutlined,
 } from "@ant-design/icons";
+import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
-const { Search } = Input;
+const { TextArea } = Input;
+const { Option } = Select;
 
-// Importaciones de servicios
 import obtenerTodosFuncionarios, {
   crearFuncionario,
-  obtenerColaboradoresSucursal,
-  desvincularFuncionario,
-} from "../../services/usuario/funcionario.service.js";
+  editarFuncionario,
+  eliminarFuncionario,
+} from "../../services/usuario/funcionario.service";
+import obtenerSucursales from "../../services/inventario/Sucursal.service";
 
-export default function GestionColaborador() {
-  const { idSucursal } = useParams();
-  const navigate = useNavigate();
-
-  // Estados principales
-  const [colaboradores, setColaboradores] = useState([]);
-  const [funcionarios, setFuncionarios] = useState([]);
-  const [funcionariosFiltrados, setFuncionariosFiltrados] = useState([]);
+const GestionColaborador = () => {
+  const [form] = Form.useForm();
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedColaborador, setSelectedColaborador] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  // Estados de UI
-  const [drawerAgregarFuncionario, setDrawerAgregarFuncionario] =
-    useState(false);
-  const [modalDetalle, setModalDetalle] = useState({
-    visible: false,
-    colaborador: null,
+  const [searchText, setSearchText] = useState("");
+  const [filters, setFilters] = useState({
+    cargo: null,
+    sucursal: null,
+    estado: null,
+    turno: null,
   });
-  const [busqueda, setBusqueda] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [colaboradores, setColaboradores] = useState([]);
 
-  // Formulario para agregar contrato
-  const [formContrato] = Form.useForm();
+  const [sucursales, setSucursales] = useState([]);
 
-  // ========== FUNCIONES DE OBTENCIÓN DE DATOS ==========
-
-  const obtenerColaboradores = useCallback(async () => {
-    if (!idSucursal) return;
-
-    try {
-      setLoading(true);
-      const respuesta = await obtenerColaboradoresSucursal(idSucursal);
-
-      if (respuesta.status === 200) {
-        setColaboradores(respuesta.data);
-        notification.success({
-          message: "Éxito",
-          description: `${respuesta.data.length} colaboradores cargados`,
-          placement: "topRight",
-          duration: 2,
-        });
-      } else if (respuesta.status === 204) {
-        setColaboradores([]);
-        notification.info({
-          message: "Sin colaboradores",
-          description: "No hay colaboradores en esta sucursal",
-          placement: "topRight",
-          duration: 2,
-        });
-      } else {
-        throw new Error(respuesta.error || "Error al obtener colaboradores");
-      }
-    } catch (error) {
-      console.error("Error al obtener colaboradores:", error);
-      notification.error({
-        message: "Error",
-        description: error.message,
-        placement: "topRight",
-      });
-      setColaboradores([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [idSucursal]);
-
-  const obtenerFuncionarios = async () => {
-    try {
-      setLoading(true);
-      const respuesta = await obtenerTodosFuncionarios();
-
-      if (respuesta.status === 200) {
-        // Filtrar funcionarios que NO están en la sucursal actual
-        const idsColaboradores = colaboradores.map((c) => c.idFuncionario);
-        const disponibles = respuesta.data.filter(
-          (f) =>
-            !idsColaboradores.includes(f.idFuncionario) && f.estado === "Activo"
-        );
-
-        setFuncionarios(disponibles);
-        setFuncionariosFiltrados(disponibles);
-
-        if (disponibles.length === 0) {
-          notification.info({
-            message: "Sin funcionarios disponibles",
-            description: "Todos los funcionarios activos ya están asignados",
-            placement: "topRight",
+  //obtener sucursales
+  useEffect(() => {
+    const todasSucursales = async () => {
+      try {
+        setLoading(true);
+        const response = await obtenerSucursales();
+        if (response.status === 200) {
+          setSucursales(response.data);
+          setLoading(false);
+          notification.success({
+            message: "Sucursales cargadas",
+            description: "Las sucursales se han cargado correctamente.",
+            duration: 2,
           });
+          return;
         }
-      } else if (respuesta.status === 204) {
-        setFuncionarios([]);
-        setFuncionariosFiltrados([]);
-      } else {
-        throw new Error(respuesta.error || "Error al obtener funcionarios");
+        if (response.status === 204) {
+          setSucursales([]);
+          setLoading(false);
+          notification.info({
+            message: "No hay sucursales",
+            description: "No se encontraron sucursales registradas.",
+            duration: 2,
+          });
+          return;
+        }
+        notification.error({
+          message: response.error || "Error al cargar sucursales",
+          description: "Hubo un problema al obtener las sucursales.",
+          duration: 5,
+        });
+      } catch (error) {
+        notification.error({
+          message: error.message || "Error de servidor",
+          description: "No se pudo conectar al servidor.",
+          duration: 5,
+        });
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error al obtener funcionarios:", error);
-      notification.error({
-        message: "Error",
-        description: error.message,
-        placement: "topRight",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    todasSucursales();
+  }, []);
 
-  // ========== FUNCIONES DE ACCIÓN ==========
-
-  const crearContratoFuncionario = async (valores) => {
+  //obtener colaboradores
+  const obtenerColaboradores = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const datos = {
-        idSucursal: parseInt(idSucursal),
-        idFuncionario: valores.idFuncionario,
-        tipoContrato: valores.tipoContrato,
-        fechaIngreso: valores.fechaIngreso?.toISOString(),
-        fechaTermino: valores.fechaTermino?.toISOString(),
-        salario: valores.salario,
-      };
-
-      const respuesta = await crearFuncionario(datos);
-
-      if (respuesta.status === 200 || respuesta.status === 201) {
+      const response = await obtenerTodosFuncionarios();
+      console.log("Respuesta colaboradores:", response.data);
+      if (response.status === 200) {
+        setColaboradores(response.data);
+        setLoading(false);
         notification.success({
-          message: "Éxito",
-          description: "Contrato creado correctamente",
-          placement: "topRight",
+          message: "Colaboradores cargados",
+          description: "Los colaboradores se han cargado correctamente.",
+          duration: 3,
         });
-        formContrato.resetFields();
-        setDrawerAgregarFuncionario(false);
-        await obtenerColaboradores();
-      } else if (respuesta.status === 409) {
-        notification.warning({
-          message: "Contrato existente",
-          description: "El funcionario ya tiene un contrato en esta sucursal",
-          placement: "topRight",
-        });
-      } else {
-        throw new Error(respuesta.error || "Error al crear contrato");
+        return;
       }
-    } catch (error) {
-      console.error("Error al crear contrato:", error);
+      if (response.status === 204) {
+        setColaboradores([]);
+        setLoading(false);
+        notification.info({
+          message: "No hay colaboradores",
+          description: "No se encontraron colaboradores registrados.",
+          duration: 3,
+        });
+        return;
+      }
       notification.error({
-        message: "Error",
-        description: error.message,
-        placement: "topRight",
+        message: response.error || "Error al cargar colaboradores",
+        description: "Hubo un problema al obtener los colaboradores.",
+        duration: 5,
+      });
+    } catch (error) {
+      notification.error({
+        message: error.message || "Error de servidor",
+        description: "No se pudo conectar al servidor.",
+        duration: 5,
       });
     } finally {
       setLoading(false);
     }
   };
-
-  const handleEliminarContrato = async (idContratoFuncionario) => {
-    try {
-      setLoading(true);
-      const respuesta = await desvincularFuncionario(idContratoFuncionario);
-
-      if (respuesta.status === 200) {
-        notification.success({
-          message: "Éxito",
-          description: "Contrato finalizado correctamente",
-          placement: "topRight",
-        });
-        await obtenerColaboradores();
-      } else {
-        throw new Error(respuesta.error || "Error al finalizar contrato");
-      }
-    } catch (error) {
-      console.error("Error al eliminar contrato:", error);
-      notification.error({
-        message: "Error",
-        description: error.message,
-        placement: "topRight",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ========== FUNCIONES DE UI ==========
-
-  const handleOpenDrawer = async () => {
-    await obtenerFuncionarios();
-    setDrawerAgregarFuncionario(true);
-  };
-
-  const handleCloseDrawer = () => {
-    setDrawerAgregarFuncionario(false);
-    formContrato.resetFields();
-    setBusqueda("");
-    setFuncionariosFiltrados(funcionarios);
-  };
-
-  const handleBuscarFuncionario = (valor) => {
-    setBusqueda(valor);
-    const filtrados = funcionarios.filter(
-      (f) =>
-        f.nombre.toLowerCase().includes(valor.toLowerCase()) ||
-        f.rut?.toLowerCase().includes(valor.toLowerCase()) ||
-        f.role?.nombreRol?.toLowerCase().includes(valor.toLowerCase())
-    );
-    setFuncionariosFiltrados(filtrados);
-  };
-
-  const handleVerDetalle = (colaborador) => {
-    setModalDetalle({ visible: true, colaborador });
-  };
-
-  const handleCloseModal = () => {
-    setModalDetalle({ visible: false, colaborador: null });
-  };
-
-  const colaboradoresFiltrados = colaboradores.filter((c) => {
-    if (filtroEstado === "todos") return true;
-    return c.estado === filtroEstado;
-  });
-
-  // ========== EFECTOS ==========
-
   useEffect(() => {
     obtenerColaboradores();
-  }, [obtenerColaboradores]);
+  }, []);
 
-  // ========== CONFIGURACIÓN DE TABLA ==========
+  // Estadísticas
+  const stats = {
+    total: colaboradores.length,
+    activos: colaboradores.filter((c) => c.estado === "Activo").length,
+    inactivos: colaboradores.filter((c) => c.estado === "Inactivo").length,
+  };
+
+  // Filtrado de datos
+
+  const filteredData = useMemo(() => {
+    return colaboradores.filter((item) => {
+      const matchesSearch =
+        !searchText ||
+        (() => {
+          const searchLower = searchText.toLowerCase().trim();
+          const searchSinFormato = searchText
+            .replace(/[.-]/g, "")
+            .toLowerCase();
+          const rutSinFormato = item.rut?.replace(/[.-]/g, "").toLowerCase();
+
+          return (
+            item.nombre?.toLowerCase().includes(searchLower) ||
+            item.apellido?.toLowerCase().includes(searchLower) ||
+            item.rut?.toLowerCase().includes(searchLower) ||
+            rutSinFormato?.includes(searchSinFormato) ||
+            `${item.nombre} ${item.apellido}`
+              .toLowerCase()
+              .includes(searchLower)
+          );
+        })();
+
+      const matchesCargo = !filters.cargo || item.cargo === filters.cargo;
+      const matchesSucursal =
+        !filters.sucursal || item.sucursal === filters.sucursal;
+      const matchesEstado = !filters.estado || item.estado === filters.estado;
+      const matchesTurno = !filters.turno || item.turno === filters.turno;
+
+      return (
+        matchesSearch &&
+        matchesCargo &&
+        matchesSucursal &&
+        matchesEstado &&
+        matchesTurno
+      );
+    });
+  }, [colaboradores, searchText, filters]);
+
+  const handleResetFilters = () => {
+    setSearchText("");
+    setFilters({
+      cargo: null,
+      sucursal: null,
+      estado: null,
+      turno: null,
+    });
+  };
 
   const columns = [
     {
-      title: "Nombre",
-      dataIndex: ["funcionario", "nombre"],
-      key: "nombre",
-      sorter: (a, b) =>
-        a.funcionario.nombre.localeCompare(b.funcionario.nombre),
+      title: "Colaborador",
+      key: "colaborador",
+
+      render: (_, record) => (
+        <Space>
+          <Avatar
+            size={40}
+            icon={<UserOutlined />}
+            style={{ backgroundColor: "#1890ff" }}
+          >
+            {record.nombre[0]}
+            {record.apellido[0]}
+          </Avatar>
+          <div>
+            <div style={{ fontWeight: 500 }}>
+              {record.nombre} {record.apellido}
+            </div>
+          </div>
+        </Space>
+      ),
     },
     {
-      title: "RUT",
-      dataIndex: ["funcionario", "rut"],
+      title: "Rut",
+      dataIndex: "rut",
       key: "rut",
+      width: 150,
     },
     {
       title: "Cargo",
-      dataIndex: ["funcionario", "role", "nombreRol"],
+      dataIndex: "cargo",
       key: "cargo",
-      render: (rol) => <Tag color="blue">{rol || "Sin cargo"}</Tag>,
+      width: 150,
+      render: (cargo) => {
+        const colors = {
+          Administrador: "purple",
+          Vendedor: "blue",
+          Cajero: "green",
+          Otro: "orange",
+        };
+        return <Tag color={colors[cargo] || "default"}>{cargo}</Tag>;
+      },
     },
     {
-      title: "Tipo Contrato",
-      dataIndex: "tipoContrato",
-      key: "tipoContrato",
+      title: "Sucursal",
+      dataIndex: "sucursal",
+      key: "sucursal",
+      width: 150,
+      render: (sucursal) => (
+        <Tag color="green">{sucursal || "Sin Información"}</Tag>
+      ),
     },
     {
-      title: "Fecha Ingreso",
-      dataIndex: "fechaIngreso",
-      key: "fechaIngreso",
-      render: (fecha) =>
-        fecha ? new Date(fecha).toLocaleDateString("es-CL") : "N/A",
-      sorter: (a, b) => new Date(a.fechaIngreso) - new Date(b.fechaIngreso),
+      title: "Contacto",
+      key: "contacto",
+      width: 250,
+      render: (_, record) => (
+        <div>
+          <div style={{ fontSize: "12px" }}>
+            <PhoneOutlined style={{ marginRight: 4 }} />
+            {record.telefono}
+          </div>
+          <div style={{ fontSize: "12px", marginTop: 4 }}>
+            <MailOutlined style={{ marginRight: 4 }} />
+            {record.email}
+          </div>
+        </div>
+      ),
     },
+
     {
       title: "Estado",
       dataIndex: "estado",
       key: "estado",
+      width: 100,
       render: (estado) => (
-        <Tag
-          color={
-            estado === "Activo"
-              ? "green"
-              : estado === "Inactivo"
-              ? "red"
-              : "orange"
-          }
-        >
-          {estado}
-        </Tag>
+        <Badge
+          status={estado === "Activo" ? "success" : "error"}
+          text={estado}
+        />
       ),
-      filters: [
-        { text: "Activo", value: "Activo" },
-        { text: "Inactivo", value: "Inactivo" },
-      ],
-      onFilter: (value, record) => record.estado === value,
     },
     {
       title: "Acciones",
@@ -678,293 +309,822 @@ export default function GestionColaborador() {
       width: 150,
       render: (_, record) => (
         <Space>
-          <Button
-            type="primary"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => handleVerDetalle(record)}
-          >
-            Ver
-          </Button>
-          <Popconfirm
-            title="¿Finalizar contrato?"
-            description="Esta acción cambiará el estado del contrato"
-            onConfirm={() =>
-              handleEliminarContrato(record.idContratoFuncionario)
-            }
-            okText="Sí"
-            cancelText="No"
-            okButtonProps={{ danger: true }}
-          >
-            <Button danger size="small" icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Tooltip title="Ver Detalles">
+            <Button
+              type="link"
+              icon={<EyeOutlined />}
+              onClick={() => handleViewDetails(record)}
+            />
+          </Tooltip>
+          <Tooltip title="Editar">
+            <Button
+              type="link"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+            />
+          </Tooltip>
+          <Tooltip title="Eliminar">
+            <Popconfirm
+              title="¿Está seguro de eliminar este colaborador?"
+              description="Esta acción no se puede deshacer."
+              onConfirm={() => handleDelete(record.id)}
+              okText="Sí, eliminar"
+              cancelText="Cancelar"
+              okButtonProps={{ danger: true }}
+            >
+              <Button type="link" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },
   ];
 
-  // ========== RENDER ==========
+  const handleAdd = () => {
+    setEditMode(false);
+    setSelectedColaborador(null);
+    form.resetFields();
+    setDrawerVisible(true);
+  };
+
+  const handleEdit = (record) => {
+    setEditMode(true);
+    setSelectedColaborador(record);
+    form.setFieldsValue({
+      ...record,
+      fechaIngreso: record.fechaIngreso ? dayjs(record.fechaIngreso) : null,
+    });
+    setDrawerVisible(true);
+  };
+
+  const handleViewDetails = (record) => {
+    console.log("Ver detalles de:", record);
+    setSelectedColaborador(record);
+    setDetailDrawerVisible(true);
+  };
+
+  const handleDelete = async (id) => {
+    console.log("Eliminar colaborador con ID:", id);
+    try {
+      const response = await eliminarFuncionario(id);
+      if (response.status === 200) {
+        notification.success({
+          message: response.data.message || "Colaborador eliminado",
+          description: "El colaborador se ha eliminado correctamente.",
+          duration: 3,
+        });
+        obtenerColaboradores();
+        return;
+      }
+      notification.error({
+        message: response.error || "Error al eliminar colaborador",
+        description: "Hubo un problema al eliminar el colaborador.",
+        duration: 5,
+      });
+    } catch (error) {
+      notification.error({
+        message: error.message || "Error de servidor",
+        description: "No se pudo conectar al servidor.",
+        duration: 5,
+      });
+    }
+  };
+  //envio editar crear
+  const handleSubmit = async (values) => {
+    setLoading(true);
+    if (editMode) {
+      console.log("Valores del formulario edit:", values);
+      setLoading(true);
+      const response = await editarFuncionario(values);
+      try {
+        if (response.status === 200) {
+          notification.success({
+            message: response.data.message || "Colaborador actualizado",
+            description: "El colaborador se ha actualizado correctamente.",
+            duration: 3,
+          });
+          setEditMode(false);
+          setDrawerVisible(false);
+          obtenerColaboradores();
+          setLoading(false);
+          return;
+        }
+        notification.error({
+          message: response.error || "Error al actualizar colaborador",
+          description: "Hubo un problema al actualizar el colaborador.",
+          duration: 5,
+        });
+      } catch (error) {
+        notification.error({
+          message: error.message || "Error de servidor",
+          description: "No se pudo conectar al servidor.",
+          duration: 5,
+        });
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      try {
+        const response = await crearFuncionario(values);
+        if (response.status === 201) {
+          notification.success({
+            message: "Colaborador creado",
+            description: "El colaborador se ha creado correctamente.",
+            duration: 3,
+          });
+          setColaboradores([...colaboradores, response.data]);
+          setDrawerVisible(false);
+          form.resetFields();
+          setLoading(false);
+          return;
+        }
+        notification.error({
+          message: response.error || "Error al crear colaborador",
+          description: "Hubo un problema al crear el colaborador.",
+          duration: 5,
+        });
+      } catch (error) {
+        notification.error({
+          message: error.message || "Error de servidor",
+          description: "No se pudo conectar al servidor.",
+          duration: 5,
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   return (
-    <>
-      <Spin spinning={loading} size="large" tip="Cargando..." fullscreen />
-
-      {/* Header */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col span={24}>
-          <Space>
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate(`/admin/sucursal/${idSucursal}`)}
-            >
-              Volver
-            </Button>
+    <div style={{ padding: "24px" }}>
+      {/* Header con estadísticas */}
+      <Card style={{ marginBottom: 24 }}>
+        <Row gutter={16} align="middle">
+          <Col flex="auto">
             <Title level={2} style={{ margin: 0 }}>
-              Gestión de Colaboradores - Sucursal {idSucursal}
+              <TeamOutlined style={{ marginRight: 12 }} />
+              Gestión de Colaboradores
             </Title>
-          </Space>
-        </Col>
-      </Row>
-
-      {/* Card Principal */}
-      <Card
-        title={
-          <Space>
-            <Text strong>Colaboradores</Text>
-            <Tag color="blue">{colaboradoresFiltrados.length} total</Tag>
-          </Space>
-        }
-        extra={
-          <Space>
-            <Select
-              value={filtroEstado}
-              onChange={setFiltroEstado}
-              style={{ width: 120 }}
-              options={[
-                { label: "Todos", value: "todos" },
-                { label: "Activos", value: "Activo" },
-                { label: "Inactivos", value: "Inactivo" },
-              ]}
-            />
+            <Text type="secondary">
+              Administra el personal de tus sucursales
+            </Text>
+          </Col>
+          <Col>
             <Button
               type="primary"
+              size="large"
               icon={<UserAddOutlined />}
-              onClick={handleOpenDrawer}
+              onClick={handleAdd}
             >
-              Agregar Funcionario
+              Nuevo Colaborador
             </Button>
-          </Space>
-        }
-      >
+          </Col>
+        </Row>
+
+        <Divider />
+
+        <Row gutter={16}>
+          <Col xs={24} sm={8}>
+            <Card>
+              <Statistic
+                title="Total Colaboradores"
+                value={stats.total}
+                prefix={<TeamOutlined />}
+                valueStyle={{ color: "#1890ff" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Card>
+              <Statistic
+                title="Colaboradores Activos"
+                value={stats.activos}
+                prefix={<CheckCircleOutlined />}
+                valueStyle={{ color: "#52c41a" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Card>
+              <Statistic
+                title="Colaboradores Inactivos"
+                value={stats.inactivos}
+                prefix={<CloseCircleOutlined />}
+                valueStyle={{ color: "#ff4d4f" }}
+              />
+            </Card>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* Tabla */}
+      <Card>
+        {/* Sección de Filtros */}
+        <div style={{ marginBottom: 16 }}>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={24} md={8} lg={6}>
+              <Input
+                placeholder="Nombre, apellido o RUT"
+                prefix={<UserOutlined />}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                allowClear
+                size="large"
+              />
+            </Col>
+            <Col xs={12} sm={12} md={8} lg={4}>
+              <Select
+                placeholder="Cargo"
+                style={{ width: "100%" }}
+                value={filters.cargo}
+                onChange={(value) => setFilters({ ...filters, cargo: value })}
+                allowClear
+                size="large"
+              >
+                <Option value="Administrador">Administrador</Option>
+                <Option value="Cajero">Cajero</Option>
+                <Option value="Vendedor">Vendedor</Option>
+              </Select>
+            </Col>
+
+            <Col xs={12} sm={12} md={8} lg={4}>
+              <Select
+                placeholder="Turno"
+                style={{ width: "100%" }}
+                value={filters.turno}
+                onChange={(value) => setFilters({ ...filters, turno: value })}
+                allowClear
+                size="large"
+              >
+                <Option value="Mañana">Mañana</Option>
+                <Option value="Tarde">Tarde</Option>
+                <Option value="Noche">Noche</Option>
+                <Option value="Rotativo">Rotativo</Option>
+              </Select>
+            </Col>
+            <Col xs={12} sm={12} md={8} lg={4}>
+              <Select
+                placeholder="Estado"
+                style={{ width: "100%" }}
+                value={filters.estado}
+                onChange={(value) => setFilters({ ...filters, estado: value })}
+                allowClear
+                size="large"
+              >
+                <Option value="Activo">Activo</Option>
+                <Option value="Inactivo">Inactivo</Option>
+              </Select>
+            </Col>
+            <Col xs={24} sm={24} md={8} lg={2}>
+              <Button
+                onClick={handleResetFilters}
+                block
+                size="large"
+                icon={<DeleteOutlined />}
+              >
+                Limpiar
+              </Button>
+            </Col>
+          </Row>
+
+          {/* Indicador de filtros activos */}
+          {(searchText ||
+            filters.cargo ||
+            filters.sucursal ||
+            filters.estado ||
+            filters.turno) && (
+            <div style={{ marginTop: 12 }}>
+              <Space wrap>
+                <Text type="secondary">Filtros activos:</Text>
+                {searchText && (
+                  <Tag closable onClose={() => setSearchText("")} color="blue">
+                    Búsqueda: {searchText}
+                  </Tag>
+                )}
+                {filters.cargo && (
+                  <Tag
+                    key="cargo"
+                    closable
+                    onClose={() => setFilters({ ...filters, cargo: null })}
+                    color="purple"
+                  >
+                    Cargo: {filters.cargo}
+                  </Tag>
+                )}
+                {filters.sucursal && (
+                  <Tag
+                    key="sucursal"
+                    closable
+                    onClose={() => setFilters({ ...filters, sucursal: null })}
+                    color="green"
+                  >
+                    Sucursal: {filters.sucursal}
+                  </Tag>
+                )}
+                {filters.turno && (
+                  <Tag
+                    key="turno"
+                    closable
+                    onClose={() => setFilters({ ...filters, turno: null })}
+                    color="orange"
+                  >
+                    Turno: {filters.turno}
+                  </Tag>
+                )}
+                {filters.estado && (
+                  <Tag
+                    key="estado"
+                    closable
+                    onClose={() => setFilters({ ...filters, estado: null })}
+                    color="red"
+                  >
+                    Estado: {filters.estado}
+                  </Tag>
+                )}
+                <Text type="secondary">
+                  ({filteredData.length} resultado
+                  {filteredData.length !== 1 ? "s" : ""})
+                </Text>
+              </Space>
+            </div>
+          )}
+        </div>
+
         <Table
-          dataSource={colaboradoresFiltrados}
           columns={columns}
-          scroll={{ x: 1000 }}
-          rowKey="idContratoFuncionario"
+          dataSource={filteredData}
+          rowKey="id"
+          scroll={{ x: 1200 }}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total) => `Total: ${total} colaboradores`,
+            showTotal: (total) => `Total ${total} colaboradores`,
           }}
         />
       </Card>
 
-      {/* Drawer: Agregar Funcionario */}
+      {/* Drawer para Crear/Editar */}
       <Drawer
-        title="Agregar Funcionario a la Sucursal"
-        width={600}
-        onClose={handleCloseDrawer}
-        open={drawerAgregarFuncionario}
+        title={
+          <Space>
+            {editMode ? <EditOutlined /> : <UserAddOutlined />}
+            <span>{editMode ? "Editar Colaborador" : "Nuevo Colaborador"}</span>
+          </Space>
+        }
+        width={720}
+        onClose={() => setDrawerVisible(false)}
+        open={drawerVisible}
+        extra={
+          <Space>
+            <Button onClick={() => setDrawerVisible(false)}>Cancelar</Button>
+            <Button
+              type="primary"
+              onClick={() => form.submit()}
+              loading={loading}
+            >
+              {editMode ? "Actualizar" : "Guardar"}
+            </Button>
+          </Space>
+        }
       >
-        <Search
-          placeholder="Buscar por nombre, RUT o cargo"
-          allowClear
-          enterButton={<SearchOutlined />}
-          size="large"
-          value={busqueda}
-          onChange={(e) => handleBuscarFuncionario(e.target.value)}
-          style={{ marginBottom: 16 }}
-        />
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          initialValues={{
+            estadoContrato: "Activo",
+            turno: "Mañana",
+            contrato: "Plazo Fijo",
+          }}
+        >
+          <Title level={5}>Información Personal</Title>
+          <Divider style={{ marginTop: 8, marginBottom: 16 }} />
 
-        {funcionariosFiltrados.length === 0 ? (
-          <Empty
-            description="No hay funcionarios disponibles"
-            style={{ marginTop: 50 }}
-          />
-        ) : (
-          <List
-            dataSource={funcionariosFiltrados}
-            renderItem={(funcionario) => (
-              <List.Item
-                actions={[
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      formContrato.setFieldsValue({
-                        idFuncionario: funcionario.idFuncionario,
-                      });
-                      Modal.confirm({
-                        title: `Agregar ${funcionario.nombre}`,
-                        content: (
-                          <Form
-                            form={formContrato}
-                            layout="vertical"
-                            initialValues={{
-                              idFuncionario: funcionario.idFuncionario,
-                              tipoContrato: "Indefinido",
-                            }}
-                          >
-                            <Form.Item name="idFuncionario" hidden>
-                              <Input />
-                            </Form.Item>
-                            <Form.Item
-                              label="Tipo de Contrato"
-                              name="tipoContrato"
-                              rules={[
-                                {
-                                  required: true,
-                                  message: "Seleccione tipo de contrato",
-                                },
-                              ]}
-                            >
-                              <Select
-                                options={[
-                                  { label: "Indefinido", value: "Indefinido" },
-                                  { label: "Plazo Fijo", value: "Plazo Fijo" },
-                                  { label: "Honorarios", value: "Honorarios" },
-                                ]}
-                              />
-                            </Form.Item>
-                            <Form.Item
-                              label="Fecha de Ingreso"
-                              name="fechaIngreso"
-                              rules={[
-                                {
-                                  required: true,
-                                  message: "Seleccione fecha de ingreso",
-                                },
-                              ]}
-                            >
-                              <DatePicker
-                                style={{ width: "100%" }}
-                                format="DD/MM/YYYY"
-                              />
-                            </Form.Item>
-                            <Form.Item
-                              label="Fecha de Término"
-                              name="fechaTermino"
-                            >
-                              <DatePicker
-                                style={{ width: "100%" }}
-                                format="DD/MM/YYYY"
-                              />
-                            </Form.Item>
-                            <Form.Item
-                              label="Salario"
-                              name="salario"
-                              rules={[
-                                { required: true, message: "Ingrese salario" },
-                              ]}
-                            >
-                              <Input type="number" prefix="$" />
-                            </Form.Item>
-                          </Form>
-                        ),
-                        width: 500,
-                        okText: "Agregar",
-                        cancelText: "Cancelar",
-                        onOk: async () => {
-                          try {
-                            const valores = await formContrato.validateFields();
-                            await crearContratoFuncionario(valores);
-                          } catch (error) {
-                            console.error("Error de validación:", error);
-                          }
-                        },
-                      });
-                    }}
-                  >
-                    Agregar
-                  </Button>,
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="nombre"
+                label="Nombre"
+                rules={[
+                  { required: true, message: "Por favor ingrese el nombre" },
                 ]}
               >
-                <List.Item.Meta
-                  avatar={
-                    <Avatar size={48} style={{ backgroundColor: "#1890ff" }}>
-                      {funcionario.nombre?.[0]?.toUpperCase()}
-                    </Avatar>
-                  }
-                  title={<Text strong>{funcionario.nombre}</Text>}
-                  description={
-                    <Space direction="vertical" size={0}>
-                      <Text type="secondary">
-                        {funcionario.rut || "Sin RUT"}
-                      </Text>
-                      <Tag color="blue">
-                        {funcionario.role?.nombreRol || "Sin cargo"}
-                      </Tag>
-                    </Space>
-                  }
+                <Input
+                  placeholder="Ingrese el nombre"
+                  prefix={<UserOutlined />}
                 />
-              </List.Item>
-            )}
-          />
-        )}
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="apellido"
+                label="Apellido"
+                rules={[
+                  { required: true, message: "Por favor ingrese el apellido" },
+                ]}
+              >
+                <Input
+                  placeholder="Ingrese el apellido"
+                  prefix={<UserOutlined />}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="rut"
+                label="RUT"
+                rules={[
+                  { required: true, message: "Por favor ingrese el RUT" },
+                  {
+                    pattern: /^[0-9]{7,8}-[0-9kK]$/,
+                    message: "Formato de RUT inválido",
+                  },
+                  {
+                    min: 10,
+                    max: 10,
+                    message: "RUT debe tener formato 12345678-9",
+                  },
+                ]}
+                normalize={(value) => {
+                  if (!value) return value;
+
+                  const cleaned = value.replace(/[^0-9kK]/g, "");
+
+                  const limited = cleaned.slice(0, 9);
+
+                  if (limited.length <= 1) return limited;
+
+                  const number = limited.slice(0, -1);
+                  const verifier = limited.slice(-1).toUpperCase();
+
+                  return `${number}-${verifier}`;
+                }}
+              >
+                <Input
+                  disabled={editMode}
+                  placeholder="12345678-9"
+                  prefix={<IdcardOutlined />}
+                  min={10}
+                  maxLength={10}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                hidden={editMode}
+                name="fechaIngreso"
+                label="Fecha de Ingreso"
+                initialValue={dayjs()}
+              >
+                <DatePicker
+                  disabled
+                  style={{ width: "100%" }}
+                  format="DD/MM/YYYY"
+                  placeholder="Seleccione fecha"
+                />
+              </Form.Item>
+              <Form.Item name="estado" label="Estado" hidden={!editMode}>
+                <Select style={{ width: "100%" }}>
+                  <Option value="Activo">Activo</Option>
+                  <Option value="Inactivo">Inactivo</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Title level={5} style={{ marginTop: 24 }}>
+            Información de Contacto
+          </Title>
+          <Divider style={{ marginTop: 8, marginBottom: 16 }} />
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="email"
+                label="Correo Electrónico"
+                rules={[
+                  {
+                    required: true,
+                    type: "email",
+                    message: "Por favor ingrese un correo válido",
+                  },
+                ]}
+              >
+                <Input
+                  placeholder="correo@ejemplo.cl"
+                  prefix={<MailOutlined />}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="telefono"
+                label="Teléfono"
+                rules={[
+                  { required: true, message: "Por favor ingrese el teléfono" },
+                ]}
+              >
+                <Input
+                  addonBefore="+56"
+                  placeholder="9 1234 5678"
+                  maxLength={9}
+                  prefix={<PhoneOutlined />}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item name="direccion" label="Dirección">
+            <TextArea
+              rows={2}
+              placeholder="Ingrese la dirección completa"
+              prefix={<HomeOutlined />}
+            />
+          </Form.Item>
+
+          <Title level={5} style={{ marginTop: 24 }}>
+            Información Laboral
+          </Title>
+          <Divider style={{ marginTop: 8, marginBottom: 16 }} />
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="cargo"
+                label="Cargo"
+                rules={[
+                  { required: true, message: "Por favor seleccione el cargo" },
+                ]}
+              >
+                <Select placeholder="Seleccione un cargo">
+                  <Option value="Administrador">Administrador</Option>
+                  <Option value="Vendedor">Vendedor</Option>
+                  <Option value="Cajero">Cajero</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="sucursal"
+                label="Sucursal"
+                rules={[
+                  {
+                    required: true,
+                    message: "Por favor seleccione la sucursal",
+                  },
+                ]}
+              >
+                <Select placeholder="Seleccione una sucursal">
+                  {sucursales.map((sucursal) => (
+                    <Option key={sucursal.id} value={sucursal.nombre}>
+                      {sucursal.nombre}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="turno"
+                label="Turno"
+                rules={[
+                  { required: true, message: "Por favor seleccione el turno" },
+                ]}
+              >
+                <Select placeholder="Seleccione un turno">
+                  <Option value="Mañana">Mañana </Option>
+                  <Option value="Tarde">Tarde</Option>
+                  <Option value="Noche">Noche</Option>
+                  <Option value="Completo">Jornada Completa</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="contrato"
+                label="Tipo de Contrato"
+                rules={[
+                  {
+                    required: true,
+                    message: "Por favor seleccione el tipo de contrato",
+                  },
+                ]}
+              >
+                <Select placeholder="Seleccione tipo de contrato">
+                  <Option value="Indefinido">Indefinido</Option>
+                  <Option value="Plazo Fijo">Plazo Fijo</Option>
+
+                  <Option value="Honorarios">Honorarios</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="estadoContrato"
+                label="Estado Del Contrato"
+                rules={[
+                  { required: true, message: "Por favor seleccione el estado" },
+                ]}
+              >
+                <Select placeholder="Seleccione el estado">
+                  <Option value="Activo">Activo</Option>
+                  <Option value="Inactivo">Inactivo</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
       </Drawer>
 
-      {/* Modal: Detalle Colaborador */}
-      <Modal
-        title="Detalle del Colaborador"
-        open={modalDetalle.visible}
-        onCancel={handleCloseModal}
-        footer={[
-          <Button key="close" onClick={handleCloseModal}>
-            Cerrar
-          </Button>,
-        ]}
-        width={700}
+      {/* Drawer de Detalles */}
+      <Drawer
+        title={
+          <Space>
+            <Avatar
+              size={40}
+              icon={<UserOutlined />}
+              style={{ backgroundColor: "#1890ff" }}
+            >
+              {selectedColaborador?.nombre}
+              {selectedColaborador?.apellido}
+            </Avatar>
+            <span>
+              {selectedColaborador?.nombre} {selectedColaborador?.apellido}
+            </span>
+          </Space>
+        }
+        width={640}
+        onClose={() => setDetailDrawerVisible(false)}
+        open={detailDrawerVisible}
+        extra={
+          <Space>
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => {
+                setDetailDrawerVisible(false);
+                handleEdit(selectedColaborador);
+              }}
+            >
+              Editar
+            </Button>
+            <Popconfirm
+              title="¿Está seguro de eliminar este colaborador?"
+              onConfirm={() => {
+                handleDelete(selectedColaborador?.id);
+                setDetailDrawerVisible(false);
+              }}
+              okText="Sí"
+              cancelText="No"
+            >
+              <Button danger icon={<DeleteOutlined />}>
+                Eliminar
+              </Button>
+            </Popconfirm>
+          </Space>
+        }
       >
-        {modalDetalle.colaborador && (
-          <Descriptions bordered column={2}>
-            <Descriptions.Item label="Nombre" span={2}>
-              {modalDetalle.colaborador.funcionario?.nombre}
-            </Descriptions.Item>
-            <Descriptions.Item label="RUT">
-              {modalDetalle.colaborador.funcionario?.rut}
-            </Descriptions.Item>
-            <Descriptions.Item label="Email">
-              {modalDetalle.colaborador.funcionario?.email}
-            </Descriptions.Item>
-            <Descriptions.Item label="Cargo">
-              {modalDetalle.colaborador.funcionario?.role?.nombreRol}
-            </Descriptions.Item>
-            <Descriptions.Item label="Tipo Contrato">
-              {modalDetalle.colaborador.tipoContrato}
-            </Descriptions.Item>
-            <Descriptions.Item label="Fecha Ingreso">
-              {new Date(
-                modalDetalle.colaborador.fechaIngreso
-              ).toLocaleDateString("es-CL")}
-            </Descriptions.Item>
-            <Descriptions.Item label="Fecha Término">
-              {modalDetalle.colaborador.fechaTermino
-                ? new Date(
-                    modalDetalle.colaborador.fechaTermino
-                  ).toLocaleDateString("es-CL")
-                : "Indefinido"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Estado">
-              <Tag
-                color={
-                  modalDetalle.colaborador.estado === "Activo" ? "green" : "red"
-                }
-              >
-                {modalDetalle.colaborador.estado}
-              </Tag>
-            </Descriptions.Item>
-          </Descriptions>
+        {selectedColaborador && (
+          <>
+            <Card style={{ marginBottom: 16 }}>
+              <div style={{ textAlign: "center" }}>
+                <Avatar
+                  size={100}
+                  icon={<UserOutlined />}
+                  style={{ backgroundColor: "#1890ff", marginBottom: 16 }}
+                >
+                  {selectedColaborador.nombre[0]}
+                  {selectedColaborador.apellido[0]}
+                </Avatar>
+                <Title level={3} style={{ marginBottom: 4 }}>
+                  {selectedColaborador.nombre} {selectedColaborador.apellido}
+                </Title>
+                <Tag color="blue" style={{ fontSize: "14px" }}>
+                  {selectedColaborador.cargo}
+                </Tag>
+                <div style={{ marginTop: 12 }}>
+                  <Badge
+                    status={
+                      selectedColaborador.estado === "Activo"
+                        ? "success"
+                        : "error"
+                    }
+                    text={selectedColaborador.estado}
+                    style={{ fontSize: "14px" }}
+                  />
+                </div>
+              </div>
+            </Card>
+
+            <Card title="Información Personal" style={{ marginBottom: 16 }}>
+              <Descriptions column={1}>
+                <Descriptions.Item
+                  label={
+                    <span>
+                      <IdcardOutlined style={{ marginRight: 8 }} />
+                      RUT
+                    </span>
+                  }
+                >
+                  {selectedColaborador.rut}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={
+                    <span>
+                      <MailOutlined style={{ marginRight: 8 }} />
+                      Email
+                    </span>
+                  }
+                >
+                  {selectedColaborador.email}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={
+                    <span>
+                      <PhoneOutlined style={{ marginRight: 8 }} />
+                      Teléfono
+                    </span>
+                  }
+                >
+                  {selectedColaborador.telefono}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={
+                    <span>
+                      <HomeOutlined style={{ marginRight: 8 }} />
+                      Dirección
+                    </span>
+                  }
+                >
+                  {selectedColaborador.direccion}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            <Card title="Información Laboral" style={{ marginBottom: 16 }}>
+              <Descriptions column={1}>
+                <Descriptions.Item label="Sucursal">
+                  {selectedColaborador.sucursal}
+                </Descriptions.Item>
+                <Descriptions.Item label="Cargo">
+                  <Tag color="blue">{selectedColaborador.cargo}</Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Turno">
+                  <Tag color="orange">{selectedColaborador.turno}</Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Tipo de Contrato">
+                  {selectedColaborador.tipoContrato}
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={
+                    <span>
+                      <CalendarOutlined style={{ marginRight: 8 }} />
+                      Fecha de Ingreso
+                    </span>
+                  }
+                >
+                  {dayjs(selectedColaborador.fechaIngreso).format("DD/MM/YYYY")}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            <Card title="Estadísticas">
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Statistic
+                    title="Días Trabajando"
+                    value={dayjs().diff(
+                      dayjs(selectedColaborador.fechaIngreso),
+                      "day"
+                    )}
+                    suffix="días"
+                  />
+                </Col>
+                <Col span={12}>
+                  <Statistic
+                    title="Antigüedad"
+                    value={dayjs().diff(
+                      dayjs(selectedColaborador.fechaIngreso),
+                      "month"
+                    )}
+                    suffix="meses"
+                  />
+                </Col>
+              </Row>
+            </Card>
+          </>
         )}
-      </Modal>
-    </>
+      </Drawer>
+    </div>
   );
-}
+};
+
+export default GestionColaborador;

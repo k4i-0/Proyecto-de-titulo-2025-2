@@ -1,31 +1,67 @@
-//import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Layout, Menu } from "antd";
 import { useNavigate } from "react-router-dom";
 const { Sider } = Layout;
 import {
   AreaChartOutlined,
+  TagsOutlined,
   ProductOutlined,
   UserOutlined,
+  UsergroupAddOutlined,
   HomeOutlined,
+  UserSwitchOutlined,
+  ShopOutlined,
+  SettingOutlined,
+  BankOutlined,
+  UserAddOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 
 export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
-  //const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const navigate = useNavigate();
+  const siderRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Solo colapsar si el menú está expandido
+      if (
+        !collapsed &&
+        siderRef.current &&
+        !siderRef.current.contains(event.target)
+      ) {
+        setCollapsed(true);
+      }
+    };
+
+    // Agregar event listener
+    document.addEventListener("mousedown", handleClickOutside);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [collapsed]);
   return (
     <>
       <Sider
-        ///collapsible
-        collapsed={false}
-        //onCollapse={(value) => setCollapsed(value)}
-        width={200}
-        style={{ background: colorBgContainer }}
+        collapsible
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
+        width={280}
+        ref={siderRef}
+        style={{
+          background: colorBgContainer,
+        }}
       >
         <Menu
           mode="inline"
           defaultSelectedKeys={["1"]}
           defaultOpenKeys={["sub1"]}
-          style={{ height: "100%", borderInlineEnd: 0 }}
+          theme="dark"
+          style={{
+            height: "100%",
+            borderInlineEnd: 0,
+          }}
           items={[
             {
               key: "Inicio",
@@ -65,32 +101,51 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
               ],
             },
             {
+              key: "empresa",
+              icon: <ShopOutlined />,
+              label: "Empresa",
+              children: [
+                {
+                  key: "sucursales",
+                  label: "Sucursales",
+                  onClick: () => navigate("sucursales"),
+                },
+                {
+                  key: "productos",
+                  label: "Productos",
+                  onClick: () => navigate("productos"),
+                },
+                {
+                  key: "categorias",
+                  label: "Categorías",
+                  onClick: () => navigate("categorias"),
+                },
+                {
+                  key: "colaboradores",
+                  label: "Colaboradores",
+                  icon: <UserSwitchOutlined />,
+                  children: [
+                    {
+                      icon: <UserAddOutlined />,
+                      key: "Gestion_colaboradores",
+                      label: "Gestion Colaborador",
+                      onClick: () => navigate("gestion/colaboradores"),
+                    },
+                    {
+                      icon: <UsergroupAddOutlined />,
+                      key: "Contratos_colaboradores",
+                      label: "Contratos Colaboradores",
+                      onClick: () =>
+                        navigate("gestion/colaboradores/contratos"),
+                    },
+                  ],
+                },
+              ],
+            },
+            {
               key: "Configuracion",
-              icon: <AreaChartOutlined />,
+              icon: <SettingOutlined />,
               label: "Configuración",
-              onClick: () => navigate("sucursales"),
-              // children: [
-              //   {
-              //     key: "productos",
-              //     label: "Productos",
-              //     onClick: () => navigate("productos"),
-              //   },
-              //   {
-              //     key: "inventario",
-              //     label: "Inventario",
-              //     onClick: () => navigate("inventario"),
-              //   },
-              //   {
-              //     key: "sucursal",
-              //     label: "Sucursal",
-              //     onClick: () => navigate("sucursal"),
-              //   },
-              //   {
-              //     key: "proveedores",
-              //     label: "Proveedores",
-              //     onClick: () => navigate("proveedores"),
-              //   },
-              // ],
             },
             {
               key: "1",

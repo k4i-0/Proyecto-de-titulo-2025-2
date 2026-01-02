@@ -238,7 +238,10 @@ Funcionario.belongsToMany(Sucursal, {
   through: ContratoFuncionario,
   foreignKey: "idFuncionario",
 });
-
+Funcionario.hasMany(ContratoFuncionario, {
+  foreignKey: "idFuncionario",
+  as: "contratos",
+});
 ContratoFuncionario.belongsTo(Funcionario, {
   foreignKey: "idFuncionario",
 });

@@ -4,14 +4,23 @@ const ContratoFuncionario = require("../../models/Usuarios/ContratoFuncionario")
 const Sucursal = require("../../models/inventario/Sucursal");
 const { Op } = require("sequelize");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const validarRutChileno = require("../../function/verificarRut");
 
 //Crud Funcionario
 exports.getAllFuncionarios = async (req, res) => {
   try {
-    const funcionarios = await Funcionario.findAll({
+    const roles = await Roles.findAll();
+    if (roles.length === 0 || !roles) {
+      return res.status(204).json({ message: "No hay roles registrados" });
+    }
+    const funcionariosData = await Funcionario.findAll({
       where: {
-        cargo: {
-          [Op.notIn]: ["Sistema", "Gerente"],
+        idRol: {
+          [Op.notIn]: [1],
+        },
+        estado: {
+          [Op.not]: "Eliminado",
         },
       },
       attributes: {
@@ -20,14 +29,62 @@ exports.getAllFuncionarios = async (req, res) => {
       include: [
         {
           model: Roles,
+          as: "role",
+        },
+        {
+          model: ContratoFuncionario,
+          foreignKey: "idFuncionario",
+          as: "contratos",
+          required: false,
+          where: {
+            estado: { [Op.not]: "Eliminado" },
+          },
+          include: [
+            {
+              model: Sucursal,
+              as: "sucursal",
+              attributes: {
+                exclude: ["createdAt", "updatedAt"],
+              },
+            },
+          ],
+          attributes: {
+            exclude: ["createdAt", "updatedAt"],
+          },
         },
       ],
     });
-    if (funcionarios.length === 0 || !funcionarios) {
+
+    if (funcionariosData.length === 0 || !funcionariosData) {
       return res
         .status(204)
         .json({ message: "No hay funcionarios registrados" });
     }
+    const funcionarios = funcionariosData.map((func) => {
+      const contratoActivo =
+        func.contratos?.find((c) => c.estado === "Activo") ||
+        func.contratos?.[0] ||
+        null;
+      return {
+        id: func.idFuncionario,
+        nombre: func.nombre,
+        apellido: func.apellido,
+        rut: func.rut,
+        email: func.email,
+        telefono: func.telefono.slice(3),
+        cargo: func.role?.nombreRol || null,
+
+        sucursal: contratoActivo?.sucursal?.nombre || null,
+        fechaIngreso: contratoActivo?.fechaIngreso || null,
+        estado: func.estado || null,
+        direccion: func.direccion || null,
+        turno: contratoActivo?.turno || null,
+        contrato: contratoActivo?.tipoContrato || null,
+        tipoContrato: contratoActivo?.tipoContrato || null,
+        nombreRol: func.role?.nombreRol || null,
+      };
+    });
+
     res.status(200).json(funcionarios);
   } catch (error) {
     console.error("Error al obtener los funcionarios:", error);
@@ -88,6 +145,263 @@ exports.obtenerColaboradoresPorSucursal = async (req, res) => {
   } catch (error) {
     console.error("Error al obtener los colaboradores:", error);
     res.status(500).json({ error: "Error al obtener los colaboradores" });
+  }
+};
+
+exports.crearFuncionario = async (req, res) => {
+  const {
+    nombre,
+    apellido,
+    rut,
+    fechaIngreso,
+    email,
+    telefono,
+    direccion,
+    cargo,
+    sucursal,
+    turno,
+    contrato,
+    estadoContrato,
+  } = req.body;
+  try {
+    if (
+      !nombre ||
+      !apellido ||
+      !rut ||
+      !fechaIngreso ||
+      !email ||
+      !telefono ||
+      !direccion ||
+      !cargo ||
+      !sucursal ||
+      !turno ||
+      !contrato ||
+      !estadoContrato
+    ) {
+      return res.status(422).json({ error: "Faltan datos obligatorios" });
+    }
+    const passwordInicial = await bcrypt.hash(rut.split("-")[0], 10);
+    const passwordCajaInicial = await bcrypt.hash(
+      rut.split("-")[0].slice(-4),
+      10
+    );
+    const rolEncontrado = await Roles.findOne({
+      where: { nombreRol: cargo },
+    });
+    if (!rolEncontrado) {
+      return res.status(404).json({ error: "Rol no encontrado" });
+    }
+    //verifica rut
+    const rutValido = validarRutChileno(rut);
+    if (!rutValido) {
+      return res.status(422).json({ error: "RUT inválido" });
+    }
+    //verifica si el rut ya existe
+    const rutExistente = await Funcionario.findOne({ where: { rut: rut } });
+    if (rutExistente) {
+      if (rutExistente.estado === "Eliminado") {
+        return res.status(409).json({
+          error:
+            "El RUT pertenece a un funcionario eliminado, solicite activacion",
+        });
+      }
+    }
+    const nuevoFuncionario = await Funcionario.create({
+      rut,
+      nombre,
+      apellido,
+      email,
+      password: passwordInicial,
+      passwordCaja: passwordCajaInicial,
+      telefono: `+56${telefono}`,
+      direccion,
+      idRol: rolEncontrado.idRol,
+      estado: "Activo",
+    });
+    if (!nuevoFuncionario) {
+      return res.status(500).json({ error: "No se pudo crear el funcionario" });
+    }
+    const sucursalEncontrada = await Sucursal.findOne({
+      where: { nombre: sucursal },
+    });
+    if (!sucursalEncontrada) {
+      return res.status(404).json({ error: "Sucursal no encontrada" });
+    }
+    let fechaTermino = null;
+    if (contrato === "Plazo Fijo") {
+      const hoy = new Date();
+      fechaTermino = new Date(hoy);
+      fechaTermino.setMonth(fechaTermino.getMonth() + 1);
+    } else {
+      fechaTermino = null;
+    }
+    const contratoCreado = await ContratoFuncionario.create({
+      idSucursal: sucursalEncontrada.idSucursal,
+      idFuncionario: nuevoFuncionario.idFuncionario,
+      fechaIngreso: fechaIngreso,
+      tipoContrato: contrato,
+      turno: turno,
+      estado: estadoContrato,
+      fechaTermino: fechaTermino || null,
+    });
+    if (!contratoCreado) {
+      return res.status(500).json({ error: "No se pudo crear el contrato" });
+    }
+    res.status(201).json({
+      message: "Funcionario creado exitosamente",
+      nuevoFuncionario,
+      contratoCreado,
+    });
+  } catch (error) {
+    console.error("Error al crear el funcionario:", error);
+    res.status(500).json({ error: "Error al crear el funcionario" });
+  }
+};
+
+exports.editarFuncionario = async (req, res) => {
+  try {
+    const {
+      rut,
+      nombre,
+      apellido,
+      email,
+      telefono,
+      direccion,
+      cargo,
+      estado,
+      sucursal,
+      turno,
+      contrato,
+      estadoContrato,
+    } = req.body;
+    if (
+      !rut ||
+      !nombre ||
+      !apellido ||
+      !email ||
+      !telefono ||
+      !direccion ||
+      !cargo ||
+      !estado ||
+      !sucursal ||
+      !turno ||
+      !contrato ||
+      !estadoContrato
+    ) {
+      return res.status(422).json({ error: "Faltan datos obligatorios" });
+    }
+    const funcionario = await Funcionario.findOne({ where: { rut: rut } });
+    if (!funcionario) {
+      return res.status(404).json({ error: "Funcionario no encontrado" });
+    }
+    const rolEncontrado = await Roles.findOne({
+      where: { nombreRol: cargo },
+    });
+    if (!rolEncontrado) {
+      return res.status(404).json({ error: "Rol no encontrado" });
+    }
+    const rutValido = validarRutChileno(rut);
+    if (!rutValido) {
+      return res.status(422).json({ error: "RUT inválido" });
+    }
+    const funcionarioActualizado = await funcionario.update(
+      {
+        nombre,
+        apellido,
+        email,
+        telefono: `+56${telefono}`,
+        direccion,
+        idRol: rolEncontrado.idRol,
+        estado,
+      },
+
+      { where: { rut: rut } }
+    );
+    if (!funcionarioActualizado) {
+      return res
+        .status(500)
+        .json({ error: "No se pudo actualizar el funcionario" });
+    }
+    //busca la sucursal por nombre
+    const sucursalEncontrada = await Sucursal.findOne({
+      where: { nombre: sucursal },
+    });
+    if (!sucursalEncontrada) {
+      return res.status(404).json({ error: "Sucursal no encontrada" });
+    }
+    //Actualiza contrato
+    const contratoFuncionarioActualizado = await ContratoFuncionario.update(
+      {
+        tipoContrato: contrato,
+        turno: turno,
+        estado: estadoContrato,
+        idSucursal: sucursalEncontrada.idSucursal,
+      },
+      {
+        where: { idFuncionario: funcionario.idFuncionario },
+      }
+    );
+    if (!contratoFuncionarioActualizado) {
+      return res
+        .status(500)
+        .json({ error: "No se pudo actualizar el contrato del funcionario" });
+    }
+    res.status(200).json({
+      message: "Funcionario editado exitosamente",
+    });
+  } catch (error) {
+    console.log("Error al editar el funcionario:", error);
+    res.status(500).json({ error: "Error al editar el funcionario" });
+  }
+};
+
+exports.eliminarFuncionario = async (req, res) => {
+  try {
+    const { idFuncionario } = req.params;
+    if (!idFuncionario) {
+      return res.status(422).json({ error: "Falta el ID del funcionario" });
+    }
+    //elimina contrato del funcionario si no tiene contrato activo
+    const funcionarioContrato = await ContratoFuncionario.findOne({
+      where: { idFuncionario: idFuncionario },
+    });
+    if (funcionarioContrato) {
+      return res.status(409).json({
+        error: "No se puede eliminar el funcionario con contrato activo",
+      });
+    }
+    const eliminado = await Funcionario.update(
+      {
+        estado: "Eliminado",
+      },
+      {
+        where: { idFuncionario: idFuncionario },
+      }
+    );
+    if (!eliminado) {
+      return res
+        .status(500)
+        .json({ error: "No se pudo eliminar el funcionario" });
+    }
+    const funcionarioEliminado = await Funcionario.update(
+      {
+        estado: "Eliminado",
+      },
+      {
+        where: { idFuncionario: idFuncionario },
+      }
+    );
+    if (!funcionarioEliminado) {
+      return res
+        .status(500)
+        .json({ error: "No se pudo eliminar el funcionario" });
+    }
+    res.status(200).json({
+      message: "Funcionario eliminado exitosamente",
+    });
+  } catch (error) {
+    console.log("Error al eliminar el funcionario:", error);
+    res.status(500).json({ error: "Error al eliminar el funcionario" });
   }
 };
 

@@ -52,6 +52,19 @@ exports.createSucursal = async (req, res) => {
     }
   }
 
+  //veririficar que no exista una sucursal con el mismo nombre
+  const nombreSucursalExistente = await Sucursal.findOne({
+    where: {
+      nombre: { [Op.iLike]: nombre },
+    },
+  });
+
+  if (nombreSucursalExistente) {
+    return res
+      .status(409)
+      .json({ error: "Ya existe una sucursal con ese nombre" });
+  }
+
   //Validacion de datos con Joi
   try {
     const nuevaSucursal = await Sucursal.create({
