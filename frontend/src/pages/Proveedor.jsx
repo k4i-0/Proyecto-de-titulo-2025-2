@@ -138,7 +138,7 @@ export default function Proveedores() {
 
   const handleVerVendedores = (rut, e) => {
     if (e) e.stopPropagation();
-    navigate("/vendedores/" + rut);
+    navigate("vendedores/" + rut);
   };
 
   const getEstadoConfig = (estado) => {

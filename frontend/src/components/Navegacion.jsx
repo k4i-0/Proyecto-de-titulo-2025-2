@@ -15,6 +15,8 @@ import {
   BankOutlined,
   UserAddOutlined,
   InboxOutlined,
+  ReconciliationOutlined,
+  OrderedListOutlined,
 } from "@ant-design/icons";
 
 export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
@@ -47,7 +49,7 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
         collapsible
         collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
-        width={280}
+        width={380}
         ref={siderRef}
         style={{
           background: colorBgContainer,
@@ -88,37 +90,108 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
               ],
             },
             {
-              key: "Proveedores",
+              key: "aprovicionamiento",
               icon: <AreaChartOutlined />,
-              label: "Proveedores",
+              label: "Aprovicionamiento",
 
               children: [
                 {
                   key: "Compra_Proveedores",
                   label: "Ordenes de Compra",
-                  onClick: () => navigate("gestion/ordenes_compra"),
+                  icon: <OrderedListOutlined />,
+                  children: [
+                    {
+                      key: "ordenes_directas",
+                      label: "Órdenes De Compra Directas",
+                      icon: <InboxOutlined />,
+                    },
+                    {
+                      key: "ordenes_compra_proveedores",
+                      label: "Órdenes De Compra a Proveedores",
+                      icon: <InboxOutlined />,
+                    },
+                    {
+                      key: "orden_compra_colaboradores",
+                      label: "Órdenes De Compra de Colaboradores",
+                      icon: <InboxOutlined />,
+                      onClick: () => navigate("gestion/ordenes_compra"),
+                    },
+                    {
+                      key: "anular_ordenes_compra",
+                      label: "Anular Órdenes De Compra",
+                      icon: <InboxOutlined />,
+                    },
+
+                    {
+                      key: "cuestionar_ordenes_compra",
+                      label: "Cuestionar Órdenes De Compra",
+                      icon: <InboxOutlined />,
+                    },
+                    {
+                      key: "historial_ordenes_compra",
+                      label: "Historial de Órdenes de Compra",
+                      icon: <InboxOutlined />,
+                    },
+                  ],
+                },
+                {
+                  key: "recepcion_proveedores",
+                  label: "Recepción de Proveedores",
+                  icon: <ReconciliationOutlined />,
+                  children: [
+                    {
+                      key: "recepcionar_ordenes_compra",
+                      label: "Recepcionar Órdenes De Compra",
+                      icon: <InboxOutlined />,
+                    },
+                    {
+                      key: "devolucion_ordenes_compra",
+                      label: "Devolución Órdenes De Compra",
+                      icon: <InboxOutlined />,
+                    },
+                    {
+                      key: "incidentes_ordenes_compra",
+                      label: "Incidentes Órdenes De Compra",
+                      icon: <InboxOutlined />,
+                    },
+                  ],
+                },
+                {
+                  key: "inventario",
+                  label: "Inventario",
+                  icon: <InboxOutlined />,
+                  onClick: () => navigate("inventario"),
                 },
               ],
             },
             {
-              key: "empresa",
+              key: "conf_empresa",
               icon: <ShopOutlined />,
-              label: "Empresa",
+              label: "Configurar Empresa",
               children: [
                 {
                   key: "sucursales",
                   label: "Sucursales",
+                  icon: <BankOutlined />,
                   onClick: () => navigate("sucursales"),
                 },
                 {
                   key: "productos",
                   label: "Productos",
+                  icon: <ProductOutlined />,
                   onClick: () => navigate("productos"),
                 },
                 {
                   key: "categorias",
                   label: "Categorías",
+                  icon: <TagsOutlined />,
                   onClick: () => navigate("categorias"),
+                },
+                {
+                  key: "proveedores",
+                  label: "Proveedores",
+                  icon: <InboxOutlined />,
+                  onClick: () => navigate("proveedores"),
                 },
                 {
                   key: "colaboradores",
@@ -134,9 +207,20 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                     {
                       icon: <UsergroupAddOutlined />,
                       key: "Contratos_colaboradores",
-                      label: "Contratos Colaboradores",
-                      onClick: () =>
-                        navigate("gestion/colaboradores/contratos"),
+                      label: "Trabajadores por sucursal",
+                      onClick: () => navigate("gestion/colaboradores/sucursal"),
+                    },
+                    {
+                      key: "Roles_Permisos",
+                      label: "Roles y Permisos",
+                      icon: <UserOutlined />,
+                      disabled: true,
+                    },
+                    {
+                      key: "Administracion Cajas",
+                      label: "Administración de Cajas",
+                      icon: <InboxOutlined />,
+                      disabled: true,
                     },
                   ],
                 },
@@ -146,6 +230,7 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
               key: "Configuracion",
               icon: <SettingOutlined />,
               label: "Configuración",
+              disabled: true,
             },
             {
               key: "1",

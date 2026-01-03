@@ -64,7 +64,10 @@ createRoot(document.getElementById("root")).render(
 
             <Route path="categorias" element={<Categoria />} />
             <Route path="proveedores" element={<Proveedor />} />
-            <Route path="vendedores/:rutProveedor" element={<Vendedores />} />
+            <Route
+              path="proveedores/vendedores/:rutProveedor"
+              element={<Aprovisionamiento />}
+            />
 
             {/* Gestiones */}
             <Route
@@ -72,13 +75,13 @@ createRoot(document.getElementById("root")).render(
               element={<GestionColaborador />}
             />
             <Route
-              path="gestion/colaboradores/contratos"
+              path="gestion/colaboradores/sucursal"
               element={<Pruebas />}
             />
-            <Route
+            {/* <Route
               path="proveedores/:idSucursal"
               element={<Aprovisionamiento />}
-            />
+            /> */}
             <Route path="gestion/ordenes_compra" element={<OrdenesCompra />} />
             <Route path="pruebas" element={<Pruebas />} />
           </Route>

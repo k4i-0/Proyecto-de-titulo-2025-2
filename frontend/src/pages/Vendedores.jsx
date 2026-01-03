@@ -11,6 +11,8 @@ import {
   Tag,
   Table,
   Popconfirm,
+  Divider,
+  Card,
 } from "antd";
 import {
   PlusOutlined,
@@ -26,13 +28,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import AgregarVendedor from "../components/inventario/modalVendedor/AgregarVendedor";
 import EditarVendedor from "../components/inventario/modalVendedor/EditarVendedor";
 
-// 1. SERVICIOS CORREGIDOS: Asumiendo que vienen de 'Vendedor.service'
 import {
-  getAllProveedoresVendedor, // Renombrado para claridad
+  getAllProveedoresVendedor,
   eliminarVendedor,
-} from "../services/inventario/Proveedor.service"; // Asumiendo un servicio de Vendedor
+} from "../services/inventario/Proveedor.service";
 
 export default function Vendedores() {
+  console.log("Renderizando componente Vendedores");
   const { Title, Text } = Typography;
   const navigate = useNavigate();
   const { rutProveedor } = useParams();
@@ -150,23 +152,22 @@ export default function Vendedores() {
     }
   };
 
-  const getEstadoColor = (estado) => {
-    const estadoLower = estado?.toLowerCase() || "";
-    switch (estadoLower) {
-      case "activo":
-        return "success";
-      case "inactivo":
-        return "error";
-      default:
-        return "default";
-    }
-  };
+  // const getEstadoColor = (estado) => {
+  //   const estadoLower = estado?.toLowerCase() || "";
+  //   switch (estadoLower) {
+  //     case "activo":
+  //       return "success";
+  //     case "inactivo":
+  //       return "error";
+  //     default:
+  //       return "default";
+  //   }
+  // };
 
-  // 4. COLUMNAS CORREGIDAS
   const columns = [
     {
-      title: "ID Vendedor", // Título aclarado
-      dataIndex: "idVendedorProveedor", // Clave principal
+      title: "ID Vendedor",
+      dataIndex: "idVendedorProveedor",
       key: "idVendedorProveedor",
       width: 120,
     },
@@ -188,14 +189,13 @@ export default function Vendedores() {
       key: "email",
     },
     {
-      title: "Teléfono", // Columna "Teléfono" corregida
-      dataIndex: "telefono", // Muestra el teléfono
+      title: "Teléfono",
+      dataIndex: "telefono",
       key: "telefono",
       width: 120,
     },
   ];
 
-  // 5. Lógica de Renderizado (sin cambios, ya estaba bien)
   const renderContenido = () => {
     if (loading && vendedores.length === 0) {
       return (
@@ -238,19 +238,19 @@ export default function Vendedores() {
       );
     }
 
-    // Renderizar la TABLA
     return (
       <Col span={24}>
         <Table
           columns={columns}
           dataSource={vendedores}
-          rowKey="idVendedorProveedor" // 3. ROWKEY CORREGIDO
+          rowKey="idVendedorProveedor"
           loading={loading}
           pagination={{ pageSize: 10, showSizeChanger: true }}
           scroll={{ x: "max-content" }}
           onRow={(record) => ({
             onClick: () => handleSeleccionarFila(record),
             style: {
+              padding: 16,
               cursor: "pointer",
               backgroundColor:
                 vendedorSelect?.idVendedorProveedor ===
@@ -268,12 +268,11 @@ export default function Vendedores() {
     );
   };
 
-  // 6. Renderizado del Componente (sin cambios, ya estaba bien)
   return (
-    <div style={{ padding: "24px" }}>
+    <div style={{ padding: 24, background: "#fff", minHeight: 360 }}>
       {/* Encabezado */}
-      <Row justify="center" style={{ marginBottom: 24 }}>
-        <Col span={18} style={{ textAlign: "center" }}>
+      <Row justify="start" style={{ marginBottom: 16 }}>
+        <Col span={18}>
           <Title level={2} style={{ marginBottom: 8 }}>
             <UserOutlined style={{ marginRight: 8 }} />
             Gestión de Vendedores
@@ -283,7 +282,7 @@ export default function Vendedores() {
           </Text>
         </Col>
       </Row>
-
+      <Divider />
       {/* Alerta de Mensajes */}
       {mensaje && (
         <Row style={{ marginBottom: 16 }}>
@@ -300,82 +299,76 @@ export default function Vendedores() {
       )}
 
       {/* Barra de Acciones */}
-      {/* Ajuste de lógica: Mostrar botones de acción incluso si la tabla está vacía 
-        (para permitir "Agregar" y "Volver")
-      */}
-      {!loading && (
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{ marginBottom: 24 }}
-        >
-          {/* Botón Volver a Proveedores */}
-          <Col>
-            <Button
-              type="default"
-              icon={<RollbackOutlined />}
-              onClick={() => navigate(-1)} // Vuelve a la página anterior
-              size="large"
-            >
-              Volver a Proveedores
-            </Button>
-          </Col>
+      <Card>
+        {!loading && (
+          <Row justify="space-between" align="middle" style={{ margin: 16 }}>
+            {/* Botón Volver a Proveedores */}
+            <Col>
+              <Button
+                type="default"
+                icon={<RollbackOutlined />}
+                onClick={() => navigate(-1)} // Vuelve a la página anterior
+                size="sm"
+              >
+                Volver a Proveedores
+              </Button>
+            </Col>
 
-          {/* Acciones */}
-          <Col>
-            <Space wrap>
-              {vendedorSelect && (
-                <Alert
-                  message={`Seleccionado: ${vendedorSelect.nombre}`}
-                  type="info"
-                  showIcon
-                  closable
-                  onClose={() => setVendedorSelect(null)}
-                />
-              )}
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleCrear}
-                disabled={loading}
-                size="large"
-              >
-                Agregar Vendedor
-              </Button>
-              <Button
-                icon={<EditOutlined />}
-                onClick={handleAbrirModalEditar}
-                disabled={loading || !vendedorSelect}
-                size="large"
-              >
-                Editar
-              </Button>
-              <Popconfirm
-                title="¿Eliminar vendedor?"
-                description={`Se eliminará: ${vendedorSelect?.nombre || ""}`}
-                onConfirm={handleEliminarConfirmado}
-                okText="Sí, eliminar"
-                cancelText="Cancelar"
-                okButtonProps={{ danger: true }}
-                disabled={!vendedorSelect || loading}
-              >
+            {/* Acciones */}
+            <Col>
+              <Space wrap>
+                {vendedorSelect && (
+                  <Alert
+                    message={`Seleccionado: ${vendedorSelect.nombre}`}
+                    type="info"
+                    showIcon
+                    closable
+                    onClose={() => setVendedorSelect(null)}
+                  />
+                )}
                 <Button
-                  icon={<DeleteOutlined />}
-                  disabled={loading || !vendedorSelect}
-                  danger
-                  size="large"
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleCrear}
+                  disabled={loading}
+                  size="sm"
                 >
-                  Eliminar
+                  Agregar Vendedor
                 </Button>
-              </Popconfirm>
-            </Space>
-          </Col>
-        </Row>
-      )}
+                <Button
+                  icon={<EditOutlined />}
+                  onClick={handleAbrirModalEditar}
+                  disabled={loading || !vendedorSelect}
+                  size="sm"
+                >
+                  Editar
+                </Button>
+                <Popconfirm
+                  title="¿Eliminar vendedor?"
+                  description={`Se eliminará: ${vendedorSelect?.nombre || ""}`}
+                  onConfirm={handleEliminarConfirmado}
+                  okText="Sí, eliminar"
+                  cancelText="Cancelar"
+                  okButtonProps={{ danger: true }}
+                  disabled={!vendedorSelect || loading}
+                >
+                  <Button
+                    icon={<DeleteOutlined />}
+                    disabled={loading || !vendedorSelect}
+                    danger
+                    size="sm"
+                  >
+                    Eliminar
+                  </Button>
+                </Popconfirm>
+              </Space>
+            </Col>
+          </Row>
+        )}
 
-      {/* Contenido (Tabla o Empty/Loading) */}
-      <Row gutter={[16, 16]}>{renderContenido()}</Row>
-
+        {/* Contenido (Tabla o Empty/Loading) */}
+        <Row gutter={[16, 16]}>{renderContenido()}</Row>
+      </Card>
       {/* Modales */}
       <AgregarVendedor
         show={modalCrear}
