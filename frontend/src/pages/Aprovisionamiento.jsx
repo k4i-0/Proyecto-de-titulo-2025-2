@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+// import { useParams, useNavigate } from "react-router-dom";
 
 import {
   Row,
@@ -21,6 +21,7 @@ import {
   Popconfirm,
   Drawer,
   Table,
+  Statistic,
 } from "antd";
 
 import {
@@ -32,16 +33,14 @@ import {
   MailOutlined,
   PhoneOutlined,
   IdcardOutlined,
-  FileTextOutlined,
-  CalendarOutlined,
-  ShopOutlined,
   PlusOutlined,
+  ReloadOutlined,
+  SearchOutlined,
+  FilterOutlined,
+  ArrowLeftOutlined,
 } from "@ant-design/icons";
 
-const { Title } = Typography;
-const { TextArea } = Input;
-
-const { Option } = Select;
+const { Title, Text } = Typography;
 
 import dayjs from "dayjs";
 
@@ -58,13 +57,11 @@ import {
   eliminarVendedor,
   editarVendedor,
 } from "../services/inventario/Proveedor.service.js";
-import Alert from "antd/es/alert/Alert.js";
 
 export default function Aprovisionamiento() {
-  // const funcionario = JSON.parse(localStorage.getItem("userData"));
-  // console.log("Funcionario desde localStorage:", funcionario.nombre);
-  const navigator = useNavigate();
-  const { idSucursal } = useParams();
+  // const navigate = useNavigate();
+  // const { idSucursal } = useParams();
+
   const [proveedores, setProveedores] = useState([]);
   const [vendedores, setVendedores] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -76,22 +73,23 @@ export default function Aprovisionamiento() {
   const [modalEditarVendedorProveedor, setModalEditarVendedorProveedor] =
     useState(false);
   const [vendedorEditarProveedor, setVendedorEditarProveedor] = useState({});
+
+  // Estados para filtros
+  const [searchText, setSearchText] = useState("");
+  const [filterEstado, setFilterEstado] = useState(null);
+  const [filterRubro, setFilterRubro] = useState(null);
+
   const [form] = Form.useForm();
   const [formEditar] = Form.useForm();
-  const [formOrdenCompra] = Form.useForm();
-
   const [formVendedor] = Form.useForm();
   const [formVendedorEditar] = Form.useForm();
-
   const [childrenDrawer, setChildrenDrawer] = useState(false);
 
   const obtenerProveedores = async () => {
     try {
       setLoading(true);
       const response = await getAllProveedores();
-      //console.log("Respuesta proveedores:", response);
       if (response.status === 200) {
-        //console.log("Proveedores:", response.data);
         setProveedores(response.data);
         setLoading(false);
         return;
@@ -110,6 +108,7 @@ export default function Aprovisionamiento() {
       setLoading(false);
     }
   };
+
   const buscarVendedoresSucursal = async (rutProveedor) => {
     try {
       setLoading(true);
@@ -140,17 +139,12 @@ export default function Aprovisionamiento() {
   }, []);
 
   const handelSubmitEditarProveedor = async (values) => {
-    console.log(
-      "Datos para editar proveedor handelSubmitEditarProveedor:",
-      formEditar
-    );
     try {
       setLoading(true);
       const respuesta = await editarProveedor(
         values,
         proveedorEditar.idProveedor
       );
-      console.log("Respuesta editar proveedor:", respuesta);
       if (respuesta.status === 200) {
         message.success("Proveedor editado exitosamente");
         setVerModalEditar(false);
@@ -173,12 +167,9 @@ export default function Aprovisionamiento() {
     } finally {
       setLoading(false);
     }
-
-    //setVerModalCrear(true);
   };
 
   const handleSubmitVendedor = async (values) => {
-    //console.log("Datos del vendedor a crear:", values);
     try {
       setLoading(true);
       const vendedorData = {
@@ -186,7 +177,6 @@ export default function Aprovisionamiento() {
         rutProveedor: proveedorSeleccionado.rut,
       };
       const respuesta = await crearVendedor(vendedorData);
-      // console.log("Respuesta crear vendedor:", respuesta);
       if (respuesta.status === 200) {
         message.success("Vendedor creado exitosamente");
         formVendedor.resetFields();
@@ -211,7 +201,6 @@ export default function Aprovisionamiento() {
   const handelEliminarVendedor = async (idVendedorProveedor) => {
     try {
       setLoading(true);
-      // console.log("ID Vendedor a eliminar:", vendedor);
       const respuesta = await eliminarVendedor(idVendedorProveedor);
       if (respuesta.status === 200) {
         message.success("Vendedor eliminado exitosamente");
@@ -236,12 +225,10 @@ export default function Aprovisionamiento() {
   const handleSubmitCrearProveedor = async (values) => {
     try {
       setLoading(true);
-      // Formatear la fecha si es necesario
       const proveedorData = {
         ...values,
-        fechaIngreso: values.fechaIngreso.format("YYYY-MM-DD"), // Ajusta el formato según tu backend
+        fechaIngreso: values.fechaIngreso.format("YYYY-MM-DD"),
       };
-      //console.log("Datos del proveedor a crear:", proveedorData);
 
       const response = await crearProveedor(proveedorData);
 
@@ -271,12 +258,13 @@ export default function Aprovisionamiento() {
     }
   };
 
-  const handelEliminarProveedor = async (idProveedor) => {
+  const handelEliminarProveedor = async (proveedor) => {
     try {
       setLoading(true);
-      const respuesta = await eliminarProveedor(idProveedor);
+      const respuesta = await eliminarProveedor(proveedor.idProveedor);
       if (respuesta.status === 200) {
         message.success("Proveedor eliminado exitosamente");
+        setProveedorSeleccionado(null);
         obtenerProveedores();
         setLoading(false);
         return;
@@ -302,8 +290,6 @@ export default function Aprovisionamiento() {
     formVendedorEditar.resetFields();
     form.resetFields();
     formEditar.resetFields();
-    formOrdenCompra.resetFields();
-    setProveedorSeleccionado(null);
   };
 
   const handleAbrirVendedores = () => {
@@ -316,7 +302,6 @@ export default function Aprovisionamiento() {
   };
 
   const handleSeleccionarProveedor = (proveedor) => {
-    // console.log("Proveedor seleccionado:", proveedor);
     if (proveedorSeleccionado?.idProveedor === proveedor.idProveedor) {
       setProveedorSeleccionado(null);
     } else {
@@ -329,30 +314,21 @@ export default function Aprovisionamiento() {
   };
 
   const handleEditarProveedor = (recibido) => {
-    // console.log("Proveedor a editar handelEditarProveedor:", recibido);
     setProveedorEditar(recibido);
     setVerModalEditar(!verModalEditar);
   };
 
   const handelEditarVendedorProveedor = (vendedor) => {
     setVendedorEditarProveedor(vendedor);
-    console.log(
-      "Vendedor a editar handelEditarVendedorProveedor:",
-      vendedorEditarProveedor
-    );
     setModalEditarVendedorProveedor(true);
   };
 
   const handelEditarVendedorProveedorSubmit = async (values) => {
-    console.log(
-      "Datos para editar vendedor handelEditarVendedorProveedorSubmit:",
-      values
-    );
     try {
       setLoading(true);
       const respuesta = await editarVendedor(
         values,
-        vendedorEditarProveedor.idProveedor
+        vendedorEditarProveedor.idVendedorProveedor
       );
       if (respuesta.status === 200) {
         message.success("Vendedor editado exitosamente");
@@ -378,128 +354,336 @@ export default function Aprovisionamiento() {
     }
   };
 
-  return (
-    <>
-      <div style={{ textAlign: "left" }}>
-        <Button
-          type="primary"
-          onClick={() => navigator("/admin/sucursal/" + idSucursal)}
-        >
-          Volver
-        </Button>
-      </div>
+  const getEstadoConfig = (estado) => {
+    const configs = {
+      Activo: { color: "success", text: "Activo" },
+      Inactivo: { color: "error", text: "Inactivo" },
+    };
+    return configs[estado] || { color: "default", text: estado };
+  };
 
-      <Row justify="center" align="middle">
-        <Col>
-          <Title level={2}>Aprovisionamiento Sucursal {idSucursal}</Title>
+  // Función para limpiar filtros
+  const handleLimpiarFiltros = () => {
+    setSearchText("");
+    setFilterEstado(null);
+    setFilterRubro(null);
+  };
+
+  // Obtener rubros únicos
+  const rubrosUnicos = useMemo(() => {
+    const rubros = [
+      ...new Set(proveedores.map((p) => p.rubro).filter(Boolean)),
+    ];
+    return rubros.map((rubro) => ({ value: rubro, label: rubro }));
+  }, [proveedores]);
+
+  // Datos filtrados
+  const proveedoresFiltrados = useMemo(() => {
+    return proveedores.filter((proveedor) => {
+      const matchesSearch =
+        !searchText ||
+        proveedor.nombre?.toLowerCase().includes(searchText.toLowerCase()) ||
+        proveedor.rut?.toLowerCase().includes(searchText.toLowerCase()) ||
+        proveedor.email?.toLowerCase().includes(searchText.toLowerCase());
+
+      const matchesEstado = !filterEstado || proveedor.estado === filterEstado;
+      const matchesRubro = !filterRubro || proveedor.rubro === filterRubro;
+
+      return matchesSearch && matchesEstado && matchesRubro;
+    });
+  }, [proveedores, searchText, filterEstado, filterRubro]);
+
+  return (
+    <div style={{ padding: "24px" }}>
+      {/* Header */}
+      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+        <Col span={12} style={{ textAlign: "start" }}>
+          <Title>Gestion Proveedores</Title>
         </Col>
-      </Row>
-      <Divider />
-      <Row style={{ marginBottom: 20 }}>
-        <Col>
-          {proveedorSeleccionado && (
-            <Alert
-              message={`Proveedor Seleccionado: ${proveedorSeleccionado.nombre}`}
-              type="info"
-              showIcon
-            />
+        <Col span={12} style={{ textAlign: "end" }}>
+          {/* Estadísticas */}
+          {proveedores.length > 0 && (
+            <Row gutter={16} style={{ marginBottom: 24 }}>
+              <Col xs={24} sm={8}>
+                <Card>
+                  <Statistic
+                    title="Total Proveedores"
+                    value={proveedores.length}
+                    prefix={<TeamOutlined />}
+                    valueStyle={{ color: "#1890ff" }}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={8}>
+                <Card>
+                  <Statistic
+                    title="Proveedores Activos"
+                    value={
+                      proveedores.filter((p) => p.estado === "Activo").length
+                    }
+                    prefix={<TeamOutlined />}
+                    valueStyle={{ color: "#52c41a" }}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={8}>
+                <Card>
+                  <Statistic
+                    title="Proveedores Inactivos"
+                    value={
+                      proveedores.filter((p) => p.estado === "Inactivo").length
+                    }
+                    prefix={<TeamOutlined />}
+                    valueStyle={{ color: "#ff4d4f" }}
+                  />
+                </Card>
+              </Col>
+            </Row>
           )}
         </Col>
       </Row>
 
-      {/* BOTONES ACCIONES */}
-      <Row gutter={16}>
-        <Col>
-          <Button type="primary" onClick={handleCrearProveedor}>
-            Agregar Proveedor
-          </Button>
-        </Col>
-        <Col>
-          <Button
-            type="default"
-            icon={<TeamOutlined />}
-            onClick={handleAbrirVendedores}
-            disabled={loading || !proveedorSeleccionado}
-          >
-            Gestionar Vendedores
-          </Button>
-        </Col>
-        {/* <Col>
-          <Button
-            type="default"
-            icon={<FileTextOutlined />}
-            onClick={openDrawerOrdenCompra}
-            disabled={loading || !proveedorSeleccionado}
-          >
-            Orden de Compra
-          </Button>
-        </Col> */}
-      </Row>
       <Divider />
 
-      {/* LISTA DE PROVEEDORES */}
-      <Row gutter={[16, 16]}>
-        {loading ? (
-          <Col span={24} style={{ textAlign: "center", padding: "50px" }}>
-            <Spin tip="Cargando proveedores..." size="large" fullscreen />
-          </Col>
-        ) : proveedores.length > 0 ? (
-          proveedores.map((proveedor) => (
-            <Col key={proveedor.idProveedor} xs={24} sm={12} md={8}>
-              <Card
-                title={proveedor.nombre}
-                hoverable
-                extra={
-                  <Tag color={proveedor.estado === "Activo" ? "green" : "red"}>
-                    {proveedor.estado}
-                  </Tag>
-                }
-                actions={[
-                  <EditOutlined
-                    key="edit"
-                    onClick={() => handleEditarProveedor(proveedor)}
-                  />,
-                  <Popconfirm
-                    title="¿Está seguro de eliminar este proveedor?"
-                    onConfirm={() =>
-                      handelEliminarProveedor(proveedor.idProveedor)
-                    }
-                    okText="Sí"
-                    cancelText="No"
+      {proveedores.length === 0 && !loading ? (
+        <Empty
+          description="No hay proveedores registrados"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        >
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCrearProveedor}
+          >
+            Crear Primer Proveedor
+          </Button>
+        </Empty>
+      ) : (
+        <>
+          {/* Tabla de Proveedores */}
+          <Card
+            style={{
+              borderRadius: "12px",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+            }}
+          >
+            {/* Botones */}
+            <Row
+              justify="space-between"
+              align="middle"
+              style={{ marginBottom: 16 }}
+            >
+              <Col>
+                <Space>
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={obtenerProveedores}
+                    loading={loading}
                   >
-                    <DeleteOutlined key="delete" style={{ color: "red" }} />
-                  </Popconfirm>,
-                ]}
-                onClick={() => handleSeleccionarProveedor(proveedor)}
-              >
-                <p>
-                  <strong>RUT:</strong> {proveedor.rut}
-                </p>
-                <p>
-                  <strong>Teléfono:</strong> {proveedor.telefono}
-                </p>
-                <p>
-                  <strong>Email:</strong> {proveedor.email}
-                </p>
-                <p>
-                  <strong>Rubro:</strong> {proveedor.rubro}
-                </p>
-                <p style={{ fontSize: "12px", color: "#666" }}>
-                  <strong>Giro:</strong> {proveedor.giro}
-                </p>
-                <p>
-                  <strong>Fecha Ingreso:</strong>{" "}
-                  {new Date(proveedor.fechaIngreso).toLocaleDateString("es-CL")}
-                </p>
-              </Card>
-            </Col>
-          ))
-        ) : (
-          <Col span={24} style={{ padding: "24px" }}>
-            <Empty description="No hay proveedores registrados" />
-          </Col>
-        )}
-      </Row>
+                    Actualizar
+                  </Button>
+                  <Button
+                    icon={<TeamOutlined />}
+                    onClick={handleAbrirVendedores}
+                    disabled={!proveedorSeleccionado}
+                  >
+                    Gestionar Vendedores
+                  </Button>
+                </Space>
+              </Col>
+              <Col>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleCrearProveedor}
+                  disabled={loading}
+                >
+                  Agregar Proveedor
+                </Button>
+              </Col>
+            </Row>
+
+            {/* Filtros */}
+            <Row
+              justify="start"
+              align="middle"
+              gutter={16}
+              style={{ marginBottom: 16 }}
+            >
+              <Col xs={24} sm={12} md={8}>
+                <Input
+                  placeholder="Buscar por nombre, RUT o email..."
+                  prefix={<SearchOutlined />}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  allowClear
+                />
+              </Col>
+              <Col xs={12} sm={6} md={4}>
+                <Select
+                  placeholder="Estado"
+                  style={{ width: "100%" }}
+                  value={filterEstado}
+                  onChange={setFilterEstado}
+                  allowClear
+                  options={[
+                    { value: "Activo", label: "Activo" },
+                    { value: "Inactivo", label: "Inactivo" },
+                  ]}
+                />
+              </Col>
+              <Col xs={12} sm={6} md={4}>
+                <Select
+                  placeholder="Rubro"
+                  style={{ width: "100%" }}
+                  value={filterRubro}
+                  onChange={setFilterRubro}
+                  allowClear
+                  options={rubrosUnicos}
+                />
+              </Col>
+              <Col xs={12} sm={6} md={4}>
+                <Button
+                  icon={<FilterOutlined />}
+                  onClick={handleLimpiarFiltros}
+                  block
+                >
+                  Limpiar Filtros
+                </Button>
+              </Col>
+              {(searchText || filterEstado || filterRubro) && (
+                <Col span={24}>
+                  <Text type="secondary">
+                    Mostrando {proveedoresFiltrados.length} de{" "}
+                    {proveedores.length} proveedores
+                  </Text>
+                </Col>
+              )}
+            </Row>
+
+            <Table
+              dataSource={proveedoresFiltrados}
+              rowKey="idProveedor"
+              loading={loading}
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showTotal: (total) => `Total ${total} proveedores`,
+              }}
+              onRow={(record) => ({
+                onClick: () => handleSeleccionarProveedor(record),
+                style: {
+                  cursor: "pointer",
+                  background:
+                    proveedorSeleccionado?.idProveedor === record.idProveedor
+                      ? "#e6f7ff"
+                      : "white",
+                },
+              })}
+              columns={[
+                {
+                  title: "Proveedor",
+                  dataIndex: "nombre",
+                  key: "nombre",
+                  width: "25%",
+                  render: (text, record) => (
+                    <Space direction="vertical" size={0}>
+                      <Text strong style={{ fontSize: "15px" }}>
+                        {text}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: "12px" }}>
+                        RUT: {record.rut}
+                      </Text>
+                    </Space>
+                  ),
+                },
+                {
+                  title: "Contacto",
+                  key: "contacto",
+                  width: "25%",
+                  render: (_, record) => (
+                    <Space direction="vertical" size={4}>
+                      <Space>
+                        <PhoneOutlined style={{ color: "#8c8c8c" }} />
+                        <Text>{record.telefono}</Text>
+                      </Space>
+                      <Space>
+                        <MailOutlined style={{ color: "#8c8c8c" }} />
+                        <Text>{record.email}</Text>
+                      </Space>
+                    </Space>
+                  ),
+                },
+                {
+                  title: "Rubro",
+                  dataIndex: "rubro",
+                  key: "rubro",
+                  width: "15%",
+                },
+                {
+                  title: "Estado",
+                  dataIndex: "estado",
+                  key: "estado",
+                  width: "10%",
+                  align: "center",
+                  render: (estado) => {
+                    const config = getEstadoConfig(estado);
+                    return (
+                      <Tag color={config.color} style={{ fontWeight: 600 }}>
+                        {config.text}
+                      </Tag>
+                    );
+                  },
+                },
+                {
+                  title: "Fecha Ingreso",
+                  dataIndex: "fechaIngreso",
+                  key: "fechaIngreso",
+                  width: "15%",
+                  render: (fecha) =>
+                    new Date(fecha).toLocaleDateString("es-CL"),
+                },
+                {
+                  title: "Acciones",
+                  key: "acciones",
+                  width: "10%",
+                  align: "center",
+                  render: (_, record) => (
+                    <Space size="small">
+                      <Button
+                        type="text"
+                        icon={<EditOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditarProveedor(record);
+                        }}
+                      />
+                      <Popconfirm
+                        title="¿Está seguro de eliminar este proveedor?"
+                        description={`Se eliminará el proveedor: ${record.nombre}`}
+                        onConfirm={(e) => {
+                          e?.stopPropagation();
+                          handelEliminarProveedor(record);
+                        }}
+                        okText="Sí, eliminar"
+                        cancelText="Cancelar"
+                        okButtonProps={{ danger: true }}
+                      >
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </Popconfirm>
+                    </Space>
+                  ),
+                },
+              ]}
+            />
+          </Card>
+        </>
+      )}
 
       {/* MODAL CREAR PROVEEDOR */}
       <Modal
@@ -544,27 +728,32 @@ export default function Aprovisionamiento() {
             <Input placeholder="Nombre del proveedor" />
           </Form.Item>
 
-          <Form.Item
-            label="Teléfono"
-            name="telefono"
-            rules={[
-              { required: true, message: "Por favor ingrese el teléfono" },
-              { pattern: /^[0-9]{9}$/, message: "Debe tener 9 dígitos" },
-            ]}
-          >
-            <Input placeholder="912345678" maxLength={9} />
-          </Form.Item>
-
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[
-              { required: true, message: "Por favor ingrese el email" },
-              { type: "email", message: "Email inválido" },
-            ]}
-          >
-            <Input placeholder="proveedor@ejemplo.com" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Teléfono"
+                name="telefono"
+                rules={[
+                  { required: true, message: "Por favor ingrese el teléfono" },
+                  { pattern: /^[0-9]{9}$/, message: "Debe tener 9 dígitos" },
+                ]}
+              >
+                <Input placeholder="912345678" maxLength={9} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Email"
+                name="email"
+                rules={[
+                  { required: true, message: "Por favor ingrese el email" },
+                  { type: "email", message: "Email inválido" },
+                ]}
+              >
+                <Input placeholder="proveedor@ejemplo.com" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item
             hidden
@@ -578,20 +767,40 @@ export default function Aprovisionamiento() {
             <DatePicker
               style={{ width: "100%" }}
               format="DD/MM/YYYY"
-              disabledDate={(current) => {
-                // Deshabilitar fechas futuras
-                return current && current > dayjs().endOf("day");
-              }}
+              disabledDate={(current) =>
+                current && current > dayjs().endOf("day")
+              }
             />
           </Form.Item>
 
-          <Form.Item
-            label="Rubro"
-            name="rubro"
-            rules={[{ required: true, message: "Por favor ingrese el rubro" }]}
-          >
-            <Input placeholder="Ej: Alimentos, Tecnología, etc." />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Rubro"
+                name="rubro"
+                rules={[
+                  { required: true, message: "Por favor ingrese el rubro" },
+                ]}
+              >
+                <Input placeholder="Ej: Alimentos, Tecnología, etc." />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Estado"
+                name="estado"
+                rules={[
+                  { required: true, message: "Por favor seleccione el estado" },
+                ]}
+                initialValue="Activo"
+              >
+                <Select placeholder="Seleccione el estado">
+                  <Select.Option value="Activo">Activo</Select.Option>
+                  <Select.Option value="Inactivo">Inactivo</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item
             label="Giro"
@@ -615,20 +824,6 @@ export default function Aprovisionamiento() {
                 label: `${giro.codigo} - ${giro.nombre}`,
               }))}
             />
-          </Form.Item>
-
-          <Form.Item
-            label="Estado"
-            name="estado"
-            rules={[
-              { required: true, message: "Por favor seleccione el estado" },
-            ]}
-            initialValue={proveedorSeleccionado?.estado || "Activo"}
-          >
-            <Select placeholder="Seleccione el estado">
-              <Select.Option value="Activo">Activo</Select.Option>
-              <Select.Option value="Inactivo">Inactivo</Select.Option>
-            </Select>
           </Form.Item>
 
           <Form.Item>
@@ -666,14 +861,14 @@ export default function Aprovisionamiento() {
             name="rut"
             initialValue={proveedorEditar?.rut}
             rules={[
-              { required: true, message: "Por favor ingrese el RUT" },
+              // { required: true, message: "Por favor ingrese el RUT" },
               {
                 pattern: /^[0-9]+-[0-9kK]{1}$/,
                 message: "Formato de RUT inválido (ej: 12345678-9)",
               },
             ]}
           >
-            <Input placeholder="12345678-9" />
+            <Input placeholder="12345678-9" disabled />
           </Form.Item>
 
           <Form.Item
@@ -685,38 +880,64 @@ export default function Aprovisionamiento() {
             <Input placeholder="Nombre del proveedor" />
           </Form.Item>
 
-          <Form.Item
-            label="Teléfono"
-            name="telefono"
-            initialValue={proveedorEditar?.telefono}
-            rules={[
-              { required: true, message: "Por favor ingrese el teléfono" },
-              { pattern: /^[0-9]{9}$/, message: "Debe tener 9 dígitos" },
-            ]}
-          >
-            <Input placeholder="912345678" maxLength={9} />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Teléfono"
+                name="telefono"
+                initialValue={proveedorEditar?.telefono}
+                rules={[
+                  { required: true, message: "Por favor ingrese el teléfono" },
+                  { pattern: /^[0-9]{9}$/, message: "Debe tener 9 dígitos" },
+                ]}
+              >
+                <Input placeholder="912345678" maxLength={9} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Email"
+                name="email"
+                initialValue={proveedorEditar?.email}
+                rules={[
+                  { required: true, message: "Por favor ingrese el email" },
+                  { type: "email", message: "Email inválido" },
+                ]}
+              >
+                <Input placeholder="proveedor@ejemplo.com" />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          <Form.Item
-            label="Email"
-            name="email"
-            initialValue={proveedorEditar?.email}
-            rules={[
-              { required: true, message: "Por favor ingrese el email" },
-              { type: "email", message: "Email inválido" },
-            ]}
-          >
-            <Input placeholder="proveedor@ejemplo.com" />
-          </Form.Item>
-
-          <Form.Item
-            label="Rubro"
-            name="rubro"
-            initialValue={proveedorEditar?.rubro}
-            rules={[{ required: true, message: "Por favor ingrese el rubro" }]}
-          >
-            <Input placeholder="Ej: Alimentos, Tecnología, etc." />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Rubro"
+                name="rubro"
+                initialValue={proveedorEditar?.rubro}
+                rules={[
+                  { required: true, message: "Por favor ingrese el rubro" },
+                ]}
+              >
+                <Input placeholder="Ej: Alimentos, Tecnología, etc." />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Estado"
+                name="estado"
+                initialValue={proveedorEditar?.estado}
+                rules={[
+                  { required: true, message: "Por favor seleccione el estado" },
+                ]}
+              >
+                <Select placeholder="Seleccione el estado">
+                  <Select.Option value="Activo">Activo</Select.Option>
+                  <Select.Option value="Inactivo">Inactivo</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item
             label="Giro"
@@ -743,20 +964,6 @@ export default function Aprovisionamiento() {
             />
           </Form.Item>
 
-          <Form.Item
-            label="Estado"
-            name="estado"
-            initialValue={proveedorEditar?.estado}
-            rules={[
-              { required: true, message: "Por favor seleccione el estado" },
-            ]}
-          >
-            <Select placeholder="Seleccione el estado">
-              <Select.Option value="Activo">Activo</Select.Option>
-              <Select.Option value="Inactivo">Inactivo</Select.Option>
-            </Select>
-          </Form.Item>
-
           <Form.Item>
             <Row gutter={8} justify="end">
               <Col>
@@ -780,7 +987,16 @@ export default function Aprovisionamiento() {
         open={verDrawerVendedores}
         width={450}
       >
-        <Button onClick={showChildrenDrawer}>Agregar Nuevo Vendedor</Button>
+        <Button
+          onClick={showChildrenDrawer}
+          type="primary"
+          icon={<PlusOutlined />}
+          block
+          style={{ marginBottom: 16 }}
+        >
+          Agregar Nuevo Vendedor
+        </Button>
+
         {/* DRAWER HIJO CREAR VENDEDOR */}
         <Drawer
           title="Agregar Nuevo Vendedor"
@@ -849,24 +1065,24 @@ export default function Aprovisionamiento() {
 
         <Divider />
 
-        <Title level={3}>Vendedores Actuales</Title>
+        <Title level={4}>Vendedores Actuales</Title>
 
         {loading ? (
-          <Spin tip="Cargando..." fullscreen />
+          <Spin tip="Cargando..." />
         ) : vendedores.length > 0 ? (
-          <Space direction="vertical" style={{ width: "100%" }}>
+          <Space direction="vertical" style={{ width: "100%" }} size="middle">
             {vendedores.map((vendedor) => (
               <Card
-                key={vendedor.idVendedor}
-                style={{ width: "60%" }}
+                key={vendedor.idVendedorProveedor}
+                style={{ width: "100%" }}
                 title={
                   <>
-                    {"Vendedor: "} <UserOutlined /> {vendedor.nombre}
+                    <UserOutlined /> {vendedor.nombre}
                   </>
                 }
                 size="small"
                 extra={
-                  <>
+                  <Space>
                     <Button
                       type="text"
                       icon={<EditOutlined />}
@@ -887,7 +1103,7 @@ export default function Aprovisionamiento() {
                         size="small"
                       />
                     </Popconfirm>
-                  </>
+                  </Space>
                 }
               >
                 <Space
@@ -899,7 +1115,7 @@ export default function Aprovisionamiento() {
                     <IdcardOutlined /> {vendedor.rut}
                   </div>
                   <div style={{ fontSize: "13px" }}>
-                    <MailOutlined style={{ color: "#1890ff" }} />{" "}
+                    <MailOutlined style={{ color: "#1890ff" }} />
                     <a
                       href={`mailto:${vendedor.email}`}
                       style={{ color: "#1890ff" }}
@@ -908,7 +1124,7 @@ export default function Aprovisionamiento() {
                     </a>
                   </div>
                   <div style={{ fontSize: "13px" }}>
-                    <PhoneOutlined style={{ color: "#52c41a" }} />{" "}
+                    <PhoneOutlined style={{ color: "#52c41a" }} />
                     {vendedor.telefono}
                   </div>
                 </Space>
@@ -918,90 +1134,84 @@ export default function Aprovisionamiento() {
         ) : (
           <Empty description="No hay vendedores registrados" />
         )}
-
-        <Drawer
-          title="Editar Vendedor"
-          width={450}
-          closable={false}
-          open={modalEditarVendedorProveedor}
-          onClose={() => {
-            setModalEditarVendedorProveedor(false);
-            setVendedorEditarProveedor({});
-          }}
-        >
-          <Form
-            form={formVendedorEditar}
-            layout="vertical"
-            onFinish={handelEditarVendedorProveedorSubmit}
-            width={400}
-            style={{ margin: 10 }}
-          >
-            <Form.Item
-              label="ID Vendedor"
-              name="idVendedorProveedor"
-              initialValue={vendedorEditarProveedor?.idVendedorProveedor}
-              hidden
-            >
-              <Input disabled />
-            </Form.Item>
-            <Form.Item
-              label="Nombre"
-              name="nombre"
-              initialValue={vendedorEditarProveedor?.nombre}
-              rules={[{ required: true, message: "Ingrese el nombre" }]}
-            >
-              <Input placeholder={vendedorEditarProveedor?.nombre} />
-            </Form.Item>
-            <Form.Item
-              label="Rut"
-              name="rut"
-              initialValue={vendedorEditarProveedor?.rut}
-              rules={[{ required: true, message: "Ingrese el rut" }]}
-            >
-              <Input placeholder={vendedorEditarProveedor?.rut} />
-            </Form.Item>
-
-            <Form.Item
-              label="Teléfono"
-              name="telefono"
-              initialValue={vendedorEditarProveedor?.telefono}
-              rules={[
-                { required: true, message: "Ingrese el teléfono" },
-                { pattern: /^[0-9]{9}$/, message: "Debe tener 9 dígitos" },
-              ]}
-            >
-              <Input
-                placeholder={vendedorEditarProveedor?.telefono}
-                maxLength={9}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Email"
-              name="email"
-              initialValue={vendedorEditarProveedor?.email}
-              rules={[
-                { required: true, message: "Ingrese el email" },
-                { type: "email", message: "Email inválido" },
-              ]}
-            >
-              <Input placeholder={vendedorEditarProveedor?.email} />
-            </Form.Item>
-
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={loading}
-                icon={<UserAddOutlined />}
-                block
-              >
-                Editar Vendedor
-              </Button>
-            </Form.Item>
-          </Form>
-        </Drawer>
       </Drawer>
-    </>
+
+      {/* DRAWER EDITAR VENDEDOR */}
+      <Drawer
+        title="Editar Vendedor"
+        width={450}
+        closable={true}
+        open={modalEditarVendedorProveedor}
+        onClose={() => {
+          setModalEditarVendedorProveedor(false);
+          setVendedorEditarProveedor({});
+          formVendedorEditar.resetFields();
+        }}
+      >
+        <Form
+          form={formVendedorEditar}
+          layout="vertical"
+          onFinish={handelEditarVendedorProveedorSubmit}
+          width={400}
+          style={{ margin: 10 }}
+        >
+          <Form.Item
+            label="Nombre"
+            name="nombre"
+            initialValue={vendedorEditarProveedor?.nombre}
+            rules={[{ required: true, message: "Ingrese el nombre" }]}
+          >
+            <Input placeholder={vendedorEditarProveedor?.nombre} />
+          </Form.Item>
+          <Form.Item
+            label="Rut"
+            name="rut"
+            initialValue={vendedorEditarProveedor?.rut}
+            rules={[{ required: true, message: "Ingrese el rut" }]}
+          >
+            <Input placeholder={vendedorEditarProveedor?.rut} />
+          </Form.Item>
+
+          <Form.Item
+            label="Teléfono"
+            name="telefono"
+            initialValue={vendedorEditarProveedor?.telefono}
+            rules={[
+              { required: true, message: "Ingrese el teléfono" },
+              { pattern: /^[0-9]{9}$/, message: "Debe tener 9 dígitos" },
+            ]}
+          >
+            <Input
+              placeholder={vendedorEditarProveedor?.telefono}
+              maxLength={9}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Email"
+            name="email"
+            initialValue={vendedorEditarProveedor?.email}
+            rules={[
+              { required: true, message: "Ingrese el email" },
+              { type: "email", message: "Email inválido" },
+            ]}
+          >
+            <Input placeholder={vendedorEditarProveedor?.email} />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              icon={<UserAddOutlined />}
+              block
+            >
+              Guardar Cambios
+            </Button>
+          </Form.Item>
+        </Form>
+      </Drawer>
+    </div>
   );
 }

@@ -104,6 +104,7 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                       key: "ordenes_directas",
                       label: "Órdenes De Compra Directas",
                       icon: <InboxOutlined />,
+                      onClick: () => navigate("gestion/oc_directa"),
                     },
                     {
                       key: "ordenes_compra_proveedores",

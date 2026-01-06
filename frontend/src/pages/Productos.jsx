@@ -11,7 +11,8 @@ import {
   Col,
   Tag,
   Table,
-  Popconfirm, // Importar Popconfirm
+  Popconfirm,
+  Card,
 } from "antd";
 import {
   PlusOutlined,
@@ -24,11 +25,11 @@ import {
 
 import Agregar from "../components/inventario/modalProductos/Agregar";
 import Editar from "../components/inventario/modalProductos/Editar";
-// El modal Eliminar ya no es necesario
+
 // import Eliminar from "../components/inventario/modalProductos/Eliminar";
 
 import obtenerProductos, {
-  eliminarProducto, // Importar el servicio de eliminar
+  eliminarProducto,
 } from "../services/inventario/Productos.service";
 import obtenerCategoria from "../services/inventario/Categorias.service";
 
@@ -40,8 +41,8 @@ export default function Productos({ onCambiarVista }) {
   const [categorias, setCategorias] = useState([]);
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
-  // const [modalEliminar, setModalEliminar] = useState(false); // Ya no se usa
-  const [productosSelect, setProductoSelect] = useState(null); // Estado para la fila seleccionada
+  // const [modalEliminar, setModalEliminar] = useState(false);
+  const [productosSelect, setProductoSelect] = useState(null);
   const [error, setError] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,7 +58,6 @@ export default function Productos({ onCambiarVista }) {
       const respuesta2 = await obtenerCategoria();
 
       if (respuesta.status === 500 || respuesta2.status === 500) {
-        // ... (manejo de errores sin cambios)
         setError(true);
         setMensaje("Error en el servidor");
         setProductos([]);
@@ -89,7 +89,6 @@ export default function Productos({ onCambiarVista }) {
     buscarProducto();
   }, []);
 
-  // --- Handlers (Modificados) ---
   const handleCrear = () => {
     if (categorias.length === 0) {
       setError(true);
@@ -406,34 +405,54 @@ export default function Productos({ onCambiarVista }) {
 
   return (
     <div style={{ padding: "24px" }}>
-      <Row justify="center" style={{ marginBottom: 24 }}>
-        <Col span={24} style={{ textAlign: "center" }}>
-          <div style={{ textAlign: "left" }}>
+      <Row gutter={16} style={{ marginBottom: 50 }}>
+        <Col span={12} style={{ textAlign: "start" }}>
+          {/* <div style={{ textAlign: "left", marginBottom: 16 }}>
             <Button
               type="primary"
               icon={<ArrowLeftOutlined />}
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/admin")}
             >
               Volver
             </Button>
-          </div>
-          <Title level={2} style={{ marginBottom: 8 }}>
-            <ShoppingOutlined style={{ marginRight: 8 }} />
-            Gestión de Productos
-          </Title>
-          <Text type="secondary">
-            Aquí puedes gestionar los productos de tu inventario
-          </Text>
-          <div style={{ textAlign: "right", justifyContent: "right" }}>
-            <Button
-              type="default"
-              icon={<EditOutlined />}
-              onClick={() => navigate("/admin/categorias")}
-              disabled={loading}
-            >
-              Gestionar Categorias
-            </Button>
-          </div>
+          </div> */}
+          <Title>Gestión de Productos</Title>
+        </Col>
+        <Col span={12}>
+          <Row gutter={20} justify="center">
+            <Col>
+              <Card>
+                <Text>
+                  <ShoppingOutlined style={{ marginRight: 8 }} />
+                  Total de Productos: <strong>{productos.length}</strong>
+                </Text>
+              </Card>
+            </Col>
+            <Col>
+              <Card>
+                <Text>
+                  <Tag color="blue" style={{ marginRight: 8 }}></Tag>
+                  Total de Categorías: <strong>{categorias.length}</strong>
+                </Text>
+              </Card>
+            </Col>
+            <Col>
+              <Card>
+                <Text>
+                  <Tag color="success" style={{ marginRight: 8 }}></Tag>
+                  Productos Activos:{" "}
+                  <strong>
+                    {
+                      productos.filter(
+                        (prod) =>
+                          prod.estado && prod.estado.toLowerCase() === "activo"
+                      ).length
+                    }
+                  </strong>
+                </Text>
+              </Card>
+            </Col>
+          </Row>
         </Col>
       </Row>
 
@@ -467,14 +486,14 @@ export default function Productos({ onCambiarVista }) {
 
           <Col>
             <Space wrap>
-              {/* <Button
+              <Button
                 type="default"
                 icon={<EditOutlined />}
                 onClick={() => navigate("/admin/categorias")}
                 disabled={loading}
               >
                 Gestionar Categorias
-              </Button> */}
+              </Button>
               <Button
                 type="primary"
                 icon={<PlusOutlined />}

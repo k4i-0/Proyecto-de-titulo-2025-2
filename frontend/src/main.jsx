@@ -33,7 +33,10 @@ import AprovisionamientoProveedor from "./pages/Vendedor/AprovicionamientoProvee
 
 //Gestiones admin
 import GestionColaborador from "./pages/Gestion/GestionColaborador.jsx";
+
+//ordenes de compra
 import OrdenesCompra from "./pages/Gestion/OrdenesCompra.jsx";
+import OrdenCompraDirecta from "./pages/Gestion/Ordenes Compra/OrdenCompraDirecta.jsx";
 
 //Pruebas
 import Pruebas from "./pages/Pruebas.jsx";
@@ -63,10 +66,10 @@ createRoot(document.getElementById("root")).render(
             <Route path="inventario" element={<Inventario />} />
 
             <Route path="categorias" element={<Categoria />} />
-            <Route path="proveedores" element={<Proveedor />} />
+            <Route path="proveedores" element={<Aprovisionamiento />} />
             <Route
               path="proveedores/vendedores/:rutProveedor"
-              element={<Aprovisionamiento />}
+              element={<Proveedor />}
             />
 
             {/* Gestiones */}
@@ -78,11 +81,11 @@ createRoot(document.getElementById("root")).render(
               path="gestion/colaboradores/sucursal"
               element={<Pruebas />}
             />
-            {/* <Route
-              path="proveedores/:idSucursal"
-              element={<Aprovisionamiento />}
-            /> */}
-            <Route path="gestion/ordenes_compra" element={<OrdenesCompra />} />
+
+            {/**orden compras */}
+            <Route path="gestion/oc_directa" element={<OrdenCompraDirecta />} />
+
+            {/**Pruebas Codigo - Deshabilitar */}
             <Route path="pruebas" element={<Pruebas />} />
           </Route>
 

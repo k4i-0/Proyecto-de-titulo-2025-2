@@ -10,44 +10,82 @@ import {
   Popconfirm,
   Empty,
   Spin,
-  message,
   Input,
+  Select,
+  notification,
+  Card,
+  Divider,
 } from "antd";
 
 const { Search } = Input;
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
 // Servicios
-import obtenerInventarios, {
-  eliminarInventario,
-} from "../services/inventario/Inventario.service";
+import obtenerInventarios from "../services/inventario/Inventario.service";
+
+import obtenerSucursales from "../services/inventario/Sucursal.service";
 
 // Modales
 import CrearInventario from "../components/inventario/modalInventario/CrearInventario";
 import EditarInventario from "../components/inventario/modalInventario/EditarInventario";
 
 export default function Inventario() {
-  const { Title } = Typography;
+  const { Title, Text } = Typography;
   const [inventarios, setInventarios] = useState([]);
-  const [error, setError] = useState(false);
-  const [mensaje, setMensaje] = useState("");
+  const [sucursales, setSucursales] = useState([]);
+  const [sucursalSeleccionada, setSucursalSeleccionada] = useState(null);
   const [loading, setLoading] = useState(false);
+  // const [searchText, setSearchText] = useState("");
 
-  const [inventarioSelect, setInventarioSelect] = useState(null);
+  // const inventariosFiltrados = inventarios.filter((item) => {
+  //   const searchLower = searchText.toLowerCase();
+  //   return (
+  //     item.producto?.idProducto?.toString().includes(searchLower) ||
+  //     item.producto?.nombre?.toLowerCase().includes(searchLower) ||
+  //     item.lote?.codigo?.toString().includes(searchLower) ||
+  //     item.cantidad?.toString().includes(searchLower)
+  //   );
+  // });
 
-  const [modalCrear, setModalCrear] = useState(false);
-  const [modalEditar, setModalEditar] = useState(false);
-
-  const [searchText, setSearchText] = useState("");
-  const inventariosFiltrados = inventarios.filter((item) => {
-    const searchLower = searchText.toLowerCase();
-    return (
-      item.producto?.idProducto?.toString().includes(searchLower) ||
-      item.producto?.nombre?.toLowerCase().includes(searchLower) ||
-      item.lote?.codigo?.toString().includes(searchLower) ||
-      item.cantidad?.toString().includes(searchLower)
-    );
-  });
+  const buscarSucursales = async () => {
+    setLoading(true);
+    try {
+      const response = await obtenerSucursales();
+      console.log("Respuesta sucursales:", response);
+      if (response.status === 200) {
+        setSucursales(response.data || []);
+        setLoading(false);
+        notification.success({
+          message: "Éxito",
+          description: "Sucursales cargadas correctamente",
+        });
+        return;
+      }
+      if (response.status === 204) {
+        notification.info({
+          message: "Información",
+          description: "No hay sucursales disponibles",
+        });
+        setSucursales([]);
+        setLoading(false);
+        return;
+      }
+      notification.error({
+        message: "Error",
+        description: response.error || "No se pudieron cargar las sucursales",
+      });
+    } catch (error) {
+      notification.error({
+        message: "Error",
+        description: "No se pudieron cargar las sucursales",
+      });
+      setSucursales([]);
+      setLoading(false);
+      console.error("Error al obtener sucursales:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const cargarInventarios = async () => {
     try {
@@ -55,23 +93,31 @@ export default function Inventario() {
       const response = await obtenerInventarios();
       console.log("Respuesta inventarios:", response);
       if (!response) {
-        message.error("Error al obtener inventarios");
+        notification.error({
+          message: "Error",
+          description: "No se pudieron cargar los productos",
+        });
         setInventarios([]);
         return;
       }
 
       if (response.status === 422) {
-        message.warning("No hay productos en el inventario");
+        notification.warning({
+          message: "Advertencia",
+          description: "No hay productos en el inventario",
+        });
         setInventarios([]);
         return;
       }
 
-      // Asumiendo que la respuesta tiene la data en response.data
       const data = response.data || response;
       setInventarios(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error al obtener inventarios:", error);
-      message.error("No se pudieron cargar los productos");
+      notification.error({
+        message: "Error",
+        description: "No se pudieron cargar los productos",
+      });
       setInventarios([]);
     } finally {
       setLoading(false);
@@ -79,303 +125,101 @@ export default function Inventario() {
   };
 
   useEffect(() => {
-    cargarInventarios();
+    buscarSucursales();
   }, []);
 
-  const handleCerrarModal = () => {
-    setModalCrear(false);
-    setModalEditar(false);
-    setInventarioSelect(null);
-  };
-
-  const handleCrear = () => {
-    setError(false);
-    setMensaje("");
-    setModalCrear(true);
-  };
-
-  const handleEditar = () => {
-    if (!inventarioSelect) {
-      setError(true);
-      setMensaje("Por favor seleccione un registro de la tabla");
-      return;
-    }
-    setError(false);
-    setMensaje("");
-    setModalEditar(true);
-  };
-
-  const handleEliminar = async () => {
-    if (!inventarioSelect) {
-      setError(true);
-      setMensaje("Por favor seleccione un registro de la tabla");
-      return;
-    }
-
-    setLoading(true);
-    setError(false);
-    setMensaje("");
-    try {
-      // Asumo que tienes un servicio 'eliminarInventario'
-      const respuesta = await eliminarInventario(inventarioSelect.idInventario);
-      if (respuesta.status === 200) {
-        setMensaje("Entrada de inventario eliminada exitosamente");
-        setError(false);
-        setInventarioSelect(null);
-        await cargarInventarios();
-      } else {
-        setError(true);
-        setMensaje(respuesta.error || "Error al eliminar la entrada.");
-      }
-    } catch (error) {
-      setError(true);
-      setMensaje("Error de conexión al eliminar la entrada.");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  const handleSeleccionarFila = (record) => {
-    // console.log(record?.producto?.idProducto?.toString().startsWith("20"));
-    // if (record?.idInventario?.toString().startsWith("20")) {
-    //   console.log(inventarioSelect?.idInventario?.toString().startsWith("20"));
-    //   message.warning("Registro solo de lectura");
-    //   setMensaje("Registro solo de lectura");
-    //   setInventarioSelect(null);
-    //   return;
-    // }
-    if (inventarioSelect?.idInventario === record.idInventario) {
-      setInventarioSelect(null);
-    } else {
-      setInventarioSelect(record);
-    }
-  };
-
-  const columns = [
-    {
-      title: "ID",
-      dataIndex: "idInventario",
-      key: "idInventario",
-      align: "center",
-      //width: 80,
-    },
-    {
-      title: "Cod Producto",
-      dataIndex: "idProducto",
-      key: "idProducto",
-    },
-    {
-      title: "Producto",
-      dataIndex: "producto",
-      key: "producto",
-      align: "center",
-      render: (producto) => producto?.nombre || "N/A",
-    },
-    {
-      title: "Cod Lote",
-      dataIndex: "lote",
-      key: "lote",
-      align: "center",
-      //width: 120,
-      render: (lote) => lote?.idLote || "N/A",
-    },
-    {
-      title: "Stock",
-      dataIndex: "stock",
-      key: "stock",
-      align: "center",
-      //width: 100,
-    },
-    {
-      title: "Estado",
-      dataIndex: "estado",
-      key: "estado",
-      align: "center",
-      //width: 150,
-      render: (estado) => <span style={{ color: "green" }}>{estado}</span>,
-    },
-  ];
-
-  const renderContenido = () => {
-    if (loading && inventarios.length === 0) {
-      return (
-        <div style={{ textAlign: "center", padding: "50px 0" }}>
-          <Spin size="large" tip="Cargando inventario..." fullscreen />
-        </div>
-      );
-    }
-
-    if (inventarios.length === 0) {
-      return (
-        <Row justify="center" style={{ marginTop: 48 }}>
-          <Col span={24}>
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={
-                <Space direction="vertical" size="large">
-                  <div>
-                    <Title level={4}>No hay inventario registrado</Title>
-                    <p style={{ color: "#8c8c8c" }}>
-                      Crea tu primera entrada de inventario para comenzar
-                    </p>
-                  </div>
-                  <Button
-                    type="primary"
-                    size="large"
-                    icon={<PlusOutlined />}
-                    onClick={handleCrear}
-                  >
-                    Añadir Primera Entrada
-                  </Button>
-                </Space>
-              }
-            />
-          </Col>
-        </Row>
-      );
-    }
-
-    return (
-      <>
-        <Row justify="end" gutter={16} style={{ marginBottom: 16 }}>
-          <Col flex="auto">
-            {inventarioSelect && (
-              <Alert
-                message={`Registro seleccionado: ID ${inventarioSelect.idInventario} (${inventarioSelect.producto.nombre})`}
-                type="info"
-                showIcon
-                closable
-                onClose={() => setInventarioSelect(null)}
-                style={{ marginBottom: 0 }}
-              />
-            )}
-          </Col>
-          <Col>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCrear}
-              disabled={loading}
-            >
-              Añadir Inventario
-            </Button>
-          </Col>
-          <Col>
-            <Button
-              type="primary" // O 'default' si prefieres
-              icon={<EditOutlined />}
-              onClick={handleEditar}
-              disabled={loading || !inventarioSelect}
-            >
-              Modificar Stock
-            </Button>
-          </Col>
-          <Col>
-            <Popconfirm
-              title="¿Está seguro de eliminar esta entrada?"
-              description={`Se eliminará el registro: ${
-                inventarioSelect?.nombre || ""
-              } (ID: ${inventarioSelect?.idInventario || ""})`}
-              onConfirm={handleEliminar}
-              okText="Sí, eliminar"
-              cancelText="Cancelar"
-              okButtonProps={{ danger: true }}
-              disabled={!inventarioSelect}
-            >
-              <Button
-                type="primary"
-                icon={<DeleteOutlined />}
-                disabled={loading || !inventarioSelect}
-                danger
-              >
-                Eliminar Entrada
-              </Button>
-            </Popconfirm>
-          </Col>
-        </Row>
-
-        <Space direction="vertical" style={{ width: "100%", marginBottom: 16 }}>
-          <Search
-            placeholder="Buscar por producto, lote o cantidad..."
-            allowClear
-            enterButton
-            size="large"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onSearch={(value) => setSearchText(value)}
-            style={{ maxWidth: 400 }}
-          />
-        </Space>
-
-        <Table
-          columns={columns}
-          dataSource={inventariosFiltrados}
-          rowKey="idInventario"
-          loading={loading}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `Total: ${total} registros`,
-          }}
-          onRow={(record) => ({
-            onClick: () => handleSeleccionarFila(record),
-            style: {
-              cursor: "pointer",
-              backgroundColor:
-                inventarioSelect?.idInventario === record.idInventario
-                  ? "#e6f4ff"
-                  : "transparent",
-              transition: "background-color 0.3s ease",
-            },
-          })}
-          locale={{
-            emptyText: "No hay registros de inventario disponibles",
-          }}
-        />
-      </>
-    );
+  const handleSucursalSeleccionada = (value) => {
+    console.log(`Sucursal seleccionada: ${value}`);
+    setSucursalSeleccionada(sucursales.find((s) => s.idSucursal === value));
+    cargarInventarios();
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Row justify="center" style={{ marginBottom: 24 }}>
-        <Col span={24} style={{ textAlign: "center" }}>
-          <Title>Gestión de Inventario</Title>
-          <Title level={5} style={{ color: "#8c8c8c", fontWeight: 400 }}>
-            Aquí puedes gestionar el stock de productos en tus bodegas
-          </Title>
+    <>
+      <Row>
+        <Col>
+          <Title level={2}>Gestión de Inventario</Title>
         </Col>
       </Row>
-
-      {mensaje &&
-        !loading && ( // Oculta el mensaje si está cargando
-          <Row style={{ marginBottom: 16 }}>
-            <Col span={24}>
-              <Alert
-                type={error ? "error" : "success"}
-                showIcon
-                message={mensaje}
-                closable
-                onClose={() => setMensaje("")}
+      <Row>
+        <Col span={24}>
+          <Text>Selecciona sucursal:</Text>
+          <br />
+          <Select
+            style={{ width: 200, marginTop: 8 }}
+            placeholder="Seleccionar Sucursal"
+            onChange={(value) => handleSucursalSeleccionada(value)}
+          >
+            {sucursales.map((sucursal) => (
+              <Select.Option
+                key={sucursal.idSucursal}
+                value={sucursal.idSucursal}
+              >
+                {sucursal.nombre}
+              </Select.Option>
+            ))}
+          </Select>
+        </Col>
+      </Row>
+      <Divider />
+      {sucursalSeleccionada && (
+        <Row>
+          <Col span={24}>
+            <Card>
+              <Title level={4}>
+                Inventario de la Sucursal: {sucursalSeleccionada.nombre}
+              </Title>
+              <Text>Dirección: {sucursalSeleccionada.direccion}</Text>
+              <Divider />
+              <Table
+                dataSource={inventarios}
+                loading={loading}
+                rowKey="idInventario"
+                columns={[
+                  {
+                    title: "Código Producto",
+                    dataIndex: ["producto", "idProducto"],
+                    key: "idProducto",
+                  },
+                  {
+                    title: "Producto",
+                    dataIndex: ["producto", "nombre"],
+                    key: "nombre",
+                  },
+                  {
+                    title: "Stock",
+                    dataIndex: "cantidad",
+                    key: "cantidad",
+                  },
+                  {
+                    title: "Lote",
+                    dataIndex: ["lote", "codigo"],
+                    key: "lote",
+                  },
+                  {
+                    title: "Estado",
+                    dataIndex: "estado",
+                    key: "estado",
+                  },
+                ]}
+                pagination={{ pageSize: 5 }}
+                locale={{
+                  emptyText: (
+                    <Empty
+                      description={
+                        loading
+                          ? "Cargando inventario..."
+                          : "No hay inventario disponible para esta sucursal, ingrese compras"
+                      }
+                    />
+                  ),
+                }}
               />
-            </Col>
-          </Row>
-        )}
-
-      {renderContenido()}
-
-      <CrearInventario
-        show={modalCrear}
-        handleClose={handleCerrarModal}
-        buscarInventarios={cargarInventarios}
-      />
-      <EditarInventario
-        show={modalEditar}
-        handleClose={handleCerrarModal}
-        inventario={inventarioSelect}
-        buscarInventarios={cargarInventarios}
-      />
-    </div>
+            </Card>
+          </Col>
+        </Row>
+      )}
+    </>
   );
   // return (
   //   <Container style={{ marginTop: "30px" }}>

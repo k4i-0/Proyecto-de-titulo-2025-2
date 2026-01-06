@@ -11,6 +11,7 @@ import {
   Tag,
   Table,
   Popconfirm,
+  Card,
 } from "antd";
 import {
   PlusOutlined,
@@ -21,7 +22,7 @@ import {
   RollbackOutlined,
 } from "@ant-design/icons";
 
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 import AgregarCategoria from "../components/inventario/modalCategoria/AgregarCategoria";
 import EditarCategoria from "../components/inventario/modalCategoria/EditarCategoria";
@@ -32,7 +33,7 @@ import obtenerCategoria, {
 
 export default function Categoria() {
   const { Title, Text } = Typography;
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const [categorias, setCategorias] = useState([]);
   const [modalCrear, setModalCrear] = useState(false);
@@ -260,15 +261,12 @@ export default function Categoria() {
   return (
     <div style={{ padding: "24px" }}>
       {/* Encabezado */}
-      <Row justify="center" style={{ marginBottom: 24 }}>
-        <Col span={18} style={{ textAlign: "center" }}>
-          <Title level={2} style={{ marginBottom: 8 }}>
+      <Row justify="start" style={{ margin: 24 }}>
+        <Col span={18} style={{ textAlign: "start" }}>
+          <Title style={{ marginBottom: 8 }}>
             <TagsOutlined style={{ marginRight: 8 }} />
             Gestión de Categorías
           </Title>
-          <Text type="secondary">
-            Aquí puedes gestionar las categorías de tu inventario
-          </Text>
         </Col>
       </Row>
 
@@ -287,72 +285,73 @@ export default function Categoria() {
         </Row>
       )}
 
-      {!loading && categorias.length > 0 && (
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{ marginBottom: 24 }}
-        >
-          <Col>
-            <Button
+      <Card>
+        {!loading && categorias.length > 0 && (
+          <Row
+            justify="space-between"
+            align="middle"
+            style={{ marginBottom: 24 }}
+          >
+            <Col>
+              {/* <Button
               type="default"
               icon={<RollbackOutlined />}
               onClick={() => navigate(-1)}
             >
               Volver
-            </Button>
-          </Col>
+            </Button> */}
+            </Col>
 
-          <Col>
-            <Space wrap>
-              {categoriaSelect && (
-                <Alert
-                  message={`Seleccionada: ${categoriaSelect.nombreCategoria}`}
-                  type="info"
-                  showIcon
-                  closable
-                  onClose={() => setCategoriaSelect(null)}
-                />
-              )}
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleCrear}
-                disabled={loading}
-              >
-                Agregar Categoría
-              </Button>
-              <Button
-                icon={<EditOutlined />}
-                onClick={handleAbrirModalEditar}
-                disabled={loading || !categoriaSelect}
-              >
-                Editar
-              </Button>
-              <Popconfirm
-                title="¿Eliminar categoría?"
-                description={`Se eliminará: ${categoriaSelect?.nombre || ""}`}
-                onConfirm={handleEliminarConfirmado}
-                okText="Sí, eliminar"
-                cancelText="Cancelar"
-                okButtonProps={{ danger: true }}
-                disabled={!categoriaSelect || loading}
-              >
+            <Col>
+              <Space wrap>
+                {categoriaSelect && (
+                  <Alert
+                    message={`Seleccionada: ${categoriaSelect.nombreCategoria}`}
+                    type="info"
+                    showIcon
+                    closable
+                    onClose={() => setCategoriaSelect(null)}
+                  />
+                )}
                 <Button
-                  icon={<DeleteOutlined />}
-                  disabled={loading || !categoriaSelect}
-                  danger
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleCrear}
+                  disabled={loading}
                 >
-                  Eliminar
+                  Agregar Categoría
                 </Button>
-              </Popconfirm>
-            </Space>
-          </Col>
-        </Row>
-      )}
+                <Button
+                  icon={<EditOutlined />}
+                  onClick={handleAbrirModalEditar}
+                  disabled={loading || !categoriaSelect}
+                >
+                  Editar
+                </Button>
+                <Popconfirm
+                  title="¿Eliminar categoría?"
+                  description={`Se eliminará: ${categoriaSelect?.nombre || ""}`}
+                  onConfirm={handleEliminarConfirmado}
+                  okText="Sí, eliminar"
+                  cancelText="Cancelar"
+                  okButtonProps={{ danger: true }}
+                  disabled={!categoriaSelect || loading}
+                >
+                  <Button
+                    icon={<DeleteOutlined />}
+                    disabled={loading || !categoriaSelect}
+                    danger
+                  >
+                    Eliminar
+                  </Button>
+                </Popconfirm>
+              </Space>
+            </Col>
+          </Row>
+        )}
 
-      <Row gutter={[16, 16]}>{renderContenido()}</Row>
-
+        <Row gutter={[16, 16]}>{renderContenido()}</Row>
+      </Card>
       <AgregarCategoria
         show={modalCrear}
         handleClose={handleCerrarModal}
