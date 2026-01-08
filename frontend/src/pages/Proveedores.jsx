@@ -22,6 +22,7 @@ import {
   Drawer,
   Table,
   Statistic,
+  notification,
 } from "antd";
 
 import {
@@ -38,6 +39,7 @@ import {
   SearchOutlined,
   FilterOutlined,
   ArrowLeftOutlined,
+  LinkOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -58,21 +60,36 @@ import {
   editarVendedor,
 } from "../services/inventario/Proveedor.service.js";
 
-export default function Aprovisionamiento() {
+import obtenerProductos from "../services/inventario/Productos.service.js";
+
+import { enlazarProductoProveedor } from "../services/inventario/Proveedor.service.js";
+
+import { useAuth } from "../context/AuthContext.jsx";
+
+export default function Proveedor() {
   // const navigate = useNavigate();
   // const { idSucursal } = useParams();
 
+  const { user } = useAuth();
   const [proveedores, setProveedores] = useState([]);
   const [vendedores, setVendedores] = useState([]);
+  const [productos, setProductos] = useState([]);
+  // const [productosEnlazados, setProductosEnlazados] = useState([]);
   const [loading, setLoading] = useState(false);
   const [verModalCrear, setVerModalCrear] = useState(false);
   const [verModalEditar, setVerModalEditar] = useState(false);
   const [verDrawerVendedores, setVerDrawerVendedores] = useState(false);
+  const [openDrawerEnlazar, setOpenDrawerEnlazar] = useState(false);
+  const [openDrawerTablaEnlazar, setOpenDrawerTablaEnlazar] = useState(false);
+
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState(null);
   const [proveedorEditar, setProveedorEditar] = useState(null);
   const [modalEditarVendedorProveedor, setModalEditarVendedorProveedor] =
     useState(false);
   const [vendedorEditarProveedor, setVendedorEditarProveedor] = useState({});
+
+  const [productosEnlazadosSeleccionados, setProductosEnlazadosSeleccionados] =
+    useState([]);
 
   // Estados para filtros
   const [searchText, setSearchText] = useState("");
@@ -83,6 +100,8 @@ export default function Aprovisionamiento() {
   const [formEditar] = Form.useForm();
   const [formVendedor] = Form.useForm();
   const [formVendedorEditar] = Form.useForm();
+  const [formEnlazarProductos] = Form.useForm();
+  const [formTablaEnlazarProductos] = Form.useForm();
   const [childrenDrawer, setChildrenDrawer] = useState(false);
 
   const obtenerProveedores = async () => {
@@ -393,6 +412,156 @@ export default function Aprovisionamiento() {
     });
   }, [proveedores, searchText, filterEstado, filterRubro]);
 
+  //Enlazar productos
+  const buscarProductos = async () => {
+    try {
+      setLoading(true);
+      const response = await obtenerProductos();
+      if (response.status === 200) {
+        setProductos(response.data);
+        notification.success({
+          message: "Éxito",
+          description: "Productos obtenidos correctamente",
+          placement: "topLeft",
+        });
+        setLoading(false);
+        return;
+      }
+      if (response.status === 204) {
+        notification.info({
+          message: "Información",
+          description: "No hay productos disponibles",
+          placement: "topLeft",
+        });
+        setProductos([]);
+        setLoading(false);
+        return;
+      }
+      notification.error({
+        message: "Error",
+        description:
+          response?.error || "Error en el servidor al buscar productos",
+        placement: "topLeft",
+      });
+    } catch (error) {
+      notification.error({
+        message: "Error",
+        description: error?.message || "Error al buscar productos",
+        placement: "topLeft",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDrawerEnlazar = () => {
+    setOpenDrawerEnlazar(true);
+  };
+
+  const handleDrawerEnlazarTabla = () => {
+    setOpenDrawerTablaEnlazar(true);
+    buscarProductos();
+  };
+
+  const cerrarDrawerEnlazar = () => {
+    setOpenDrawerEnlazar(false);
+    setProductosEnlazadosSeleccionados([]);
+    formEnlazarProductos.resetFields();
+    formTablaEnlazarProductos.resetFields();
+  };
+
+  const cerrarDrawerEnlazarTabla = () => {
+    setOpenDrawerTablaEnlazar(false);
+  };
+
+  const productosEnlazadosTabla = () => {
+    const idsSeleccionados =
+      formTablaEnlazarProductos.getFieldValue("productos");
+
+    if (!idsSeleccionados || idsSeleccionados.length === 0) {
+      notification.warning({
+        message: "Advertencia",
+        description: "Seleccione al menos un producto",
+        placement: "topLeft",
+      });
+      return;
+    }
+
+    // Filtrar productos seleccionados
+    const productosSeleccionados = productos.filter((producto) =>
+      idsSeleccionados.includes(producto.idProducto)
+    );
+
+    // Agregar solo los que NO están duplicados
+    setProductosEnlazadosSeleccionados((prev) => {
+      // Filtrar productos que no existen en prev
+      const productosNuevos = productosSeleccionados.filter(
+        (productoNuevo) =>
+          !prev.some(
+            (existente) => existente.idProducto === productoNuevo.idProducto
+          )
+      );
+
+      if (productosNuevos.length === 0) {
+        notification.info({
+          message: "Información",
+          description: "Todos los productos ya están enlazados",
+          placement: "topLeft",
+        });
+        return prev;
+      }
+
+      notification.success({
+        message: "Éxito",
+        description: `${productosNuevos.length} producto(s) enlazado(s)`,
+        placement: "topLeft",
+      });
+      return [...prev, ...productosNuevos];
+    });
+    console.log(productosEnlazadosSeleccionados);
+    formTablaEnlazarProductos.resetFields();
+    cerrarDrawerEnlazarTabla();
+  };
+
+  const submitProductosEnlazados = async (values) => {
+    let datos = {
+      ...values,
+      user: user?.nombre,
+      productos: productosEnlazadosSeleccionados,
+    };
+
+    setLoading(true);
+    try {
+      const response = await enlazarProductoProveedor(datos);
+      if (response.status === 200) {
+        notification.success({
+          message: "Éxito",
+          description: "Productos enlazados correctamente",
+          placement: "topLeft",
+        });
+        setProductosEnlazadosSeleccionados([]);
+        cerrarDrawerEnlazar();
+        obtenerProveedores();
+        return;
+      }
+      notification.error({
+        message: "Error",
+        description:
+          response?.error || "Error en el servidor al enlazar productos",
+        placement: "topLeft",
+      });
+    } catch (error) {
+      notification.error({
+        message: "Error",
+        description: error?.message || "Error al enlazar productos",
+        placement: "topLeft",
+      });
+    } finally {
+      cerrarDrawerEnlazar();
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ padding: "24px" }}>
       {/* Header */}
@@ -488,6 +657,13 @@ export default function Aprovisionamiento() {
                     disabled={!proveedorSeleccionado}
                   >
                     Gestionar Vendedores
+                  </Button>
+                  <Button
+                    disabled={!proveedorSeleccionado}
+                    icon={<LinkOutlined />}
+                    onClick={handleDrawerEnlazar}
+                  >
+                    Enzalar Productos
                   </Button>
                 </Space>
               </Col>
@@ -1210,6 +1386,124 @@ export default function Aprovisionamiento() {
               Guardar Cambios
             </Button>
           </Form.Item>
+        </Form>
+      </Drawer>
+
+      {/* DRAWER ENLAZAR PRODUCTOS */}
+      <Drawer
+        title="Enlazar Productos"
+        width={450}
+        closable={true}
+        open={openDrawerEnlazar}
+        onClose={() => cerrarDrawerEnlazar()}
+        footer={
+          <Row gutter={16} justify="end">
+            <Col>
+              <Button
+                type="primary"
+                onClick={() => formEnlazarProductos.submit()}
+              >
+                Agregar
+              </Button>
+            </Col>
+            <Col>
+              <Button onClick={() => cerrarDrawerEnlazar()}>Cancelar</Button>
+            </Col>
+          </Row>
+        }
+      >
+        <Form
+          form={formEnlazarProductos}
+          layout="vertical"
+          onFinish={submitProductosEnlazados}
+        >
+          <Form.Item label="Proveedor Seleccionado">
+            <Input disabled value={proveedorSeleccionado?.rut} />
+          </Form.Item>
+          <Form.Item
+            name="idProveedor"
+            hidden
+            initialValue={proveedorSeleccionado?.idProveedor}
+          >
+            <Input />
+          </Form.Item>
+          <Button onClick={handleDrawerEnlazarTabla}>+ Enlazar Producto</Button>
+          {/**Drawer Secundario */}
+          <Drawer
+            title="Productos Disponibles"
+            width={320}
+            closable={true}
+            open={openDrawerTablaEnlazar}
+            onClose={cerrarDrawerEnlazarTabla}
+            footer={
+              <Row gutter={16} justify="end">
+                <Col>
+                  <Button onClick={() => formTablaEnlazarProductos.submit()}>
+                    {" "}
+                    + Agregar
+                  </Button>
+                </Col>
+                <Col>
+                  <Button onClick={cerrarDrawerEnlazarTabla}>Cerrar</Button>
+                </Col>
+              </Row>
+            }
+          >
+            <Form
+              form={formTablaEnlazarProductos}
+              layout="vertical"
+              onFinish={productosEnlazadosTabla}
+            >
+              <Form.Item label="Productos a Enlazar" name="productos">
+                <Select
+                  placeholder="Seleccione un proveedor"
+                  showSearch
+                  optionFilterProp="children"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Seleccione al menos un producto",
+                    },
+                  ]}
+                  style={{ width: "100%" }}
+                  mode="multiple"
+                >
+                  {productos.map((producto) => (
+                    <Select.Option
+                      key={producto.idProducto}
+                      value={producto.idProducto}
+                    >
+                      {producto.nombre} - {producto.codigo}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Form>
+          </Drawer>
+          <Divider />
+
+          <Table
+            columns={[
+              {
+                title: "Cod. Producto",
+                dataIndex: "idProducto",
+                key: "idProducto",
+              },
+              {
+                title: "Nombre",
+                dataIndex: "nombre",
+                key: "nombre",
+              },
+              {
+                title: "Marca",
+                dataIndex: "marca",
+                key: "marca",
+              },
+            ]}
+            dataSource={productosEnlazadosSeleccionados}
+            rowKey="idProducto"
+            pagination={false}
+          />
         </Form>
       </Drawer>
     </div>

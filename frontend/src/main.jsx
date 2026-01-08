@@ -24,7 +24,7 @@ import Inventario from "./pages/Inventario.jsx";
 import Categoria from "./pages/Categoria.jsx";
 import Proveedor from "./pages/Proveedor.jsx";
 import Vendedores from "./pages/Vendedores.jsx";
-import Aprovisionamiento from "./pages/Aprovisionamiento.jsx";
+import Proveedores from "./pages/Proveedores.jsx";
 
 //vendedor
 import DashboardVendedor from "./pages/Vendedor/DashboardVendedor.jsx";
@@ -66,7 +66,7 @@ createRoot(document.getElementById("root")).render(
             <Route path="inventario" element={<Inventario />} />
 
             <Route path="categorias" element={<Categoria />} />
-            <Route path="proveedores" element={<Aprovisionamiento />} />
+            <Route path="proveedores" element={<Proveedores />} />
             <Route
               path="proveedores/vendedores/:rutProveedor"
               element={<Proveedor />}

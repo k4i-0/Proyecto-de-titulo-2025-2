@@ -67,3 +67,22 @@ export async function eliminarProducto(id) {
     return error.response;
   }
 }
+
+export async function obtenerProductosPorProveedor(rutProveedor) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/proveedor/obtener-productos/${rutProveedor}`,
+      {
+        withCredentials: true,
+      }
+    );
+    //console.log("Productos por proveedor obtenidos:", response);
+    return response;
+  } catch (error) {
+    console.error(
+      "Error al obtener productos por proveedor:",
+      error.response.data.error
+    );
+    return error.response.data;
+  }
+}

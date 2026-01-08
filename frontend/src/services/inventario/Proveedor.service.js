@@ -151,3 +151,23 @@ export async function editarVendedor(vendedorData, idProveedor) {
     return error.response.data;
   }
 }
+
+// Tabla intermedia de proveedores y productos
+export async function enlazarProductoProveedor(enlaceData) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/enlazar-producto-proveedor`,
+      enlaceData,
+      {
+        withCredentials: true,
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error("Error al enlazar productos y proveedor:", error);
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response.data;
+  }
+}

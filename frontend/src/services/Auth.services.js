@@ -13,13 +13,13 @@ export default async function inicioSesion(email, password) {
       },
       { withCredentials: true }
     );
-    if (
-      !response.data ||
-      response.data === null ||
-      response.data === undefined
-    ) {
-      return "No se recibió respuesta del servidor";
-    }
+    // if (
+    //   !response.data ||
+    //   response.data === null ||
+    //   response.data === undefined
+    // ) {
+    //   return "No se recibió respuesta del servidor";
+    // }
     return response;
   } catch (error) {
     console.log(error);
