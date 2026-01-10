@@ -11,6 +11,10 @@ const compraproveedordetalle = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
+    nombreProducto: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     cantidad: {
       type: DataTypes.INTEGER,
       allowNull: false,

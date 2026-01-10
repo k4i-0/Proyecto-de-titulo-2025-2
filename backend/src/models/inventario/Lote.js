@@ -5,28 +5,32 @@ const lote = sequelize.define(
   "lote",
   {
     idLote: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.BIGINT,
       primaryKey: true,
       unique: true,
       autoIncrement: true,
     },
     codigo: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.BIGINT,
       allowNull: false,
       unique: true,
     },
-    fechaIngreso: {
+    fechaCreacion: {
       type: DataTypes.DATE,
       allowNull: false,
     },
-    cantidad: {
-      type: DataTypes.INTEGER,
+    estado: {
+      type: DataTypes.ENUM(
+        "creado",
+        "asociado a OC",
+        "recibido",
+        "aprobado",
+        "rechazado"
+      ),
       allowNull: false,
+      defaultValue: "creado",
     },
-    fechaVencimiento: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
+
     // idBodega: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,

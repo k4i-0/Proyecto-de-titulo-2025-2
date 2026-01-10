@@ -22,4 +22,9 @@ router.delete(
   /*authMiddleware, roleMiddleware(['admin']),*/ productosController.deleteProducto
 );
 
+router.get(
+  "/proveedor/obtener-productos/:rutProveedor",
+  /*authMiddleware,*/ productosController.obtenerProductosPorProveedor
+);
+
 module.exports = router;

@@ -1,7 +1,8 @@
 const Proveedor = require("../../models/inventario/Proveedor");
 const Vendedor = require("../../models/inventario/VendedorProveedor");
+const Provee = require("../../models/inventario/Provee");
 const { Op } = require("sequelize");
-
+const Productos = require("../../models/inventario/Productos");
 exports.getAllProveedores = async (req, res) => {
   try {
     const proveedores = await Proveedor.findAll({});
@@ -219,5 +220,122 @@ exports.updateVendedor = async (req, res) => {
   } catch (error) {
     console.error("Error al actualizar el vendedor:", error);
     res.status(500).json({ error: "Error al actualizar el vendedor" });
+  }
+};
+
+//Tabla intermedia de proveedores y productos
+exports.enlazarProductoProveedor = async (req, res) => {
+  try {
+    const { productos, idProveedor, user } = req.body;
+    // validar que no este repetido el producto para el mismo proveedor
+    const verificarRepetidos = await Provee.findAll({
+      where: {
+        [Op.and]: [
+          { idProveedor: idProveedor },
+          { idProducto: { [Op.in]: productos.map((p) => p.idProducto) } },
+        ],
+      },
+    });
+    if (verificarRepetidos.length > 0) {
+      return res.status(409).json({
+        error: `Algunos productos ya están enlazados con este proveedor:\n COD: ${verificarRepetidos
+          .map((p) => p.idProducto)
+          .join(", ")}`,
+      });
+    }
+    if (!productos || !idProveedor) {
+      return res.status(422).json({
+        error: "Faltan datos obligatorios para enlazar productos y proveedor",
+      });
+    }
+    const proveedor = await Proveedor.findByPk(idProveedor);
+    const usuarioQueRealiza = user || "Desconocido";
+    if (!proveedor) {
+      return res.status(404).json({ error: "Proveedor no encontrado" });
+    }
+    for (const producto of productos) {
+      if (!producto.idProducto) {
+        return res.status(422).json({ error: "Faltan datos del producto" });
+      }
+      await Provee.create({
+        idProducto: producto.idProducto,
+        idProveedor: proveedor.idProveedor,
+        registradoPor: usuarioQueRealiza,
+        estado: "Activo",
+        fechaRegistro: new Date(),
+      });
+    }
+    return res
+      .status(200)
+      .json({ message: "Productos enlazados al proveedor con éxito" });
+  } catch (error) {
+    console.error("Error al enlazar producto y proveedor:", error);
+    res.status(500).json({ error: "Error al enlazar producto y proveedor" });
+  }
+};
+
+// Obtener productos de un proveedor enlazador y datos del proveedor
+exports.obtenerDetalleProveedorConProductos = async (req, res) => {
+  try {
+    const { idProveedor } = req.params;
+    if (!idProveedor || idProveedor === undefined || idProveedor === null) {
+      return res
+        .status(422)
+        .json({ error: "Falta idProveedor en los parámetros" });
+    }
+    const proveedor = await Proveedor.findByPk(idProveedor);
+    if (!proveedor) {
+      return res.status(404).json({ error: "Proveedor no encontrado" });
+    }
+
+    const productosProvee = await Provee.findAll({
+      where: { idProveedor: idProveedor, estado: "Activo" },
+      include: [
+        {
+          model: Productos,
+          as: "producto",
+        },
+      ],
+    });
+    res.status(200).json({ proveedor, productosProvee });
+  } catch (error) {
+    console.error("Error al obtener productos por proveedor:", error);
+    res.status(500).json({ error: "Error al obtener productos por proveedor" });
+  }
+};
+
+//Dezenlazar producto y proveedor
+exports.desenlazarProductoProveedor = async (req, res) => {
+  try {
+    const { idProveedor, idProducto } = req.body;
+    if (!idProveedor || !idProducto) {
+      return res.status(422).json({
+        error: "Faltan datos obligatorios para desenlazar producto y proveedor",
+      });
+    }
+    const enlace = await Provee.findOne({
+      where: {
+        idProveedor: idProveedor,
+        idProducto: idProducto,
+      },
+    });
+
+    if (!enlace) {
+      return res.status(404).json({
+        mensaje: "No se encontró el enlace entre producto y proveedor",
+      });
+    }
+
+    await Provee.destroy({
+      where: {
+        idProveedor: idProveedor,
+        idProducto: idProducto,
+      },
+    });
+
+    return res.status(200).json({ mensaje: "Enlace eliminado correctamente" });
+  } catch (error) {
+    console.error("Error al desenlazar producto y proveedor:", error);
+    res.status(500).json({ error: "Error al desenlazar producto y proveedor" });
   }
 };

@@ -3,6 +3,8 @@ const Producto = require("../../models/inventario/Productos");
 const Categoria = require("../../models/inventario/Categoria");
 const Lote = require("../../models/inventario/Lote");
 const Inventario = require("../../models/inventario/Inventario");
+const Provee = require("../../models/inventario/Provee");
+const Proveedor = require("../../models/inventario/Proveedor");
 
 //bitacora
 const { crearBitacora } = require("../../services/bitacora.service");
@@ -98,6 +100,44 @@ exports.getAllProductos = async (req, res) => {
     res
       .status(500)
       .json({ code: 500, error: "Error al obtener los productos" });
+  }
+};
+
+exports.obtenerProductosPorProveedor = async (req, res) => {
+  try {
+    const { rutProveedor } = req.params;
+    console.log("RUT Proveedor recibido:", rutProveedor);
+    const proveedor = await Proveedor.findOne({ where: { rut: rutProveedor } });
+
+    if (!proveedor) {
+      return res.status(404).json({ error: "Proveedor no encontrado" });
+    }
+    const productosProvee = await Provee.findAll({
+      where: { idProveedor: proveedor.idProveedor },
+    });
+    const idsProductos = productosProvee.map((item) => item.idProducto);
+
+    const productos = await Producto.findAll({
+      where: {
+        idProducto: {
+          [Op.in]: idsProductos,
+        },
+      },
+      include: [{ model: Categoria }],
+    });
+    if (productos.length === 0 || !productos) {
+      return res
+        .status(204)
+        .json({ code: 1212, error: "No hay productos disponibles" });
+    }
+    res.status(200).json(productos);
+  } catch (error) {
+    console.error("Error al obtener los productos por proveedor:", error);
+
+    res.status(500).json({
+      code: 500,
+      error: "Error al obtener los productos por proveedor",
+    });
   }
 };
 

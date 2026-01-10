@@ -5,8 +5,30 @@ const VendedorProveedor = require("../../models/inventario/VendedorProveedor");
 const CompraProveedorDetalle = require("../../models/inventario/CompraProveedorDetalle");
 const Producto = require("../../models/inventario/Productos");
 const Funcionario = require("../../models/Usuarios/Funcionario");
+const Despacho = require("../../models/inventario/Despacho");
+const Lote = require("../../models/inventario/Lote");
+const LoteProducto = require("../../models/inventario/LoteProducto");
+const Inventario = require("../../models/inventario/Inventario");
+const OrdenCompra = require("../../models/inventario/OrdenCompra");
 const { Op } = require("sequelize");
 
+//otros controladores
+const { crearLote } = require("./Lote.controller");
+
+//funciones
+async function generarNombreOrden() {
+  const hoy = new Date().toISOString().split("T")[0].replace(/-/g, "");
+  const ordenesHoy = await CompraProveedor.count({
+    where: {
+      fechaCompra: {
+        [Op.gte]: new Date().setHours(0, 0, 0, 0),
+      },
+    },
+  });
+  return `OC-${hoy}-${String(ordenesHoy + 1).padStart(3, "0")}`;
+}
+
+///------------------------funciones importantes------------------------///
 // Crear una nueva compra a proveedor
 exports.crearOrdenCompraProveedor = async (req, res) => {
   try {
@@ -72,23 +94,33 @@ exports.crearOrdenCompraProveedor = async (req, res) => {
         total + item.valorUnitarioProducto * item.cantidadProducto,
       0
     );
-    const hoy = new Date().toISOString().split("T")[0].replace(/-/g, "");
-    const ordenesHoy = await CompraProveedor.count({
-      where: {
-        fechaCompra: {
-          [Op.gte]: new Date().setHours(0, 0, 0, 0),
-        },
-      },
-    });
-    const nuevaCompraProveedor = await CompraProveedor.create({
-      fechaCompra: new Date(),
+
+    // Crear la Orden compra proveedor
+    const nuevaOrdenCompraProveedor = await OrdenCompra.create({
+      nombreOrden: await generarNombreOrden(),
+      fechaOrden: new Date(),
       estado: "pendiente",
       total: totalCompra,
       observaciones,
-      nombreOrden: `OC-${hoy}-${String(ordenesHoy + 1).padStart(3, "0")}`,
-      idSucursal,
-      idProveedor,
-      idFuncionario,
+      detalleEstado: "Orden creada y pendiente de aprobación",
+    });
+    if (!nuevaOrdenCompraProveedor) {
+      console.log(
+        "Fallo al crear la orden de compra proveedor",
+        nuevaOrdenCompraProveedor
+      );
+      return res.status(500).json({
+        code: 1242,
+        error: "Error al crear la orden de compra proveedor",
+      });
+    }
+
+    const nuevaCompraProveedor = await CompraProveedor.create({
+      fechaCompra: new Date(),
+      idOrdenCompra: nuevaOrdenCompraProveedor.idOrdenCompra,
+      idSucursal: comprobarSucursal.idSucursal,
+      idProveedor: comprobarProveedor.idProveedor,
+      idFuncionario: comprobarFuncionario.idFuncionario,
     });
     if (!nuevaCompraProveedor) {
       console.log("Fallo al crear la compra proveedor", nuevaCompraProveedor);
@@ -111,7 +143,8 @@ exports.crearOrdenCompraProveedor = async (req, res) => {
         });
       }
       const nuevaCompraProveedorDetalle = await CompraProveedorDetalle.create({
-        idCompraProveedor: nuevaCompraProveedor.idCompraProveedor,
+        idOrdenCompra: nuevaOrdenCompraProveedor.idOrdenCompra,
+        nombreProducto: comprobarProducto.nombre,
         idProducto: productoSeleccionado,
         cantidad: cantidadProducto,
         precioUnitario: valorUnitarioProducto,
@@ -140,6 +173,7 @@ exports.crearOrdenCompraProveedor = async (req, res) => {
   }
 };
 
+///================== Verificar ya que se cambio los modelos==================///
 exports.obtenerOrdenesCompraProveedores = async (req, res) => {
   try {
     const ordenesCompra = await CompraProveedor.findAll({
@@ -183,5 +217,523 @@ exports.obtenerOrdenesCompraProveedores = async (req, res) => {
     res
       .status(500)
       .json({ error: "Error al obtener las ordenes de compra a proveedores" });
+  }
+};
+
+// Crear una nueva orden de compra directa (Creada por administrador)
+exports.createOrdenCompraDirecta = async (req, res) => {
+  try {
+    // Extraer los datos del cuerpo de la solicitud
+    const {
+      rutProveedor,
+      idSucursal,
+      observaciones,
+      nombreFuncionario,
+      productos,
+      total,
+    } = req.body;
+    // console.log("Datos recibidos para OC Directa:", req.body);
+    // Validar que se recibieron todos los datos necesarios
+    if (
+      !rutProveedor ||
+      !idSucursal ||
+      // !nombreFuncionario ||
+      !productos ||
+      productos.length === 0 ||
+      !total
+    ) {
+      return res
+        .status(422)
+        .json({ code: 1300, error: "Faltan datos obligatorios" });
+    }
+    // validar datos con joi o similar (opcional)
+
+    //Comprobar que el proveedor, sucursal y funcionario existen
+    const comprobarProveedor = await Proveedor.findOne({
+      where: { rut: rutProveedor },
+    });
+    const comprobarSucursal = await Sucursal.findByPk(idSucursal);
+    const comprobarFuncionario = await Funcionario.findOne({
+      where: { nombre: nombreFuncionario },
+    });
+
+    if (!comprobarProveedor) {
+      return res
+        .status(404)
+        .json({ code: 1301, error: "Proveedor no encontrado" });
+    }
+    if (!comprobarSucursal) {
+      return res
+        .status(404)
+        .json({ code: 1302, error: "Sucursal no encontrada" });
+    }
+    if (!comprobarFuncionario) {
+      return res
+        .status(404)
+        .json({ code: 1303, error: "Funcionario no encontrado" });
+    }
+
+    // Crear la orden de compra (Tabla CompraProveedor)
+    // Con estado pendiente por defecto, cuando se cree el registo en tabla detalle se actualiza el estado a aprobada
+    const nuevaOrdenCompraDirecta = await CompraProveedor.create({
+      nombreOrden: await generarNombreOrden(),
+      fechaCompra: new Date(),
+      estado: "creada",
+      total: total,
+      observaciones: observaciones,
+      idSucursal: idSucursal,
+      idProveedor: comprobarProveedor.idProveedor,
+      idFuncionario: comprobarFuncionario.idFuncionario,
+    });
+    //comprobar creación orden
+    if (!nuevaOrdenCompraDirecta) {
+      console.log(
+        "Fallo al crear la compra proveedor",
+        nuevaOrdenCompraDirecta
+      );
+      return res.status(500).json({
+        error: "Error al crear la orden de compra a proveedor",
+      });
+    }
+
+    // Crear los detalles de la compra (Tabla CompraProveedorDetalle)
+    for (const item of productos) {
+      const { idProducto, nombre, cantidad, precioUnitario, subtotal } = item;
+      //comprobar que el producto existe
+      let comprobarProducto = await Producto.findByPk(idProducto);
+      if (!comprobarProducto) {
+        await nuevaOrdenCompraDirecta.update({ estado: "fallo detalle" });
+        return res
+          .status(404)
+          .json({ error: `Producto con ID ${idProducto} no encontrado` });
+      }
+      //ctear el detalle de la compra
+      const nuevaCompraProveedorDetalle = await CompraProveedorDetalle.create({
+        nombreProducto: nombre,
+        cantidad: cantidad,
+        precioUnitario: precioUnitario,
+        total: subtotal,
+        idCompraProveedor: nuevaOrdenCompraDirecta.idCompraProveedor,
+        idProducto: idProducto,
+      });
+      //comprobar creación detalle
+      if (!nuevaCompraProveedorDetalle) {
+        console.log(
+          "Fallo al crear el detalle de la compra proveedor",
+          nuevaCompraProveedorDetalle
+        );
+        await nuevaOrdenCompraDirecta.update({ estado: "fallo detalle" });
+        return res.status(500).json({
+          error: "Error al crear el detalle de la orden de compra a proveedor",
+        });
+      }
+    }
+    // Si todo sale bien, actualizar el estado de la orden a aprobada
+    await nuevaOrdenCompraDirecta.update({ estado: "aprobada" });
+
+    //Crear lote para entrega de productos OC directa
+    const numeroLote = Date.now();
+
+    const loteCreado = await Lote.create({
+      codigo: numeroLote,
+      fechaCreacion: new Date(),
+      estado: "creado",
+    });
+
+    //Crear Registro en la Tabla despacho en estado pendiente entrega
+    await Despacho.create({
+      fechaDespacho: new Date(),
+      tipoDocumento: "Otro",
+      tipoDespacho: "Compra Directa",
+      repartidor: comprobarFuncionario.rut,
+      estado: "Pendiente Entrega",
+      idLote: loteCreado.idLote,
+      idSucursal: idSucursal,
+      idFuncionario: comprobarFuncionario.idFuncionario,
+      idProveedor: comprobarProveedor.idProveedor,
+      idCompraProveedor: nuevaOrdenCompraDirecta.idCompraProveedor,
+    });
+    //actualizo estado de lote asociado a OC directa
+    await loteCreado.update({ estado: "asociado a OC" });
+
+    return res
+      .status(201)
+      .json({ message: "Orden de compra directa creada exitosamente" });
+  } catch (error) {
+    console.log("Error al crear orden de compra directa:", error);
+    return res.status(500).json({ error: "Error del servidor" });
+  }
+};
+
+//Ver Ordenes de compra directa (Creada por admin)
+exports.obtenerOrdenesCompraDirecta = async (req, res) => {
+  try {
+    // recordar validar que el usuario es admin con middleware en routes
+
+    //obetner ordenes de compra directa
+    const ordenesCompraDirecta = await CompraProveedor.findAll({
+      where: { estado: { [Op.notIn]: ["fallo detalle", "cancelada"] } },
+      include: [
+        {
+          model: Proveedor,
+          attributes: ["rut", "nombre", "rut", "email"],
+        },
+        {
+          model: Funcionario,
+          attributes: ["rut", "nombre", "email"],
+        },
+        {
+          model: Sucursal,
+          attributes: ["idSucursal", "nombre", "direccion"],
+        },
+        {
+          model: CompraProveedorDetalle,
+
+          include: [
+            {
+              model: Producto,
+              attributes: ["codigo", "nombre", "marca", "descripcion"],
+            },
+          ],
+        },
+      ],
+      order: [["fechaCompra", "DESC"]],
+    });
+    if (ordenesCompraDirecta.length === 0 || !ordenesCompraDirecta) {
+      return res.status(204).json({
+        message: "No hay ordenes de compra directa disponibles",
+      });
+    }
+    res.status(200).json(ordenesCompraDirecta);
+  } catch (error) {
+    console.error(
+      "Error al obtener las ordenes de compra directa a proveedores:",
+      error
+    );
+    res
+      .status(500)
+      .json({ error: "Error al obtener las ordenes de compra directa" });
+  }
+};
+
+//eliminar o cancelar ordenes de compra cualuquiera
+exports.cancelarOrdenCompra = async (req, res) => {
+  try {
+    //verificar que existe la orden
+    const { idCompraProveedor } = req.params;
+    console.log("ID de la orden a cancelar:", idCompraProveedor);
+    if (
+      !idCompraProveedor ||
+      idCompraProveedor === "" ||
+      idCompraProveedor === null ||
+      idCompraProveedor === undefined
+    ) {
+      return res
+        .status(422)
+        .json({ error: "ID de la orden de compra es obligatorio" });
+    }
+    const ordenCompra = await CompraProveedor.findByPk(idCompraProveedor);
+    if (!ordenCompra) {
+      return res
+        .status(404)
+        .json({ error: "Orden de compra a proveedor no encontrada" });
+    }
+    //actualizar estado a cancelada
+    await ordenCompra.update({ estado: "cancelada" });
+    res
+      .status(200)
+      .json({ message: "Orden de compra a proveedor cancelada exitosamente" });
+  } catch (error) {
+    console.error("Error al cancelar la orden de compra a proveedores:", error);
+    res
+      .status(500)
+      .json({ error: "Error al cancelar la orden de compra a proveedores" });
+  }
+};
+
+// Cambiar el estado de una orden de compra
+exports.cambiarEstadoOrdenCompra = async (req, res) => {
+  try {
+    const { idCompraProveedor } = req.params;
+    const { estado, observaciones } = req.body;
+    if (!estado || estado === "" || estado === null || estado === undefined) {
+      return res.status(422).json({ error: "El nuevo estado es obligatorio" });
+    }
+    if (
+      idCompraProveedor === "" ||
+      idCompraProveedor === null ||
+      idCompraProveedor === undefined
+    ) {
+      return res
+        .status(422)
+        .json({ error: "ID de la orden de compra es obligatorio" });
+    }
+
+    // Verificar que la orden de compra existe
+    const ordenCompra = await CompraProveedor.findByPk(idCompraProveedor);
+    if (!ordenCompra) {
+      return res
+        .status(404)
+
+        .json({ error: "Orden de compra a proveedor no encontrada" });
+    }
+    // actualizar orden de compra
+    await ordenCompra.update({
+      estado: estado,
+      observaciones: ordenCompra.observaciones
+        ? `${ordenCompra.observaciones}\n${observaciones}`
+        : observaciones,
+    });
+    res.status(200).json({
+      message: "Estado de la orden de compra actualizado exitosamente",
+    });
+  } catch (error) {
+    console.error("Error al cambiar el estado de la orden de compra:", error);
+    res
+      .status(500)
+      .json({ error: "Error al cambiar el estado de la orden de compra" });
+  }
+};
+
+// Editar una orden de compra a proveedor
+exports.editarOrdenCompraProveedor = async (req, res) => {
+  try {
+    const { idCompraProveedor } = req.params;
+    const { productos, observaciones } = req.body;
+    if (
+      !productos ||
+      productos.length === 0 ||
+      productos === null ||
+      productos === undefined
+    ) {
+      return res
+        .status(422)
+        .json({ error: "La lista de productos es obligatoria" });
+    }
+    if (
+      idCompraProveedor === "" ||
+      idCompraProveedor === null ||
+      idCompraProveedor === undefined
+    ) {
+      return res
+        .status(422)
+        .json({ error: "ID de la orden de compra es obligatorio" });
+    }
+    const comprobarOrden = await CompraProveedor.findByPk(idCompraProveedor);
+    if (!comprobarOrden) {
+      return res
+        .status(404)
+        .json({ error: "Orden de compra a proveedor no encontrada" });
+    }
+    // Actualizar los detalles de la orden de compra
+    comprobarOrden.update({ observaciones: observaciones });
+
+    // editar detalle productos
+    const comprobarOrdenDetalles = await CompraProveedorDetalle.findAll({
+      where: { idCompraProveedor: idCompraProveedor },
+    });
+    for (const item of productos) {
+      const { idCompraProveedorDetalle, cantidad, precioUnitario } = item;
+      const detalle = comprobarOrdenDetalles.find(
+        (d) => d.idCompraProveedorDetalle === idCompraProveedorDetalle
+      );
+      if (detalle) {
+        const totalProducto = cantidad * precioUnitario;
+        await detalle.update({
+          cantidad: cantidad,
+          precioUnitario: precioUnitario,
+          total: totalProducto,
+        });
+      }
+    }
+    // Recalcular el total de la orden de compra
+    let totalOrden = 0;
+    for (const item of productos) {
+      totalOrden += item.cantidad * item.precioUnitario;
+    }
+    await comprobarOrden.update({ total: totalOrden });
+    res.status(200).json({
+      message: "Orden de compra a proveedor editada exitosamente",
+    });
+  } catch (error) {
+    console.error("Error al editar la orden de compra a proveedor:", error);
+    res
+      .status(500)
+      .json({ error: "Error al editar la orden de compra a proveedor" });
+  }
+};
+
+//------------------Funciones de despacho relacionadas con compra proveedor------------------//
+exports.buscarTodasOrdenesParaRecepcion = async (req, res) => {
+  try {
+    const ordenesCompra = await CompraProveedor.findAll({
+      include: [
+        {
+          model: Proveedor,
+          attributes: ["idProveedor", "nombre", "rut", "email"],
+        },
+        {
+          model: Funcionario,
+          attributes: ["idFuncionario", "nombre", "email"],
+        },
+        {
+          model: Sucursal,
+          attributes: ["idSucursal", "nombre", "direccion"],
+        },
+        {
+          model: CompraProveedorDetalle,
+          include: [
+            {
+              model: Producto,
+              attributes: ["idProducto", "nombre", "marca", "descripcion"],
+            },
+          ],
+        },
+      ],
+      order: [["fechaCompra", "DESC"]],
+    });
+
+    if (!ordenesCompra || ordenesCompra.length === 0) {
+      return res.status(204).json({
+        message: "No hay ordenes de compra a proveedores disponibles",
+      });
+    }
+    res.status(200).json(ordenesCompra);
+  } catch (error) {
+    console.error(
+      "Error al buscar las órdenes de compra para recepción:",
+      error
+    );
+    res
+      .status(500)
+      .json({ error: "Error al buscar las órdenes de compra para recepción" });
+  }
+};
+
+exports.buscarOrdenesCompraParaRecepcion = async (req, res) => {
+  try {
+    const { rutProveedor } = req.params;
+
+    //verificar que el proveedor existe
+    const comprobarProveedor = await Proveedor.findOne({
+      where: { rut: rutProveedor },
+    });
+    if (!comprobarProveedor) {
+      return res
+        .status(404)
+        .json({ code: 1301, error: "Proveedor no encontrado" });
+    }
+    // console.log("Proveedor encontrado:", comprobarProveedor);
+    //encontrar ordenes de compra asociadas al proveedor
+    const ordenesCompra = await CompraProveedor.findAll({
+      where: {
+        idProveedor: comprobarProveedor.idProveedor,
+        estado: {
+          [Op.notIn]: ["creada", "rechazada", "recibida", "cancelada"],
+        },
+      },
+      include: [
+        {
+          model: Proveedor,
+          attributes: ["idProveedor", "nombre", "rut", "email"],
+        },
+        {
+          model: Funcionario,
+          attributes: ["idFuncionario", "nombre", "email"],
+        },
+        {
+          model: Sucursal,
+          attributes: ["idSucursal", "nombre", "direccion"],
+        },
+        {
+          model: CompraProveedorDetalle,
+          include: [
+            {
+              model: Producto,
+              attributes: ["idProducto", "nombre", "marca", "descripcion"],
+            },
+          ],
+        },
+      ],
+      order: [["fechaCompra", "DESC"]],
+    });
+    // console.log("Ordenes de compra encontradas:", ordenesCompra);
+    if (!ordenesCompra || ordenesCompra.length === 0) {
+      return res.status(204).json({
+        message: "No hay ordenes de compra a proveedores disponibles",
+      });
+    }
+    res.status(200).json(ordenesCompra);
+  } catch (error) {
+    console.error(
+      "Error al buscar las órdenes de compra para recepción:",
+      error
+    );
+    res
+      .status(500)
+      .json({ error: "Error al buscar las órdenes de compra para recepción" });
+  }
+};
+
+exports.confirmacionRecepcionOrdenCompra = async (req, res) => {
+  try {
+    const { idCompraProveedor } = req.params;
+
+    //buscar orden de compra
+    const ordenCompra = await CompraProveedor.findByPk(idCompraProveedor);
+    if (!ordenCompra) {
+      return res
+        .status(404)
+        .json({ error: "Orden de compra a proveedor no encontrada" });
+    }
+    //actualizar estado orden de compra a recibida
+    await ordenCompra.update({ estado: "recibida" });
+    //verificar si existe un despacho asociado a la orden de compra
+    const despachoAsociado = await Despacho.findOne({
+      where: { idCompraProveedor: idCompraProveedor },
+    });
+    if (despachoAsociado) {
+      //actulizar estado despacho a entregado
+      await despachoAsociado.update({ estado: "Entregado" });
+      //buscar lote asociado al despacho
+      const loteAsociado = await Lote.findByPk(despachoAsociado.idLote);
+      if (loteAsociado) {
+        //actualizar estado lote a recibido
+        await loteAsociado.update({ estado: "recibido" });
+      }
+      //buscar los detalles de la orden de compra para actualizar stock
+      const detallesOrden = await CompraProveedorDetalle.findAll({
+        where: { idCompraProveedor: idCompraProveedor },
+      });
+      for (const detalle of detallesOrden) {
+        const producto = await Producto.findByPk(detalle.idProducto);
+        if (producto) {
+          //Agregar a tabla lote producto
+          const loteProducto = await LoteProducto.create({
+            idLote: loteAsociado.idLote,
+            idProducto: producto.idProducto,
+            cantidad: detalle.cantidad,
+            fechaIngreso: new Date(),
+            fechaVencimiento: new Date(
+              new Date().setFullYear(new Date().getFullYear() + 1)
+            ),
+            estado: "disponible",
+          });
+        }
+      }
+
+      //actualizar estado inventario
+      const inventario = await Inventario.findOne({
+        where: { idSucursal: ordenCompra.idSucursal },
+      });
+    }
+  } catch (error) {
+    console.error(
+      "Error al confirmar la recepción de la orden de compra:",
+      error
+    );
+    res
+      .status(500)
+      .json({ error: "Error al confirmar la recepción de la orden de compra" });
   }
 };

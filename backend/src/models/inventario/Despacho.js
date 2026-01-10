@@ -15,18 +15,43 @@ const despacho = sequelize.define(
       allowNull: false,
     },
     tipoDocumento: {
-      type: DataTypes.ENUM("Factura", "Guia de despacho"),
+      type: DataTypes.ENUM("Factura", "Guia de despacho", "Boleta", "Otro"),
       allowNull: false,
       defaultValue: "Factura",
     },
     tipoDespacho: {
-      type: DataTypes.ENUM("Proveedor", "Entre Sucursales"),
+      type: DataTypes.ENUM(
+        "Proveedor",
+        "Entre Sucursales",
+        "Compra Directa",
+        "Devolucion"
+      ),
       allowNull: false,
       defaultValue: "Proveedor",
     },
+    numeroDocumento: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+    },
     repartidor: {
       type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    estado: {
+      type: DataTypes.ENUM(
+        "En espera aprobacion",
+        "Pendiente Entrega",
+        "Entregado",
+        "Entregado Con Faltantes",
+        "En Inventario",
+        "Cancelado"
+      ),
       allowNull: false,
+      defaultValue: "Pendiente Entrega",
+    },
+    observaciones: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     // idProveedor: {
     //   type: DataTypes.INTEGER,

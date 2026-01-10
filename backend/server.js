@@ -21,23 +21,26 @@ const {
   Roles,
   Bitacora,
   Actividad,
-  DatosVenta,
+
   Descuento,
   Categoria,
   Productos,
   Cliente,
   Estante,
-  Boleta,
+  RealizaVenta,
   Despacho,
   CompraProveedor,
   ContratoFuncionario,
   CajaFuncionario,
-  DescuentoAsociado,
   VentaCliente,
   BitacoraActividad,
-  DetalleDescuento,
   DescuentoSobre,
   CompraProveedorDetalle,
+  Provee,
+  LoteProducto,
+  DetalleVenta,
+  OrdenCompra,
+  EntregaProveedor,
 } = require("./src/models");
 const { allowedNodeEnvironmentFlags } = require("process");
 
@@ -130,9 +133,6 @@ async function syncDataBase() {
     await Caja.sync(syncOptions);
     console.log("  ✓ Caja");
 
-    await Boleta.sync(syncOptions);
-    console.log("  ✓ Boleta");
-
     await Productos.sync(syncOptions);
     console.log("  ✓ Productos");
 
@@ -143,24 +143,31 @@ async function syncDataBase() {
     console.log("  ✓ CajaFuncionario");
 
     // NIVEL 5: Tablas que dependen de Productos y Bodega
+
+    await Despacho.sync(syncOptions);
+    console.log("  ✓ Despacho");
+
     await Inventario.sync(syncOptions);
     console.log("  ✓ Inventario");
 
     await Lote.sync(syncOptions);
     console.log("  ✓ Lote");
 
-    await DescuentoAsociado.sync(syncOptions);
-    console.log("  ✓ DescuentoAsociado");
+    await RealizaVenta.sync(syncOptions);
+    console.log("  ✓ RealizaVenta");
 
-    await DatosVenta.sync(syncOptions);
-    console.log("  ✓ DatosVenta");
+    await OrdenCompra.sync(syncOptions);
+    console.log("  ✓ OrdenCompra");
+
+    await EntregaProveedor.sync(syncOptions);
+    console.log("  ✓ EntregaProveedor");
+
+    await DetalleVenta.sync(syncOptions);
+    console.log("  ✓ DetalleVenta");
 
     // NIVEL 6: Tablas intermedias finales
     await CompraProveedor.sync(syncOptions);
     console.log("  ✓ CompraProveedor");
-
-    await Despacho.sync(syncOptions);
-    console.log("  ✓ Despacho");
 
     await VentaCliente.sync(syncOptions);
     console.log("  ✓ VentaCliente");
@@ -168,14 +175,16 @@ async function syncDataBase() {
     await BitacoraActividad.sync(syncOptions);
     console.log("  ✓ BitacoraActividad");
 
-    await DetalleDescuento.sync(syncOptions);
-    console.log("  ✓ DetalleDescuento");
-
     await DescuentoSobre.sync(syncOptions);
     console.log("  ✓ DescuentoSobre");
 
     await CompraProveedorDetalle.sync(syncOptions);
     console.log("  ✓ CompraProveedorDetalle");
+
+    await Provee.sync(syncOptions);
+    console.log("  ✓ Provee");
+    await LoteProducto.sync(syncOptions);
+    console.log("  ✓ LoteProducto");
 
     console.log("✅ Todas las tablas sincronizadas correctamente");
   } catch (error) {

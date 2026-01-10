@@ -1,10 +1,10 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/bd");
 
-const datosventa = sequelize.define(
-  "datosventa",
+const detalleventa = sequelize.define(
+  "detalleventa",
   {
-    idDatosVenta: {
+    idDetalleVenta: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
@@ -21,12 +21,20 @@ const datosventa = sequelize.define(
       type: DataTypes.STRING(50),
       allowNull: false,
     },
-    fecha: {
+    fechaHoraEmision: {
       type: DataTypes.DATE,
       allowNull: false,
     },
-    subTotal: {
+    total: {
       type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    iva: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    numeroBoleta: {
+      type: DataTypes.STRING(100),
       allowNull: false,
     },
     // idDescuento: {
@@ -51,9 +59,9 @@ const datosventa = sequelize.define(
     // },
   },
   {
-    tableName: "datosventa",
+    tableName: "detalleventa",
     timestamps: false,
   }
 );
 
-module.exports = datosventa;
+module.exports = detalleventa;

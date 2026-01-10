@@ -10,29 +10,12 @@ const compraproveedor = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    nombreOrden: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     fechaCompra: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
-    estado: {
-      type: DataTypes.ENUM("pendiente", "aprobada", "recibida", "cancelada"),
-      allowNull: false,
-      defaultValue: "pendiente",
-    },
-    total: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
-    },
-    observaciones: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
+
     // idLote: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,

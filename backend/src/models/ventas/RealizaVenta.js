@@ -1,35 +1,31 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/bd");
 
-const boleta = sequelize.define(
-  "boleta",
+const realizaVenta = sequelize.define(
+  "realizaVenta",
   {
-    idBoleta: {
+    idRealizaVenta: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
     },
-    fechaHoraEmision: {
+    fechaRealizaVenta: {
       type: DataTypes.DATE,
       allowNull: false,
     },
-    total: {
+    montoTotalVenta: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    iva: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    codigoSII: {
-      type: DataTypes.STRING(100),
+    metodoPago: {
+      type: DataTypes.STRING(50),
       allowNull: false,
     },
   },
   {
-    tableName: "boleta",
+    tableName: "realizaVenta",
     timestamps: false,
   }
 );
 
-module.exports = boleta;
+module.exports = realizaVenta;
