@@ -81,7 +81,7 @@ const despacho = sequelize.define(
     //   onDelete: "CASCADE",
     // },
   },
-  { tableName: "despacho", timestamps: false }
+  { tableName: "despacho", timestamps: true }
 );
 
 module.exports = despacho;

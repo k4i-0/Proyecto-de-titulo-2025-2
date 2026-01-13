@@ -23,6 +23,7 @@ import {
   Table,
   Statistic,
   notification,
+  Descriptions,
 } from "antd";
 
 import {
@@ -40,6 +41,8 @@ import {
   FilterOutlined,
   ArrowLeftOutlined,
   LinkOutlined,
+  EyeOutlined,
+  DisconnectOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -62,7 +65,11 @@ import {
 
 import obtenerProductos from "../services/inventario/Productos.service.js";
 
-import { enlazarProductoProveedor } from "../services/inventario/Proveedor.service.js";
+import {
+  enlazarProductoProveedor,
+  getProductosPorProveedor,
+  desenzalarProductoProveedor,
+} from "../services/inventario/Proveedor.service.js";
 
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -81,6 +88,8 @@ export default function Proveedor() {
   const [verDrawerVendedores, setVerDrawerVendedores] = useState(false);
   const [openDrawerEnlazar, setOpenDrawerEnlazar] = useState(false);
   const [openDrawerTablaEnlazar, setOpenDrawerTablaEnlazar] = useState(false);
+  const [drawerDetalleProveedorVisible, setDrawerDetalleProveedorVisible] =
+    useState(false);
 
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState(null);
   const [proveedorEditar, setProveedorEditar] = useState(null);
@@ -91,6 +100,7 @@ export default function Proveedor() {
   const [productosEnlazadosSeleccionados, setProductosEnlazadosSeleccionados] =
     useState([]);
 
+  const [proveedorDetalle, setProveedorDetalle] = useState(null);
   // Estados para filtros
   const [searchText, setSearchText] = useState("");
   const [filterEstado, setFilterEstado] = useState(null);
@@ -114,12 +124,20 @@ export default function Proveedor() {
         return;
       }
       if (response.status === 204) {
-        message.info("No hay proveedores registrados");
+        notification.info({
+          message: "Información",
+          description: "No hay proveedores registrados",
+          placement: "topLeft",
+        });
         setProveedores([]);
         setLoading(false);
         return;
       }
-      message.error("Error en el servidor al obtener los proveedores");
+      notification.error({
+        message: "Error",
+        description: "Error en el servidor al obtener los proveedores",
+        placement: "topLeft",
+      });
       setLoading(false);
     } catch (error) {
       message.error("Error al obtener los proveedores");
@@ -133,7 +151,11 @@ export default function Proveedor() {
       setLoading(true);
       const respuesta = await getAllProveedoresVendedor(rutProveedor);
       if (respuesta.status === 200) {
-        message.success("Vendedores obtenidos correctamente");
+        notification.success({
+          message: "Éxito",
+          description: "Vendedores obtenidos correctamente",
+          placement: "topLeft",
+        });
         setVendedores(respuesta.data);
         setLoading(false);
         return;
@@ -144,10 +166,18 @@ export default function Proveedor() {
         setLoading(false);
         return;
       }
-      message.error("Error en el servidor al obtener los vendedores");
+      notification.error({
+        message: "Error",
+        description: "Error en el servidor al obtener los vendedores",
+        placement: "topLeft",
+      });
       setLoading(false);
     } catch (error) {
-      message.error("Error al obtener los vendedores");
+      notification.error({
+        message: "Error",
+        description: "Error al obtener los vendedores",
+        placement: "topLeft",
+      });
       console.error("Error al obtener los vendedores:", error);
       setLoading(false);
     }
@@ -165,15 +195,32 @@ export default function Proveedor() {
         proveedorEditar.idProveedor
       );
       if (respuesta.status === 200) {
-        message.success("Proveedor editado exitosamente");
+        notification.success({
+          message: "Éxito",
+          description: "Proveedor editado exitosamente",
+          placement: "topLeft",
+        });
         setVerModalEditar(false);
+        buscarVendedoresSucursal(proveedorSeleccionado.rut);
+        buscarDetalleProductoProveedor(proveedorSeleccionado.idProveedor);
+        setVendedorEditarProveedor({});
+        setProveedorEditar(null);
+
+        setDrawerDetalleProveedorVisible(false);
+        setModalEditarVendedorProveedor(false);
         formEditar.resetFields();
+        formEnlazarProductos.resetFields();
+        formTablaEnlazarProductos.resetFields();
         obtenerProveedores();
         setLoading(false);
         return;
       }
       if (respuesta.status === 422) {
-        message.info("Faltan datos obligatorios para editar el proveedor");
+        notification.info({
+          message: "Información",
+          description: "Faltan datos obligatorios para editar el proveedor",
+          placement: "topLeft",
+        });
         setLoading(false);
         return;
       }
@@ -181,7 +228,11 @@ export default function Proveedor() {
         respuesta.error || "Error en el servidor al editar el proveedor"
       );
     } catch (error) {
-      message.error("Error al editar el proveedor");
+      notification.error({
+        message: "Error",
+        description: "Error al editar el proveedor",
+        placement: "topLeft",
+      });
       console.error("Error al editar el proveedor:", error);
     } finally {
       setLoading(false);
@@ -197,7 +248,11 @@ export default function Proveedor() {
       };
       const respuesta = await crearVendedor(vendedorData);
       if (respuesta.status === 200) {
-        message.success("Vendedor creado exitosamente");
+        notification.success({
+          message: "Éxito",
+          description: "Vendedor creado exitosamente",
+          placement: "topLeft",
+        });
         formVendedor.resetFields();
         buscarVendedoresSucursal(proveedorSeleccionado.rut);
         setChildrenDrawer(false);
@@ -206,12 +261,19 @@ export default function Proveedor() {
       if (respuesta.status === 422) {
         message.error("Faltan datos obligatorios para crear el vendedor");
       }
-      message.error(
-        respuesta.error || "Error en el servidor al crear el vendedor"
-      );
+      notification.error({
+        message: "Error",
+        description:
+          respuesta.error || "Error en el servidor al crear el vendedor",
+        placement: "topLeft",
+      });
       setLoading(false);
     } catch (error) {
-      message.error("Error al crear el vendedor");
+      notification.error({
+        message: "Error",
+        description: "Error al crear el vendedor",
+        placement: "topLeft",
+      });
       console.error("Error al crear el vendedor:", error);
       setLoading(false);
     }
@@ -222,7 +284,11 @@ export default function Proveedor() {
       setLoading(true);
       const respuesta = await eliminarVendedor(idVendedorProveedor);
       if (respuesta.status === 200) {
-        message.success("Vendedor eliminado exitosamente");
+        notification.success({
+          message: "Éxito",
+          description: "Vendedor eliminado exitosamente",
+          placement: "topLeft",
+        });
         buscarVendedoresSucursal(proveedorSeleccionado.rut);
         return;
       }
@@ -230,12 +296,19 @@ export default function Proveedor() {
         message.error("Vendedor no encontrado");
         return;
       }
-      message.error(
-        respuesta.message || "Error en el servidor al eliminar el vendedor"
-      );
+      notification.error({
+        message: "Error",
+        description:
+          respuesta.message || "Error en el servidor al eliminar el vendedor",
+        placement: "topLeft",
+      });
       setLoading(false);
     } catch (error) {
-      message.error("Error al eliminar el vendedor");
+      notification.error({
+        message: "Error",
+        description: "Error al eliminar el vendedor",
+        placement: "topLeft",
+      });
       console.error("Error al eliminar el vendedor:", error);
       setLoading(false);
     }
@@ -333,6 +406,8 @@ export default function Proveedor() {
   };
 
   const handleEditarProveedor = (recibido) => {
+    console.log("Proveedor a editar:", recibido);
+    setProveedorSeleccionado(recibido);
     setProveedorEditar(recibido);
     setVerModalEditar(!verModalEditar);
   };
@@ -353,8 +428,13 @@ export default function Proveedor() {
         message.success("Vendedor editado exitosamente");
         formVendedorEditar.resetFields();
         buscarVendedoresSucursal(proveedorSeleccionado.rut);
+        buscarDetalleProductoProveedor(proveedorSeleccionado.idProveedor);
         setVendedorEditarProveedor({});
+        setProveedorDetalle(null);
+
+        setDrawerDetalleProveedorVisible(false);
         setModalEditarVendedorProveedor(false);
+        formEditar.resetFields();
         return;
       }
       if (respuesta.status === 422) {
@@ -562,6 +642,85 @@ export default function Proveedor() {
     }
   };
 
+  //funciones drawer detalle proveedor
+  const buscarDetalleProductoProveedor = async (idProvedor) => {
+    try {
+      setLoading(true);
+      const response = await getProductosPorProveedor(idProvedor);
+      if (response.status === 200) {
+        console.log("Detalle proveedor con productos:", response.data);
+        setProveedorDetalle(response.data);
+        notification.success({
+          message: "Éxito",
+          description: "Detalle proveedor obtenido correctamente",
+          placement: "topLeft",
+        });
+        setLoading(false);
+        return;
+      }
+
+      notification.error({
+        message: "Error",
+        description:
+          response?.error ||
+          "Error en el servidor al obtener detalle proveedor",
+        placement: "topLeft",
+      });
+    } catch (error) {
+      notification.error({
+        message: "Error",
+        description: error?.message || "Error al obtener detalle proveedor",
+        placement: "topLeft",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const openDrawerProveedor = (idProveedor) => {
+    buscarDetalleProductoProveedor(idProveedor);
+    setDrawerDetalleProveedorVisible(true);
+  };
+  const cerrarDrawerProveedor = () => {
+    setDrawerDetalleProveedorVisible(false);
+    setProveedorDetalle(null);
+    setProveedorEditar(null);
+    setProveedorSeleccionado(null);
+  };
+
+  const desenlazarProducto = async (datos) => {
+    const data = {
+      idProveedor: datos.idProveedor,
+      idProducto: datos.producto.idProducto,
+    };
+
+    try {
+      setLoading(true);
+      const respuesta = await desenzalarProductoProveedor(data);
+      if (respuesta.status === 200) {
+        notification.success({
+          message: "Éxito",
+          description: "Producto desenlazado correctamente",
+          placement: "topLeft",
+        });
+        buscarDetalleProductoProveedor(proveedorDetalle.proveedor.idProveedor);
+        return;
+      }
+      notification.error({
+        message: "Error",
+        description:
+          respuesta?.error || "Error en el servidor al desenlazar producto",
+        placement: "topLeft",
+      });
+    } catch (error) {
+      notification.error({
+        message: "Error",
+        description: error?.message || "Error al desenlazar producto",
+        placement: "topLeft",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div style={{ padding: "24px" }}>
       {/* Header */}
@@ -827,12 +986,19 @@ export default function Proveedor() {
                   render: (_, record) => (
                     <Space size="small">
                       <Button
+                        type="link"
+                        icon={<EyeOutlined />}
+                        onClick={() => openDrawerProveedor(record.idProveedor)}
+                        disabled={!proveedorSeleccionado}
+                      />
+                      <Button
                         type="text"
                         icon={<EditOutlined />}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEditarProveedor(record);
                         }}
+                        disabled={!proveedorSeleccionado}
                       />
                       <Popconfirm
                         title="¿Está seguro de eliminar este proveedor?"
@@ -1505,6 +1671,242 @@ export default function Proveedor() {
             pagination={false}
           />
         </Form>
+      </Drawer>
+
+      {/* Drawer Detalle Proveedor */}
+      <Drawer
+        title="Detalle del Proveedor"
+        width={700}
+        closable={true}
+        open={drawerDetalleProveedorVisible}
+        onClose={() => cerrarDrawerProveedor()}
+        footer={
+          <Row gutter={16} justify="end">
+            <Col>
+              <Button onClick={() => cerrarDrawerProveedor()}>Cerrar</Button>
+            </Col>
+            <Col>
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={() =>
+                  handleEditarProveedor(proveedorDetalle?.proveedor)
+                }
+              >
+                Editar Proveedor
+              </Button>
+            </Col>
+          </Row>
+        }
+      >
+        {proveedorDetalle && (
+          <>
+            {/* Información del Proveedor */}
+            <Descriptions
+              title="Información del Proveedor"
+              bordered
+              column={2}
+              size="small"
+            >
+              <Descriptions.Item label="ID Proveedor">
+                {proveedorDetalle.proveedor.idProveedor}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="RUT">
+                {proveedorDetalle.proveedor.rut}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Nombre" span={2}>
+                <strong>{proveedorDetalle.proveedor.nombre}</strong>
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Teléfono">
+                {proveedorDetalle.proveedor.telefono}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Email">
+                {proveedorDetalle.proveedor.email}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Rubro">
+                {proveedorDetalle.proveedor.rubro}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Giro">
+                {proveedorDetalle.proveedor.giro}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Fecha Ingreso">
+                {new Date(
+                  proveedorDetalle.proveedor.fechaIngreso
+                ).toLocaleDateString("es-CL", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </Descriptions.Item>
+
+              <Descriptions.Item label="Estado">
+                <Tag
+                  color={
+                    proveedorDetalle.proveedor.estado === "Activo"
+                      ? "green"
+                      : "red"
+                  }
+                >
+                  {proveedorDetalle.proveedor.estado.toUpperCase()}
+                </Tag>
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Divider>
+              Productos que Provee ({proveedorDetalle.productosProvee.length})
+            </Divider>
+
+            {/* Tabla de Productos */}
+            <Table
+              columns={[
+                {
+                  title: "Código",
+                  dataIndex: ["producto", "codigo"],
+                  key: "codigo",
+                },
+                {
+                  title: "Nombre",
+                  dataIndex: ["producto", "nombre"],
+                  key: "nombre",
+                },
+                {
+                  title: "Marca",
+                  dataIndex: ["producto", "marca"],
+                  key: "marca",
+                },
+                {
+                  title: "Precio Compra",
+                  dataIndex: ["producto", "precioCompra"],
+                  key: "precioCompra",
+                  align: "right",
+
+                  render: (precio) => `$${precio.toLocaleString("es-CL")}`,
+                },
+                {
+                  title: "Precio Venta",
+                  dataIndex: ["producto", "precioVenta"],
+                  key: "precioVenta",
+                  align: "right",
+
+                  render: (precio) => `$${precio.toLocaleString("es-CL")}`,
+                },
+                {
+                  title: "Fecha Registro",
+                  dataIndex: "fechaRegistro",
+                  key: "fechaRegistro",
+
+                  render: (fecha) =>
+                    new Date(fecha).toLocaleDateString("es-CL"),
+                },
+                {
+                  title: "Estado",
+                  dataIndex: ["producto", "estado"],
+                  key: "estado",
+
+                  align: "center",
+                  render: (estado) => (
+                    <Tag color={estado === "Activo" ? "green" : "red"}>
+                      {estado}
+                    </Tag>
+                  ),
+                },
+                {
+                  title: "Acciones",
+                  key: "acciones",
+
+                  align: "center",
+                  render: (_, record) => (
+                    <Space>
+                      {/* <Button
+                        type="link"
+                        icon={<EyeOutlined />}
+                        onClick={() => verDetalleProducto(record.producto.idProducto)}
+                        title="Ver detalle"
+                      /> */}
+                      <Popconfirm
+                        title="¿Desenlazar este producto?"
+                        description="El producto dejará de estar asociado a este proveedor"
+                        onConfirm={() => desenlazarProducto(record)}
+                        okText="Sí"
+                        cancelText="No"
+                        okButtonProps={{ danger: true }}
+                      >
+                        <Button
+                          type="link"
+                          danger
+                          icon={<DisconnectOutlined />}
+                          title="Desenlazar"
+                        />
+                      </Popconfirm>
+                    </Space>
+                  ),
+                },
+              ]}
+              dataSource={proveedorDetalle.productosProvee}
+              pagination={false}
+              rowKey="idProvee"
+              size="small"
+              scroll={{ x: 1000 }}
+              expandable={{
+                expandedRowRender: (record) => (
+                  <div
+                    style={{ padding: "8px 16px", backgroundColor: "#fafafa" }}
+                  >
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <strong>Descripción:</strong>{" "}
+                        {record.producto.descripcion}
+                      </Col>
+                      <Col span={8}>
+                        <strong>Peso:</strong> {record.producto.peso} kg
+                      </Col>
+                      <Col span={8}>
+                        <strong>Registrado por:</strong> {record.registradoPor}
+                      </Col>
+                    </Row>
+                  </div>
+                ),
+              }}
+              locale={{
+                emptyText: "No hay productos asociados a este proveedor",
+              }}
+            />
+
+            {proveedorDetalle.productosProvee.length > 0 && (
+              <Card
+                size="small"
+                style={{ marginTop: 16, backgroundColor: "#f0f2f5" }}
+              >
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Statistic
+                      title="Total de Productos"
+                      value={proveedorDetalle.productosProvee.length}
+                    />
+                  </Col>
+                  <Col span={12}>
+                    <Statistic
+                      title="Productos Activos"
+                      value={
+                        proveedorDetalle.productosProvee.filter(
+                          (p) => p.producto.estado === "Activo"
+                        ).length
+                      }
+                      valueStyle={{ color: "#3f8600" }}
+                    />
+                  </Col>
+                </Row>
+              </Card>
+            )}
+          </>
+        )}
       </Drawer>
     </div>
   );

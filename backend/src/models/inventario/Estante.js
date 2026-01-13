@@ -24,9 +24,10 @@ const estante = sequelize.define(
     },
     estado: {
       type: DataTypes.ENUM(
-        "Habilitado",
+        "Disponible",
         "Inhabilitado",
         "Mantenimiento",
+        "Completo",
         "Reservado"
       ),
       allowNull: false,

@@ -10,16 +10,36 @@ const inventario = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    estado: {
-      type: DataTypes.ENUM("Bueno", "Malo", "Revision"),
-      allowNull: false,
-      defaultValue: "Bueno",
-    },
     stock: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
     },
+    // stock == sumatoria Lote.StockInicial
+    stockMinimo: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    // define tope minimo
+    stockMaximo: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 100,
+    },
+    //Maximo permitido
+    stockReservado: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    // en caso de salida por reserva
+    estado: {
+      type: DataTypes.ENUM("Bueno", "Malo", "Roto", "Vendido", "Vencido"),
+      allowNull: false,
+      defaultValue: "Bueno",
+    },
+
     // idBodega: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,

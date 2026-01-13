@@ -27,7 +27,7 @@ const ordenCompra = sequelize.define(
         "rechazada",
         "recibida",
         "cancelada",
-        "fallo detalle"
+        "recibida con faltante"
       ),
       allowNull: false,
       defaultValue: "creada",

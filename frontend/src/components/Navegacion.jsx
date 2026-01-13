@@ -144,6 +144,8 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                       key: "recepcionar_ordenes_compra",
                       label: "Recepcionar Órdenes De Compra",
                       icon: <InboxOutlined />,
+                      onClick: () =>
+                        navigate("gestion/recepcion-ordenes-compra"),
                     },
                     {
                       key: "devolucion_ordenes_compra",

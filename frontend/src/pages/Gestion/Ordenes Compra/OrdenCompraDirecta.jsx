@@ -25,7 +25,7 @@ import {
   DeleteOutlined,
   EyeOutlined,
   EditOutlined,
-  CheckSquareOutlined,
+  CloseCircleOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -387,50 +387,67 @@ export default function OrdenCompraDirecta() {
     }
   };
 
-  const descartarOrdenCompra = async (idCompraProveedor) => {
+  // const descartarOrdenCompra = async (idCompraProveedor) => {
+  //   try {
+  //     setLoading(true);
+  //     const response = await cancelarOrdenCompra(idCompraProveedor);
+  //     if (response.status === 200) {
+  //       notification.success({
+  //         message: "Éxito",
+  //         description: "Orden de compra cancelada correctamente.",
+  //         placement: "topLeft",
+  //       });
+  //       setLoading(false);
+  //       buscarOrdenesDirectas();
+  //       return;
+  //     }
+  //     if (response.status === 404) {
+  //       notification.error({
+  //         message: "Error",
+  //         description: "Orden de compra no encontrada.",
+  //         placement: "topLeft",
+  //       });
+  //       setLoading(false);
+  //       return;
+  //     }
+  //     notification.error({
+  //       message: "Error",
+  //       description:
+  //         response.error?.message || "No se pudo cancelar la orden de compra.",
+  //       placement: "topLeft",
+  //     });
+  //   } catch (error) {
+  //     notification.error({
+  //       message: "Error",
+  //       description: error.message || "No se pudo cancelar la orden de compra.",
+  //       placement: "topLeft",
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const editarEstadoOrdenCompra = async (idCompraProveedor, datos) => {
     try {
       setLoading(true);
-      const response = await cancelarOrdenCompra(idCompraProveedor);
+      const response = await cambiarEstadoOrdenCompra(idCompraProveedor, datos);
+      console.log("Respuesta al cambiar estado OC:", response);
       if (response.status === 200) {
         notification.success({
           message: "Éxito",
-          description: "Orden de compra cancelada correctamente.",
+          description: "Estado de la orden de compra cambiado correctamente.",
           placement: "topLeft",
         });
-        setLoading(false);
         buscarOrdenesDirectas();
-        return;
-      }
-      if (response.status === 404) {
-        notification.error({
-          message: "Error",
-          description: "Orden de compra no encontrada.",
-          placement: "topLeft",
-        });
-        setLoading(false);
         return;
       }
       notification.error({
         message: "Error",
         description:
-          response.error?.message || "No se pudo cancelar la orden de compra.",
+          response?.error ||
+          "No se pudo cambiar el estado de la orden de compra.",
         placement: "topLeft",
       });
-    } catch (error) {
-      notification.error({
-        message: "Error",
-        description: error.message || "No se pudo cancelar la orden de compra.",
-        placement: "topLeft",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const editarEstadoOrdenCompra = async (idCompraProveedor, datos) => {
-    try {
-      const response = await cambiarEstadoOrdenCompra(idCompraProveedor, datos);
-      console.log("Respuesta al cambiar estado OC:", response);
     } catch (error) {
       notification.error({
         message: "Error",
@@ -439,6 +456,8 @@ export default function OrdenCompraDirecta() {
           "No se pudo cambiar el estado de la orden de compra.",
         placement: "topLeft",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -479,9 +498,9 @@ export default function OrdenCompraDirecta() {
     }
   };
 
-  const handleCancelarOrdenCompra = (idCompraProveedor) => {
-    descartarOrdenCompra(idCompraProveedor);
-  };
+  // const handleCancelarOrdenCompra = (idCompraProveedor) => {
+  //   descartarOrdenCompra(idCompraProveedor);
+  // };
   const handelVerOrdenesDirectas = () => {
     setOrdenesDirectasFlag(false);
     buscarOrdenesDirectas();
@@ -568,9 +587,12 @@ export default function OrdenCompraDirecta() {
   return (
     <>
       <Spin spinning={loading} fullscreen tip="Cargando..." />
-      <Row justify="center" align="middle" style={{ marginTop: "20px" }}>
-        <Col>
+      <Row justify="start" align="middle" style={{ marginTop: "20px" }}>
+        <Col span={24} style={{ textAlign: "start" }}>
           <Title level={2}>Órdenes de Compra Directa Proveedor</Title>
+          <Text level={4} style={{ color: "gray" }}>
+            Compras directas por el administrador
+          </Text>
         </Col>
       </Row>
       <Divider />
@@ -904,7 +926,8 @@ export default function OrdenCompraDirecta() {
                       <>
                         <Button
                           type="link"
-                          icon={<CheckSquareOutlined />}
+                          danger
+                          icon={<CloseCircleOutlined />}
                           onClick={() =>
                             openModalEstado(record.idCompraProveedor)
                           }
@@ -914,7 +937,7 @@ export default function OrdenCompraDirecta() {
                           icon={<EditOutlined />}
                           onClick={() => openDrawerEditarOC(record)}
                         ></Button>
-                        <Popconfirm
+                        {/* <Popconfirm
                           title="¿Estás seguro de Cancelar esta orden de compra?"
                           onConfirm={() =>
                             handleCancelarOrdenCompra(record.idCompraProveedor)
@@ -927,7 +950,7 @@ export default function OrdenCompraDirecta() {
                             danger
                             icon={<DeleteOutlined />}
                           />
-                        </Popconfirm>
+                        </Popconfirm> */}
 
                         <Button
                           type="link"
@@ -1125,7 +1148,7 @@ export default function OrdenCompraDirecta() {
             </Drawer>
             {/* Modal para cambiar estado de la orden de compra */}
             <Modal
-              title="Cambiar Estado de la Orden de Compra"
+              title="Anulación Orden de Compra"
               open={ModalEstadoVisible}
               onCancel={cerrarModalEstado}
               footer={[
@@ -1137,7 +1160,7 @@ export default function OrdenCompraDirecta() {
                   type="primary"
                   onClick={() => formEstado.submit()}
                 >
-                  Cambiar Estado
+                  Guardar
                 </Button>,
               ]}
             >
@@ -1155,19 +1178,23 @@ export default function OrdenCompraDirecta() {
                   rules={[{ required: true, message: "Seleccione un estado" }]}
                 >
                   <Select placeholder="Seleccione un nuevo estado">
-                    <Select.Option value="aprobada">Aprobada</Select.Option>
                     <Select.Option value="rechazada">Rechazada</Select.Option>
                     <Select.Option value="cancelada">Cancelada</Select.Option>
-                    <Select.Option value="recibida">Recibida</Select.Option>
                   </Select>
                 </Form.Item>
                 <Form.Item
-                  label="Observaciones (opcional)"
+                  label="Observaciones"
                   name="observaciones"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Agregue observaciones sobre la anulación",
+                    },
+                  ]}
                 >
                   <Input.TextArea
                     rows={3}
-                    placeholder="Agregue observaciones sobre el cambio de estado"
+                    placeholder="Agregue observaciones sobre la anulación"
                   />
                 </Form.Item>
               </Form>

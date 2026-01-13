@@ -7,7 +7,7 @@ const sequelize = require("./src/config/bd");
 const cors = require("cors");
 const morgan = require("morgan");
 const routes = require("./src/routes/index.route");
-const { createUsers } = require("./src/config/initSetup");
+const { poblarBD } = require("./src/config/initSetup");
 const cookieParser = require("cookie-parser");
 const {
   Bodega,
@@ -21,7 +21,6 @@ const {
   Roles,
   Bitacora,
   Actividad,
-
   Descuento,
   Categoria,
   Productos,
@@ -41,6 +40,7 @@ const {
   DetalleVenta,
   OrdenCompra,
   EntregaProveedor,
+  DetalleDespacho,
 } = require("./src/models");
 const { allowedNodeEnvironmentFlags } = require("process");
 
@@ -183,8 +183,12 @@ async function syncDataBase() {
 
     await Provee.sync(syncOptions);
     console.log("  ✓ Provee");
-    await LoteProducto.sync(syncOptions);
-    console.log("  ✓ LoteProducto");
+
+    // await LoteProducto.sync(syncOptions);
+    // console.log("  ✓ LoteProducto");
+
+    await DetalleDespacho.sync(syncOptions);
+    console.log("  ✓ DetalleDespacho");
 
     console.log("✅ Todas las tablas sincronizadas correctamente");
   } catch (error) {
@@ -201,8 +205,9 @@ const startServer = async () => {
 
     await syncDataBase();
 
-    //Crear usuarios iniciales
-    await createUsers();
+    //Poblar Base de datos
+    await poblarBD();
+
     app.listen(process.env.PORT, () => {
       console.log(
         `Servidor escuchando en http://localhost:${process.env.PORT}`

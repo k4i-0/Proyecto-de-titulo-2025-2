@@ -10,15 +10,25 @@ const entregaProveedor = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    fechaEntrega: {
-      type: DataTypes.DATE,
+    codigoEntrega: {
+      type: DataTypes.STRING(50),
       allowNull: false,
-      defaultValue: DataTypes.NOW,
+      unique: true,
+    },
+    cantidadEntregada: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
     },
     estado: {
-      type: DataTypes.ENUM("pendiente", "en camino", "entregado", "cancelado"),
+      type: DataTypes.ENUM(
+        "asociado despacho",
+        "asignado",
+        "rechazado",
+        "cancelado"
+      ),
       allowNull: false,
-      defaultValue: "pendiente",
+      defaultValue: "asociado despacho",
     },
     observaciones: {
       type: DataTypes.TEXT,

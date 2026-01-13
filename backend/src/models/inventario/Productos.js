@@ -23,14 +23,6 @@ const producto = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    precioCompra: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    precioVenta: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
     peso: {
       type: DataTypes.FLOAT,
       allowNull: true,

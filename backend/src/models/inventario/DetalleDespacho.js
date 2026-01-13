@@ -10,26 +10,15 @@ const detalledespacho = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    fechaCreacion: {
-      type: DataTypes.DATE,
+    cantidad: {
+      type: DataTypes.INTEGER,
       allowNull: false,
+      defaultValue: 0,
     },
-    estado: {
-      type: DataTypes.ENUM(
-        "creada",
-        "enviada",
-        "recibida",
-        "completada",
-        "cancelada"
-      ),
-      allowNull: false,
-      defaultValue: "creada",
-    },
-
     totalCompra: {
-      type: DataTypes.DECIMAL(10, 2),
+      type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0.0,
+      defaultValue: 0,
     },
   },
   { tableName: "detalledespacho", timestamps: false }

@@ -115,3 +115,24 @@ export async function obtenerOrdenesCompraProveedores() {
     return error.response.data;
   }
 }
+
+export async function buscarTodasOrdenesParaRecepcion(rutProveedor) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/buscar-ordenes-recepcion/${rutProveedor}`,
+      {
+        withCredentials: true,
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error(
+      "Error al buscar las ordenes de compra para recepcion:",
+      error
+    );
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response.data;
+  }
+}

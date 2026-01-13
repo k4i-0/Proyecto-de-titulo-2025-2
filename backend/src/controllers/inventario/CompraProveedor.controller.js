@@ -11,6 +11,7 @@ const LoteProducto = require("../../models/inventario/LoteProducto");
 const Inventario = require("../../models/inventario/Inventario");
 const OrdenCompra = require("../../models/inventario/OrdenCompra");
 const { Op } = require("sequelize");
+const { sequelize } = require("../../models");
 
 //otros controladores
 const { crearLote } = require("./Lote.controller");
@@ -31,6 +32,7 @@ async function generarNombreOrden() {
 ///------------------------funciones importantes------------------------///
 // Crear una nueva compra a proveedor
 exports.crearOrdenCompraProveedor = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const {
       idSucursal,
@@ -96,37 +98,25 @@ exports.crearOrdenCompraProveedor = async (req, res) => {
     );
 
     // Crear la Orden compra proveedor
-    const nuevaOrdenCompraProveedor = await OrdenCompra.create({
+    const nuevaOrdenCompra = await OrdenCompra.create({
       nombreOrden: await generarNombreOrden(),
       fechaOrden: new Date(),
       estado: "pendiente",
       total: totalCompra,
       observaciones,
       detalleEstado: "Orden creada y pendiente de aprobación",
+      idFuncionario: comprobarFuncionario.idFuncionario,
+      idSucursal: comprobarSucursal.idSucursal,
+      idProveedor: comprobarProveedor.idProveedor,
     });
-    if (!nuevaOrdenCompraProveedor) {
+    if (!nuevaOrdenCompra) {
       console.log(
         "Fallo al crear la orden de compra proveedor",
-        nuevaOrdenCompraProveedor
+        nuevaOrdenCompra
       );
       return res.status(500).json({
         code: 1242,
         error: "Error al crear la orden de compra proveedor",
-      });
-    }
-
-    const nuevaCompraProveedor = await CompraProveedor.create({
-      fechaCompra: new Date(),
-      idOrdenCompra: nuevaOrdenCompraProveedor.idOrdenCompra,
-      idSucursal: comprobarSucursal.idSucursal,
-      idProveedor: comprobarProveedor.idProveedor,
-      idFuncionario: comprobarFuncionario.idFuncionario,
-    });
-    if (!nuevaCompraProveedor) {
-      console.log("Fallo al crear la compra proveedor", nuevaCompraProveedor);
-      return res.status(500).json({
-        code: 1239,
-        error: "Error al crear la orden de compra a proveedor",
       });
     }
 
@@ -161,11 +151,13 @@ exports.crearOrdenCompraProveedor = async (req, res) => {
         });
       }
     }
+    await t.commit();
     res.status(201).json({
       message: "Orden de compra a proveedor creada con éxito",
-      compraProveedor: nuevaCompraProveedor,
+      compraProveedor: nuevaOrdenCompra,
     });
   } catch (error) {
+    await t.rollback();
     console.error("Error al crear la orden de compra a proveedor:", error);
     res
       .status(500)
@@ -176,7 +168,7 @@ exports.crearOrdenCompraProveedor = async (req, res) => {
 ///================== Verificar ya que se cambio los modelos==================///
 exports.obtenerOrdenesCompraProveedores = async (req, res) => {
   try {
-    const ordenesCompra = await CompraProveedor.findAll({
+    const ordenesCompra = await OrdenCompra.findAll({
       include: [
         {
           model: Proveedor,
@@ -196,7 +188,6 @@ exports.obtenerOrdenesCompraProveedores = async (req, res) => {
           include: [
             {
               model: Producto,
-              attributes: ["idProducto", "nombre", "marca", "descripcion"],
             },
           ],
         },
@@ -220,8 +211,11 @@ exports.obtenerOrdenesCompraProveedores = async (req, res) => {
   }
 };
 
+///==========================Verificar Modelo de estas funciones==========================///
+
 // Crear una nueva orden de compra directa (Creada por administrador)
 exports.createOrdenCompraDirecta = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     // Extraer los datos del cuerpo de la solicitud
     const {
@@ -246,6 +240,7 @@ exports.createOrdenCompraDirecta = async (req, res) => {
         .status(422)
         .json({ code: 1300, error: "Faltan datos obligatorios" });
     }
+    //Iniciar transaccion
     // validar datos con joi o similar (opcional)
 
     //Comprobar que el proveedor, sucursal y funcionario existen
@@ -275,7 +270,7 @@ exports.createOrdenCompraDirecta = async (req, res) => {
 
     // Crear la orden de compra (Tabla CompraProveedor)
     // Con estado pendiente por defecto, cuando se cree el registo en tabla detalle se actualiza el estado a aprobada
-    const nuevaOrdenCompraDirecta = await CompraProveedor.create({
+    const nuevaOrdenCompraDirecta = await OrdenCompra.create({
       nombreOrden: await generarNombreOrden(),
       fechaCompra: new Date(),
       estado: "creada",
@@ -307,13 +302,13 @@ exports.createOrdenCompraDirecta = async (req, res) => {
           .status(404)
           .json({ error: `Producto con ID ${idProducto} no encontrado` });
       }
-      //ctear el detalle de la compra
+      //crear el detalle de la compra
       const nuevaCompraProveedorDetalle = await CompraProveedorDetalle.create({
         nombreProducto: nombre,
         cantidad: cantidad,
         precioUnitario: precioUnitario,
         total: subtotal,
-        idCompraProveedor: nuevaOrdenCompraDirecta.idCompraProveedor,
+        idCompraProveedor: nuevaOrdenCompraDirecta.idOrdenCompra,
         idProducto: idProducto,
       });
       //comprobar creación detalle
@@ -330,36 +325,14 @@ exports.createOrdenCompraDirecta = async (req, res) => {
     }
     // Si todo sale bien, actualizar el estado de la orden a aprobada
     await nuevaOrdenCompraDirecta.update({ estado: "aprobada" });
-
-    //Crear lote para entrega de productos OC directa
-    const numeroLote = Date.now();
-
-    const loteCreado = await Lote.create({
-      codigo: numeroLote,
-      fechaCreacion: new Date(),
-      estado: "creado",
-    });
-
-    //Crear Registro en la Tabla despacho en estado pendiente entrega
-    await Despacho.create({
-      fechaDespacho: new Date(),
-      tipoDocumento: "Otro",
-      tipoDespacho: "Compra Directa",
-      repartidor: comprobarFuncionario.rut,
-      estado: "Pendiente Entrega",
-      idLote: loteCreado.idLote,
-      idSucursal: idSucursal,
-      idFuncionario: comprobarFuncionario.idFuncionario,
-      idProveedor: comprobarProveedor.idProveedor,
-      idCompraProveedor: nuevaOrdenCompraDirecta.idCompraProveedor,
-    });
-    //actualizo estado de lote asociado a OC directa
-    await loteCreado.update({ estado: "asociado a OC" });
-
+    //Guardar transaccion si sale todo bien
+    await t.commit();
     return res
       .status(201)
       .json({ message: "Orden de compra directa creada exitosamente" });
   } catch (error) {
+    //Elimina todo lo que se genero durante la transaccion
+    await t.rollback();
     console.log("Error al crear orden de compra directa:", error);
     return res.status(500).json({ error: "Error del servidor" });
   }
@@ -371,8 +344,8 @@ exports.obtenerOrdenesCompraDirecta = async (req, res) => {
     // recordar validar que el usuario es admin con middleware en routes
 
     //obetner ordenes de compra directa
-    const ordenesCompraDirecta = await CompraProveedor.findAll({
-      where: { estado: { [Op.notIn]: ["fallo detalle", "cancelada"] } },
+    const ordenesCompraDirecta = await OrdenCompra.findAll({
+      where: { estado: { [Op.notIn]: ["cancelada"] } },
       include: [
         {
           model: Proveedor,
@@ -397,7 +370,7 @@ exports.obtenerOrdenesCompraDirecta = async (req, res) => {
           ],
         },
       ],
-      order: [["fechaCompra", "DESC"]],
+      order: [["fechaOrden", "DESC"]],
     });
     if (ordenesCompraDirecta.length === 0 || !ordenesCompraDirecta) {
       return res.status(204).json({
@@ -422,6 +395,7 @@ exports.cancelarOrdenCompra = async (req, res) => {
     //verificar que existe la orden
     const { idCompraProveedor } = req.params;
     console.log("ID de la orden a cancelar:", idCompraProveedor);
+    const t = await sequelize.transaction();
     if (
       !idCompraProveedor ||
       idCompraProveedor === "" ||
@@ -432,7 +406,7 @@ exports.cancelarOrdenCompra = async (req, res) => {
         .status(422)
         .json({ error: "ID de la orden de compra es obligatorio" });
     }
-    const ordenCompra = await CompraProveedor.findByPk(idCompraProveedor);
+    const ordenCompra = await OrdenCompra.findByPk(idCompraProveedor);
     if (!ordenCompra) {
       return res
         .status(404)
@@ -440,10 +414,12 @@ exports.cancelarOrdenCompra = async (req, res) => {
     }
     //actualizar estado a cancelada
     await ordenCompra.update({ estado: "cancelada" });
+    await t.commit();
     res
       .status(200)
       .json({ message: "Orden de compra a proveedor cancelada exitosamente" });
   } catch (error) {
+    await t.rollback();
     console.error("Error al cancelar la orden de compra a proveedores:", error);
     res
       .status(500)
@@ -468,9 +444,9 @@ exports.cambiarEstadoOrdenCompra = async (req, res) => {
         .status(422)
         .json({ error: "ID de la orden de compra es obligatorio" });
     }
-
+    const t = await sequelize.transaction();
     // Verificar que la orden de compra existe
-    const ordenCompra = await CompraProveedor.findByPk(idCompraProveedor);
+    const ordenCompra = await OrdenCompra.findByPk(idCompraProveedor);
     if (!ordenCompra) {
       return res
         .status(404)
@@ -484,10 +460,12 @@ exports.cambiarEstadoOrdenCompra = async (req, res) => {
         ? `${ordenCompra.observaciones}\n${observaciones}`
         : observaciones,
     });
+    await t.commit();
     res.status(200).json({
       message: "Estado de la orden de compra actualizado exitosamente",
     });
   } catch (error) {
+    await t.rollback();
     console.error("Error al cambiar el estado de la orden de compra:", error);
     res
       .status(500)
@@ -519,7 +497,8 @@ exports.editarOrdenCompraProveedor = async (req, res) => {
         .status(422)
         .json({ error: "ID de la orden de compra es obligatorio" });
     }
-    const comprobarOrden = await CompraProveedor.findByPk(idCompraProveedor);
+    const t = await sequelize.transaction();
+    const comprobarOrden = await OrdenCompra.findByPk(idCompraProveedor);
     if (!comprobarOrden) {
       return res
         .status(404)
@@ -530,7 +509,7 @@ exports.editarOrdenCompraProveedor = async (req, res) => {
 
     // editar detalle productos
     const comprobarOrdenDetalles = await CompraProveedorDetalle.findAll({
-      where: { idCompraProveedor: idCompraProveedor },
+      where: { idOrdenCompra: idCompraProveedor },
     });
     for (const item of productos) {
       const { idCompraProveedorDetalle, cantidad, precioUnitario } = item;
@@ -552,10 +531,12 @@ exports.editarOrdenCompraProveedor = async (req, res) => {
       totalOrden += item.cantidad * item.precioUnitario;
     }
     await comprobarOrden.update({ total: totalOrden });
+    await t.commit();
     res.status(200).json({
       message: "Orden de compra a proveedor editada exitosamente",
     });
   } catch (error) {
+    await t.rollback();
     console.error("Error al editar la orden de compra a proveedor:", error);
     res
       .status(500)

@@ -1,39 +1,77 @@
-const Bodega = require("./inventario/Bodega");
-const Inventario = require("./inventario/Inventario");
-const Sucursal = require("./inventario/Sucursal");
-const Lote = require("./inventario/Lote");
-const Proveedor = require("./inventario/Proveedor");
-const Vendedor = require("./inventario/VendedorProveedor");
-const Caja = require("./ventas/Caja");
-const Funcionario = require("./Usuarios/Funcionario");
-const Roles = require("./Usuarios/Rol");
-const Bitacora = require("./Usuarios/Bitacora");
-const Actividad = require("./Usuarios/Actividad");
-const DetalleVenta = require("./ventas/DetalleVenta");
-const Descuento = require("./ventas/Descuento");
-const Categoria = require("./inventario/Categoria");
-const Productos = require("./inventario/Productos");
-const Cliente = require("./ventas/Cliente");
-const Estante = require("./inventario/Estante");
-const OrdenCompra = require("./inventario/OrdenCompra");
-// const Boleta = require("./ventas/Boleta");
-//const DetalleDespacho = require("./inventario/DetalleDespacho");
+const Sequelize = require("sequelize");
+
+const sequelize = require("../config/bd");
+
+const db = {};
+
+// Modelos
+
+db.Bodega = require("./inventario/Bodega");
+db.Inventario = require("./inventario/Inventario");
+db.Sucursal = require("./inventario/Sucursal");
+db.Lote = require("./inventario/Lote");
+db.Proveedor = require("./inventario/Proveedor");
+db.Vendedor = require("./inventario/VendedorProveedor");
+db.Caja = require("./ventas/Caja");
+db.Funcionario = require("./Usuarios/Funcionario");
+db.Roles = require("./Usuarios/Rol");
+db.Bitacora = require("./Usuarios/Bitacora");
+db.Actividad = require("./Usuarios/Actividad");
+db.DetalleVenta = require("./ventas/DetalleVenta");
+db.Descuento = require("./ventas/Descuento");
+db.Categoria = require("./inventario/Categoria");
+db.Productos = require("./inventario/Productos");
+db.Cliente = require("./ventas/Cliente");
+db.Estante = require("./inventario/Estante");
+db.OrdenCompra = require("./inventario/OrdenCompra");
+// db.Boleta = require("./ventas/Boleta");
+db.DetalleDespacho = require("./inventario/DetalleDespacho");
 
 //intermedias
-const Despacho = require("./inventario/Despacho");
-const CompraProveedor = require("./inventario/CompraProveedor");
-const ContratoFuncionario = require("./Usuarios/ContratoFuncionario");
-const CajaFuncionario = require("./ventas/CajaAsignada");
-const VentaCliente = require("./ventas/VentaCliente");
-const BitacoraActividad = require("./Usuarios/BitacoraActividad");
+db.Despacho = require("./inventario/Despacho");
+db.CompraProveedor = require("./inventario/CompraProveedor");
+db.ContratoFuncionario = require("./Usuarios/ContratoFuncionario");
+db.CajaFuncionario = require("./ventas/CajaAsignada");
+db.VentaCliente = require("./ventas/VentaCliente");
+db.BitacoraActividad = require("./Usuarios/BitacoraActividad");
 
-const DescuentoSobre = require("./ventas/DescuentoSobre");
-const CompraProveedorDetalle = require("./inventario/CompraProveedorDetalle");
-const Provee = require("./inventario/Provee");
-const LoteProducto = require("./inventario/LoteProducto");
-const compraproveedordetalle = require("./inventario/CompraProveedorDetalle");
-const RealizaVenta = require("./ventas/RealizaVenta");
-const EntregaProveedor = require("./inventario/EntregaProveedor");
+db.DescuentoSobre = require("./ventas/DescuentoSobre");
+db.CompraProveedorDetalle = require("./inventario/CompraProveedorDetalle");
+db.Provee = require("./inventario/Provee");
+db.compraproveedordetalle = require("./inventario/CompraProveedorDetalle");
+db.RealizaVenta = require("./ventas/RealizaVenta");
+db.EntregaProveedor = require("./inventario/EntregaProveedor");
+
+//Destructuriacion
+const {
+  Sucursal,
+  Bodega,
+  Estante,
+  Inventario,
+  Categoria,
+  Productos,
+  Proveedor,
+  Vendedor,
+  DetalleVenta,
+  Lote,
+  CompraProveedorDetalle,
+  Roles,
+  Funcionario,
+  Bitacora,
+  Caja,
+  VentaCliente,
+  Descuento,
+  Despacho,
+  EntregaProveedor,
+  OrdenCompra,
+  DetalleDespacho,
+  Cliente,
+  RealizaVenta,
+  ContratoFuncionario,
+  CajaFuncionario,
+  DescuentoSobre,
+  Provee,
+} = db;
 
 // ========== tablas 1:n Modulo Inventario ==========
 
@@ -118,12 +156,20 @@ Lote.belongsTo(Estante, {
   foreignKey: "idEstante",
 });
 
-// Despacho -> Lote (1:N)
-Despacho.hasMany(Lote, {
-  foreignKey: "idLote",
+// Deatlle Despacho -> Lote (1:N)
+DetalleDespacho.hasMany(Lote, {
+  foreignKey: "idDetalleDespacho",
 });
-Lote.belongsTo(Despacho, {
-  foreignKey: "idLote",
+Lote.belongsTo(DetalleDespacho, {
+  foreignKey: "idDetalleDespacho",
+});
+
+// Despacho -> Detalle Despacho (1:N)
+Despacho.hasMany(DetalleDespacho, {
+  foreignKey: "idDespacho",
+});
+DetalleDespacho.belongsTo(Despacho, {
+  foreignKey: "idDespacho",
 });
 
 // compraProveedorDetalle productos 1:N
@@ -134,21 +180,14 @@ CompraProveedorDetalle.belongsTo(Productos, {
   foreignKey: "idProducto",
 });
 
-// OrdenCompra CompraProveedorDetalle  1:N
-OrdenCompra.hasMany(CompraProveedorDetalle, {
-  foreignKey: "idOrdenCompra",
+//Lote -> Producto (1:N)
+Productos.hasMany(Lote, {
+  foreignKey: "idProducto",
 });
-CompraProveedorDetalle.belongsTo(OrdenCompra, {
-  foreignKey: "idOrdenCompra",
+Lote.belongsTo(Productos, {
+  foreignKey: "idProducto",
 });
 
-// lote Despacho 1:N
-Despacho.hasMany(Lote, {
-  foreignKey: "idDespacho",
-});
-Lote.belongsTo(Despacho, {
-  foreignKey: "idDespacho",
-});
 // ========== tablas 1:n Modulo Usuarios ==========
 
 // Roles -> Funcionario (1:N)
@@ -206,52 +245,31 @@ Descuento.belongsTo(VentaCliente, {
 
 //============Tablas intermedias Modulo Inventario ==========
 
-//Tabla intermedia LoteProducto
-Lote.hasMany(LoteProducto, { foreignKey: "idLote" });
-Productos.hasMany(LoteProducto, { foreignKey: "idProducto" });
-
-LoteProducto.belongsTo(Lote, { foreignKey: "idLote" });
-LoteProducto.belongsTo(Productos, { foreignKey: "idProducto" });
-
-Lote.belongsToMany(Productos, {
-  through: LoteProducto,
-  foreignKey: "idLote",
-  otherKey: "idProducto",
-  as: "productos",
-});
-
-Productos.belongsToMany(Lote, {
-  through: LoteProducto,
-  foreignKey: "idProducto",
-  otherKey: "idLote",
-  as: "lotes",
-});
-
 //Despacho
 Despacho.hasMany(EntregaProveedor, { foreignKey: "idDespacho" });
-Sucursal.hasMany(EntregaProveedor, { foreignKey: "idSucursal" });
-Funcionario.hasMany(EntregaProveedor, { foreignKey: "idFuncionario" });
-Proveedor.hasMany(EntregaProveedor, { foreignKey: "idProveedor" });
+Sucursal.hasMany(Despacho, { foreignKey: "idSucursal" });
+Funcionario.hasMany(Despacho, { foreignKey: "idFuncionario" });
+Proveedor.hasMany(Despacho, { foreignKey: "idProveedor" });
 
 EntregaProveedor.belongsTo(Despacho, { foreignKey: "idDespacho" });
-EntregaProveedor.belongsTo(Sucursal, { foreignKey: "idSucursal" });
-EntregaProveedor.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
-EntregaProveedor.belongsTo(Proveedor, { foreignKey: "idProveedor" });
+Despacho.belongsTo(Sucursal, { foreignKey: "idSucursal" });
+Despacho.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
+Despacho.belongsTo(Proveedor, { foreignKey: "idProveedor" });
 
 //Compra
-OrdenCompra.hasMany(CompraProveedor, {
+OrdenCompra.hasMany(CompraProveedorDetalle, {
   foreignKey: "idOrdenCompra",
 });
-Sucursal.hasMany(CompraProveedor, { foreignKey: "idSucursal" });
-Funcionario.hasMany(CompraProveedor, { foreignKey: "idFuncionario" });
-Proveedor.hasMany(CompraProveedor, { foreignKey: "idProveedor" });
+Sucursal.hasMany(OrdenCompra, { foreignKey: "idSucursal" });
+Funcionario.hasMany(OrdenCompra, { foreignKey: "idFuncionario" });
+Proveedor.hasMany(OrdenCompra, { foreignKey: "idProveedor" });
 
-CompraProveedor.belongsTo(OrdenCompra, {
+CompraProveedorDetalle.belongsTo(OrdenCompra, {
   foreignKey: "idOrdenCompra",
 });
-CompraProveedor.belongsTo(Sucursal, { foreignKey: "idSucursal" });
-CompraProveedor.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
-CompraProveedor.belongsTo(Proveedor, { foreignKey: "idProveedor" });
+OrdenCompra.belongsTo(Sucursal, { foreignKey: "idSucursal" });
+OrdenCompra.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
+OrdenCompra.belongsTo(Proveedor, { foreignKey: "idProveedor" });
 
 //Tabla intermedia Provee (Producto - Proveedor)
 Proveedor.belongsToMany(Productos, {
@@ -346,36 +364,41 @@ ContratoFuncionario.belongsTo(Sucursal, {
   foreignKey: "idSucursal",
 });
 
-module.exports = {
-  Bodega,
-  Inventario,
-  Sucursal,
-  Lote,
-  Proveedor,
-  Vendedor,
-  Caja,
-  Funcionario,
-  Roles,
-  Bitacora,
-  Actividad,
-  DetalleVenta,
-  Descuento,
-  Categoria,
-  Productos,
-  Cliente,
-  Estante,
-  Despacho,
-  CompraProveedor,
-  ContratoFuncionario,
-  CajaFuncionario,
-  VentaCliente,
-  BitacoraActividad,
-  DescuentoSobre,
-  CompraProveedorDetalle,
-  Provee,
-  LoteProducto,
-  RealizaVenta,
-  DetalleVenta,
-  OrdenCompra,
-  EntregaProveedor,
-};
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
+
+module.exports = db;
+
+// module.exports = {
+//   Bodega,
+//   Inventario,
+//   Sucursal,
+//   Lote,
+//   Proveedor,
+//   Vendedor,
+//   Caja,
+//   Funcionario,
+//   Roles,
+//   Bitacora,
+//   Actividad,
+//   DetalleVenta,
+//   Descuento,
+//   Categoria,
+//   Productos,
+//   Cliente,
+//   Estante,
+//   Despacho,
+//   CompraProveedor,
+//   ContratoFuncionario,
+//   CajaFuncionario,
+//   VentaCliente,
+//   BitacoraActividad,
+//   DescuentoSobre,
+//   CompraProveedorDetalle,
+//   Provee,
+//   RealizaVenta,
+//   DetalleVenta,
+//   OrdenCompra,
+//   EntregaProveedor,
+//   DetalleDespacho,
+// };
