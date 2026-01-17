@@ -67,7 +67,7 @@ const Login = () => {
       }
       notification.error({
         message: "Error de inicio de sesión",
-        description: usuario.data.message || "Credenciales inválidas",
+        description: usuario?.message || "Credenciales inválidas",
         placement: "topRight",
       });
     } catch (error) {

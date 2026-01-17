@@ -31,8 +31,8 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
-import CrearSucursal from "../components/inventario/modalSucursal/CrearSucursal";
-import EditarSucursal from "../components/inventario/modalSucursal/EditarSucursal";
+import CrearSucursal from "./inventario/modalSucursal/CrearSucursal";
+import EditarSucursal from "./inventario/modalSucursal/EditarSucursal";
 
 import obtenerSucursales, {
   eliminarSucursal,

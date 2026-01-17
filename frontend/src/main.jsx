@@ -8,7 +8,9 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 
 import NoEncontrado from "./pages/NoEncontrado.jsx";
 
+//inicio de sesion
 import Login from "./pages/login.jsx";
+import LoginCodigo from "./pages/LoginCodigo.jsx";
 import RedireccionPorRol from "./pages/RedireccionPorRol.jsx";
 
 //admin
@@ -32,10 +34,10 @@ import InicioVendedor from "./pages/Vendedor/InicioVendedor.jsx";
 import AprovisionamientoProveedor from "./pages/Vendedor/AprovicionamientoProveedor.jsx";
 
 //Gestiones admin
-import GestionColaborador from "./pages/Gestion/GestionColaborador.jsx";
+import GestionColaborador from "./pages/Gestion/Gestion Colaboradores/GestionColaborador.jsx";
 
 //ordenes de compra
-import OrdenesCompra from "./pages/Gestion/OrdenesCompra.jsx";
+import OrdenesCompra from "./pages/Gestion/Ordenes Compra/OrdenesCompra.jsx";
 import OrdenCompraDirecta from "./pages/Gestion/Ordenes Compra/OrdenCompraDirecta.jsx";
 import RecepcionOrdenCompra from "./pages/Gestion/RecepcionProveedores/RecepcionOrdenCompra.jsx";
 

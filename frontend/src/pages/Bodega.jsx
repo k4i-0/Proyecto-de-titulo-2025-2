@@ -27,9 +27,9 @@ import {
   obtenerBodegasPorSucursal,
   eliminarBodega,
 } from "../services/inventario/Bodega.service";
-import EditarBodega from "../components/inventario/modalBodega/editarBodega.jsx";
-import CrearBodega from "../components/inventario/modalBodega/crearBodega.jsx";
-import GestionEstantes from "../components/inventario/Estantes/GestionEstantes.jsx";
+import EditarBodega from "./inventario/modalBodega/editarBodega.jsx";
+import CrearBodega from "./inventario/modalBodega/crearBodega.jsx";
+import GestionEstantes from "./inventario/Estantes/GestionEstantes.jsx";
 
 export default function Bodega() {
   const { idSucursal } = useParams();

@@ -26,8 +26,8 @@ import obtenerInventarios from "../services/inventario/Inventario.service";
 import obtenerSucursales from "../services/inventario/Sucursal.service";
 
 // Modales
-import CrearInventario from "../components/inventario/modalInventario/CrearInventario";
-import EditarInventario from "../components/inventario/modalInventario/EditarInventario";
+import CrearInventario from "./inventario/modalInventario/CrearInventario";
+import EditarInventario from "./inventario/modalInventario/EditarInventario";
 
 export default function Inventario() {
   const { Title, Text } = Typography;

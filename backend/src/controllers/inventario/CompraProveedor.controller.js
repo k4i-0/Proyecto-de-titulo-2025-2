@@ -604,13 +604,13 @@ exports.buscarOrdenesCompraParaRecepcion = async (req, res) => {
         .status(404)
         .json({ code: 1301, error: "Proveedor no encontrado" });
     }
-    // console.log("Proveedor encontrado:", comprobarProveedor);
+    //console.log("Proveedor encontrado:", comprobarProveedor);
     //encontrar ordenes de compra asociadas al proveedor
-    const ordenesCompra = await CompraProveedor.findAll({
+    const ordenesCompra = await OrdenCompra.findAll({
       where: {
         idProveedor: comprobarProveedor.idProveedor,
         estado: {
-          [Op.notIn]: ["creada", "rechazada", "recibida", "cancelada"],
+          [Op.notIn]: ["rechazada", "recibida", "cancelada"],
         },
       },
       include: [
@@ -636,7 +636,7 @@ exports.buscarOrdenesCompraParaRecepcion = async (req, res) => {
           ],
         },
       ],
-      order: [["fechaCompra", "DESC"]],
+      order: [["fechaOrden", "DESC"]],
     });
     // console.log("Ordenes de compra encontradas:", ordenesCompra);
     if (!ordenesCompra || ordenesCompra.length === 0) {

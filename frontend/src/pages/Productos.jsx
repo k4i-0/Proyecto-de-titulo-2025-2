@@ -23,8 +23,8 @@ import {
   ArrowLeftOutlined,
 } from "@ant-design/icons";
 
-import Agregar from "../components/inventario/modalProductos/Agregar";
-import Editar from "../components/inventario/modalProductos/Editar";
+import Agregar from "./inventario/modalProductos/Agregar";
+import Editar from "./inventario/modalProductos/Editar";
 
 // import Eliminar from "../components/inventario/modalProductos/Eliminar";
 

@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { miEstado, finSesion } from "../services/Auth.services.js";
 
 const AuthContext = createContext();
-
-import { miEstado } from "../services/Auth.services.js";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -10,51 +9,42 @@ export const AuthProvider = ({ children }) => {
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    const userData = localStorage.getItem("userData");
-
-    try {
-      if (token && userData) {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-        miEstado()
-          .then((estado) => {
-            if (estado.status === 401 || estado.status === 498) {
-              logout(); // Borra los datos y redirige
-            } else if (
-              estado.status === 200 &&
-              estado.data.payload.role !== parsedUser.nombreRol
-            ) {
-              logout();
-            }
-          })
-          .catch(() => {
-            logout();
-          })
-          .finally(() => {
-            setInitializing(false);
-          });
+    async function checkAuth() {
+      const storedUser = sessionStorage.getItem("userData");
+      if (storedUser) {
+        sessionStorage.removeItem("userData");
       }
-    } catch (error) {
-      console.error("Error al parsear userData desde localStorage:", error);
-      logout();
-      setInitializing(false);
-    } finally {
-      setInitializing(false);
+      try {
+        const response = await miEstado();
+
+        if (response.status === 200) {
+          const userData = response.data.payload;
+          setUser(userData);
+          setIsAuthenticated(true);
+          sessionStorage.setItem("userData", JSON.stringify(userData));
+        } else {
+          logout();
+        }
+      } catch (error) {
+        console.log("Error en autenticación:", error);
+        logout();
+      } finally {
+        setInitializing(false);
+      }
     }
+
+    checkAuth();
   }, []);
 
-  const login = (usuario, token) => {
-    localStorage.setItem("auth_token", token);
-    localStorage.setItem("userData", JSON.stringify(usuario));
+  const login = (usuario) => {
+    sessionStorage.setItem("userData", JSON.stringify(usuario));
     setUser(usuario);
     setIsAuthenticated(true);
   };
 
   const logout = () => {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("userData");
+    finSesion();
+    sessionStorage.removeItem("userData");
     setUser(null);
     setIsAuthenticated(false);
   };

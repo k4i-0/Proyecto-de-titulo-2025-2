@@ -1,5 +1,7 @@
 // Función para crear usuarios admin y user
 const bcrypt = require("bcrypt");
+const { encriptar } = require("./AES.js");
+
 const { sequelize } = require("../models/index.js");
 const Funcionario = require("../models/Usuarios/Funcionario");
 const Rol = require("../models/Usuarios/Rol");
@@ -23,6 +25,9 @@ async function poblarBD() {
   try {
     const adminPassword = await bcrypt.hash("admin123", 10);
     const userPassword = await bcrypt.hash("user123", 10);
+    const clave = "11111111-1";
+    const codigoDefault = encriptar(clave);
+
     console.log(" Iniciando creación de roles...");
 
     // Crear roles si no existen
@@ -104,7 +109,7 @@ async function poblarBD() {
         apellido: "1",
         email: "sistema@sistema.dev",
         password: adminPassword,
-        passwordCaja: adminPassword,
+        passwordCaja: codigoDefault,
         telefono: "+56900000000",
         direccion: "collao 1202, concepcion",
 
@@ -120,7 +125,7 @@ async function poblarBD() {
         apellido: "1",
         email: "admin@sistema.dev",
         password: adminPassword,
-        passwordCaja: adminPassword,
+        passwordCaja: codigoDefault,
         telefono: "+56912345678",
         direccion: "collao 1202, concepcion",
 
@@ -137,7 +142,7 @@ async function poblarBD() {
         apellido: "1",
         email: "cajero@sistema.dev",
         password: userPassword,
-        passwordCaja: userPassword,
+        passwordCaja: codigoDefault,
         telefono: "+56987654321",
         direccion: "collao 1202, concepcion",
 
@@ -154,7 +159,7 @@ async function poblarBD() {
         apellido: "1",
         email: "vendedor@sistema.dev",
         password: userPassword,
-        passwordCaja: userPassword,
+        passwordCaja: codigoDefault,
         telefono: "+56987654321",
         direccion: "collao 1202, concepcion",
 
@@ -397,6 +402,11 @@ async function poblarBD() {
       },
     ];
     await CompraProveedorDetalle.bulkCreate(detalleOC);
+
+    //Actualizar total orden de compra
+    const totalOC = detalleOC.reduce((sum, item) => sum + item.total, 0);
+    OC[0].total = totalOC;
+    await OC[0].save();
 
     //Crear Despacho inicial
     const despacho = await Despacho.findOrCreate({

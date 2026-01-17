@@ -52,8 +52,8 @@ import obtenerTodosFuncionarios, {
   crearFuncionario,
   editarFuncionario,
   eliminarFuncionario,
-} from "../../services/usuario/funcionario.service";
-import obtenerSucursales from "../../services/inventario/Sucursal.service";
+} from "../../../services/usuario/funcionario.service";
+import obtenerSucursales from "../../../services/inventario/Sucursal.service";
 
 const GestionColaborador = () => {
   const [form] = Form.useForm();

@@ -1,9 +1,7 @@
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-
-//llamar funcion miEstado
-// import { miEstado } from "../services/Auth.services.js";
+import { Spin } from "antd";
 
 const ProtectedRoute = ({
   allowedRoles,
@@ -20,18 +18,20 @@ const ProtectedRoute = ({
           justifyContent: "center",
           alignItems: "center",
           height: "100vh",
+          backgroundColor: "#f0f2f5",
         }}
       >
-        Cargando...
+        <Spin size="large" tip="Verificando sesión..." />
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace fullscreen />;
   }
 
   const userRole = user?.nombreRol;
+
   if (!userRole || (allowedRoles && !allowedRoles.includes(userRole))) {
     if (userRole === "Administrador") {
       return <Navigate to="/admin" replace />;
@@ -42,7 +42,8 @@ const ProtectedRoute = ({
     return <Navigate to={fallbackPath} replace />;
   }
 
-  return children;
+  return children ? children : <Outlet />;
 };
 
 export default ProtectedRoute;
+//

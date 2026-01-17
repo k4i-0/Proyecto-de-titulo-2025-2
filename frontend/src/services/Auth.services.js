@@ -13,17 +13,24 @@ export default async function inicioSesion(email, password) {
       },
       { withCredentials: true }
     );
-    // if (
-    //   !response.data ||
-    //   response.data === null ||
-    //   response.data === undefined
-    // ) {
-    //   return "No se recibió respuesta del servidor";
-    // }
     return response;
   } catch (error) {
     console.log(error);
-    return error?.response;
+    return error?.message;
+  }
+}
+
+export async function inicioSesionCodigo(codigo) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/login-codigo`,
+      { codigo },
+      { withCredentials: true }
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+    return error?.message;
   }
 }
 
@@ -40,7 +47,7 @@ export async function finSesion() {
     return response.data;
   } catch (error) {
     console.log(error);
-    return error.response.data;
+    return error.message;
   }
 }
 
@@ -56,6 +63,6 @@ export async function miEstado() {
     return response;
   } catch (error) {
     console.log("Error en miEstado:", error);
-    return error.response;
+    return error.message;
   }
 }

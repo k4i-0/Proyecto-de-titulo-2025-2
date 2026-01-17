@@ -23,6 +23,8 @@ const { Title, Text } = Typography;
 import { EyeOutlined, InboxOutlined, SaveOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
+import Tabla from "../../../components/Tabla.jsx";
+
 //importacion
 import { buscarTodasOrdenesParaRecepcion } from "../../../services/inventario/CompraProveedor.service.js";
 
@@ -112,12 +114,12 @@ export default function RecepcionOrdenCompra() {
   const columns = [
     {
       title: "ID",
-      dataIndex: "idCompraProveedor",
-      key: "idCompraProveedor",
+      dataIndex: "idOrdenCompra",
+      key: "idOrdenCompra",
       width: 80,
       align: "center",
       // Ejemplo de ordenamiento simple
-      sorter: (a, b) => a.idCompraProveedor - b.idCompraProveedor,
+      sorter: (a, b) => a.idOrdenCompra - b.idOrdenCompra,
     },
     {
       title: "Orden Compra",
@@ -129,11 +131,11 @@ export default function RecepcionOrdenCompra() {
     },
     {
       title: "Fecha Compra",
-      dataIndex: "fechaCompra",
-      key: "fechaCompra",
+      dataIndex: "fechaOrden",
+      key: "fechaOrden",
       width: 120,
       render: (fecha) => new Date(fecha).toLocaleDateString("es-CL"),
-      sorter: (a, b) => new Date(a.fechaCompra) - new Date(b.fechaCompra),
+      sorter: (a, b) => new Date(a.fechaOrden) - new Date(b.fechaOrden),
     },
     {
       title: "Estado",
@@ -141,11 +143,10 @@ export default function RecepcionOrdenCompra() {
       key: "estado",
       width: 120,
       align: "center",
-      // --- AQUI AGREGAMOS EL FILTRO ---
+
       filters: estadoFilters,
       onFilter: (value, record) => record.estado === value,
       render: (estado) => (
-        // Asumiendo que tienes una función getColorEstado definida fuera
         <Tag color={estado === "aprobada" ? "green" : "orange"}>
           {estado.toUpperCase()}
         </Tag>
@@ -164,7 +165,7 @@ export default function RecepcionOrdenCompra() {
       dataIndex: ["proveedor", "nombre"],
       key: "proveedor",
       width: 180,
-      // --- AQUI AGREGAMOS EL FILTRO ---
+
       filters: proveedorFilters,
       onFilter: (value, record) => record.proveedor.nombre === value,
       render: (_, record) => (
@@ -224,7 +225,12 @@ export default function RecepcionOrdenCompra() {
   ];
 
   const detalleColumns = [
-    { title: "Producto", dataIndex: "nombreProducto", key: "prod" },
+    {
+      title: "Producto",
+      dataIndex: ["producto", "nombre"],
+      key: "producto",
+      onFilter: (value, record) => record.producto.nombre.includes(value),
+    },
     { title: "Cant.", dataIndex: "cantidad", key: "cant", align: "center" },
     {
       title: "Precio Unit.",
@@ -338,19 +344,15 @@ export default function RecepcionOrdenCompra() {
         </Button>
       </Form>
       {ordenesCompra != null && ordenesCompra.length > 0 && (
-        <Table
-          columns={columns}
-          dataSource={ordenesCompra}
-          rowKey="idCompraProveedor"
-          scroll={{ x: 1200 }}
-          locale={{ emptyText: "No se encontraron órdenes de compra" }}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `Total ${total} órdenes`,
-          }}
-        />
+        <>
+          <Tabla
+            columns={columns}
+            data={ordenesCompra}
+            rowKey="idOrdenCompra"
+          />
+        </>
       )}
+
       {/**Drawer Detalle */}
       <Drawer
         title={`Detalle Orden: ${selectedOrden?.nombreOrden || ""}`}

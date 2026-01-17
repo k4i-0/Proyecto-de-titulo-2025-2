@@ -25,8 +25,8 @@ import {
 
 import { useNavigate, useParams } from "react-router-dom";
 
-import AgregarVendedor from "../components/inventario/modalVendedor/AgregarVendedor";
-import EditarVendedor from "../components/inventario/modalVendedor/EditarVendedor";
+import AgregarVendedor from "./inventario/modalVendedor/AgregarVendedor";
+import EditarVendedor from "./inventario/modalVendedor/EditarVendedor";
 
 import {
   getAllProveedoresVendedor,

@@ -30,8 +30,8 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
-import AgregarProveedor from "../components/inventario/modalProveedor/AgregarProveedor";
-import EditarProveedor from "../components/inventario/modalProveedor/EditarProveedor";
+import AgregarProveedor from "./inventario/modalProveedor/AgregarProveedor";
+import EditarProveedor from "./inventario/modalProveedor/EditarProveedor";
 
 import {
   getAllProveedores,

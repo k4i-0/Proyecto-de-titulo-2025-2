@@ -24,8 +24,8 @@ import {
 
 // import { useNavigate } from "react-router-dom";
 
-import AgregarCategoria from "../components/inventario/modalCategoria/AgregarCategoria";
-import EditarCategoria from "../components/inventario/modalCategoria/EditarCategoria";
+import AgregarCategoria from "./inventario/modalCategoria/AgregarCategoria";
+import EditarCategoria from "./inventario/modalCategoria/EditarCategoria";
 
 import obtenerCategoria, {
   eliminarCategoria,
