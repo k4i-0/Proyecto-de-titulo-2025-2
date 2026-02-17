@@ -21,13 +21,13 @@ const ProtectedRoute = ({
           backgroundColor: "#f0f2f5",
         }}
       >
-        <Spin size="large" tip="Verificando sesión..." />
+        <Spin size="large" tip="Verificando sesión..." fullscreen />
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace fullscreen />;
+    return <Navigate to="/cajas/login" replace fullscreen />;
   }
 
   const userRole = user?.nombreRol;

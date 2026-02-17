@@ -6,25 +6,19 @@ import {
   Space,
   Empty,
   Spin,
-  Row,
-  Col,
-  Tag,
-  Table,
   Popconfirm,
-  Divider,
-  Card,
 } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  UserOutlined,
   LoadingOutlined,
   RollbackOutlined,
 } from "@ant-design/icons";
 
 import { useNavigate, useParams } from "react-router-dom";
 
+import DataTable from "../components/Tabla";
 import AgregarVendedor from "./inventario/modalVendedor/AgregarVendedor";
 import EditarVendedor from "./inventario/modalVendedor/EditarVendedor";
 
@@ -166,10 +160,11 @@ export default function Vendedores() {
 
   const columns = [
     {
-      title: "ID Vendedor",
+      title: "ID",
       dataIndex: "idVendedorProveedor",
       key: "idVendedorProveedor",
-      width: 120,
+      width: "12%",
+      align: "center",
     },
     {
       title: "Nombre",
@@ -178,197 +173,157 @@ export default function Vendedores() {
       sorter: (a, b) => a.nombre.localeCompare(b.nombre),
     },
     {
-      title: "Rut",
+      title: "RUT",
       dataIndex: "rut",
       key: "rut",
-      width: 130,
+      width: "15%",
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
+      width: "25%",
     },
     {
       title: "Teléfono",
       dataIndex: "telefono",
       key: "telefono",
-      width: 120,
+      width: "15%",
     },
   ];
 
-  const renderContenido = () => {
-    if (loading && vendedores.length === 0) {
-      return (
-        <Col span={24} style={{ textAlign: "center", padding: "60px 0" }}>
-          <Spin
-            indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
-            tip="Cargando vendedores..."
-            size="large"
-          />
-        </Col>
-      );
-    }
-
-    if (vendedores.length === 0 && !loading) {
-      return (
-        <Col span={24}>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              // ... (contenido de Empty)
-              <Space direction="vertical" size="large">
-                <div>
-                  <Title level={4}>No hay vendedores disponibles</Title>
-                  <Text type="secondary">
-                    Agrega el primer vendedor para este proveedor
-                  </Text>
-                </div>
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<PlusOutlined />}
-                  onClick={handleCrear}
-                >
-                  Crear Primer Vendedor
-                </Button>
-              </Space>
-            }
-          />
-        </Col>
-      );
-    }
-
+  // Renderizado condicional para estados de carga y vacío
+  if (loading && vendedores.length === 0) {
     return (
-      <Col span={24}>
-        <Table
-          columns={columns}
-          dataSource={vendedores}
-          rowKey="idVendedorProveedor"
-          loading={loading}
-          pagination={{ pageSize: 10, showSizeChanger: true }}
-          scroll={{ x: "max-content" }}
-          onRow={(record) => ({
-            onClick: () => handleSeleccionarFila(record),
-            style: {
-              padding: 16,
-              cursor: "pointer",
-              backgroundColor:
-                vendedorSelect?.idVendedorProveedor ===
-                record.idVendedorProveedor
-                  ? "#e6f4ff"
-                  : "transparent",
-              transition: "background-color 0.3s ease",
-            },
-          })}
-          locale={{
-            emptyText: "No hay vendedores para mostrar",
-          }}
+      <div style={{ padding: "24px", textAlign: "center" }}>
+        <Spin
+          indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
+          tip="Cargando vendedores..."
+          size="large"
         />
-      </Col>
+      </div>
     );
-  };
+  }
+
+  if (vendedores.length === 0 && !loading) {
+    return (
+      <div style={{ padding: "24px" }}>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <Space direction="vertical" size="large">
+              <div>
+                <Typography.Title level={4}>
+                  No hay vendedores disponibles
+                </Typography.Title>
+                <Typography.Text type="secondary">
+                  Agrega el primer vendedor para este proveedor
+                </Typography.Text>
+              </div>
+              <Button
+                type="primary"
+                size="large"
+                icon={<PlusOutlined />}
+                onClick={handleCrear}
+              >
+                Crear Primer Vendedor
+              </Button>
+            </Space>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: 24, background: "#fff", minHeight: 360 }}>
-      {/* Encabezado */}
-      <Row justify="start" style={{ marginBottom: 16 }}>
-        <Col span={18}>
-          <Title level={2} style={{ marginBottom: 8 }}>
-            <UserOutlined style={{ marginRight: 8 }} />
-            Gestión de Vendedores
-          </Title>
-          <Text type="secondary" style={{ fontSize: 16 }}>
-            Proveedor RUT: {rutProveedor}
-          </Text>
-        </Col>
-      </Row>
-      <Divider />
+    <div style={{ padding: "24px" }}>
       {/* Alerta de Mensajes */}
       {mensaje && (
-        <Row style={{ marginBottom: 16 }}>
-          <Col span={24}>
-            <Alert
-              message={mensaje}
-              type={error ? "error" : "success"}
-              showIcon
-              closable
-              onClose={() => setMensaje("")}
-            />
-          </Col>
-        </Row>
+        <Alert
+          message={mensaje}
+          type={error ? "error" : "success"}
+          showIcon
+          closable
+          onClose={() => setMensaje("")}
+          style={{ marginBottom: 16 }}
+        />
       )}
 
-      {/* Barra de Acciones */}
-      <Card>
-        {!loading && (
-          <Row justify="space-between" align="middle" style={{ margin: 16 }}>
-            {/* Botón Volver a Proveedores */}
-            <Col>
+      {/* Alerta de Selección */}
+      {vendedorSelect && (
+        <Alert
+          message={`Vendedor seleccionado: ${vendedorSelect.nombre}`}
+          type="info"
+          showIcon
+          closable
+          onClose={() => setVendedorSelect(null)}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      {/* Tabla con DataTable Component */}
+      <DataTable
+        title="Gestión de Vendedores"
+        description={`Vendedores del proveedor RUT: ${rutProveedor}`}
+        data={vendedores}
+        columns={columns}
+        rowKey="idVendedorProveedor"
+        loading={loading}
+        searchableFields={["nombre", "rut", "email", "telefono"]}
+        onRowClick={handleSeleccionarFila}
+        selectedRow={vendedorSelect}
+        headerButtons={
+          <Space size="middle">
+            <Button
+              size="large"
+              icon={<RollbackOutlined />}
+              onClick={() => navigate(-1)}
+              style={{ borderRadius: "8px" }}
+            >
+              Volver a Proveedores
+            </Button>
+            <Button
+              type="primary"
+              size="large"
+              icon={<PlusOutlined />}
+              onClick={handleCrear}
+              disabled={loading}
+              style={{ borderRadius: "8px" }}
+            >
+              Nuevo Vendedor
+            </Button>
+            <Button
+              size="large"
+              icon={<EditOutlined />}
+              onClick={handleAbrirModalEditar}
+              disabled={loading || !vendedorSelect}
+              style={{ borderRadius: "8px" }}
+            >
+              Editar
+            </Button>
+            <Popconfirm
+              title="¿Eliminar vendedor?"
+              description={`Se eliminará: ${vendedorSelect?.nombre || ""}`}
+              onConfirm={handleEliminarConfirmado}
+              okText="Sí, eliminar"
+              cancelText="Cancelar"
+              okButtonProps={{ danger: true }}
+              disabled={!vendedorSelect || loading}
+            >
               <Button
-                type="default"
-                icon={<RollbackOutlined />}
-                onClick={() => navigate(-1)} // Vuelve a la página anterior
-                size="sm"
+                size="large"
+                icon={<DeleteOutlined />}
+                disabled={loading || !vendedorSelect}
+                danger
+                style={{ borderRadius: "8px" }}
               >
-                Volver a Proveedores
+                Eliminar
               </Button>
-            </Col>
+            </Popconfirm>
+          </Space>
+        }
+      />
 
-            {/* Acciones */}
-            <Col>
-              <Space wrap>
-                {vendedorSelect && (
-                  <Alert
-                    message={`Seleccionado: ${vendedorSelect.nombre}`}
-                    type="info"
-                    showIcon
-                    closable
-                    onClose={() => setVendedorSelect(null)}
-                  />
-                )}
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={handleCrear}
-                  disabled={loading}
-                  size="sm"
-                >
-                  Agregar Vendedor
-                </Button>
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={handleAbrirModalEditar}
-                  disabled={loading || !vendedorSelect}
-                  size="sm"
-                >
-                  Editar
-                </Button>
-                <Popconfirm
-                  title="¿Eliminar vendedor?"
-                  description={`Se eliminará: ${vendedorSelect?.nombre || ""}`}
-                  onConfirm={handleEliminarConfirmado}
-                  okText="Sí, eliminar"
-                  cancelText="Cancelar"
-                  okButtonProps={{ danger: true }}
-                  disabled={!vendedorSelect || loading}
-                >
-                  <Button
-                    icon={<DeleteOutlined />}
-                    disabled={loading || !vendedorSelect}
-                    danger
-                    size="sm"
-                  >
-                    Eliminar
-                  </Button>
-                </Popconfirm>
-              </Space>
-            </Col>
-          </Row>
-        )}
-
-        {/* Contenido (Tabla o Empty/Loading) */}
-        <Row gutter={[16, 16]}>{renderContenido()}</Row>
-      </Card>
       {/* Modales */}
       <AgregarVendedor
         show={modalCrear}

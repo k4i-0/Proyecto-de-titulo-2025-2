@@ -22,14 +22,23 @@ export default function NavegacionVendedor({
         collapsible
         collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
-        width={200}
-        style={{ background: colorBgContainer }}
+        width={250}
+        style={{
+          background: "#ffffff",
+          boxShadow: "2px 0 8px rgba(0,0,0,0.06)",
+          borderRight: "1px solid #f0f0f0",
+        }}
       >
         <Menu
           mode="inline"
           defaultSelectedKeys={["1"]}
           defaultOpenKeys={["sub1"]}
-          style={{ height: "100%", borderInlineEnd: 0 }}
+          theme="light"
+          style={{
+            height: "100%",
+            borderInlineEnd: 0,
+            padding: "8px 0",
+          }}
           items={[
             {
               key: "0",

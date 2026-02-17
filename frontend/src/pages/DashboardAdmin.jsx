@@ -78,38 +78,52 @@ function Dashboard() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "0 24px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            padding: "0 32px",
+            background: "linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%)",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
             zIndex: 10,
-            backgroundColor: "#fff",
+            height: "72px",
+            borderBottom: "1px solid #f0f0f0",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
             <Button
               type="text"
               icon={
-                <HomeOutlined style={{ fontSize: "20px", color: "#000" }} />
+                <HomeOutlined style={{ fontSize: "22px", color: "#1890ff" }} />
               }
               onClick={() => navigate("/admin")}
               style={{
                 display: "flex",
                 alignItems: "center",
-                color: "white",
+                height: "48px",
+                width: "48px",
+                borderRadius: "12px",
               }}
+              className="hover-lift"
             />
-            <Title
-              level={4}
-              style={{
-                margin: 0,
-                color: "#000",
-                fontWeight: 600,
-              }}
-            >
-              Sistema de Gestión
-            </Title>
+            <div>
+              <Title
+                level={3}
+                style={{
+                  margin: 0,
+                  color: "#1890ff",
+                  fontWeight: 700,
+                  letterSpacing: "-0.5px",
+                }}
+              >
+                Sistema de Gestión
+              </Title>
+              <Text
+                type="secondary"
+                style={{ fontSize: "13px", display: "block", marginTop: "2px" }}
+              >
+                Panel de Administración
+              </Text>
+            </div>
           </div>
 
-          <Space size="middle" align="center">
+          <Space size="large" align="center">
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
               {/* Información del usuario */}
               <Dropdown
@@ -120,18 +134,27 @@ function Dashboard() {
                 <Space
                   style={{
                     cursor: "pointer",
-                    padding: "8px 12px",
-                    borderRadius: "8px",
-                    transition: "background-color 0.3s",
-                    height: "40px",
+                    padding: "8px 16px",
+                    borderRadius: "12px",
+                    transition: "all 0.3s",
+                    border: "1px solid #f0f0f0",
+                    background: "#ffffff",
                   }}
                   className="user-menu-trigger"
                   align="center"
                 >
+                  <Avatar
+                    icon={<UserOutlined />}
+                    style={{
+                      backgroundColor: "#1890ff",
+                      boxShadow: "0 2px 8px rgba(24,144,255,0.3)",
+                    }}
+                    size={40}
+                  />
                   <Space
                     direction="vertical"
                     size={0}
-                    style={{ lineHeight: 1 }}
+                    style={{ lineHeight: 1.2 }}
                   >
                     <Text
                       strong
@@ -141,15 +164,15 @@ function Dashboard() {
                         display: "block",
                       }}
                     >
-                      {user.nombreCompleto || user.nombre || "Usuario"} -{" "}
+                      {user.nombreCompleto || user.nombre || "Usuario"}
+                    </Text>
+                    <Text
+                      type="secondary"
+                      style={{ fontSize: "12px", display: "block" }}
+                    >
                       {user.nombreRol}
                     </Text>
                   </Space>
-                  <Avatar
-                    icon={<UserOutlined />}
-                    style={{ backgroundColor: "#1890ff" }}
-                    size={32}
-                  />
                 </Space>
               </Dropdown>
             </div>

@@ -1,14 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
-// import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 
 import {
-  Row,
-  Col,
   Form,
   Input,
   Button,
   message,
-  Card,
   Select,
   Typography,
   Divider,
@@ -21,9 +17,12 @@ import {
   Popconfirm,
   Drawer,
   Table,
-  Statistic,
   notification,
   Descriptions,
+  Row,
+  Col,
+  Card,
+  Statistic,
 } from "antd";
 
 import {
@@ -34,20 +33,19 @@ import {
   UserOutlined,
   MailOutlined,
   PhoneOutlined,
-  IdcardOutlined,
   PlusOutlined,
   ReloadOutlined,
-  SearchOutlined,
-  FilterOutlined,
-  ArrowLeftOutlined,
   LinkOutlined,
   EyeOutlined,
   DisconnectOutlined,
+  IdcardOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
 import dayjs from "dayjs";
+import DataTable from "../components/Tabla";
+import KPIStats from "../components/Kpis";
 
 //codigo SII
 import girosSII from "../services/codigoSII.js";
@@ -74,14 +72,10 @@ import {
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Proveedor() {
-  // const navigate = useNavigate();
-  // const { idSucursal } = useParams();
-
   const { user } = useAuth();
   const [proveedores, setProveedores] = useState([]);
   const [vendedores, setVendedores] = useState([]);
   const [productos, setProductos] = useState([]);
-  // const [productosEnlazados, setProductosEnlazados] = useState([]);
   const [loading, setLoading] = useState(false);
   const [verModalCrear, setVerModalCrear] = useState(false);
   const [verModalEditar, setVerModalEditar] = useState(false);
@@ -101,10 +95,6 @@ export default function Proveedor() {
     useState([]);
 
   const [proveedorDetalle, setProveedorDetalle] = useState(null);
-  // Estados para filtros
-  const [searchText, setSearchText] = useState("");
-  const [filterEstado, setFilterEstado] = useState(null);
-  const [filterRubro, setFilterRubro] = useState(null);
 
   const [form] = Form.useForm();
   const [formEditar] = Form.useForm();
@@ -453,44 +443,7 @@ export default function Proveedor() {
     }
   };
 
-  const getEstadoConfig = (estado) => {
-    const configs = {
-      Activo: { color: "success", text: "Activo" },
-      Inactivo: { color: "error", text: "Inactivo" },
-    };
-    return configs[estado] || { color: "default", text: estado };
-  };
 
-  // Función para limpiar filtros
-  const handleLimpiarFiltros = () => {
-    setSearchText("");
-    setFilterEstado(null);
-    setFilterRubro(null);
-  };
-
-  // Obtener rubros únicos
-  const rubrosUnicos = useMemo(() => {
-    const rubros = [
-      ...new Set(proveedores.map((p) => p.rubro).filter(Boolean)),
-    ];
-    return rubros.map((rubro) => ({ value: rubro, label: rubro }));
-  }, [proveedores]);
-
-  // Datos filtrados
-  const proveedoresFiltrados = useMemo(() => {
-    return proveedores.filter((proveedor) => {
-      const matchesSearch =
-        !searchText ||
-        proveedor.nombre?.toLowerCase().includes(searchText.toLowerCase()) ||
-        proveedor.rut?.toLowerCase().includes(searchText.toLowerCase()) ||
-        proveedor.email?.toLowerCase().includes(searchText.toLowerCase());
-
-      const matchesEstado = !filterEstado || proveedor.estado === filterEstado;
-      const matchesRubro = !filterRubro || proveedor.rubro === filterRubro;
-
-      return matchesSearch && matchesEstado && matchesRubro;
-    });
-  }, [proveedores, searchText, filterEstado, filterRubro]);
 
   //Enlazar productos
   const buscarProductos = async () => {
@@ -721,311 +674,247 @@ export default function Proveedor() {
       setLoading(false);
     }
   };
-  return (
-    <div style={{ padding: "24px" }}>
-      {/* Header */}
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col span={12} style={{ textAlign: "start" }}>
-          <Title>Gestion Proveedores</Title>
-        </Col>
-        <Col span={12} style={{ textAlign: "end" }}>
-          {/* Estadísticas */}
-          {proveedores.length > 0 && (
-            <Row gutter={16} style={{ marginBottom: 24 }}>
-              <Col xs={24} sm={8}>
-                <Card>
-                  <Statistic
-                    title="Total Proveedores"
-                    value={proveedores.length}
-                    prefix={<TeamOutlined />}
-                    valueStyle={{ color: "#1890ff" }}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={8}>
-                <Card>
-                  <Statistic
-                    title="Proveedores Activos"
-                    value={
-                      proveedores.filter((p) => p.estado === "Activo").length
-                    }
-                    prefix={<TeamOutlined />}
-                    valueStyle={{ color: "#52c41a" }}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={8}>
-                <Card>
-                  <Statistic
-                    title="Proveedores Inactivos"
-                    value={
-                      proveedores.filter((p) => p.estado === "Inactivo").length
-                    }
-                    prefix={<TeamOutlined />}
-                    valueStyle={{ color: "#ff4d4f" }}
-                  />
-                </Card>
-              </Col>
-            </Row>
-          )}
-        </Col>
-      </Row>
+  // Columnas para DataTable
+  const columns = [
+    {
+      title: "Proveedor",
+      dataIndex: "nombre",
+      key: "nombre",
+      width: "25%",
+      render: (text, record) => (
+        <Space direction="vertical" size={0}>
+          <Text strong style={{ fontSize: "15px" }}>
+            {text}
+          </Text>
+          <Text type="secondary" style={{ fontSize: "12px" }}>
+            RUT: {record.rut}
+          </Text>
+        </Space>
+      ),
+    },
+    {
+      title: "Contacto",
+      key: "contacto",
+      width: "25%",
+      render: (_, record) => (
+        <Space direction="vertical" size={4}>
+          <Space>
+            <PhoneOutlined style={{ color: "#8c8c8c" }} />
+            <Text>{record.telefono}</Text>
+          </Space>
+          <Space>
+            <MailOutlined style={{ color: "#8c8c8c" }} />
+            <Text>{record.email}</Text>
+          </Space>
+        </Space>
+      ),
+    },
+    {
+      title: "Rubro",
+      dataIndex: "rubro",
+      key: "rubro",
+      width: "15%",
+    },
+    {
+      title: "Estado",
+      dataIndex: "estado",
+      key: "estado",
+      width: "10%",
+      align: "center",
+      render: (estado) => {
+        const getEstadoConfig = (estado) => {
+          const configs = {
+            Activo: { color: "success", text: "Activo" },
+            Inactivo: { color: "error", text: "Inactivo" },
+          };
+          return configs[estado] || { color: "default", text: estado };
+        };
+        const config = getEstadoConfig(estado);
+        return (
+          <Tag color={config.color} style={{ fontWeight: 600, fontSize: "13px" }}>
+            {config.text}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Fecha Ingreso",
+      dataIndex: "fechaIngreso",
+      key: "fechaIngreso",
+      width: "15%",
+      render: (fecha) => new Date(fecha).toLocaleDateString("es-CL"),
+    },
+    {
+      title: "Acciones",
+      key: "acciones",
+      width: "10%",
+      align: "center",
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="text"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              openDrawerProveedor(record.idProveedor);
+            }}
+          />
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditarProveedor(record);
+            }}
+          />
+          <Popconfirm
+            title="¿Está seguro de eliminar este proveedor?"
+            description={`Se eliminará el proveedor: ${record.nombre}`}
+            onConfirm={(e) => {
+              e?.stopPropagation();
+              handelEliminarProveedor(record);
+            }}
+            okText="Sí, eliminar"
+            cancelText="Cancelar"
+            okButtonProps={{ danger: true }}
+          >
+            <Button
+              type="text"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
 
-      <Divider />
-
-      {proveedores.length === 0 && !loading ? (
+  // Renderizado condicional para estado vacío
+  if (proveedores.length === 0 && !loading) {
+    return (
+      <div style={{ padding: "24px" }}>
+        <Title>Gestión de Proveedores</Title>
         <Empty
           description="No hay proveedores registrados"
           image={Empty.PRESENTED_IMAGE_SIMPLE}
         >
           <Button
             type="primary"
+            size="large"
             icon={<PlusOutlined />}
             onClick={handleCrearProveedor}
           >
             Crear Primer Proveedor
           </Button>
         </Empty>
-      ) : (
-        <>
-          {/* Tabla de Proveedores */}
-          <Card
-            style={{
-              borderRadius: "12px",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-            }}
-          >
-            {/* Botones */}
-            <Row
-              justify="space-between"
-              align="middle"
-              style={{ marginBottom: 16 }}
-            >
-              <Col>
-                <Space>
-                  <Button
-                    icon={<ReloadOutlined />}
-                    onClick={obtenerProveedores}
-                    loading={loading}
-                  >
-                    Actualizar
-                  </Button>
-                  <Button
-                    icon={<TeamOutlined />}
-                    onClick={handleAbrirVendedores}
-                    disabled={!proveedorSeleccionado}
-                  >
-                    Gestionar Vendedores
-                  </Button>
-                  <Button
-                    disabled={!proveedorSeleccionado}
-                    icon={<LinkOutlined />}
-                    onClick={handleDrawerEnlazar}
-                  >
-                    Enzalar Productos
-                  </Button>
-                </Space>
-              </Col>
-              <Col>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={handleCrearProveedor}
-                  disabled={loading}
-                >
-                  Agregar Proveedor
-                </Button>
-              </Col>
-            </Row>
+      </div>
+    );
+  }
 
-            {/* Filtros */}
-            <Row
-              justify="start"
-              align="middle"
-              gutter={16}
-              style={{ marginBottom: 16 }}
-            >
-              <Col xs={24} sm={12} md={8}>
-                <Input
-                  placeholder="Buscar por nombre, RUT o email..."
-                  prefix={<SearchOutlined />}
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  allowClear
-                />
-              </Col>
-              <Col xs={12} sm={6} md={4}>
-                <Select
-                  placeholder="Estado"
-                  style={{ width: "100%" }}
-                  value={filterEstado}
-                  onChange={setFilterEstado}
-                  allowClear
-                  options={[
-                    { value: "Activo", label: "Activo" },
-                    { value: "Inactivo", label: "Inactivo" },
-                  ]}
-                />
-              </Col>
-              <Col xs={12} sm={6} md={4}>
-                <Select
-                  placeholder="Rubro"
-                  style={{ width: "100%" }}
-                  value={filterRubro}
-                  onChange={setFilterRubro}
-                  allowClear
-                  options={rubrosUnicos}
-                />
-              </Col>
-              <Col xs={12} sm={6} md={4}>
-                <Button
-                  icon={<FilterOutlined />}
-                  onClick={handleLimpiarFiltros}
-                  block
-                >
-                  Limpiar Filtros
-                </Button>
-              </Col>
-              {(searchText || filterEstado || filterRubro) && (
-                <Col span={24}>
-                  <Text type="secondary">
-                    Mostrando {proveedoresFiltrados.length} de{" "}
-                    {proveedores.length} proveedores
-                  </Text>
-                </Col>
-              )}
-            </Row>
-
-            <Table
-              dataSource={proveedoresFiltrados}
-              rowKey="idProveedor"
-              loading={loading}
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showTotal: (total) => `Total ${total} proveedores`,
-              }}
-              onRow={(record) => ({
-                onClick: () => handleSeleccionarProveedor(record),
-                style: {
-                  cursor: "pointer",
-                  background:
-                    proveedorSeleccionado?.idProveedor === record.idProveedor
-                      ? "#e6f7ff"
-                      : "white",
-                },
-              })}
-              columns={[
-                {
-                  title: "Proveedor",
-                  dataIndex: "nombre",
-                  key: "nombre",
-                  width: "25%",
-                  render: (text, record) => (
-                    <Space direction="vertical" size={0}>
-                      <Text strong style={{ fontSize: "15px" }}>
-                        {text}
-                      </Text>
-                      <Text type="secondary" style={{ fontSize: "12px" }}>
-                        RUT: {record.rut}
-                      </Text>
-                    </Space>
-                  ),
-                },
-                {
-                  title: "Contacto",
-                  key: "contacto",
-                  width: "25%",
-                  render: (_, record) => (
-                    <Space direction="vertical" size={4}>
-                      <Space>
-                        <PhoneOutlined style={{ color: "#8c8c8c" }} />
-                        <Text>{record.telefono}</Text>
-                      </Space>
-                      <Space>
-                        <MailOutlined style={{ color: "#8c8c8c" }} />
-                        <Text>{record.email}</Text>
-                      </Space>
-                    </Space>
-                  ),
-                },
-                {
-                  title: "Rubro",
-                  dataIndex: "rubro",
-                  key: "rubro",
-                  width: "15%",
-                },
-                {
-                  title: "Estado",
-                  dataIndex: "estado",
-                  key: "estado",
-                  width: "10%",
-                  align: "center",
-                  render: (estado) => {
-                    const config = getEstadoConfig(estado);
-                    return (
-                      <Tag color={config.color} style={{ fontWeight: 600 }}>
-                        {config.text}
-                      </Tag>
-                    );
-                  },
-                },
-                {
-                  title: "Fecha Ingreso",
-                  dataIndex: "fechaIngreso",
-                  key: "fechaIngreso",
-                  width: "15%",
-                  render: (fecha) =>
-                    new Date(fecha).toLocaleDateString("es-CL"),
-                },
-                {
-                  title: "Acciones",
-                  key: "acciones",
-                  width: "10%",
-                  align: "center",
-                  render: (_, record) => (
-                    <Space size="small">
-                      <Button
-                        type="link"
-                        icon={<EyeOutlined />}
-                        onClick={() => openDrawerProveedor(record.idProveedor)}
-                        disabled={!proveedorSeleccionado}
-                      />
-                      <Button
-                        type="text"
-                        icon={<EditOutlined />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditarProveedor(record);
-                        }}
-                        disabled={!proveedorSeleccionado}
-                      />
-                      <Popconfirm
-                        title="¿Está seguro de eliminar este proveedor?"
-                        description={`Se eliminará el proveedor: ${record.nombre}`}
-                        onConfirm={(e) => {
-                          e?.stopPropagation();
-                          handelEliminarProveedor(record);
-                        }}
-                        okText="Sí, eliminar"
-                        cancelText="Cancelar"
-                        okButtonProps={{ danger: true }}
-                      >
-                        <Button
-                          type="text"
-                          danger
-                          icon={<DeleteOutlined />}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </Popconfirm>
-                    </Space>
-                  ),
-                },
-              ]}
-            />
-          </Card>
-        </>
+  return (
+    <div style={{ padding: "24px" }}>
+      {/* KPIs */}
+      {proveedores.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <KPIStats
+            datos={[
+              {
+                titulo: "Total Proveedores",
+                valor: proveedores.length,
+                prefijo: <TeamOutlined />,
+                estiloValor: { color: "#1890ff" },
+              },
+              {
+                titulo: "Proveedores Activos",
+                valor: proveedores.filter((p) => p.estado === "Activo").length,
+                prefijo: <TeamOutlined />,
+                estiloValor: { color: "#52c41a" },
+              },
+              {
+                titulo: "Proveedores Inactivos",
+                valor: proveedores.filter((p) => p.estado === "Inactivo").length,
+                prefijo: <TeamOutlined />,
+                estiloValor: { color: "#ff4d4f" },
+              },
+            ]}
+          />
+        </div>
       )}
+
+      {/* Tabla con DataTable */}
+      <DataTable
+        title="Gestión de Proveedores"
+        description="Administra los proveedores de tu empresa"
+        data={proveedores}
+        columns={columns}
+        rowKey="idProveedor"
+        loading={loading}
+        searchableFields={["nombre", "rut", "email"]}
+        filterConfig={[
+          {
+            key: "estado",
+            placeholder: "Filtrar por estado",
+            options: [
+              { value: "Activo", label: "Activo" },
+              { value: "Inactivo", label: "Inactivo" },
+            ],
+          },
+          {
+            key: "rubro",
+            placeholder: "Filtrar por rubro",
+            options: [
+              ...new Set(proveedores.map((p) => p.rubro).filter(Boolean)),
+            ].map((rubro) => ({ value: rubro, label: rubro })),
+          },
+        ]}
+        onRowClick={handleSeleccionarProveedor}
+        selectedRow={proveedorSeleccionado}
+        headerButtons={
+          <Space size="middle">
+            <Button
+              size="large"
+              icon={<ReloadOutlined />}
+              onClick={obtenerProveedores}
+              loading={loading}
+              style={{ borderRadius: "8px" }}
+            >
+              Actualizar
+            </Button>
+            <Button
+              size="large"
+              icon={<TeamOutlined />}
+              onClick={handleAbrirVendedores}
+              disabled={!proveedorSeleccionado}
+              style={{ borderRadius: "8px" }}
+            >
+              Gestionar Vendedores
+            </Button>
+            <Button
+              size="large"
+              disabled={!proveedorSeleccionado}
+              icon={<LinkOutlined />}
+              onClick={handleDrawerEnlazar}
+              style={{ borderRadius: "8px" }}
+            >
+              Enlazar Productos
+            </Button>
+            <Button
+              type="primary"
+              size="large"
+              icon={<PlusOutlined />}
+              onClick={handleCrearProveedor}
+              disabled={loading}
+              style={{ borderRadius: "8px" }}
+            >
+              Nuevo Proveedor
+            </Button>
+          </Space>
+        }
+      />
 
       {/* MODAL CREAR PROVEEDOR */}
       <Modal
@@ -1787,7 +1676,7 @@ export default function Proveedor() {
                   key: "precioCompra",
                   align: "right",
 
-                  render: (precio) => `$${precio.toLocaleString("es-CL")}`,
+                  render: (precio) => `$${precio?.toLocaleString("es-CL")}`,
                 },
                 {
                   title: "Precio Venta",
@@ -1795,7 +1684,7 @@ export default function Proveedor() {
                   key: "precioVenta",
                   align: "right",
 
-                  render: (precio) => `$${precio.toLocaleString("es-CL")}`,
+                  render: (precio) => `$${precio?.toLocaleString("es-CL")}`,
                 },
                 {
                   title: "Fecha Registro",
@@ -1803,7 +1692,7 @@ export default function Proveedor() {
                   key: "fechaRegistro",
 
                   render: (fecha) =>
-                    new Date(fecha).toLocaleDateString("es-CL"),
+                    new Date(fecha)?.toLocaleDateString("es-CL"),
                 },
                 {
                   title: "Estado",

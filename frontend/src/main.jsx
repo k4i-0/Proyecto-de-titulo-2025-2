@@ -38,7 +38,7 @@ import GestionColaborador from "./pages/Gestion/Gestion Colaboradores/GestionCol
 
 //ordenes de compra
 import OrdenesCompra from "./pages/Gestion/Ordenes Compra/OrdenesCompra.jsx";
-import OrdenCompraDirecta from "./pages/Gestion/Ordenes Compra/OrdenCompraDirecta.jsx";
+import CompraDirecta from "./pages/Gestion/Ordenes Compra/CompraDirecta.jsx";
 import RecepcionOrdenCompra from "./pages/Gestion/RecepcionProveedores/RecepcionOrdenCompra.jsx";
 
 //Pruebas
@@ -49,6 +49,8 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="/cajas/login" element={<LoginCodigo />} />
+
           <Route path="/login" element={<Login />} />
 
           <Route path="/" element={<RedireccionPorRol />} />
@@ -82,7 +84,7 @@ createRoot(document.getElementById("root")).render(
             />
 
             {/**orden compras */}
-            <Route path="gestion/oc_directa" element={<OrdenCompraDirecta />} />
+            <Route path="gestion/compra_directa" element={<CompraDirecta />} />
 
             {/*Recepcion Orden de compra */}
             <Route
@@ -110,5 +112,5 @@ createRoot(document.getElementById("root")).render(
         </Routes>
       </AuthProvider>
     </BrowserRouter>
-  </StrictMode>
+  </StrictMode>,
 );

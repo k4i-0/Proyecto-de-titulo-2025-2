@@ -1,25 +1,24 @@
 const router = require("express").Router();
 const sucursalController = require("../../controllers/inventario/Sucursales.controller");
-// const authMiddleware = require('../../middleware/authMiddleware');
-// const roleMiddleware = require('../../middleware/roleMiddleware');
+const { verifyToken, isAdmin } = require('../../middleware/auth.middleware');
 
 // Rutas para sucursales
 router.post(
   "/crear",
-  /*authMiddleware, roleMiddleware(['admin']),*/ sucursalController.createSucursal
+  verifyToken, isAdmin, sucursalController.createSucursal
 );
-router.get("/buscar", /*authMiddleware,*/ sucursalController.getAllSucursal);
+router.get("/buscar", verifyToken, isAdmin, sucursalController.getAllSucursal);
 router.get(
   "/buscar/:id",
-  /*authMiddleware,*/ sucursalController.getSucursalById
+  verifyToken, isAdmin, sucursalController.getSucursalById
 );
 router.put(
   "/actualizar/:id",
-  /*authMiddleware, roleMiddleware(['admin']),*/ sucursalController.updateSucursal
+  verifyToken, isAdmin, sucursalController.updateSucursal
 );
 router.delete(
   "/eliminar/:id",
-  /*authMiddleware, roleMiddleware(['admin']),*/ sucursalController.deleteSucursal
+  verifyToken, isAdmin, sucursalController.deleteSucursal
 );
 
 module.exports = router;

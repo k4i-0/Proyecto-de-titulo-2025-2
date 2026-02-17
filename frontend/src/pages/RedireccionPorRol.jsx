@@ -10,7 +10,7 @@ const RedireccionPorRol = () => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/cajas/login" replace />;
   }
 
   const userRole = user?.nombreRol;
@@ -23,7 +23,7 @@ const RedireccionPorRol = () => {
     return <Navigate to="/vendedor" replace />;
   }
 
-  return <Navigate to="/login" replace />;
+  return <Navigate to="/cajas/login" replace />;
 };
 
 export default RedireccionPorRol;

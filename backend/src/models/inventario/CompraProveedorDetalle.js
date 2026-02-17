@@ -21,7 +21,7 @@ const compraproveedordetalle = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
-    total: {
+    subtotal: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,

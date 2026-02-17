@@ -13,6 +13,7 @@ async function login(req, res) {
     res.status(203).send({ code: 1238, message: "Faltan Datos" });
   }
   try {
+    //BUSCO FUNCIONARIO POR EMAIL
     const funcionarioEncontrado = await Funcionario.findOne({
       where: { email },
       include: [
@@ -21,33 +22,50 @@ async function login(req, res) {
         },
       ],
     });
+    //SI NO EXISTE RETURN 404
     if (!funcionarioEncontrado) {
       res
         .status(404)
         .send({ code: 1010, message: "Usuario No encontrado, verifique" });
     }
+    //COMPROBAR CONTRASEÑA
     const passwordMatch = await bcrypt.compare(
       password,
-      funcionarioEncontrado.password
+      funcionarioEncontrado.password,
     );
-
+    //SI CONTRASEÑA INCORRECTA RETURN 401
     if (!passwordMatch)
       return res
         .status(401)
         .json({ code: 1011, message: "Contraseña incorrecta" });
 
+    //VERIFICAR ESTADO DE LA SESSION
+    if (funcionarioEncontrado.session === true) {
+      return res
+        .status(409)
+        .json({ code: 1020, message: "Usuario ya tiene sesión activa" });
+    }
+    //VERIFICAR ESTADO DEL USUARIO
+    if (funcionarioEncontrado.estado !== "Activo") {
+      return res.status(401).json({ code: 1012, message: "Usuario inactivo" });
+    }
+
+    //CREAR TOKEN
     const token = jwt.sign(
       {
+        rut: funcionarioEncontrado.dataValues.rut,
         email,
         role: funcionarioEncontrado.dataValues.role.dataValues.nombreRol,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
-
+    //SI NO SE CREA TOKEN RETURN 404
     if (!token) {
       res.status(404).json({ code: 1013, message: "Error al crear Token" });
     }
+
+    //REGISTRAR BITACORA ACTIVIDAD LOGIN
     await crearBitacora({
       nombre: `login usuario ${email}`,
       fechaCreacion: new Date(),
@@ -55,6 +73,11 @@ async function login(req, res) {
       funcionOcupo: "login controller",
       usuariosCreador: ` Sistema por ${email} `,
       nivelAlerta: "Bajo",
+    });
+    //ACTUALIZAR ESTADO DE SESSION A ACTIVADA
+    await funcionarioEncontrado.update({
+      session: true,
+      tipoSession: "Administracion",
     });
     res.cookie("token", token, {
       httpOnly: true,
@@ -68,6 +91,7 @@ async function login(req, res) {
         email: funcionarioEncontrado.email,
         nombreRol: funcionarioEncontrado.dataValues.role.dataValues.nombreRol,
         nombre: funcionarioEncontrado.dataValues.nombre,
+        tipoSession: "Administracion",
       },
       token: {
         token,
@@ -81,6 +105,7 @@ async function login(req, res) {
 
 async function loginCodigo(req, res) {
   const { token } = req.cookies;
+  //VERIFICA QUE SE RECIBA TOKEN EN COOKIES Y LO ELIMINA PARA EVITAR CONFLICTOS
   if (token) {
     res.clearCookie("token", {
       httpOnly: true,
@@ -91,14 +116,15 @@ async function loginCodigo(req, res) {
 
   try {
     const { codigo } = req.body;
+    //VERIFICA QUE SE RECIBA EL CODIGO
     if (!codigo) {
       return res.status(203).json({ message: "Faltan datos" });
     }
 
-    const codigoDesencriptado = desencriptar(
-      "90279fe442d436ac0842130a61843a7f"
-    );
+    //DESENCRIPTAR CODIGO BARRA
+    const codigoDesencriptado = desencriptar(codigo);
 
+    //COMPRUEBA SI EL FUNCIONARIO EXISTE
     const verificarFuncionario = await Funcionario.findOne({
       where: { rut: codigoDesencriptado },
       include: [
@@ -107,35 +133,62 @@ async function loginCodigo(req, res) {
         },
       ],
     });
+
+    //SI NO EXISTE RETURN 404
     if (!verificarFuncionario) {
       return res
         .status(404)
         .json({ code: 1010, message: "Usuario No encontrado, verifique" });
     }
+
+    //VERIFICAR ESTADO DEL USUARIO
+    if (verificarFuncionario.estado !== "Activo") {
+      return res.status(401).json({ code: 1012, message: "Usuario inactivo" });
+    }
+
+    //VERIFICAR ESTADO DE LA SESSION
+    if (verificarFuncionario.session === true) {
+      return res
+        .status(409)
+        .json({ code: 1020, message: "Usuario ya tiene sesión activa" });
+    }
+
+    //CREAR TOKEN
     const token = jwt.sign(
       {
+        id: verificarFuncionario.id,
         email: verificarFuncionario.email,
         role: verificarFuncionario.dataValues.role.dataValues.nombreRol,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
+
+    //SI NO SE CREA TOKEN RETURN 404
     if (!token) {
       return res
         .status(404)
         .json({ code: 1013, message: "Error al crear Token" });
     }
+
+    // ACTUALIZAR ESTADO DE SESSION A ACTIVADA Y TIPO DE SESSION A CAJA
+    await verificarFuncionario.update({ session: true, tipoSession: "Caja" });
+
+    //ENVIA COOKIE CON TOKEN AL NAVEGADOR
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false, //process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+
+    //ENVIA DATOS PARA SESSION ABIERTA
     return res.status(200).json({
       datos: {
         email: verificarFuncionario.email,
         nombreRol: verificarFuncionario.dataValues.role.dataValues.nombreRol,
         nombre: verificarFuncionario.dataValues.nombre,
+        tipoSession: "Caja",
       },
     });
   } catch (error) {
@@ -156,9 +209,25 @@ async function logout(req, res) {
     if (payload && payload.email) {
       emailDelToken = payload.email;
     }
+    const funcionarioEncontrado = await Funcionario.findOne({
+      where: { email: emailDelToken },
+    });
+    if (funcionarioEncontrado) {
+      await funcionarioEncontrado.update({
+        session: false,
+        tipoSession: "Sin session",
+      });
+    } else {
+      console.warn(
+        `No se encontró el funcionario para actualizar sesión durante logout: ${emailDelToken}`,
+      );
+      return res
+        .status(404)
+        .json({ message: "Usuario no encontrado, reintente" });
+    }
   } catch (error) {
     console.warn(
-      `Intento de logout con token inválido/expirado: ${error.name}`
+      `Intento de logout con token inválido/expirado: ${error.name}`,
     );
   }
   try {
@@ -230,6 +299,14 @@ async function miEstado(req, res) {
         sameSite: "lax",
       });
       return res.status(401).json({ message: "Usuario inactivo" });
+    }
+    if (verificarFuncionario.session === false) {
+      res.clearCookie("token", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+      });
+      return res.status(401).json({ message: "Usuario sin sesión activa" });
     }
 
     return res.status(200).send({

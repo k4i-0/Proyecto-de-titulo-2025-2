@@ -2,26 +2,30 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import inicioSesion from "../services/Auth.services";
-import { UserOutlined, LockOutlined, GoogleOutlined } from "@ant-design/icons";
 import {
-  Layout,
+  UserOutlined,
+  LockOutlined,
+  LoginOutlined,
+  ScanOutlined,
+  SafetyCertificateFilled,
+} from "@ant-design/icons";
+import {
   Form,
   Input,
   Button,
   Card,
   Typography,
-  Alert,
-  Row,
-  Col,
   notification,
+  theme,
 } from "antd";
 
-const { Header, Content, Footer } = Layout;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const Login = () => {
   // const [flag, setFlag] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { token } = theme.useToken();
 
   const navigate = useNavigate();
   const { login, isAuthenticated, user } = useAuth();
@@ -52,6 +56,7 @@ const Login = () => {
   };
 
   const handleSubmit = async (values) => {
+    setLoading(true);
     try {
       const usuario = await inicioSesion(values.email, values.password);
       // console.log("Usuario dentro de login", usuario.data.token);
@@ -78,6 +83,8 @@ const Login = () => {
           "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
         placement: "topRight",
       });
+    } finally {
+      setLoading(false);
     }
     // if (usuario.code) {
     //   setShowAlert(true);
@@ -90,91 +97,249 @@ const Login = () => {
   };
 
   return (
-    <>
-      {/* <Row justify="start" align="middle" style={{ padding: "20px" }}>
-        <Col span={8} style={{ textAlign: "center" }}>
-          Logo
-        </Col>
-        <Col span={8} offset={8} style={{ textAlign: "center" }}>
-          Nombre Empresa
-        </Col>
-      </Row> */}
-      <Row justify="center" align="middle" style={{ height: "100vh" }}>
-        <Col>
-          <Card
+    // <>
+    //   <Row
+    //     justify="start"
+    //     align="middle"
+    //     style={{
+    //       padding: "10px",
+    //       paddingLeft: "50px",
+    //       backgroundColor: "rgb(57, 57, 239)",
+    //     }}
+    //   >
+    //     <Col span={8} style={{ display: "flex", alignItems: "center" }}>
+    //       <img
+    //         src="../../public/Logo.jpeg"
+    //         alt="Logo"
+    //         style={{
+    //           borderRadius: "8px",
+    //           alignItems: "start",
+    //           width: "150px",
+    //         }}
+    //       />
+    //       <Title
+    //         level={3}
+    //         style={{
+    //           color: "white",
+    //           marginTop: "10px",
+    //           marginLeft: "50px",
+    //         }}
+    //       >
+    //         Sistema de Ventas
+    //       </Title>
+    //     </Col>
+    //   </Row>
+    //   <Row
+    //     justify="center"
+    //     align="middle"
+    //     style={{ height: "100vh", backgroundColor: "#f0f2f5" }}
+    //   >
+    //     <Col style={{ marginBottom: "80px" }}>
+    //       <Card
+    //         style={{
+    //           width: 400,
+    //           boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+    //           borderRadius: "8px",
+    //         }}
+    //       >
+    //         <Title
+    //           level={2}
+    //           style={{ textAlign: "center", marginBottom: "24px" }}
+    //         >
+    //           Acceso
+    //         </Title>
+    //         {/* {showAlert && (
+    //           <div>
+    //             <Alert message={flag} type="error" showIcon />
+    //           </div>
+    //         )} */}
+
+    //         <Form
+    //           onFinish={handleSubmit}
+    //           onFinishFailed={onFinishFailed}
+    //           layout="vertical"
+    //           initialValues={{ remember: true }}
+    //           autoComplete="off"
+    //         >
+    //           <Form.Item
+    //             label="Correo"
+    //             name="email"
+    //             rules={[
+    //               { required: true, message: "¡Por favor ingresa tu correo!" },
+    //               { type: "email", message: "¡Ese no es un correo válido!" },
+    //             ]}
+    //           >
+    //             <Input
+    //               id="email"
+    //               //onChange={(e) => setEmail(e.target.value)}
+    //               placeholder="tu@email.com"
+    //               className="mb-3"
+    //             />
+    //           </Form.Item>
+
+    //           <Form.Item
+    //             label="Contraseña"
+    //             name="password"
+    //             rules={[
+    //               {
+    //                 required: true,
+    //                 message: "¡Por favor ingresa tu contraseña!",
+    //               },
+    //             ]}
+    //           >
+    //             <Input.Password
+    //               id="password"
+    //               //onChange={(e) => setPassword(e.target.value)}
+    //               placeholder="Ingresa tu contraseña"
+    //               className="w-100"
+    //             />
+    //           </Form.Item>
+    //           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+    //             <Button type="primary" htmlType="submit">
+    //               Iniciar Sesión
+    //             </Button>
+    //           </Form.Item>
+
+    //           {/* <p className="text-center mb-2">Presiona ESC para salir</p>
+    //     <Alert className="text-center text-muted small">
+    //       Pantalla Completa: {isFullscreen ? "✓ Activo" : "✗ Inactivo"}
+    //     </Alert> */}
+    //         </Form>
+    //       </Card>
+    //     </Col>
+    //   </Row>
+    // </>
+    <div
+      style={{
+        minHeight: "100vh",
+
+        background: "linear-gradient(135deg, #1c2e4a 0%, #324a6e 100%)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        position: "relative",
+        padding: "20px",
+      }}
+    >
+      {/* --- Botón Flotante para volver a Caja/Kiosco --- */}
+      <div style={{ position: "absolute", top: 20, right: 20, zIndex: 10 }}>
+        <Button
+          type="text"
+          icon={<ScanOutlined />}
+          onClick={() => navigate("/cajas/login")}
+          style={{ color: "rgba(255,255,255,0.8)", fontSize: "14px" }}
+        >
+          Ir a Caja / Vendedor
+        </Button>
+      </div>
+
+      <Card
+        style={{
+          width: "100%",
+          maxWidth: 420,
+          borderRadius: 16,
+
+          boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+          padding: "10px",
+          backgroundColor: "#ffffff",
+        }}
+      >
+        <div style={{ textAlign: "center", marginBottom: "30px" }}>
+          {/* Logo / Icono Principal */}
+          <div
             style={{
-              width: 400,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-              borderRadius: "8px",
+              width: "60px",
+              height: "60px",
+              background: token.colorPrimaryBg,
+              borderRadius: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 20px auto",
+              color: token.colorPrimary,
             }}
           >
-            <Title
-              level={2}
-              style={{ textAlign: "center", marginBottom: "24px" }}
+            <SafetyCertificateFilled style={{ fontSize: "32px" }} />
+          </div>
+
+          <Title
+            level={3}
+            style={{ margin: 0, fontWeight: 700, color: "#1c2e4a" }}
+          >
+            Administración
+          </Title>
+          <Text type="secondary">Gestión y Control del Sistema</Text>
+        </div>
+
+        <Form
+          name="login_admin"
+          onFinish={handleSubmit}
+          onFinishFailed={onFinishFailed}
+          layout="vertical"
+          size="large"
+          autoComplete="off"
+        >
+          <Form.Item
+            name="email"
+            rules={[
+              { required: true, message: "Ingresa tu correo" },
+              { type: "email", message: "Formato de correo inválido" },
+            ]}
+          >
+            <Input
+              prefix={<UserOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+              placeholder="Correo electrónico"
+              style={{ borderRadius: "8px" }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            rules={[{ required: true, message: "Ingresa tu contraseña" }]}
+          >
+            <Input.Password
+              prefix={<LockOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+              placeholder="Contraseña"
+              style={{ borderRadius: "8px" }}
+            />
+          </Form.Item>
+
+          <Form.Item style={{ marginTop: "20px" }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              block
+              loading={loading}
+              icon={!loading && <LoginOutlined />}
+              style={{
+                height: "48px", // Botón un poco más alto
+                fontSize: "16px",
+                fontWeight: 600,
+                borderRadius: "8px",
+                backgroundColor: "#1c2e4a", // Azul oscuro a juego con el fondo
+                borderColor: "#1c2e4a",
+              }}
             >
-              Acceso
-            </Title>
-            {/* {showAlert && (
-              <div>
-                <Alert message={flag} type="error" showIcon />
-              </div>
-            )} */}
+              {loading ? "Validando..." : "Ingresar al Panel"}
+            </Button>
+          </Form.Item>
+        </Form>
 
-            <Form
-              onFinish={handleSubmit}
-              onFinishFailed={onFinishFailed}
-              layout="vertical"
-              initialValues={{ remember: true }}
-              autoComplete="off"
-            >
-              <Form.Item
-                label="Correo"
-                name="email"
-                rules={[
-                  { required: true, message: "¡Por favor ingresa tu correo!" },
-                  { type: "email", message: "¡Ese no es un correo válido!" },
-                ]}
-              >
-                <Input
-                  id="email"
-                  //onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@email.com"
-                  className="mb-3"
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="Contraseña"
-                name="password"
-                rules={[
-                  {
-                    required: true,
-                    message: "¡Por favor ingresa tu contraseña!",
-                  },
-                ]}
-              >
-                <Input.Password
-                  id="password"
-                  //onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Ingresa tu contraseña"
-                  className="w-100"
-                />
-              </Form.Item>
-              <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-                <Button type="primary" htmlType="submit">
-                  Iniciar Sesión
-                </Button>
-              </Form.Item>
-
-              {/* <p className="text-center mb-2">Presiona ESC para salir</p>
-        <Alert className="text-center text-muted small">
-          Pantalla Completa: {isFullscreen ? "✓ Activo" : "✗ Inactivo"}
-        </Alert> */}
-            </Form>
-          </Card>
-        </Col>
-      </Row>
-    </>
+        {/* Footer Discreto */}
+        {/* <div
+          style={{
+            textAlign: "center",
+            marginTop: "20px",
+            borderTop: "1px solid #f0f0f0",
+            paddingTop: "15px",
+          }}
+        >
+          <Text type="secondary" style={{ fontSize: "12px" }}>
+            © 2024 Tu Empresa. Acceso restringido.
+          </Text>
+        </div> */}
+      </Card>
+    </div>
   );
 };
 

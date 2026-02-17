@@ -6,24 +6,17 @@ import {
   Space,
   Empty,
   Spin,
-  Row,
-  Col,
   Tag,
-  Table,
   Popconfirm,
-  Card,
 } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  TagsOutlined,
   LoadingOutlined,
-  RollbackOutlined,
 } from "@ant-design/icons";
 
-// import { useNavigate } from "react-router-dom";
-
+import DataTable from "../components/Tabla";
 import AgregarCategoria from "./inventario/modalCategoria/AgregarCategoria";
 import EditarCategoria from "./inventario/modalCategoria/EditarCategoria";
 
@@ -160,7 +153,7 @@ export default function Categoria() {
       title: "ID",
       dataIndex: "idCategoria",
       key: "idCategoria",
-
+      width: "15%",
       align: "center",
     },
     {
@@ -173,185 +166,152 @@ export default function Categoria() {
       title: "Estado",
       dataIndex: "estado",
       key: "estado",
+      width: "20%",
       align: "center",
-      filters: [
-        { text: "Activo", value: "Activo" },
-        { text: "Inactivo", value: "Inactivo" },
-        { text: "Suspendido", value: "Suspendido" },
-      ],
-      onFilter: (value, record) => record.estado === value,
-      sorter: (a, b) => {
-        const orden = { Activo: 1, Suspendido: 2, Inactivo: 3 };
-        return orden[a.estado] - orden[b.estado];
-      },
       render: (estado) => (
-        <Tag color={getEstadoColor(estado)}>{estado || "N/A"}</Tag>
+        <Tag color={getEstadoColor(estado)} style={{ fontSize: "13px" }}>
+          {estado || "N/A"}
+        </Tag>
       ),
     },
   ];
 
-  const renderContenido = () => {
-    if (loading && categorias.length === 0) {
-      return (
-        <Col span={24} style={{ textAlign: "center", padding: "60px 0" }}>
-          <Spin
-            indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
-            tip="Cargando categorías..."
-            size="large"
-          />
-        </Col>
-      );
-    }
-
-    if (categorias.length === 0 && !loading) {
-      return (
-        <Col span={24}>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <Space direction="vertical" size="large">
-                <div>
-                  <Title level={4}>No hay categorías disponibles</Title>
-                  <Text type="secondary">
-                    Las categorías son necesarias para organizar tus productos
-                  </Text>
-                </div>
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<PlusOutlined />}
-                  onClick={handleCrear}
-                >
-                  Crear Primera Categoría
-                </Button>
-              </Space>
-            }
-          />
-        </Col>
-      );
-    }
-
+  // Renderizado condicional para estados de carga y vacío
+  if (loading && categorias.length === 0) {
     return (
-      <Col span={24}>
-        <Table
-          columns={columns}
-          dataSource={categorias}
-          rowKey="idCategoria"
-          loading={loading}
-          pagination={{ pageSize: 10, showSizeChanger: true }}
-          onRow={(record) => ({
-            onClick: () => handleSeleccionarFila(record),
-            style: {
-              cursor: "pointer",
-              backgroundColor:
-                categoriaSelect?.idCategoria === record.idCategoria
-                  ? "#e6f4ff"
-                  : "transparent",
-              transition: "background-color 0.3s ease",
-            },
-          })}
-          locale={{
-            emptyText: "No hay categorías disponibles",
-          }}
+      <div style={{ padding: "24px", textAlign: "center" }}>
+        <Spin
+          indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
+          tip="Cargando categorías..."
+          size="large"
         />
-      </Col>
+      </div>
     );
-  };
+  }
+
+  if (categorias.length === 0 && !loading) {
+    return (
+      <div style={{ padding: "24px" }}>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <Space direction="vertical" size="large">
+              <div>
+                <Typography.Title level={4}>
+                  No hay categorías disponibles
+                </Typography.Title>
+                <Typography.Text type="secondary">
+                  Las categorías son necesarias para organizar tus productos
+                </Typography.Text>
+              </div>
+              <Button
+                type="primary"
+                size="large"
+                icon={<PlusOutlined />}
+                onClick={handleCrear}
+              >
+                Crear Primera Categoría
+              </Button>
+            </Space>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: "24px" }}>
-      {/* Encabezado */}
-      <Row justify="start" style={{ margin: 24 }}>
-        <Col span={18} style={{ textAlign: "start" }}>
-          <Title style={{ marginBottom: 8 }}>
-            <TagsOutlined style={{ marginRight: 8 }} />
-            Gestión de Categorías
-          </Title>
-        </Col>
-      </Row>
-
       {/* Alerta de Mensajes */}
       {mensaje && (
-        <Row style={{ marginBottom: 16 }}>
-          <Col span={24}>
-            <Alert
-              message={mensaje}
-              type={error ? "error" : "success"}
-              showIcon
-              closable
-              onClose={() => setMensaje("")}
-            />
-          </Col>
-        </Row>
+        <Alert
+          message={mensaje}
+          type={error ? "error" : "success"}
+          showIcon
+          closable
+          onClose={() => setMensaje("")}
+          style={{ marginBottom: 16 }}
+        />
       )}
 
-      <Card>
-        {!loading && categorias.length > 0 && (
-          <Row
-            justify="space-between"
-            align="middle"
-            style={{ marginBottom: 24 }}
-          >
-            <Col>
-              {/* <Button
-              type="default"
-              icon={<RollbackOutlined />}
-              onClick={() => navigate(-1)}
+      {/* Alerta de Selección */}
+      {categoriaSelect && (
+        <Alert
+          message={`Categoría seleccionada: ${categoriaSelect.nombreCategoria}`}
+          type="info"
+          showIcon
+          closable
+          onClose={() => setCategoriaSelect(null)}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      {/* Tabla con DataTable Component */}
+      <DataTable
+        title="Gestión de Categorías"
+        description="Administra las categorías de productos del inventario"
+        data={categorias}
+        columns={columns}
+        rowKey="idCategoria"
+        loading={loading}
+        searchableFields={["nombreCategoria"]}
+        filterConfig={[
+          {
+            key: "estado",
+            placeholder: "Filtrar por estado",
+            options: [
+              { value: "Activo", label: "Activo" },
+              { value: "Inactivo", label: "Inactivo" },
+              { value: "Suspendido", label: "Suspendido" },
+            ],
+          },
+        ]}
+        onRowClick={handleSeleccionarFila}
+        selectedRow={categoriaSelect}
+        headerButtons={
+          <Space size="middle">
+            <Button
+              type="primary"
+              size="large"
+              icon={<PlusOutlined />}
+              onClick={handleCrear}
+              disabled={loading}
+              style={{ borderRadius: "8px" }}
             >
-              Volver
-            </Button> */}
-            </Col>
+              Nueva Categoría
+            </Button>
+            <Button
+              size="large"
+              icon={<EditOutlined />}
+              onClick={handleAbrirModalEditar}
+              disabled={loading || !categoriaSelect}
+              style={{ borderRadius: "8px" }}
+            >
+              Editar
+            </Button>
+            <Popconfirm
+              title="¿Eliminar categoría?"
+              description={`Se eliminará: ${categoriaSelect?.nombreCategoria || ""}`}
+              onConfirm={handleEliminarConfirmado}
+              okText="Sí, eliminar"
+              cancelText="Cancelar"
+              okButtonProps={{ danger: true }}
+              disabled={!categoriaSelect || loading}
+            >
+              <Button
+                size="large"
+                icon={<DeleteOutlined />}
+                disabled={loading || !categoriaSelect}
+                danger
+                style={{ borderRadius: "8px" }}
+              >
+                Eliminar
+              </Button>
+            </Popconfirm>
+          </Space>
+        }
+      />
 
-            <Col>
-              <Space wrap>
-                {categoriaSelect && (
-                  <Alert
-                    message={`Seleccionada: ${categoriaSelect.nombreCategoria}`}
-                    type="info"
-                    showIcon
-                    closable
-                    onClose={() => setCategoriaSelect(null)}
-                  />
-                )}
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={handleCrear}
-                  disabled={loading}
-                >
-                  Agregar Categoría
-                </Button>
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={handleAbrirModalEditar}
-                  disabled={loading || !categoriaSelect}
-                >
-                  Editar
-                </Button>
-                <Popconfirm
-                  title="¿Eliminar categoría?"
-                  description={`Se eliminará: ${categoriaSelect?.nombre || ""}`}
-                  onConfirm={handleEliminarConfirmado}
-                  okText="Sí, eliminar"
-                  cancelText="Cancelar"
-                  okButtonProps={{ danger: true }}
-                  disabled={!categoriaSelect || loading}
-                >
-                  <Button
-                    icon={<DeleteOutlined />}
-                    disabled={loading || !categoriaSelect}
-                    danger
-                  >
-                    Eliminar
-                  </Button>
-                </Popconfirm>
-              </Space>
-            </Col>
-          </Row>
-        )}
-
-        <Row gutter={[16, 16]}>{renderContenido()}</Row>
-      </Card>
+      {/* Modales */}
       <AgregarCategoria
         show={modalCrear}
         handleClose={handleCerrarModal}

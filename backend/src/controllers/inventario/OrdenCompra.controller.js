@@ -274,6 +274,7 @@ exports.createOrdenCompraDirecta = async (req, res) => {
       nombreOrden: await generarNombreOrden(),
       fechaCompra: new Date(),
       estado: "creada",
+      tipo: "compra directa",
       total: total,
       observaciones: observaciones,
       idSucursal: idSucursal,
@@ -297,18 +298,17 @@ exports.createOrdenCompraDirecta = async (req, res) => {
       //comprobar que el producto existe
       let comprobarProducto = await Producto.findByPk(idProducto);
       if (!comprobarProducto) {
-        await nuevaOrdenCompraDirecta.update({ estado: "fallo detalle" });
+        //await nuevaOrdenCompraDirecta.update({ estado:"fallo detalle sistema" });
         return res
           .status(404)
           .json({ error: `Producto con ID ${idProducto} no encontrado` });
       }
       //crear el detalle de la compra
       const nuevaCompraProveedorDetalle = await CompraProveedorDetalle.create({
-        nombreProducto: nombre,
         cantidad: cantidad,
         precioUnitario: precioUnitario,
-        total: subtotal,
-        idCompraProveedor: nuevaOrdenCompraDirecta.idOrdenCompra,
+        subtotal: subtotal,
+        idOrdenCompra: nuevaOrdenCompraDirecta.idOrdenCompra,
         idProducto: idProducto,
       });
       //comprobar creación detalle
@@ -317,14 +317,14 @@ exports.createOrdenCompraDirecta = async (req, res) => {
           "Fallo al crear el detalle de la compra proveedor",
           nuevaCompraProveedorDetalle
         );
-        await nuevaOrdenCompraDirecta.update({ estado: "fallo detalle" });
+        //await nuevaOrdenCompraDirecta.update({ estado: "fallo detalle" });
         return res.status(500).json({
           error: "Error al crear el detalle de la orden de compra a proveedor",
         });
       }
     }
-    // Si todo sale bien, actualizar el estado de la orden a aprobada
-    await nuevaOrdenCompraDirecta.update({ estado: "aprobada" });
+    // Si todo sale bien, actualizar el estado de la orden a pendiente recibir
+    await nuevaOrdenCompraDirecta.update({ estado: "pendiente recibir" });
     //Guardar transaccion si sale todo bien
     await t.commit();
     return res

@@ -1,51 +1,27 @@
 import { useEffect, useState } from "react";
 import {
-  Row,
-  Col,
   Button,
-  Alert,
   Typography,
-  Table,
   Space,
-  Popconfirm,
   Empty,
   Spin,
-  Input,
   Select,
   notification,
   Card,
-  Divider,
+  Tag,
 } from "antd";
 
-const { Search } = Input;
-import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { LoadingOutlined } from "@ant-design/icons";
 
-// Servicios
+import DataTable from "../components/Tabla";
 import obtenerInventarios from "../services/inventario/Inventario.service";
-
 import obtenerSucursales from "../services/inventario/Sucursal.service";
 
-// Modales
-import CrearInventario from "./inventario/modalInventario/CrearInventario";
-import EditarInventario from "./inventario/modalInventario/EditarInventario";
-
 export default function Inventario() {
-  const { Title, Text } = Typography;
   const [inventarios, setInventarios] = useState([]);
   const [sucursales, setSucursales] = useState([]);
   const [sucursalSeleccionada, setSucursalSeleccionada] = useState(null);
   const [loading, setLoading] = useState(false);
-  // const [searchText, setSearchText] = useState("");
-
-  // const inventariosFiltrados = inventarios.filter((item) => {
-  //   const searchLower = searchText.toLowerCase();
-  //   return (
-  //     item.producto?.idProducto?.toString().includes(searchLower) ||
-  //     item.producto?.nombre?.toLowerCase().includes(searchLower) ||
-  //     item.lote?.codigo?.toString().includes(searchLower) ||
-  //     item.cantidad?.toString().includes(searchLower)
-  //   );
-  // });
 
   const buscarSucursales = async () => {
     setLoading(true);
@@ -134,256 +110,131 @@ export default function Inventario() {
     cargarInventarios();
   };
 
+  const columns = [
+    {
+      title: "Código",
+      dataIndex: ["producto", "idProducto"],
+      key: "idProducto",
+      width: "12%",
+      align: "center",
+    },
+    {
+      title: "Producto",
+      dataIndex: ["producto", "nombre"],
+      key: "nombre",
+      width: "30%",
+    },
+    {
+      title: "Stock",
+      dataIndex: "cantidad",
+      key: "cantidad",
+      width: "12%",
+      align: "center",
+      render: (cantidad) => (
+        <Tag color={cantidad > 10 ? "success" : cantidad > 0 ? "warning" : "error"} style={{ fontSize: "13px" }}>
+          {cantidad}
+        </Tag>
+      ),
+    },
+    {
+      title: "Lote",
+      dataIndex: ["lote", "codigo"],
+      key: "lote",
+      width: "20%",
+    },
+    {
+      title: "Estado",
+      dataIndex: "estado",
+      key: "estado",
+      width: "15%",
+      align: "center",
+      render: (estado) => {
+        const colores = {
+          Disponible: "success",
+          "Bajo Stock": "warning",
+          Agotado: "error",
+        };
+        return (
+          <Tag color={colores[estado] || "default"} style={{ fontSize: "13px" }}>
+            {estado}
+          </Tag>
+        );
+      },
+    },
+  ];
+
+  // Renderizado condicional para estados de carga y vacío
+  if (loading && sucursales.length === 0) {
+    return (
+      <div style={{ padding: "24px", textAlign: "center" }}>
+        <Spin
+          indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
+          tip="Cargando sucursales..."
+          size="large"
+        />
+      </div>
+    );
+  }
+
   return (
-    <>
-      <Row>
-        <Col>
-          <Title level={2}>Gestión de Inventario</Title>
-        </Col>
-      </Row>
-      <Row>
-        <Col span={24}>
-          <Text>Selecciona sucursal:</Text>
-          <br />
+    <div style={{ padding: "24px" }}>
+      {/* Selector de Sucursal */}
+      <Card
+        style={{
+          marginBottom: 24,
+          borderRadius: "12px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+        }}
+      >
+        <Space direction="vertical" size="small" style={{ width: "100%" }}>
+          <Typography.Text strong style={{ fontSize: "15px" }}>
+            Selecciona una sucursal:
+          </Typography.Text>
           <Select
-            style={{ width: 200, marginTop: 8 }}
+            style={{ width: "100%", maxWidth: 400 }}
+            size="large"
             placeholder="Seleccionar Sucursal"
+            value={sucursalSeleccionada?.idSucursal}
             onChange={(value) => handleSucursalSeleccionada(value)}
+            loading={loading}
           >
             {sucursales.map((sucursal) => (
-              <Select.Option
-                key={sucursal.idSucursal}
-                value={sucursal.idSucursal}
-              >
-                {sucursal.nombre}
+              <Select.Option key={sucursal.idSucursal} value={sucursal.idSucursal}>
+                {sucursal.nombre} - {sucursal.direccion}
               </Select.Option>
             ))}
           </Select>
-        </Col>
-      </Row>
-      <Divider />
-      {sucursalSeleccionada && (
-        <Row>
-          <Col span={24}>
-            <Card>
-              <Title level={4}>
-                Inventario de la Sucursal: {sucursalSeleccionada.nombre}
-              </Title>
-              <Text>Dirección: {sucursalSeleccionada.direccion}</Text>
-              <Divider />
-              <Table
-                dataSource={inventarios}
-                loading={loading}
-                rowKey="idInventario"
-                columns={[
-                  {
-                    title: "Código Producto",
-                    dataIndex: ["producto", "idProducto"],
-                    key: "idProducto",
-                  },
-                  {
-                    title: "Producto",
-                    dataIndex: ["producto", "nombre"],
-                    key: "nombre",
-                  },
-                  {
-                    title: "Stock",
-                    dataIndex: "cantidad",
-                    key: "cantidad",
-                  },
-                  {
-                    title: "Lote",
-                    dataIndex: ["lote", "codigo"],
-                    key: "lote",
-                  },
-                  {
-                    title: "Estado",
-                    dataIndex: "estado",
-                    key: "estado",
-                  },
-                ]}
-                pagination={{ pageSize: 5 }}
-                locale={{
-                  emptyText: (
-                    <Empty
-                      description={
-                        loading
-                          ? "Cargando inventario..."
-                          : "No hay inventario disponible para esta sucursal, ingrese compras"
-                      }
-                    />
-                  ),
-                }}
-              />
-            </Card>
-          </Col>
-        </Row>
-      )}
-    </>
-  );
-  // return (
-  //   <Container style={{ marginTop: "30px" }}>
-  //     <Row className="mb-4 text-center align-items-center">
-  //       <Col className="text-center align-items-center">
-  //         <h2>Gestión de Inventario</h2>
-  //       </Col>
-  //     </Row>
-  //     <Row className="mb-3">
-  //       <Col md={3}>
-  //         <Button variant="primary" onClick={handleCrear} disabled={loading}>
-  //           Añadir Inventario
-  //         </Button>
-  //       </Col>
-  //     </Row>
-  //     <Row>
-  //       <Table striped bordered hover>
-  //         <thead>
-  //           <tr>
-  //             <th>CP</th>
-  //             <th>Producto</th>
-  //             <th>Stock</th>
-  //             <th>Estado</th>
-  //             <th>Lote</th>
-  //           </tr>
-  //         </thead>
-  //       </Table>
-  //     </Row>
-  //     <CrearInventario
-  //       show={modalCrear}
-  //       handleClose={handleCerrarModal}
-  //       buscarInventarios={buscarInventarios}
-  //     />
-  //   </Container>
-  //   // <Container style={{ marginTop: "30px" }}>
-  //   //   <Row className="mb-4 text-center align-items-center">
-  //   //     <Col className="text-center align-items-center">
-  //   //       <h2>Gestión de Inventario</h2>
-  //   //       <p className="text-muted">
-  //   //         Aquí puedes gestionar el stock de productos en tus bodegas
-  //   //       </p>
-  //   //     </Col>
-  //   //   </Row>
-  //   //   {mensaje && (
-  //   //     <Row className="mb-3">
-  //   //       <Col>
-  //   //         <Alert
-  //   //           variant={error ? "danger" : "success"}
-  //   //           dismissible
-  //   //           onClose={() => setMensaje("")}
-  //   //         >
-  //   //           {mensaje}
-  //   //         </Alert>
-  //   //       </Col>
-  //   //     </Row>
-  //   //   )}
-  //   //   {/* Botones de acción */}
-  //   //   <Row className="mb-4">
-  //   //     <Col md={3}>
-  //   //       <Button
-  //   //         variant="primary"
-  //   //         onClick={handleCrear}
-  //   //         disabled={loading}
-  //   //         className="w-100"
-  //   //       >
-  //   //         Añadir Inventario
-  //   //       </Button>
-  //   //     </Col>
-  //   //   </Row>
-  //   //   <Row>
-  //   //     {
-  //   //       loading && inventarios.length === 0
-  //   //         ? [...Array(3)].map((_, index) => (
-  //   //             <Col md={4} className="mb-4" key={index}>
-  //   //               <Card>
-  //   //                 <Card.Body>
-  //   //                   <Placeholder as={Card.Title} animation="glow">
-  //   //                     <Placeholder xs={6} />
-  //   //                   </Placeholder>
-  //   //                   <Placeholder as={Card.Text} animation="glow">
-  //   //                     <Placeholder xs={7} /> <br />
-  //   //                     <Placeholder xs={4} /> <br />
-  //   //                     <Placeholder xs={4} /> <br />
-  //   //                     <Placeholder xs={6} />
-  //   //                   </Placeholder>
-  //   //                 </Card.Body>
-  //   //                 <Card.Footer>
-  //   //                   <ButtonGroup className="w-100">
-  //   //                     <Placeholder.Button variant="warning" xs={6} />
-  //   //                     <Placeholder.Button variant="danger" xs={6} />
-  //   //                   </ButtonGroup>
-  //   //                 </Card.Footer>
-  //   //               </Card>
-  //   //             </Col>
-  //   //           ))
-  //   //         : inventarios.length > 0
-  //   //         ? inventarios.map((inventario) => (
-  //   //             <Col key={inventario.idInventario} md={4} className="mb-4">
-  //   //               {" "}
-  //   //               {/* Asumo 'idInventario' como key */}
-  //   //               <Card>
-  //   //                 <Card.Body>
-  //   //                   {/* Asumo que los datos vienen anidados */}
-  //   //                   <Card.Title>{inventario?.nombre}</Card.Title>
-  //   //                   <Card.Subtitle className="mb-2 text-muted">
-  //   //                     Codigo: {inventario?.idInventario}
-  //   //                   </Card.Subtitle>
-  //   //                   <Card.Text>
-  //   //                     <strong>Codigo Bodega:</strong> {inventario?.idBodega}
-  //   //                     <br />
-  //   //                     <strong>Codigo Producto:</strong>{" "}
-  //   //                     {inventario?.idProducto}
-  //   //                     <br />
-  //   //                     <strong>Encargado:</strong> {inventario?.encargado}
-  //   //                     <br />
-  //   //                     <strong>Stock Actual:</strong> {inventario.stock}{" "}
-  //   //                     unidades
-  //   //                     <br />
-  //   //                     <strong>Estado:</strong> {inventario?.estado}
-  //   //                   </Card.Text>
-  //   //                 </Card.Body>
-  //   //                 <Card.Footer>
-  //   //                   <ButtonGroup className="w-100">
-  //   //                     <Button
-  //   //                       variant="warning"
-  //   //                       onClick={() => handleEditar(inventario)}
-  //   //                       disabled={true}
-  //   //                     >
-  //   //                       Modificar Stock
-  //   //                     </Button>
-  //   //                     <Button
-  //   //                       variant="danger"
-  //   //                       onClick={() =>
-  //   //                         handleEliminar(inventario.idInventario)
-  //   //                       }
-  //   //                       disabled={loading}
-  //   //                     >
-  //   //                       Eliminar
-  //   //                     </Button>
-  //   //                   </ButtonGroup>
-  //   //                 </Card.Footer>
-  //   //               </Card>
-  //   //             </Col>
-  //   //           ))
-  //   //         : !loading && (
-  //   //             <Col>
-  //   //               <p>{mensaje}</p>
-  //   //             </Col>
-  //   //           ) // Muestra el mensaje si no hay datos
-  //   //     }
-  //   //   </Row>
+        </Space>
+      </Card>
 
-  //   //   {/* Modales */}
-  //   //   <CrearInventario
-  //   //     show={modalCrear}
-  //   //     handleClose={handleCerrarModal}
-  //   //     buscarInventarios={buscarInventarios}
-  //   //   />
-  //   //   <EditarInventario
-  //   //     show={modalEditar}
-  //   //     handleClose={handleCerrarModal}
-  //   //     inventario={inventarioSelect}
-  //   //     buscarInventarios={buscarInventarios}
-  //   //   />
-  //   // </Container>
-  // );
+      {/* Tabla de Inventario */}
+      {sucursalSeleccionada ? (
+        <DataTable
+          title="Inventario de Productos"
+          description={`Sucursal: ${sucursalSeleccionada.nombre} - ${sucursalSeleccionada.direccion}`}
+          data={inventarios}
+          columns={columns}
+          rowKey="idInventario"
+          loading={loading}
+          searchableFields={["producto.nombre", "lote.codigo"]}
+          filterConfig={[
+            {
+              key: "estado",
+              placeholder: "Filtrar por estado",
+              options: [
+                { value: "Disponible", label: "Disponible" },
+                { value: "Bajo Stock", label: "Bajo Stock" },
+                { value: "Agotado", label: "Agotado" },
+              ],
+            },
+          ]}
+        />
+      ) : (
+        <Empty
+          description="Selecciona una sucursal para ver su inventario"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        />
+      )}
+    </div>
+  );
 }

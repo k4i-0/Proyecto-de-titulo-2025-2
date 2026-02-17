@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const compraProveedorController = require("../../controllers/inventario/CompraProveedor.controller");
+const compraProveedorController = require("../../controllers/inventario/OrdenCompra.controller");
 
 // Rutas para compra a proveedor
 router.post(

@@ -44,16 +44,16 @@ const funcionario = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true,
     },
-    // cargo: {
-    //   type: DataTypes.ENUM(
-    //     "Sistema",
-    //     "Administrador",
-    //     "Vendedor",
-    //     "Cajero",
-    //     "Otro"
-    //   ),
-    //   allowNull: false,
-    // },
+    session: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    tipoSession: {
+      type: DataTypes.ENUM("Caja", "Administracion", "Vendedor", "Sin session"),
+      allowNull: false,
+      defaultValue: "Sin session",
+    },
     estado: {
       type: DataTypes.ENUM("Activo", "Inactivo", "Eliminado"),
       allowNull: false,
@@ -83,7 +83,7 @@ const funcionario = sequelize.define(
   {
     tableName: "funcionario",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = funcionario;

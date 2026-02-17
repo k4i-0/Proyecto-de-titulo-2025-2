@@ -49,20 +49,23 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
         collapsible
         collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
-        width={380}
+        width={280}
         ref={siderRef}
         style={{
-          background: colorBgContainer,
+          background: "#ffffff",
+          boxShadow: "2px 0 8px rgba(0,0,0,0.06)",
+          borderRight: "1px solid #f0f0f0",
         }}
       >
         <Menu
           mode="inline"
-          defaultSelectedKeys={["1"]}
+          defaultSelectedKeys={["Inicio"]}
           defaultOpenKeys={["sub1"]}
-          theme="dark"
+          theme="light"
           style={{
             height: "100%",
             borderInlineEnd: 0,
+            padding: "8px 0",
           }}
           items={[
             {
@@ -101,37 +104,10 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                   icon: <OrderedListOutlined />,
                   children: [
                     {
-                      key: "ordenes_directas",
-                      label: "Órdenes De Compra Directas",
+                      key: "compra_directa",
+                      label: "Compra Directa",
                       icon: <InboxOutlined />,
-                      onClick: () => navigate("gestion/oc_directa"),
-                    },
-                    {
-                      key: "ordenes_compra_proveedores",
-                      label: "Órdenes De Compra a Proveedores",
-                      icon: <InboxOutlined />,
-                    },
-                    {
-                      key: "orden_compra_colaboradores",
-                      label: "Órdenes De Compra de Colaboradores",
-                      icon: <InboxOutlined />,
-                      onClick: () => navigate("gestion/ordenes_compra"),
-                    },
-                    {
-                      key: "anular_ordenes_compra",
-                      label: "Anular Órdenes De Compra",
-                      icon: <InboxOutlined />,
-                    },
-
-                    {
-                      key: "cuestionar_ordenes_compra",
-                      label: "Cuestionar Órdenes De Compra",
-                      icon: <InboxOutlined />,
-                    },
-                    {
-                      key: "historial_ordenes_compra",
-                      label: "Historial de Órdenes de Compra",
-                      icon: <InboxOutlined />,
+                      onClick: () => navigate("gestion/compra_directa"),
                     },
                   ],
                 },

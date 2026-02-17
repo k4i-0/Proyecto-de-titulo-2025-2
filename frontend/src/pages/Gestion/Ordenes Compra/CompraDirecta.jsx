@@ -46,7 +46,7 @@ import {
   editarOrdenCompraProveedor,
 } from "../../../services/inventario/CompraProveedor.service";
 
-export default function OrdenCompraDirecta() {
+export default function CompraDirecta() {
   const { user } = useAuth();
 
   const [ordenesDirectasFlag, setOrdenesDirectasFlag] = useState(false);
@@ -587,60 +587,100 @@ export default function OrdenCompraDirecta() {
   return (
     <>
       <Spin spinning={loading} fullscreen tip="Cargando..." />
-      <Row justify="start" align="middle" style={{ marginTop: "20px" }}>
-        <Col span={24} style={{ textAlign: "start" }}>
-          <Title level={2}>Órdenes de Compra Directa Proveedor</Title>
-          <Text level={4} style={{ color: "gray" }}>
-            Compras directas por el administrador
-          </Text>
-        </Col>
-      </Row>
-      <Divider />
-      <Row justify="end" gutter={[16, 16]} style={{ marginTop: "20px" }}>
-        <Col>
-          <Button type="primary" onClick={handelCrearOrdenDirecta}>
-            Crear Nueva Orden de Compra Directa
-          </Button>
-        </Col>
-        <Col>
-          <Button type="primary" onClick={handelVerOrdenesDirectas}>
-            Ver Órdenes de Compra Directa Existentes
-          </Button>
-        </Col>
-      </Row>
+      
+      {/* Header Section */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%)",
+          padding: "32px",
+          borderRadius: "12px",
+          marginBottom: "24px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+        }}
+      >
+        <Row justify="space-between" align="middle">
+          <Col>
+            <Title level={2} style={{ margin: 0, marginBottom: 8, color: "#1890ff" }}>
+              Órdenes de Compra Directa
+            </Title>
+            <Text style={{ fontSize: "15px", color: "rgba(0,0,0,0.65)" }}>
+              Gestión de compras directas por el administrador
+            </Text>
+          </Col>
+          <Col>
+            <Space size="middle">
+              <Button
+                type="primary"
+                size="large"
+                onClick={handelCrearOrdenDirecta}
+                style={{
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 8px rgba(24,144,255,0.3)",
+                }}
+              >
+                + Nueva Orden
+              </Button>
+              <Button
+                size="large"
+                onClick={handelVerOrdenesDirectas}
+                style={{ borderRadius: "8px" }}
+              >
+                Ver Órdenes Existentes
+              </Button>
+            </Space>
+          </Col>
+        </Row>
+      </div>
       {ordenesDirectasFlag && (
         <Form
           form={form}
           layout="vertical"
           onFinish={handleCrearOrdenCompraDirecta}
         >
-          <Row justify="center" gutter={[16, 16]} style={{ marginTop: "20px" }}>
+          <Row justify="center" gutter={[16, 16]} style={{ marginTop: "24px" }}>
             <Card
-              style={{ width: 800 }}
+              className="card-modern"
+              style={{
+                width: "100%",
+                maxWidth: 1000,
+                borderRadius: "12px",
+              }}
               actions={[
                 <Button
                   type="primary"
+                  size="large"
                   onClick={() => form.submit()}
                   disabled={productosOrdenDirecta.length === 0}
+                  style={{
+                    borderRadius: "8px",
+                    padding: "8px 32px",
+                    height: "auto",
+                  }}
                 >
-                  Enviar
+                  Crear Orden de Compra
                 </Button>,
               ]}
             >
               <Col span={24}>
-                <Title
-                  level={4}
-                  style={{ textAlign: "center", marginBottom: 20 }}
+                <div
+                  style={{
+                    textAlign: "center",
+                    marginBottom: 24,
+                    paddingBottom: 16,
+                    borderBottom: "2px solid #f0f0f0",
+                  }}
                 >
-                  Nueva Orden de Compra Directa
-                </Title>
-                <Divider />
-                <Row gutter={16}>
-                  <Col>
+                  <Title level={3} style={{ margin: 0, color: "#1890ff" }}>
+                    Nueva Orden de Compra Directa
+                  </Title>
+                  <Text type="secondary">Complete los datos de la orden</Text>
+                </div>
+                <Row gutter={[24, 16]}>
+                  <Col xs={24} md={8}>
                     <Form.Item label="Solicitante">
                       <Input
                         disabled
-                        style={{ width: "auto", marginBottom: 20 }}
+                        style={{ width: "100%" }}
                         placeholder="Solicitante"
                         value={user?.nombre}
                       />
@@ -653,12 +693,23 @@ export default function OrdenCompraDirecta() {
                       <Input />
                     </Form.Item>
                   </Col>
-                  <Col>
-                    {/* Proveedores */}
-                    <Form.Item label="Proveedor" name="rutProveedor">
+                  <Col xs={24} md={8}>
+                    <Form.Item
+                      label="Proveedor"
+                      name="rutProveedor"
+                      rules={[
+                        { required: true, message: "Seleccione un proveedor" },
+                      ]}
+                    >
                       <Select
-                        style={{ width: "auto", marginBottom: 20 }}
+                        style={{ width: "100%" }}
                         placeholder="Seleccione un Proveedor"
+                        showSearch
+                        filterOption={(input, option) =>
+                          option.children
+                            .toLowerCase()
+                            .includes(input.toLowerCase())
+                        }
                       >
                         {proveedores.map((proveedor) => (
                           <Select.Option
@@ -671,12 +722,23 @@ export default function OrdenCompraDirecta() {
                       </Select>
                     </Form.Item>
                   </Col>
-                  <Col>
-                    {/* Sucursales */}
-                    <Form.Item label="Sucursal Destino" name="idSucursal">
+                  <Col xs={24} md={8}>
+                    <Form.Item
+                      label="Sucursal Destino"
+                      name="idSucursal"
+                      rules={[
+                        { required: true, message: "Seleccione una sucursal" },
+                      ]}
+                    >
                       <Select
-                        style={{ width: "auto", marginBottom: 20 }}
+                        style={{ width: "100%" }}
                         placeholder="Seleccione una Sucursal"
+                        showSearch
+                        filterOption={(input, option) =>
+                          option.children
+                            .toLowerCase()
+                            .includes(input.toLowerCase())
+                        }
                       >
                         {sucursales.map((sucursal) => (
                           <Select.Option
@@ -690,24 +752,40 @@ export default function OrdenCompraDirecta() {
                     </Form.Item>
                   </Col>
                 </Row>
-                <Divider />
-                {/*Botones de accion */}
-                <Row justify="end" style={{ marginBottom: 20 }}>
-                  <Button type="primary" onClick={accionDrawerAgregarProducto}>
-                    + Agregar Producto
-                  </Button>
-                </Row>
+                
+                <Divider style={{ margin: "24px 0" }} />
+                {/* Sección de Productos */}
+                <div style={{ marginBottom: 24 }}>
+                  <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+                    <Col>
+                      <Title level={5} style={{ margin: 0 }}>
+                        Productos de la Orden
+                      </Title>
+                    </Col>
+                    <Col>
+                      <Button
+                        type="primary"
+                        onClick={accionDrawerAgregarProducto}
+                        style={{ borderRadius: "8px" }}
+                      >
+                        + Agregar Producto
+                      </Button>
+                    </Col>
+                  </Row>
+                </div>
 
                 {/* Tabla de Productos */}
-                <Row gutter={16} style={{ marginBottom: 20 }}>
+                <Row gutter={16} style={{ marginBottom: 24 }}>
                   <Col span={24}>
                     <Table
                       dataSource={productosOrdenDirecta}
                       columns={[
                         {
-                          title: "Producto ID",
+                          title: "ID",
                           dataIndex: "idProducto",
-                          key: "nombre",
+                          key: "idProducto",
+                          width: "10%",
+                          align: "center",
                         },
                         {
                           title: "Producto",
@@ -763,19 +841,23 @@ export default function OrdenCompraDirecta() {
                         },
                       ]}
                       pagination={false}
-                      size="small"
+                      size="middle"
                       locale={{ emptyText: "No hay productos agregados" }}
+                      bordered
                       summary={() =>
                         productosOrdenDirecta.length > 0 && (
                           <Table.Summary.Row
-                            style={{ backgroundColor: "#fafafa" }}
+                            style={{
+                              backgroundColor: "#fafafa",
+                              fontWeight: "bold",
+                            }}
                           >
-                            <Table.Summary.Cell colSpan={3} align="right">
+                            <Table.Summary.Cell colSpan={4} align="right">
                               <strong style={{ fontSize: 16 }}>Total:</strong>
                             </Table.Summary.Cell>
-                            <Table.Summary.Cell align="right" colSpan={2}>
+                            <Table.Summary.Cell align="right">
                               <strong
-                                style={{ fontSize: 18, color: "#1890ff" }}
+                                style={{ fontSize: 18, color: "#52c41a" }}
                               >
                                 ${calcularTotal().toLocaleString("es-CL")}
                               </strong>
@@ -791,7 +873,7 @@ export default function OrdenCompraDirecta() {
                   <TextArea
                     rows={4}
                     placeholder="Observaciones (opcional)"
-                    style={{ width: "100%" }}
+                    style={{ width: "100%", borderRadius: "8px" }}
                   />
                 </Form.Item>
               </Col>
@@ -799,23 +881,29 @@ export default function OrdenCompraDirecta() {
           </Row>
           {/*Drawer Agregar Producto */}
           <Drawer
-            title="Agregar Producto a la Orden"
-            width={400}
+            title={
+              <div style={{ fontSize: "18px", fontWeight: 600 }}>
+                Agregar Producto a la Orden
+              </div>
+            }
+            width={450}
             onClose={cerrarDrawerAgregarProducto}
             open={drawerVisible}
             footer={
-              <Row gutter={16} justify="end">
-                <Col>
-                  <Button type="primary" onClick={() => formProducto.submit()}>
-                    Agregar
-                  </Button>
-                </Col>
-                <Col>
+              <div style={{ textAlign: "right" }}>
+                <Space>
                   <Button onClick={cerrarDrawerAgregarProducto}>
                     Cancelar
                   </Button>
-                </Col>
-              </Row>
+                  <Button
+                    type="primary"
+                    onClick={() => formProducto.submit()}
+                    style={{ borderRadius: "8px" }}
+                  >
+                    Agregar Producto
+                  </Button>
+                </Space>
+              </div>
             }
           >
             <Form
@@ -831,6 +919,7 @@ export default function OrdenCompraDirecta() {
                 <Select
                   placeholder="Seleccione un producto"
                   showSearch
+                  size="large"
                   filterOption={(input, option) =>
                     option.label.toLowerCase().includes(input.toLowerCase())
                   }
@@ -848,6 +937,7 @@ export default function OrdenCompraDirecta() {
               >
                 <InputNumber
                   min={1}
+                  size="large"
                   style={{ width: "100%" }}
                   placeholder="Cantidad"
                 />
@@ -861,6 +951,7 @@ export default function OrdenCompraDirecta() {
                 <InputNumber
                   min={1}
                   precision={1}
+                  size="large"
                   style={{ width: "100%" }}
                   placeholder="Precio"
                   formatter={(value) =>
@@ -874,9 +965,17 @@ export default function OrdenCompraDirecta() {
         </Form>
       )}
       {verOrdenesDirectasFlag && (
-        <Row align="middle" justify="center" style={{ marginTop: "20px" }}>
+        <Row align="middle" justify="center" style={{ marginTop: "24px" }}>
           <Col span={24}>
-            <Card>
+            <Card className="card-modern" style={{ borderRadius: "12px" }}>
+              <div style={{ marginBottom: 16 }}>
+                <Title level={4} style={{ margin: 0, color: "#1890ff" }}>
+                  Órdenes de Compra Existentes
+                </Title>
+                <Text type="secondary">
+                  Listado de todas las órdenes de compra directa
+                </Text>
+              </div>
               <Table
                 columns={[
                   {
@@ -888,22 +987,29 @@ export default function OrdenCompraDirecta() {
                     title: "Fecha Compra",
                     dataIndex: "fechaCompra",
                     key: "fecha",
-                    render: (date) => new Date(date).toLocaleDateString(),
+                    render: (date) => new Date(date).toLocaleDateString("es-CL"),
                   },
                   {
                     title: "Estado",
                     dataIndex: "estado",
                     key: "estado",
-                    render: (estado) =>
-                      estado.charAt(0).toUpperCase() + estado.slice(1),
+                    render: (estado) => (
+                      <Tag color={getEstadoColor(estado)}>
+                        {estado.charAt(0).toUpperCase() + estado.slice(1)}
+                      </Tag>
+                    ),
                   },
                   {
                     title: "Total",
                     dataIndex: "total",
                     key: "total",
-                    render: (total) => `$${total.toLocaleString("es-CL")}`,
+                    align: "right",
+                    render: (total) => (
+                      <Text strong style={{ color: "#52c41a" }}>
+                        ${total.toLocaleString("es-CL")}
+                      </Text>
+                    ),
                   },
-
                   {
                     title: "Sucursal",
                     dataIndex: ["sucursal", "nombre"],
@@ -920,54 +1026,54 @@ export default function OrdenCompraDirecta() {
                     key: "proveedor",
                   },
                   {
-                    title: "Detalles",
+                    title: "Acciones",
                     key: "detalles",
+                    align: "center",
+                    width: 150,
                     render: (_, record) => (
-                      <>
+                      <Space size="small">
                         <Button
-                          type="link"
+                          type="text"
                           danger
                           icon={<CloseCircleOutlined />}
                           onClick={() =>
                             openModalEstado(record.idCompraProveedor)
                           }
-                        ></Button>
+                          title="Anular orden"
+                        />
                         <Button
-                          type="link"
+                          type="text"
                           icon={<EditOutlined />}
                           onClick={() => openDrawerEditarOC(record)}
-                        ></Button>
-                        {/* <Popconfirm
-                          title="¿Estás seguro de Cancelar esta orden de compra?"
-                          onConfirm={() =>
-                            handleCancelarOrdenCompra(record.idCompraProveedor)
-                          }
-                          okText="Sí"
-                          cancelText="No"
-                        >
-                          <Button
-                            type="link"
-                            danger
-                            icon={<DeleteOutlined />}
-                          />
-                        </Popconfirm> */}
-
+                          title="Editar orden"
+                        />
                         <Button
-                          type="link"
+                          type="text"
                           onClick={() => handleDetalleOC(record)}
                           icon={<EyeOutlined />}
-                        ></Button>
-                      </>
+                          title="Ver detalles"
+                        />
+                      </Space>
                     ),
                   },
                 ]}
                 dataSource={ordenesDirectas}
+                pagination={{
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  showTotal: (total) => `Total ${total} órdenes`,
+                }}
+                bordered
               />
             </Card>
             {/*Drawer Ver Detalles OC */}
             <Drawer
-              title="Detalles de la Orden de Compra Directa"
-              width={800}
+              title={
+                <div style={{ fontSize: "18px", fontWeight: 600 }}>
+                  Detalles de la Orden de Compra
+                </div>
+              }
+              width={850}
               onClose={() => setDrawerVerOCVisible(false)}
               open={drawerVerOCVisible}
             >
@@ -978,7 +1084,8 @@ export default function OrdenCompraDirecta() {
                     title="Información General"
                     bordered
                     column={2}
-                    size="small"
+                    size="middle"
+                    style={{ marginBottom: 24 }}
                   >
                     <Descriptions.Item label="ID Orden">
                       {detalleOrdenSeleccionada.idCompraProveedor}
@@ -1003,6 +1110,7 @@ export default function OrdenCompraDirecta() {
                     <Descriptions.Item label="Estado">
                       <Tag
                         color={getEstadoColor(detalleOrdenSeleccionada.estado)}
+                        style={{ fontSize: "14px", padding: "4px 12px" }}
                       >
                         {detalleOrdenSeleccionada.estado.toUpperCase()}
                       </Tag>
@@ -1021,7 +1129,8 @@ export default function OrdenCompraDirecta() {
                     title="Proveedor"
                     bordered
                     column={1}
-                    size="small"
+                    size="middle"
+                    style={{ marginBottom: 24 }}
                   >
                     <Descriptions.Item label="RUT">
                       {detalleOrdenSeleccionada.proveedor.rut}
@@ -1043,7 +1152,8 @@ export default function OrdenCompraDirecta() {
                     title="Sucursal y Funcionario"
                     bordered
                     column={2}
-                    size="small"
+                    size="middle"
+                    style={{ marginBottom: 24 }}
                   >
                     <Descriptions.Item label="Sucursal">
                       {detalleOrdenSeleccionada.sucursal.nombre}
@@ -1148,19 +1258,26 @@ export default function OrdenCompraDirecta() {
             </Drawer>
             {/* Modal para cambiar estado de la orden de compra */}
             <Modal
-              title="Anulación Orden de Compra"
+              title={
+                <div style={{ fontSize: "18px", fontWeight: 600, color: "#ff4d4f" }}>
+                  Anulación de Orden de Compra
+                </div>
+              }
               open={ModalEstadoVisible}
               onCancel={cerrarModalEstado}
               footer={[
-                <Button key="cancelar" onClick={cerrarModalEstado}>
+                <Button key="cancelar" onClick={cerrarModalEstado} size="large">
                   Cancelar
                 </Button>,
                 <Button
                   key="cambiar"
                   type="primary"
+                  danger
+                  size="large"
                   onClick={() => formEstado.submit()}
+                  style={{ borderRadius: "8px" }}
                 >
-                  Guardar
+                  Confirmar Anulación
                 </Button>,
               ]}
             >
@@ -1177,7 +1294,7 @@ export default function OrdenCompraDirecta() {
                   name="estado"
                   rules={[{ required: true, message: "Seleccione un estado" }]}
                 >
-                  <Select placeholder="Seleccione un nuevo estado">
+                  <Select placeholder="Seleccione un nuevo estado" size="large">
                     <Select.Option value="rechazada">Rechazada</Select.Option>
                     <Select.Option value="cancelada">Cancelada</Select.Option>
                   </Select>
@@ -1193,8 +1310,9 @@ export default function OrdenCompraDirecta() {
                   ]}
                 >
                   <Input.TextArea
-                    rows={3}
+                    rows={4}
                     placeholder="Agregue observaciones sobre la anulación"
+                    style={{ borderRadius: "8px" }}
                   />
                 </Form.Item>
               </Form>

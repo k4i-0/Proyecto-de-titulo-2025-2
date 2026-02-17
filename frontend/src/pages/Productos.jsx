@@ -3,16 +3,12 @@ import { useNavigate } from "react-router-dom";
 import {
   Typography,
   Button,
-  Alert,
   Space,
   Empty,
   Spin,
-  Row,
-  Col,
   Tag,
-  Table,
   Popconfirm,
-  Card,
+  notification,
 } from "antd";
 import {
   PlusOutlined,
@@ -20,13 +16,13 @@ import {
   DeleteOutlined,
   ShoppingOutlined,
   LoadingOutlined,
-  ArrowLeftOutlined,
+  TagsOutlined,
 } from "@ant-design/icons";
 
+import DataTable from "../components/Tabla";
 import Agregar from "./inventario/modalProductos/Agregar";
 import Editar from "./inventario/modalProductos/Editar";
-
-// import Eliminar from "../components/inventario/modalProductos/Eliminar";
+import KPIStats from "../components/Kpis";
 
 import obtenerProductos, {
   eliminarProducto,
@@ -34,32 +30,24 @@ import obtenerProductos, {
 import obtenerCategoria from "../services/inventario/Categorias.service";
 
 export default function Productos({ onCambiarVista }) {
-  const { Title, Text } = Typography;
   const navigate = useNavigate();
-
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
-  // const [modalEliminar, setModalEliminar] = useState(false);
   const [productosSelect, setProductoSelect] = useState(null);
-  const [error, setError] = useState(false);
-  const [mensaje, setMensaje] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // --- Lógica de Búsqueda (sin cambios) ---
   const buscarProducto = async () => {
     try {
       setLoading(true);
-      setError(false);
-      setMensaje("");
-
       const respuesta = await obtenerProductos();
       const respuesta2 = await obtenerCategoria();
 
       if (respuesta.status === 500 || respuesta2.status === 500) {
-        setError(true);
-        setMensaje("Error en el servidor");
+        notification.error({
+          message: "Error",
+          description: "Error en el servidor",
+        });
         setProductos([]);
         setCategorias([]);
         return;
@@ -75,8 +63,10 @@ export default function Productos({ onCambiarVista }) {
         setCategorias(respuesta2.data);
       }
     } catch (error) {
-      setError(true);
-      setMensaje("Error al cargar datos");
+      notification.error({
+        message: "Error",
+        description: "Error al cargar datos",
+      });
       console.error(error);
       setProductos([]);
       setCategorias([]);
@@ -91,53 +81,46 @@ export default function Productos({ onCambiarVista }) {
 
   const handleCrear = () => {
     if (categorias.length === 0) {
-      setError(true);
-      setMensaje("No hay categorías disponibles. Redirigiendo a Categorías...");
+      notification.warning({
+        message: "Advertencia",
+        description: "No hay categorías disponibles. Redirigiendo a Categorías...",
+      });
       setTimeout(() => {
         navigate("/admin/categorias");
       }, 2000);
       return;
     }
-    setError(false);
-    setMensaje("");
     setProductoSelect(null);
     setModalCrear(true);
   };
 
-  const handleEditar = () => {
-    if (!productosSelect) {
-      setError(true);
-      setMensaje("Por favor seleccione un producto de la tabla");
-      return;
-    }
-    setError(false);
-    setMensaje("");
+  const handleEditar = (producto) => {
+    setProductoSelect(producto);
     setModalEditar(true);
   };
 
-  const handleEliminar = async () => {
-    if (!productosSelect) {
-      setError(true);
-      setMensaje("Por favor seleccione un producto de la tabla");
-      return;
-    }
+  const handleEliminar = async (producto) => {
     setLoading(true);
-    setError(false);
-    setMensaje("");
     try {
-      const respuesta = await eliminarProducto(productosSelect.idProducto);
+      const respuesta = await eliminarProducto(producto.idProducto);
       if (respuesta.status === 200) {
-        setMensaje("Producto eliminado exitosamente");
-        setError(false);
+        notification.success({
+          message: "Éxito",
+          description: "Producto eliminado exitosamente",
+        });
         setProductoSelect(null);
         await buscarProducto();
       } else {
-        setError(true);
-        setMensaje(respuesta.error || "Error al eliminar el producto.");
+        notification.error({
+          message: "Error",
+          description: respuesta.error || "Error al eliminar el producto.",
+        });
       }
     } catch (error) {
-      setError(true);
-      setMensaje("Error de conexión al eliminar el producto.");
+      notification.error({
+        message: "Error",
+        description: "Error de conexión al eliminar el producto.",
+      });
       console.error(error);
     } finally {
       setLoading(false);
@@ -148,33 +131,6 @@ export default function Productos({ onCambiarVista }) {
     setModalCrear(false);
     setModalEditar(false);
     productosSelect && setProductoSelect(null);
-    // setModalEliminar(false);
-  };
-
-  const handleSeleccionarFila = (record) => {
-    if (productosSelect?.idProducto === record.idProducto) {
-      setProductoSelect(null);
-    } else {
-      setProductoSelect(record);
-    }
-  };
-
-  const getEstadoColor = (estado) => {
-    const estadoLower = estado?.toLowerCase() || "";
-    switch (estadoLower) {
-      case "disponible":
-      case "activo":
-      case "bueno":
-        return "success";
-      case "inactivo":
-      case "malo":
-        return "warning";
-      case "depreciado":
-      case "dañado":
-        return "error";
-      default:
-        return "default";
-    }
   };
 
   const columns = [
@@ -182,359 +138,283 @@ export default function Productos({ onCambiarVista }) {
       title: "NPI",
       dataIndex: "idProducto",
       key: "idProducto",
-      width: 100,
+      width: "8%",
+      align: "center",
     },
     {
       title: "Código",
       dataIndex: "codigo",
       key: "codigo",
-      width: 100,
+      width: "10%",
     },
     {
       title: "Nombre",
       dataIndex: "nombre",
       key: "nombre",
-      sorter: (a, b) => a.nombre.localeCompare(b.nombre),
-      fixed: "left",
-      width: 150,
+      width: "18%",
     },
     {
       title: "Marca",
       dataIndex: "marca",
       key: "marca",
-      sorter: (a, b) => a.marca.localeCompare(b.marca),
-      width: 120,
+      width: "12%",
     },
     {
       title: "Categoría",
       dataIndex: ["categoria", "nombreCategoria"],
       key: "categoria",
-      filters: [
-        { text: "Abarrotes", value: "Abarrotes" },
-        { text: "Bebidas", value: "Bebidas" },
-        { text: "Licores", value: "Licores" },
-        { text: "Lácteos", value: "Lácteos" },
-        { text: "Congelados", value: "Congelados" },
-        { text: "Carnes", value: "Carnes" },
-        { text: "Embutidos", value: "Embutidos" },
-        { text: "Frutas y Vegetales", value: "Frutas y Vegetales" },
-        { text: "Mascotas", value: "Mascotas" },
-        { text: "Panadería", value: "Panadería" },
-        { text: "Higiene Personal", value: "Higiene Personal" },
-        { text: "Limpieza del Hogar", value: "Limpieza del Hogar" },
-        { text: "Farmacéuticos", value: "Farmacéuticos" },
-        { text: "Otros", value: "Otros" },
-      ],
-      onFilter: (value, record) => {
-        return record.categoria?.nombreCategoria === value;
-      },
-      sorter: (a, b) => {
-        const catA = a.categoria?.nombreCategoria || "";
-        const catB = b.categoria?.nombreCategoria || "";
-        return catA.localeCompare(catB);
-      },
+      width: "12%",
       render: (categoriaNombre) =>
         categoriaNombre ? (
-          <Tag color="blue">{categoriaNombre}</Tag>
+          <Tag color="blue" style={{ fontSize: "13px" }}>
+            {categoriaNombre}
+          </Tag>
         ) : (
-          <Text type="secondary">-</Text>
+          <Typography.Text type="secondary">-</Typography.Text>
         ),
-      width: 150,
     },
     {
       title: "Precio Venta",
       dataIndex: "precioVenta",
       key: "precioVenta",
+      width: "12%",
       align: "right",
       render: (precio) => (
-        <Text strong style={{ color: "#52c41a" }}>
+        <Typography.Text strong style={{ color: "#52c41a" }}>
           {new Intl.NumberFormat("es-CL", {
             style: "currency",
             currency: "CLP",
           }).format(precio || 0)}
-        </Text>
+        </Typography.Text>
       ),
-      sorter: (a, b) => a.precioVenta - b.precioVenta,
-      width: 130,
-    },
-    {
-      title: "Precio Compra",
-      dataIndex: "precioCompra",
-      key: "precioCompra",
-      align: "right",
-      render: (precio) => (
-        <Text type="secondary">
-          {new Intl.NumberFormat("es-CL", {
-            style: "currency",
-            currency: "CLP",
-          }).format(precio || 0)}
-        </Text>
-      ),
-      width: 130,
-    },
-    {
-      title: "Peso (kg)",
-      dataIndex: "peso",
-      key: "peso",
-      align: "right",
-      render: (peso) => (peso ? `${peso} kg` : "-"),
-      width: 100,
-    },
-    {
-      title: "Descripción",
-      dataIndex: "descripcion",
-      key: "descripcion",
-      ellipsis: true,
-      width: 100,
     },
     {
       title: "Estado",
       dataIndex: "estado",
       key: "estado",
+      width: "10%",
       align: "center",
-      render: (estado) => (
-        <Tag color={getEstadoColor(estado)}>{estado || "N/A"}</Tag>
+      render: (estado) => {
+        const getEstadoColor = (estado) => {
+          const estadoLower = estado?.toLowerCase() || "";
+          switch (estadoLower) {
+            case "disponible":
+            case "activo":
+            case "bueno":
+              return "success";
+            case "inactivo":
+            case "malo":
+              return "warning";
+            case "depreciado":
+            case "dañado":
+              return "error";
+            default:
+              return "default";
+          }
+        };
+        return (
+          <Tag color={getEstadoColor(estado)} style={{ fontSize: "13px" }}>
+            {estado || "N/A"}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Acciones",
+      key: "acciones",
+      width: "12%",
+      align: "center",
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditar(record);
+            }}
+          />
+          <Popconfirm
+            title="¿Está seguro de eliminar este producto?"
+            description={`Se eliminará el producto: ${record.nombre}`}
+            onConfirm={(e) => {
+              e?.stopPropagation();
+              handleEliminar(record);
+            }}
+            okText="Sí, eliminar"
+            cancelText="Cancelar"
+            okButtonProps={{ danger: true }}
+          >
+            <Button
+              type="text"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Popconfirm>
+        </Space>
       ),
-      width: 100,
     },
   ];
 
-  const renderContenido = () => {
-    if (loading && productos.length === 0) {
-      return (
-        <Col span={24} style={{ textAlign: "center", margin: "60px 0" }}>
-          <Spin
-            spinning={loading}
-            indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
-            tip="Cargando productos..."
-            size="large"
-          >
-            <div style={{ minHeight: 200 }}></div>
-          </Spin>
-        </Col>
-      );
-    }
-
-    if (categorias.length === 0 && !loading) {
-      return (
-        <Col span={24}>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <Space direction="vertical" size="large">
-                <div>
-                  <Title level={4}>No hay productos disponibles</Title>
-                  <Text type="secondary">
-                    Primero debe crear una categoría antes de agregar productos
-                  </Text>
-                </div>
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<PlusOutlined />}
-                  onClick={() => navigate("/admin/categorias")}
-                >
-                  Ir a Crear Categoría
-                </Button>
-              </Space>
-            }
-          />
-        </Col>
-      );
-    }
-
-    if (productos.length === 0 && !loading) {
-      return (
-        <Col span={24}>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <Space direction="vertical" size="large">
-                <div>
-                  <Title level={4}>No hay productos disponibles</Title>
-                  <Text type="secondary">
-                    Comienza agregando tu primer producto
-                  </Text>
-                </div>
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<PlusOutlined />}
-                  onClick={() => handleCrear(true)}
-                >
-                  Crear Productos
-                </Button>
-              </Space>
-            }
-          />
-        </Col>
-      );
-    }
-
+  // Renderizado condicional para estados vacíos
+  if (loading && productos.length === 0) {
     return (
-      <Col span={24}>
-        <Table
-          columns={columns}
-          dataSource={productos}
-          rowKey="idProducto"
-          loading={loading}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            defaultPageSize: 10,
-          }}
-          scroll={{ x: "max-content" }}
-          onRow={(record) => ({
-            onClick: () => handleSeleccionarFila(record),
-            style: {
-              cursor: "pointer",
-              backgroundColor:
-                productosSelect?.idProducto === record.idProducto
-                  ? "#e6f4ff"
-                  : "transparent",
-              transition: "background-color 0.3s ease",
-            },
-          })}
-          locale={{
-            emptyText: "No hay productos disponibles",
-          }}
+      <div style={{ padding: "24px", textAlign: "center" }}>
+        <Spin
+          indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
+          tip="Cargando productos..."
+          size="large"
         />
-      </Col>
+      </div>
     );
-  };
+  }
+
+  if (categorias.length === 0 && !loading) {
+    return (
+      <div style={{ padding: "24px" }}>
+        <Typography.Title>Gestión de Productos</Typography.Title>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <Space direction="vertical" size="large">
+              <div>
+                <Typography.Title level={4}>
+                  No hay productos disponibles
+                </Typography.Title>
+                <Typography.Text type="secondary">
+                  Primero debe crear una categoría antes de agregar productos
+                </Typography.Text>
+              </div>
+              <Button
+                type="primary"
+                size="large"
+                icon={<PlusOutlined />}
+                onClick={() => navigate("/admin/categorias")}
+              >
+                Ir a Crear Categoría
+              </Button>
+            </Space>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (productos.length === 0 && !loading) {
+    return (
+      <div style={{ padding: "24px" }}>
+        <Typography.Title>Gestión de Productos</Typography.Title>
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <Space direction="vertical" size="large">
+              <div>
+                <Typography.Title level={4}>
+                  No hay productos disponibles
+                </Typography.Title>
+                <Typography.Text type="secondary">
+                  Comienza agregando tu primer producto
+                </Typography.Text>
+              </div>
+              <Button
+                type="primary"
+                size="large"
+                icon={<PlusOutlined />}
+                onClick={handleCrear}
+              >
+                Crear Productos
+              </Button>
+            </Space>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: "24px" }}>
-      <Row gutter={16} style={{ marginBottom: 50 }}>
-        <Col span={12} style={{ textAlign: "start" }}>
-          {/* <div style={{ textAlign: "left", marginBottom: 16 }}>
+      {/* KPIs */}
+      {productos.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <KPIStats
+            datos={[
+              {
+                titulo: "Total de Productos",
+                valor: productos.length,
+                prefijo: <ShoppingOutlined />,
+                estiloValor: { color: "#1890ff" },
+              },
+              {
+                titulo: "Total de Categorías",
+                valor: categorias.length,
+                prefijo: <TagsOutlined />,
+                estiloValor: { color: "#722ed1" },
+              },
+              {
+                titulo: "Productos Activos",
+                valor: productos.filter(
+                  (prod) =>
+                    prod.estado && prod.estado.toLowerCase() === "activo"
+                ).length,
+                prefijo: <ShoppingOutlined />,
+                estiloValor: { color: "#52c41a" },
+              },
+            ]}
+          />
+        </div>
+      )}
+
+      {/* Tabla con DataTable */}
+      <DataTable
+        title="Gestión de Productos"
+        description="Administra el catálogo de productos de tu empresa"
+        data={productos}
+        columns={columns}
+        rowKey="idProducto"
+        loading={loading}
+        searchableFields={["nombre", "codigo", "marca", "idProducto"]}
+        filterConfig={[
+          {
+            key: "estado",
+            placeholder: "Filtrar por estado",
+            options: [
+              { value: "Activo", label: "Activo" },
+              { value: "Inactivo", label: "Inactivo" },
+              { value: "Disponible", label: "Disponible" },
+            ],
+          },
+        ]}
+        onRowClick={(record) => setProductoSelect(record)}
+        selectedRow={productosSelect}
+        headerButtons={
+          <Space size="middle">
+            <Button
+              size="large"
+              icon={<TagsOutlined />}
+              onClick={() => navigate("/admin/categorias")}
+              disabled={loading}
+              style={{ borderRadius: "8px" }}
+            >
+              Gestionar Categorías
+            </Button>
             <Button
               type="primary"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/admin")}
+              size="large"
+              icon={<PlusOutlined />}
+              onClick={handleCrear}
+              disabled={loading}
+              style={{ borderRadius: "8px" }}
             >
-              Volver
+              Nuevo Producto
             </Button>
-          </div> */}
-          <Title>Gestión de Productos</Title>
-        </Col>
-        <Col span={12}>
-          <Row gutter={20} justify="center">
-            <Col>
-              <Card>
-                <Text>
-                  <ShoppingOutlined style={{ marginRight: 8 }} />
-                  Total de Productos: <strong>{productos.length}</strong>
-                </Text>
-              </Card>
-            </Col>
-            <Col>
-              <Card>
-                <Text>
-                  <Tag color="blue" style={{ marginRight: 8 }}></Tag>
-                  Total de Categorías: <strong>{categorias.length}</strong>
-                </Text>
-              </Card>
-            </Col>
-            <Col>
-              <Card>
-                <Text>
-                  <Tag color="success" style={{ marginRight: 8 }}></Tag>
-                  Productos Activos:{" "}
-                  <strong>
-                    {
-                      productos.filter(
-                        (prod) =>
-                          prod.estado && prod.estado.toLowerCase() === "activo"
-                      ).length
-                    }
-                  </strong>
-                </Text>
-              </Card>
-            </Col>
-          </Row>
-        </Col>
-      </Row>
+          </Space>
+        }
+      />
 
-      {mensaje && (
-        <Row style={{ marginBottom: 16 }}>
-          <Col span={24}>
-            <Alert
-              message={mensaje}
-              type={error ? "error" : "success"}
-              showIcon
-              closable
-              onClose={() => setMensaje("")}
-            />
-          </Col>
-        </Row>
-      )}
-
-      {!loading && categorias.length > 0 && (
-        <Row justify="end" gutter={16} style={{ marginBottom: 16 }}>
-          <Col flex="auto">
-            {productosSelect && (
-              <Alert
-                message={`Producto seleccionado: ${productosSelect.nombre}`}
-                type="info"
-                showIcon
-                closable
-                onClose={() => setProductoSelect(null)}
-              />
-            )}
-          </Col>
-
-          <Col>
-            <Space wrap>
-              <Button
-                type="default"
-                icon={<EditOutlined />}
-                onClick={() => navigate("/admin/categorias")}
-                disabled={loading}
-              >
-                Gestionar Categorias
-              </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleCrear}
-                disabled={loading}
-              >
-                Agregar Producto
-              </Button>
-              <Button
-                icon={<EditOutlined />}
-                onClick={handleEditar}
-                disabled={loading || !productosSelect}
-              >
-                Editar
-              </Button>
-              <Popconfirm
-                title="¿Está seguro de eliminar este producto?"
-                description={`Se eliminará el producto: ${
-                  productosSelect?.nombre || ""
-                }`}
-                onConfirm={handleEliminar}
-                okText="Sí, eliminar"
-                cancelText="Cancelar"
-                okButtonProps={{ danger: true }}
-                disabled={!productosSelect || loading}
-              >
-                <Button
-                  icon={<DeleteOutlined />}
-                  disabled={loading || !productosSelect}
-                  danger
-                >
-                  Eliminar
-                </Button>
-              </Popconfirm>
-            </Space>
-          </Col>
-        </Row>
-      )}
-
-      <Row gutter={[16, 16]}>{renderContenido()}</Row>
-
+      {/* Modales */}
       <Agregar
         modalCrear={modalCrear}
         handleCerrarModal={handleCerrarModal}

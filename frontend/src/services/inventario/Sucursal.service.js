@@ -5,7 +5,7 @@ const API_URL = `${URL}/sucursales`;
 
 export default async function obtenerSucursales() {
   try {
-    const response = await axios.get(`${API_URL}/buscar`, null, {
+    const response = await axios.get(`${API_URL}/buscar`, {
       withCredentials: true,
     });
     // console.log("Sucursales obtenidas:", response.status);

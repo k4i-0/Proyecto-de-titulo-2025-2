@@ -1,23 +1,32 @@
 import React from "react";
 
-import Table from "../components/Tabla.jsx";
+import KPIStats from "../components/Kpis";
 
 export default function Pruebas() {
-  const columns = [
-    {
-      title: "Nombre",
-      dataIndex: "nombre",
-      key: "nombre",
-    },
-    {
-      title: "Edad",
-      dataIndex: "edad",
-      key: "edad",
-    },
-  ];
   return (
     <div>
-      <Table columns={columns} />
+      <KPIStats
+        datos={[
+          {
+            titulo: "Datos 1",
+            valor: 8500000,
+            prefijo: "$",
+            estiloValor: { color: "#1c2e4a", fontWeight: "bold" },
+          },
+          {
+            titulo: "Datos 2",
+            valor: 4300,
+            prefijo: "",
+            estiloValor: { color: "#3f8600" },
+          },
+          {
+            titulo: "Datos 3",
+            valor: 27,
+            prefijo: "",
+            estiloValor: { color: "#cf1322" },
+          },
+        ]}
+      />
     </div>
   );
 }

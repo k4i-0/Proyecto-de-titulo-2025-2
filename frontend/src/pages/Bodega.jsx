@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   Typography,
   Button,
-  Table,
   Alert,
   Space,
   Popconfirm,
@@ -13,6 +12,7 @@ import {
   Row,
   Col,
   notification,
+  Tag,
 } from "antd";
 
 import {
@@ -21,8 +21,10 @@ import {
   DeleteOutlined,
   LoadingOutlined,
   ShopOutlined,
+  RollbackOutlined,
 } from "@ant-design/icons";
 
+import DataTable from "../components/Tabla";
 import {
   obtenerBodegasPorSucursal,
   eliminarBodega,
@@ -167,68 +169,63 @@ export default function Bodega() {
       title: "ID",
       dataIndex: "idBodega",
       key: "idBodega",
+      width: "10%",
       align: "center",
-      responsive: ["sm"],
     },
     {
       title: "Nombre",
       dataIndex: "nombre",
       key: "nombre",
-      responsive: ["sm"],
+      width: "30%",
     },
     {
       title: "Capacidad m²",
       dataIndex: "capacidad",
       key: "capacidad",
+      width: "15%",
       align: "center",
-      responsive: ["sm"],
     },
     {
       title: "Estado",
       dataIndex: "estado",
       key: "estado",
+      width: "20%",
       align: "center",
-      responsive: ["sm"],
       render: (estado) => {
         const colores = {
-          "En Funcionamiento": "#52c41a",
-          "En Mantenimiento": "#faad14",
-          "Fuera de Servicio": "#ff4d4f",
-          Eliminado: "#8c8c8c",
+          "En Funcionamiento": "success",
+          "En Mantenimiento": "warning",
+          "Fuera de Servicio": "error",
+          Eliminado: "default",
         };
         return (
-          <span style={{ color: colores[estado] || "#8c8c8c" }}>{estado}</span>
+          <Tag color={colores[estado] || "default"} style={{ fontSize: "13px" }}>
+            {estado}
+          </Tag>
         );
       },
-    },
-
-    {
-      title: "Estantes",
-      key: "estantes",
-      align: "center",
-      responsive: ["sm"],
-      render: (_, record) => (
-        <Button
-          type="link"
-          icon={<ShopOutlined />}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleVerEstantes(record.idBodega);
-          }}
-        >
-          Ver
-        </Button>
-      ),
     },
     {
       title: "Acciones",
       key: "acciones",
+      width: "25%",
       align: "center",
-      responsive: ["sm"],
       render: (_, record) => (
         <Space size="small">
           <Button
             type="link"
+            size="small"
+            icon={<ShopOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleVerEstantes(record.idBodega);
+            }}
+          >
+            Estantes
+          </Button>
+          <Button
+            type="link"
+            size="small"
             icon={<EditOutlined />}
             onClick={(e) => {
               e.stopPropagation();
@@ -249,6 +246,7 @@ export default function Bodega() {
           >
             <Button
               type="link"
+              size="small"
               danger
               icon={<DeleteOutlined />}
               onClick={(e) => e.stopPropagation()}
@@ -260,128 +258,96 @@ export default function Bodega() {
     },
   ];
 
-  const renderContenido = () => {
-    if (loading && listaBodegas.length === 0) {
-      return (
-        <div style={{ textAlign: "center", padding: "40px 0" }}>
-          <Spin
-            indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
-            tip="Cargando bodegas..."
-          >
-            <div style={{ padding: 50 }} /> {/* Contenido vacío */}
-          </Spin>
-        </div>
-      );
-    }
-
-    if (error && mensaje && listaBodegas.length === 0) {
-      return (
-        <>
-          <Alert
-            message={mensaje}
-            type="warning"
-            showIcon
-            style={{ marginBottom: 16 }}
-          />
-          <Empty
-            description="No hay bodegas registradas"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          >
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCrear}
-            >
-              Crear Primera Bodega
-            </Button>
-          </Empty>
-        </>
-      );
-    }
-
+  // Renderizado condicional para estados de carga y vacío
+  if (loading && listaBodegas.length === 0) {
     return (
-      <div>
-        <div
-          style={{
-            marginBottom: 16,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCrear}
-            disabled={loading}
-          >
-            Crear Bodega
-          </Button>
-
-          {/* {mensaje && !error && (
-            <Alert
-              message={mensaje}
-              type="success"
-              showIcon
-              style={{ flexGrow: 1, marginLeft: 16 }}
-              closable
-              onClose={() => setMensaje("")}
-            />
-          )} */}
-        </div>
-
-        <Table
-          columns={columns}
-          dataSource={listaBodegas}
-          rowKey="idBodega"
-          loading={loading}
-          pagination={{
-            pageSize: 5,
-            showSizeChanger: false,
-            showTotal: (total) => `Total: ${total} bodegas`,
-          }}
-          scroll={{ x: 500 }}
-          onRow={(record) => ({
-            style: {
-              cursor: "pointer",
-              backgroundColor:
-                bodegaParaEstantesId === record.idBodega
-                  ? "#e6f7ff"
-                  : "transparent",
-            },
-          })}
+      <div style={{ padding: "24px", textAlign: "center" }}>
+        <Spin
+          indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
+          tip="Cargando bodegas..."
+          size="large"
         />
       </div>
     );
-  };
+  }
+
+  if (error && mensaje && listaBodegas.length === 0) {
+    return (
+      <div style={{ padding: "24px" }}>
+        <Alert
+          message={mensaje}
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        <Empty
+          description="No hay bodegas registradas"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        >
+          <Button
+            type="primary"
+            size="large"
+            icon={<PlusOutlined />}
+            onClick={handleCrear}
+          >
+            Crear Primera Bodega
+          </Button>
+        </Empty>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <Title level={3}>Gestión de Bodegas</Title>
-      {/* <Button type="primary" onClick={() => navigate("/admin/sucursal")}>
-        Volver
-      </Button> */}
-
-      <Row
-        justify="center"
-        gutter={24}
-        style={{ padding: "24px", marginTop: "20px" }}
-      >
-        <Col span={bodegaParaEstantesId ? 12 : 16}>
-          <Card
-            title={`Gestión de Bodegas (Sucursal ${idSucursal})`}
-            extra={
-              <Button
-                type="primary"
-                onClick={() => navigate("/admin/sucursales")}
-              >
-                Volver a Sucursales
-              </Button>
+    <div style={{ padding: "24px" }}>
+      <Row gutter={24}>
+        <Col span={bodegaParaEstantesId ? 12 : 24}>
+          <DataTable
+            title="Gestión de Bodegas"
+            description={`Bodegas de la sucursal ${idSucursal}`}
+            data={listaBodegas}
+            columns={columns}
+            rowKey="idBodega"
+            loading={loading}
+            searchableFields={["nombre", "estado"]}
+            filterConfig={[
+              {
+                key: "estado",
+                placeholder: "Filtrar por estado",
+                options: [
+                  { value: "En Funcionamiento", label: "En Funcionamiento" },
+                  { value: "En Mantenimiento", label: "En Mantenimiento" },
+                  { value: "Fuera de Servicio", label: "Fuera de Servicio" },
+                ],
+              },
+            ]}
+            selectedRow={
+              bodegaParaEstantesId
+                ? listaBodegas.find((b) => b.idBodega === bodegaParaEstantesId)
+                : null
             }
-            width={bodegaParaEstantesId ? "100%" : "80%"}
-          >
-            {renderContenido()}
-          </Card>
+            headerButtons={
+              <Space size="middle">
+                <Button
+                  size="large"
+                  icon={<RollbackOutlined />}
+                  onClick={() => navigate("/admin/sucursales")}
+                  style={{ borderRadius: "8px" }}
+                >
+                  Volver a Sucursales
+                </Button>
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<PlusOutlined />}
+                  onClick={handleCrear}
+                  disabled={loading}
+                  style={{ borderRadius: "8px" }}
+                >
+                  Nueva Bodega
+                </Button>
+              </Space>
+            }
+          />
         </Col>
 
         {bodegaParaEstantesId && (
@@ -397,16 +363,15 @@ export default function Bodega() {
                   Cerrar
                 </Button>
               }
+              style={{ borderRadius: "12px" }}
             >
-              <GestionEstantes
-                bodegaId={bodegaParaEstantesId}
-                // onVolver={() => setBodegaParaEstantesId(null)}
-              />
+              <GestionEstantes bodegaId={bodegaParaEstantesId} />
             </Card>
           </Col>
         )}
       </Row>
 
+      {/* Modales */}
       <CrearBodega
         show={modalCrear}
         handleClose={handleCerrarModal}
@@ -419,6 +384,6 @@ export default function Bodega() {
         handleClose={handleCerrarModal}
         buscarBodegas={cargarDatosBodega}
       />
-    </>
+    </div>
   );
 }

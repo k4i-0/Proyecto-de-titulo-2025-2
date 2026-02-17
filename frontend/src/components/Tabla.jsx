@@ -26,6 +26,9 @@ const { Text } = Typography;
  * @param {ReactNode} headerButtons - Botones extra para la cabecera (Actualizar, Agregar, etc).
  * @param {Boolean} pagination - Habilitar paginación (default: true).
  * @param {Function} summaryRow - Función para renderizar fila de resumen (opcional).
+ * @param {String} title - Título de la página (opcional).
+ * @param {String} description - Descripción de la página (opcional).
+ * @param {Object} selectedRow - Fila seleccionada actualmente (opcional).
  */
 export default function DataTable({
   data = [],
@@ -38,6 +41,9 @@ export default function DataTable({
   headerButtons,
   pagination = true,
   summaryRow = null,
+  title,
+  description,
+  selectedRow,
 }) {
   const [searchText, setSearchText] = useState("");
   // Estado para manejar múltiples filtros dinámicos { estado: "Activo", rubro: "Tecnologia" }
@@ -76,12 +82,45 @@ export default function DataTable({
   };
 
   return (
-    <Card
-      style={{
-        borderRadius: "12px",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-      }}
-    >
+    <>
+      {/* Header Moderno (Opcional) */}
+      {title && (
+        <div
+          style={{
+            background: "linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%)",
+            padding: "32px",
+            borderRadius: "12px",
+            marginBottom: "24px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+          }}
+        >
+          <Row justify="space-between" align="middle">
+            <Col>
+              <Typography.Title
+                level={2}
+                style={{ margin: 0, marginBottom: 8, color: "#1890ff" }}
+              >
+                {title}
+              </Typography.Title>
+              {description && (
+                <Text style={{ fontSize: "15px", color: "rgba(0,0,0,0.65)" }}>
+                  {description}
+                </Text>
+              )}
+            </Col>
+            {headerButtons && <Col>{headerButtons}</Col>}
+          </Row>
+        </div>
+      )}
+
+      {/* Card con Tabla */}
+      <Card
+        className="card-modern"
+        style={{
+          borderRadius: "12px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+        }}
+      >
       {/* 1. Botones de Acción (Header) */}
       {headerButtons && (
         <Row
@@ -153,6 +192,8 @@ export default function DataTable({
         columns={columns}
         rowKey={rowKey}
         loading={loading}
+        bordered
+        size="middle"
         pagination={
           pagination
             ? {
@@ -166,12 +207,16 @@ export default function DataTable({
           onClick: () => onRowClick && onRowClick(record),
           style: {
             cursor: onRowClick ? "pointer" : "default",
-            // Lógica visual opcional para fila seleccionada si pasas una prop 'selectedId'
-            // background: selectedId === record[rowKey] ? "#e6f7ff" : "white",
+            backgroundColor:
+              selectedRow && selectedRow[rowKey] === record[rowKey]
+                ? "#e6f7ff"
+                : "transparent",
+            transition: "background-color 0.3s ease",
           },
         })}
         summary={summaryRow}
       />
     </Card>
+    </>
   );
 }
