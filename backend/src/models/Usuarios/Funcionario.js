@@ -46,13 +46,17 @@ const funcionario = sequelize.define(
     },
     session: {
       type: DataTypes.BOOLEAN,
-      allowNull: false,
+      allowNull: true,
       defaultValue: false,
     },
+    ultimaSession: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     tipoSession: {
-      type: DataTypes.ENUM("Caja", "Administracion", "Vendedor", "Sin session"),
+      type: DataTypes.ENUM("caja", "administracion", "vendedor", "sin session"),
       allowNull: false,
-      defaultValue: "Sin session",
+      defaultValue: "sin session",
     },
     estado: {
       type: DataTypes.ENUM("Activo", "Inactivo", "Eliminado"),

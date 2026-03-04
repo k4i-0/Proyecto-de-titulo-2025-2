@@ -41,6 +41,7 @@ const {
   OrdenCompra,
   EntregaProveedor,
   DetalleDespacho,
+  CreaOrdenCompra,
 } = require("./src/models");
 const { allowedNodeEnvironmentFlags } = require("process");
 
@@ -78,10 +79,10 @@ app.use("/static", express.static(path.join(__dirname, "public")));
 // Certificado SSL y Configuración HTTPS ----------
 const sslOptions = {
   key: fs.readFileSync(
-    path.join(__dirname, "..", "backend", "/ssl/localhost.key")
+    path.join(__dirname, "..", "backend", "/ssl/localhost.key"),
   ),
   cert: fs.readFileSync(
-    path.join(__dirname, "..", "backend", "/ssl/localhost.crt")
+    path.join(__dirname, "..", "backend", "/ssl/localhost.crt"),
   ),
 };
 
@@ -150,6 +151,9 @@ async function syncDataBase() {
     await Inventario.sync(syncOptions);
     console.log("  ✓ Inventario");
 
+    await DetalleDespacho.sync(syncOptions);
+    console.log("  ✓ DetalleDespacho");
+
     await Lote.sync(syncOptions);
     console.log("  ✓ Lote");
 
@@ -184,11 +188,11 @@ async function syncDataBase() {
     await Provee.sync(syncOptions);
     console.log("  ✓ Provee");
 
+    await CreaOrdenCompra.sync(syncOptions);
+    console.log("  ✓ CreaOrdenCompra");
+
     // await LoteProducto.sync(syncOptions);
     // console.log("  ✓ LoteProducto");
-
-    await DetalleDespacho.sync(syncOptions);
-    console.log("  ✓ DetalleDespacho");
 
     console.log("✅ Todas las tablas sincronizadas correctamente");
   } catch (error) {
@@ -210,7 +214,7 @@ const startServer = async () => {
 
     app.listen(process.env.PORT, () => {
       console.log(
-        `Servidor escuchando en http://localhost:${process.env.PORT}`
+        `Servidor escuchando en http://localhost:${process.env.PORT}`,
       );
     });
     // https.createServer(sslOptions, app).listen(process.env.PORT, () => {

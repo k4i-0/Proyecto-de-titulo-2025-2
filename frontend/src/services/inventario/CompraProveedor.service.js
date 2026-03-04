@@ -20,7 +20,7 @@ export default async function crearOrdenCompraProveedor(ordenData) {
 
 export async function crearOrdenCompraDirecta(datos) {
   try {
-    const response = await axios.post(`${API_URL}/crear-oc-directa`, datos, {
+    const response = await axios.post(`${API_URL}/ocdirecta`, datos, {
       withCredentials: true,
     });
     //console.log("Orden de compra directa creada:", response);
@@ -35,7 +35,7 @@ export async function crearOrdenCompraDirecta(datos) {
 
 export async function obtenerOrdenesCompraDirecta() {
   try {
-    const response = await axios.get(`${API_URL}/buscar-oc-directa`, {
+    const response = await axios.get(`${API_URL}/ocdirecta`, {
       withCredentials: true,
     });
     return response;
@@ -51,8 +51,8 @@ export async function obtenerOrdenesCompraDirecta() {
 export async function cancelarOrdenCompra(idCompraProveedor) {
   try {
     const response = await axios.delete(
-      `${API_URL}/eliminar-oc-directa/${idCompraProveedor}`,
-      { withCredentials: true }
+      `${API_URL}/ocdirecta/${idCompraProveedor}`,
+      { withCredentials: true },
     );
     return response;
   } catch (error) {
@@ -67,9 +67,9 @@ export async function cancelarOrdenCompra(idCompraProveedor) {
 export async function cambiarEstadoOrdenCompra(idCompraProveedor, datos) {
   try {
     const response = await axios.put(
-      `${API_URL}/cambiar-estado-oc/${idCompraProveedor}`,
+      `${API_URL}/ocdirecta/${idCompraProveedor}/estado`,
       datos,
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return response;
   } catch (error) {
@@ -81,12 +81,29 @@ export async function cambiarEstadoOrdenCompra(idCompraProveedor, datos) {
   }
 }
 
-export async function editarOrdenCompraProveedor(idCompraProveedor, datos) {
+export async function anularOrdenCompraDirecta(nombreOrden, datos) {
   try {
     const response = await axios.put(
-      `${API_URL}/editar-oc/${idCompraProveedor}`,
+      `${API_URL}/ocdirecta/${nombreOrden}/anular`,
+      { datos },
+      { withCredentials: true },
+    );
+    return response;
+  } catch (error) {
+    console.error("Error al anular la orden de compra directa:", error);
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response.data;
+  }
+}
+
+export async function editarOrdenCompraProveedor(nombreOrden, datos) {
+  try {
+    const response = await axios.put(
+      `${API_URL}/ocdirecta/${nombreOrden}/editar`,
       datos,
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return response;
   } catch (error) {
@@ -100,14 +117,14 @@ export async function editarOrdenCompraProveedor(idCompraProveedor, datos) {
 
 export async function obtenerOrdenesCompraProveedores() {
   try {
-    const response = await axios.get(`${API_URL}/buscar-ordenes`, {
+    const response = await axios.get(`${API_URL}/orden-compra`, {
       withCredentials: true,
     });
     return response;
   } catch (error) {
     console.error(
       "Error al obtener las ordenes de compra a proveedores:",
-      error
+      error,
     );
     if (error.response?.data?.error == undefined) {
       return { code: 500, error: "Error del servidor" };
@@ -119,16 +136,16 @@ export async function obtenerOrdenesCompraProveedores() {
 export async function buscarTodasOrdenesParaRecepcion(rutProveedor) {
   try {
     const response = await axios.get(
-      `${API_URL}/buscar-ordenes-recepcion/${rutProveedor}`,
+      `${API_URL}/orden-compra/${rutProveedor}/recepcion`,
       {
         withCredentials: true,
-      }
+      },
     );
     return response;
   } catch (error) {
     console.error(
       "Error al buscar las ordenes de compra para recepcion:",
-      error
+      error,
     );
     if (error.response?.data?.error == undefined) {
       return { code: 500, error: "Error del servidor" };

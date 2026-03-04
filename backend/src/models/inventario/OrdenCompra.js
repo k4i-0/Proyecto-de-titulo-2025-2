@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/bd");
+const { Op } = require("sequelize");
 
 const ordenCompra = sequelize.define(
   "ordencompra",
@@ -12,9 +13,10 @@ const ordenCompra = sequelize.define(
       autoIncrement: true,
     },
     nombreOrden: {
-      //Nombre descriptivo de la orden de compra OC-AÑO-NUMERO8DIGITOS
+      //Nombre descriptivo de la orden de compra OCAÑONUMERO8DIGITOS OC202612345678 , es un codigo con OC seguido del año y un numero correlativo de 8 digitos 40.320 Ordenes de compra al año
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
     },
     fechaOrden: {
       type: DataTypes.DATE, // Cuando se creo la orden de compra
@@ -31,6 +33,7 @@ const ordenCompra = sequelize.define(
         "pendiente de aprobacion",
         "aprobada",
         "rechazada",
+        "anulada",
         "aceptada con modificaciones",
         "pendiente de pago",
         "pagada",
@@ -40,7 +43,7 @@ const ordenCompra = sequelize.define(
       allowNull: false,
       defaultValue: "creada",
     },
-    tipo:{
+    tipo: {
       type: DataTypes.ENUM(
         //Posibles tipos de la orden de compra
         "compra directa",

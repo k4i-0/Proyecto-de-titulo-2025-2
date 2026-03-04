@@ -7,7 +7,7 @@ const verifyToken = (req, res, next) => {
   // Intentar obtener token del header Authorization primero
   const authHeader = req.headers.authorization || req.headers.Authorization;
   let token = null;
-
+  
   // Prioridad 1: Header Authorization
   if (authHeader?.startsWith("Bearer ")) {
     token = authHeader.split(" ")[1];
@@ -17,8 +17,8 @@ const verifyToken = (req, res, next) => {
   if (!token && req.cookies?.token) {
     token = req.cookies.token;
   }
- 
-
+  
+  
   // Si no hay token en ningún lado
   if (!token) {
     return res.status(401).json({

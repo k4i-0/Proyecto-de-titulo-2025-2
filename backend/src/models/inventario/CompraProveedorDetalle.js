@@ -26,8 +26,24 @@ const compraproveedordetalle = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
+    idOrdenCompra: {
+      type: DataTypes.BIGINT,
+      allowNull: false,
+      references: {
+        model: "ordencompra",
+        key: "idOrdenCompra",
+      },
+    },
+    idProducto: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "productos",
+        key: "idProducto",
+      },
+    },
   },
-  { tableName: "compraProveedorDetalle", timestamps: false }
+  { tableName: "compraProveedorDetalle", timestamps: false },
 );
 
 module.exports = compraproveedordetalle;

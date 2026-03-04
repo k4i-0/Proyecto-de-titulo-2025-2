@@ -41,6 +41,7 @@ db.Provee = require("./inventario/Provee");
 db.compraproveedordetalle = require("./inventario/CompraProveedorDetalle");
 db.RealizaVenta = require("./ventas/RealizaVenta");
 db.EntregaProveedor = require("./inventario/EntregaProveedor");
+db.CreaOrdenCompra = require("./inventario/CreaOrdenCompra");
 
 //Destructuriacion
 const {
@@ -71,6 +72,7 @@ const {
   CajaFuncionario,
   DescuentoSobre,
   Provee,
+  CreaOrdenCompra,
 } = db;
 
 // ========== tablas 1:n Modulo Inventario ==========
@@ -99,15 +101,6 @@ Bodega.belongsTo(Inventario, {
   foreignKey: "idBodega",
 });
 
-//Deprecado
-// inventario -> estante (1:N)
-// Estante.hasMany(Inventario, {
-//   foreignKey: "idEstante",
-// });
-// Inventario.belongsTo(Estante, {
-//   foreignKey: "idEstante",
-// });
-
 // Categoria -> Productos (1:N)
 Categoria.hasMany(Productos, {
   foreignKey: "idCategoria",
@@ -125,12 +118,12 @@ Inventario.belongsTo(Productos, {
 });
 
 //Productos -> Lote (1:N)
-// Productos.hasMany(Lote, {
-//   foreignKey: "idProducto",
-// });
-// Lote.belongsTo(Productos, {
-//   foreignKey: "idProducto",
-// });
+Productos.hasMany(Lote, {
+  foreignKey: "idProducto",
+});
+Lote.belongsTo(Productos, {
+  foreignKey: "idProducto",
+});
 
 // Proveedor -> Vendedor (1:N)
 Proveedor.hasMany(Vendedor, {
@@ -138,14 +131,6 @@ Proveedor.hasMany(Vendedor, {
 });
 Vendedor.belongsTo(Proveedor, {
   foreignKey: "idProveedor",
-});
-
-//Detalle venta -> Producto
-Productos.hasMany(DetalleVenta, {
-  foreignKey: "idProducto",
-});
-DetalleVenta.belongsTo(Productos, {
-  foreignKey: "idProducto",
 });
 
 // Estante -> Lote (1:N)
@@ -172,19 +157,27 @@ DetalleDespacho.belongsTo(Despacho, {
   foreignKey: "idDespacho",
 });
 
+//Producto a Detalle Despacho (1:N)
+Productos.hasMany(DetalleDespacho, {
+  foreignKey: "idProducto",
+});
+DetalleDespacho.belongsTo(Productos, {
+  foreignKey: "idProducto",
+});
+
+//Orden de compra con Despacho
+OrdenCompra.hasOne(Despacho, {
+  foreignKey: "idOrdenCompra",
+});
+Despacho.belongsTo(OrdenCompra, {
+  foreignKey: "idOrdenCompra",
+});
+
 // compraProveedorDetalle productos 1:N
 Productos.hasMany(CompraProveedorDetalle, {
   foreignKey: "idProducto",
 });
 CompraProveedorDetalle.belongsTo(Productos, {
-  foreignKey: "idProducto",
-});
-
-//Lote -> Producto (1:N)
-Productos.hasMany(Lote, {
-  foreignKey: "idProducto",
-});
-Lote.belongsTo(Productos, {
   foreignKey: "idProducto",
 });
 
@@ -218,6 +211,14 @@ Sucursal.belongsTo(Funcionario, {
 
 //============ Tablas 1:n Modulo Ventas ===========
 
+//Detalle venta -> Producto
+Productos.hasMany(DetalleVenta, {
+  foreignKey: "idProducto",
+});
+DetalleVenta.belongsTo(Productos, {
+  foreignKey: "idProducto",
+});
+
 // Sucursal -> Caja (1:N)
 Sucursal.hasMany(Caja, {
   foreignKey: "idSucursal",
@@ -245,31 +246,41 @@ Descuento.belongsTo(VentaCliente, {
 
 //============Tablas intermedias Modulo Inventario ==========
 
-//Despacho
-Despacho.hasMany(EntregaProveedor, { foreignKey: "idDespacho" });
-Sucursal.hasMany(Despacho, { foreignKey: "idSucursal" });
-Funcionario.hasMany(Despacho, { foreignKey: "idFuncionario" });
-Proveedor.hasMany(Despacho, { foreignKey: "idProveedor" });
+// //Despacho
+// Despacho.hasMany(GeneraDespacho, { foreignKey: "idDespacho" });
+// Sucursal.hasMany(GeneraDespacho, { foreignKey: "idSucursal" });
+// Funcionario.hasMany(GeneraDespacho, { foreignKey: "idFuncionario" });
+// Proveedor.hasMany(GeneraDespacho, { foreignKey: "idProveedor" });
 
-EntregaProveedor.belongsTo(Despacho, { foreignKey: "idDespacho" });
-Despacho.belongsTo(Sucursal, { foreignKey: "idSucursal" });
-Despacho.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
-Despacho.belongsTo(Proveedor, { foreignKey: "idProveedor" });
+// GeneraDespacho.belongsTo(Despacho, { foreignKey: "idDespacho" });
+// GeneraDespacho.belongsTo(Sucursal, { foreignKey: "idSucursal" });
+// GeneraDespacho.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
+// GeneraDespacho.belongsTo(Proveedor, { foreignKey: "idProveedor" });
 
 //Compra
-OrdenCompra.hasMany(CompraProveedorDetalle, {
-  foreignKey: "idOrdenCompra",
+OrdenCompra.hasOne(CreaOrdenCompra, { foreignKey: "idOrden" });
+Proveedor.hasMany(CreaOrdenCompra, { foreignKey: "idProveedor" });
+Sucursal.hasMany(CreaOrdenCompra, { foreignKey: "idSucursal" });
+Funcionario.hasMany(CreaOrdenCompra, {
+  foreignKey: "idFuncionarioSolicita",
+  as: "vendedor",
 });
-Sucursal.hasMany(OrdenCompra, { foreignKey: "idSucursal" });
-Funcionario.hasMany(OrdenCompra, { foreignKey: "idFuncionario" });
-Proveedor.hasMany(OrdenCompra, { foreignKey: "idProveedor" });
+Funcionario.hasMany(CreaOrdenCompra, {
+  foreignKey: "idFuncionarioAutoriza",
+  as: "administrador",
+});
 
-CompraProveedorDetalle.belongsTo(OrdenCompra, {
-  foreignKey: "idOrdenCompra",
+CreaOrdenCompra.belongsTo(OrdenCompra, { foreignKey: "idOrden" });
+CreaOrdenCompra.belongsTo(Proveedor, { foreignKey: "idProveedor" });
+CreaOrdenCompra.belongsTo(Sucursal, { foreignKey: "idSucursal" });
+CreaOrdenCompra.belongsTo(Funcionario, {
+  foreignKey: "idFuncionarioSolicita",
+  as: "vendedor",
 });
-OrdenCompra.belongsTo(Sucursal, { foreignKey: "idSucursal" });
-OrdenCompra.belongsTo(Funcionario, { foreignKey: "idFuncionario" });
-OrdenCompra.belongsTo(Proveedor, { foreignKey: "idProveedor" });
+CreaOrdenCompra.belongsTo(Funcionario, {
+  foreignKey: "idFuncionarioAutoriza",
+  as: "administrador",
+});
 
 //Tabla intermedia Provee (Producto - Proveedor)
 Proveedor.belongsToMany(Productos, {

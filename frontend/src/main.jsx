@@ -39,10 +39,10 @@ import GestionColaborador from "./pages/Gestion/Gestion Colaboradores/GestionCol
 //ordenes de compra
 import OrdenesCompra from "./pages/Gestion/Ordenes Compra/OrdenesCompra.jsx";
 import CompraDirecta from "./pages/Gestion/Ordenes Compra/CompraDirecta.jsx";
-import RecepcionOrdenCompra from "./pages/Gestion/RecepcionProveedores/RecepcionOrdenCompra.jsx";
+import RecepcionOrdenCompraDirecta from "./pages/Gestion/RecepcionProveedores/RecepcionOrdenCompraDirecta.jsx";
 
 //Pruebas
-import Pruebas from "./pages/Pruebas.jsx";
+import Pruebas from "./pages/Pruebas.jsx";  
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -88,8 +88,8 @@ createRoot(document.getElementById("root")).render(
 
             {/*Recepcion Orden de compra */}
             <Route
-              path="gestion/recepcion-ordenes-compra"
-              element={<RecepcionOrdenCompra />}
+              path="gestion/recepcionar_compra_directa"
+              element={<RecepcionOrdenCompraDirecta />}
             />
 
             {/**Pruebas Codigo - Deshabilitar */}

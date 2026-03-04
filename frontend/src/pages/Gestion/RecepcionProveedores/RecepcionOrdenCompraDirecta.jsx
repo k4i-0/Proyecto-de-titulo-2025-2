@@ -241,7 +241,7 @@ export default function RecepcionOrdenCompra() {
     },
     {
       title: "Subtotal",
-      dataIndex: "total",
+      dataIndex: "subtotal",
       key: "subt",
       align: "right",
       render: (val) => (

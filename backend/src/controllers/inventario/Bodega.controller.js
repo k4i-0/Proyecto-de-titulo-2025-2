@@ -1,5 +1,6 @@
 const Bodega = require("../../models/inventario/Bodega");
 const Estante = require("../../models/inventario/Estante");
+const Sucursal = require("../../models/inventario/Sucursal");
 const { Op, where } = require("sequelize");
 
 const { crearBitacora } = require("../../services/bitacora.service");
@@ -12,6 +13,20 @@ exports.createBodega = async (req, res) => {
     return res.status(422).json({ error: "Faltan datos obligatorios" });
   }
   //Validacion de datos con Joi
+
+  //Validacion de que no exista la bodega con mismo nombre y sucursal
+  const busquedaBodega = await Bodega.findOne({
+    where: { nombre, idSucursal },
+  });
+  if (busquedaBodega) {
+    return res.status(422).json({ error: "Bodega ya existe" });
+  }
+
+  //verificar que exista la sucursal
+  const busquedaSucursal = await Sucursal.findByPk(idSucursal);
+  if (!busquedaSucursal) {
+    return res.status(422).json({ error: "Sucursal no encontrada" });
+  }
   try {
     const nuevaBodega = await Bodega.create({
       nombre,

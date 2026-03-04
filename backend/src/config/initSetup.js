@@ -82,22 +82,22 @@ async function poblarBD() {
     console.log(
       `  - Sistema (ID: ${sistemaRole.idRol}) ${
         sistemaCreated ? "[NUEVO]" : "[EXISTENTE]"
-      }`
+      }`,
     );
     console.log(
       `  - Administrador (ID: ${adminRole.idRol}) ${
         adminCreated ? "[NUEVO]" : "[EXISTENTE]"
-      }`
+      }`,
     );
     console.log(
       `  - Cajero (ID: ${cajeroRole.idRol}) ${
         cajeroCreated ? "[NUEVO]" : "[EXISTENTE]"
-      }`
+      }`,
     );
     console.log(
       `  - Vendedor (ID: ${vendedorRole.idRol}) ${
         vendedorCreated ? "[NUEVO]" : "[EXISTENTE]"
-      }`
+      }`,
     );
     console.log(" Iniciando creación de usuarios iniciales...");
     // Crear usuarios (await agregado y campo corregido)
@@ -112,7 +112,8 @@ async function poblarBD() {
         passwordCaja: codigoDefault,
         telefono: "+56900000000",
         direccion: "collao 1202, concepcion",
-
+        session: false,
+        tipoSession: "sin session",
         estado: "Activo",
         idRol: sistemaRole.idRol,
       },
@@ -128,7 +129,8 @@ async function poblarBD() {
         passwordCaja: codigoDefault,
         telefono: "+56912345678",
         direccion: "collao 1202, concepcion",
-
+        session: false,
+        tipoSession: "administracion",
         estado: "Activo",
         idRol: adminRole.idRol,
       },
@@ -145,7 +147,8 @@ async function poblarBD() {
         passwordCaja: codigoDefault,
         telefono: "+56987654321",
         direccion: "collao 1202, concepcion",
-
+        session: false,
+        tipoSession: "caja",
         estado: "Activo",
         idRol: cajeroRole.idRol,
       },
@@ -162,27 +165,46 @@ async function poblarBD() {
         passwordCaja: codigoDefault,
         telefono: "+56987654321",
         direccion: "collao 1202, concepcion",
-
+        session: false,
+        tipoSession: "vendedor",
         estado: "Activo",
         idRol: vendedorRole.idRol,
       },
     });
 
+    //cerrar session a todos los usuarios
+    // sistemaUser.update({
+    //   session: false,
+    //   tipoSession: "Sin session",
+    // });
+    // admin.update({
+    //   session: false,
+    //   tipoSession: "Sin session",
+    // });
+    // cajero.update({
+    //   session: false,
+    //   tipoSession: "Sin session",
+    // });
+    // vendedor.update({
+    //   session: false,
+    //   tipoSession: "Sin session",
+    // });
+
     console.log(" Usuarios verificados/creados:");
     console.log(
       `  - Admin (${admin.email}) ${
         adminUserCreated ? "[NUEVO]" : "[EXISTENTE]"
-      }`
+      }`,
     );
     console.log(
       `  - Cajero (${cajero.email}) ${
         cajeroUserCreated ? "[NUEVO]" : "[EXISTENTE]"
-      }`
+      }`,
     );
     console.log(
       `  - Vendedor (${vendedor.email}) ${
         vendedorUserCreated ? "[NUEVO]" : "[EXISTENTE]"
-      }`
+      }`,
     );
 
     //Crear Bitacora inicial
@@ -297,187 +319,189 @@ async function poblarBD() {
     }
 
     //Crear sucursales iniciales si no existen 3 digitos
-    console.log(" Creando sucursales y bodegas iniciales...");
-    const [sucursal1, sucursal1Created] = await Sucursal.findOrCreate({
-      where: { idSucursal: 100 },
-      defaults: {
-        idSucursal: 100,
-        nombre: "Casa Matriz",
-        direccion: "Calle Dos 522, Chiguayante",
-        estado: "Abierta",
-        idFuncionario: admin.idFuncionario,
-      },
-    });
-    //Crear bodegas iniciales si no existen
-    const [bodega1, bodega1Created] = await Bodega.findOrCreate({
-      where: { idBodega: 1000 },
-      defaults: {
-        idBodega: 1000,
-        nombre: "Bodega Central",
-        capacidad: 400,
-        estado: "En Funcionamiento",
-        idSucursal: sucursal1.idSucursal,
-      },
-    });
-    //Crear estantes iniciales si no existen
-    for (let i = 1; i <= 5; i++) {
-      await Estante.findOrCreate({
-        where: { codigo: `EST-${1000 + i}` },
-        defaults: {
-          codigo: `EST-${1000 + i}`,
+    // console.log(" Creando sucursales y bodegas iniciales...");
+    // const [sucursal1, sucursal1Created] = await Sucursal.findOrCreate({
+    //   where: { nombre: "Casa Matriz" },
+    //   defaults: {
+    //     idSucursal: 100,
+    //     nombre: "Casa Matriz",
+    //     direccion: "Calle Dos 522, Chiguayante",
+    //     estado: "Abierta",
+    //     idFuncionario: admin.idFuncionario,
+    //   },
+    // });
+    // //Crear bodegas iniciales si no existen
+    // const [bodega1, bodega1Created] = await Bodega.findOrCreate({
+    //   where: { nombre: "Bodega Central" },
+    //   defaults: {
+    //     nombre: "Bodega Central",
+    //     capacidad: 400,
+    //     estado: "En Funcionamiento",
+    //     idSucursal: sucursal1.idSucursal,
+    //   },
+    // });
+    // //Crear estantes iniciales si no existen
+    // for (let i = 1; i <= 5; i++) {
+    //   await Estante.findOrCreate({
+    //     where: { codigoEstante: `ET${1000 + i}` },
+    //     defaults: {
+    //       codigoEstante: `ET${1000 + i}`,
+    //       capacidad: 80,
+    //       tipo: "Estante",
+    //       estado: "Disponible",
+    //       idBodega: bodega1.idBodega,
+    //     },
+    //   });
+    // }
 
-          capacidad: 80,
-          tipo: "Estante",
-          estado: "Disponible",
-          idBodega: bodega1.idBodega,
-        },
-      });
-    }
+    // //Crear Proveedores
+    // const [proveedor, proveedorCreated] = await Proveedor.findOrCreate({
+    //   where: { rut: "77200300-1" },
+    //   defaults: {
+    //     nombre: "Proveedor 1",
+    //     telefono: "+56912345678",
+    //     email: "proveedor@test.cl",
+    //     fechaIngreso: new Date(),
+    //     rubro: "Abarrotes",
+    //     giro: "960011 - default",
+    //     estado: "Activo",
+    //   },
+    // });
 
-    //Crear Proveedores
-    const [proveedor, proveedorCreated] = await Proveedor.findOrCreate({
-      where: { idProveedor: 1 },
-      defaults: {
-        rut: "77200300-1",
-        nombre: "Proveedor 1",
-        telefono: "+56912345678",
-        email: "proveedor@test.cl",
-        fechaIngreso: new Date(),
-        rubro: "Abarrotes",
-        giro: "960011 - default",
-        estado: "Activo",
-      },
-    });
+    // //Crear vendedor
+    // await VendedorProveedor.findOrCreate({
+    //   where: { rut: "12369852-9" },
+    //   defaults: {
+    //     nombre: "Coca Cola Company",
+    //     rut: "12369852-9",
+    //     telefono: "+56912345678",
+    //     email: "pedro@coca.cl",
+    //     idProveedor: proveedor.idProveedor,
+    //   },
+    // });
 
-    //Crear vendedor
-    await VendedorProveedor.findOrCreate({
-      where: { idVendedorProveedor: 1 },
-      defaults: {
-        nombre: "Don Pedro",
-        rut: "12369852-9",
-        telefono: "+56912345678",
-        email: "pedro@proveedor1.cl",
-        idProveedor: proveedor.idProveedor,
-      },
-    });
+    // //Orden de compra
+    // const OC = await OrdenCompra.findOrCreate({
+    //   where: { nombreOrden: `OC${new Date().getFullYear()}00000000` },
+    //   defaults: {
+    //     fechaOrden: new Date(),
+    //     estado: "creada",
+    //     total: 0,
+    //     tipo: "compra directa",
+    //     observaciones: "Orden de compra inicial para pruebas",
+    //     detalleEstado: "Ninguno",
+    //     idSucursal: sucursal1.idSucursal,
+    //     idFuncionario: vendedor.idFuncionario,
+    //     idProveedor: proveedor.idProveedor,
+    //   },
+    // });
 
-    //Orden de compra
-    const OC = await OrdenCompra.findOrCreate({
-      where: { idOrdenCompra: 1 },
-      defaults: {
-        nombreOrden: "Orden de Compra Inicial",
-        fechaOrden: new Date(),
-        estado: "creada",
-        total: 0,
-        observaciones: "Orden de compra inicial para pruebas",
-        detalleEstado: "Ninguno",
-        idSucursal: sucursal1.idSucursal,
-        idFuncionario: vendedor.idFuncionario,
-        idProveedor: proveedor.idProveedor,
-      },
-    });
+    // //Detalle Orden de compra
+    // const detalleOC = [
+    //   {
+    //     cantidad: 10,
+    //     precioUnitario: 2500,
+    //     total: 25000,
+    //     idProducto: 1,
+    //     idOrdenCompra: OC[0].idOrdenCompra,
+    //   },
+    //   {
+    //     cantidad: 20,
+    //     precioUnitario: 1200,
+    //     total: 24000,
+    //     idProducto: 2,
+    //     idOrdenCompra: OC[0].idOrdenCompra,
+    //   },
+    //   {
+    //     cantidad: 15,
+    //     precioUnitario: 3000,
+    //     total: 45000,
+    //     idProducto: 3,
+    //     idOrdenCompra: OC[0].idOrdenCompra,
+    //   },
+    // ];
+    // await CompraProveedorDetalle.bulkCreate(detalleOC, {
+    //   ignoreDuplicates: true,
+    // });
 
-    //Detalle Orden de compra
-    const detalleOC = [
-      {
-        cantidad: 10,
-        precioUnitario: 2500,
-        total: 25000,
-        idProducto: 1,
-        idOrdenCompra: OC[0].idOrdenCompra,
-      },
-      {
-        cantidad: 20,
-        precioUnitario: 1200,
-        total: 24000,
-        idProducto: 2,
-        idOrdenCompra: OC[0].idOrdenCompra,
-      },
-      {
-        cantidad: 15,
-        precioUnitario: 3000,
-        total: 45000,
-        idProducto: 3,
-        idOrdenCompra: OC[0].idOrdenCompra,
-      },
-    ];
-    await CompraProveedorDetalle.bulkCreate(detalleOC);
+    // //Actualizar total orden de compra
+    // const totalOC = detalleOC.reduce((sum, item) => sum + item.total, 0);
+    // OC[0].estado = "pendiente recibir";
+    // OC[0].total = totalOC;
+    // await OC[0].save();
 
-    //Actualizar total orden de compra
-    const totalOC = detalleOC.reduce((sum, item) => sum + item.total, 0);
-    OC[0].total = totalOC;
-    await OC[0].save();
+    // //Crear Despacho inicial
+    // const despacho = await Despacho.findOrCreate({
+    //   where: { codigoDespacho: `DE${new Date().getFullYear()}00000000` },
+    //   defaults: {
+    //     fechaDespacho: new Date(),
+    //     tipoDocumento: "Factura",
+    //     tipoDespacho: "Proveedor",
+    //     numeroDocumento: "F001-000123",
+    //     repartidor: "Juan Perez",
+    //     estado: "Pendiente Entrega",
+    //     observaciones: "Despacho inicial para pruebas",
+    //     idProveedor: proveedor.idProveedor,
+    //     idSucursal: sucursal1.idSucursal,
+    //     idFuncionario: vendedor.idFuncionario,
+    //   },
+    // });
 
-    //Crear Despacho inicial
-    const despacho = await Despacho.findOrCreate({
-      where: { idDespacho: 1 },
-      defaults: {
-        fechaDespacho: new Date(),
-        tipoDocumento: "Factura",
-        tipoDespacho: "Proveedor",
-        numeroDocumento: "F001-000123",
-        repartidor: "Juan Perez",
-        estado: "Pendiente Entrega",
-        observaciones: "Despacho inicial para pruebas",
-        idProveedor: proveedor.idProveedor,
-        idSucursal: sucursal1.idSucursal,
-        idFuncionario: vendedor.idFuncionario,
-      },
-    });
+    // //Crear Detalle Despacho inicial
+    // const [detalleDespacho, detalleDespachoCreated] =
+    //   await DetalleDespacho.findOrCreate({
+    //     where: {
+    //       codigoDetalleDespacho: `CODD${new Date().getFullYear()}00000000`,
+    //     },
+    //     defaults: {
+    //       cantidad: 35,
+    //       totalCompra: 94000,
+    //       idDespacho: despacho[0].idDespacho,
+    //     },
+    //   });
 
-    //Crear Detalle Despacho inicial
-    const [detalleDespacho, detalleDespachoCreated] =
-      await DetalleDespacho.findOrCreate({
-        where: { idDetalledespacho: 1 },
-        defaults: {
-          cantidad: 35,
-          totalCompra: 94000,
-          idDespacho: despacho[0].idDespacho,
-        },
-      });
+    // //Crear Lote iniciales
 
-    //Crear Lote iniciales
-
-    const lotes = [
-      {
-        codigo: "LOTE-1001",
-        fechaCreacion: new Date(),
-        fechaVencimiento: new Date(
-          new Date().setFullYear(new Date().getFullYear() + 1)
-        ),
-        estado: "disponible",
-        stockInicial: 10,
-        idEstante: 1,
-        idProducto: 1,
-        idDetalleDespacho: detalleDespacho.idDetalledespacho,
-      },
-      {
-        codigo: "LOTE-1002",
-        fechaCreacion: new Date(),
-        fechaVencimiento: new Date(
-          new Date().setFullYear(new Date().getFullYear() + 1)
-        ),
-        estado: "disponible",
-        stockInicial: 20,
-        idEstante: 1,
-        idProducto: 2,
-        idDetalleDespacho: detalleDespacho.idDetalledespacho,
-      },
-      {
-        codigo: "LOTE-1003",
-        fechaCreacion: new Date(),
-        fechaVencimiento: new Date(
-          new Date().setFullYear(new Date().getFullYear() + 1)
-        ),
-        estado: "disponible",
-        stockInicial: 15,
-        idEstante: 1,
-        idProducto: 3,
-        idDetalleDespacho: detalleDespacho.idDetalledespacho,
-      },
-    ];
-    await Lote.bulkCreate(lotes);
-    await t.commit();
+    // const lotes = [
+    //   {
+    //     codigoLote: `LT${new Date().getFullYear()}00000001`,
+    //     fechaCreacion: new Date(),
+    //     fechaVencimiento: new Date(
+    //       new Date().setFullYear(new Date().getFullYear() + 1),
+    //     ),
+    //     estado: "disponible",
+    //     stockInicial: 10,
+    //     idEstante: 1,
+    //     idProducto: 1,
+    //     idDetalleDespacho: detalleDespacho.idDetalledespacho,
+    //   },
+    //   {
+    //     codigoLote: `LT${new Date().getFullYear()}00000002`,
+    //     fechaCreacion: new Date(),
+    //     fechaVencimiento: new Date(
+    //       new Date().setFullYear(new Date().getFullYear() + 1),
+    //     ),
+    //     estado: "disponible",
+    //     stockInicial: 20,
+    //     idEstante: 1,
+    //     idProducto: 2,
+    //     idDetalleDespacho: detalleDespacho.idDetalledespacho,
+    //   },
+    //   {
+    //     codigoLote: `LT${new Date().getFullYear()}00000003`,
+    //     fechaCreacion: new Date(),
+    //     fechaVencimiento: new Date(
+    //       new Date().setFullYear(new Date().getFullYear() + 1),
+    //     ),
+    //     estado: "disponible",
+    //     stockInicial: 15,
+    //     idEstante: 1,
+    //     idProducto: 3,
+    //     idDetalleDespacho: detalleDespacho.idDetalledespacho,
+    //   },
+    // ];
+    // await Lote.bulkCreate(lotes, { ignoreDuplicates: true });
+    // await t.commit();
     console.log(" BD poblada exitosamente");
   } catch (error) {
     await t.rollback();

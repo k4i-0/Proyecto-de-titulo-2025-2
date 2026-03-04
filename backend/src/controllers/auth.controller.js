@@ -78,12 +78,13 @@ async function login(req, res) {
     await funcionarioEncontrado.update({
       session: true,
       tipoSession: "Administracion",
+      ultimaSession: new Date(),
     });
     res.cookie("token", token, {
       httpOnly: true,
       secure: false, //process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 1 * 60 * 60 * 1000,
     });
     //console.log(funcionarioEncontrado.dataValues);
     return res.status(200).json({
@@ -156,7 +157,7 @@ async function loginCodigo(req, res) {
     //CREAR TOKEN
     const token = jwt.sign(
       {
-        id: verificarFuncionario.id,
+        rut: verificarFuncionario.dataValues.rut,
         email: verificarFuncionario.email,
         role: verificarFuncionario.dataValues.role.dataValues.nombreRol,
       },
@@ -172,14 +173,18 @@ async function loginCodigo(req, res) {
     }
 
     // ACTUALIZAR ESTADO DE SESSION A ACTIVADA Y TIPO DE SESSION A CAJA
-    await verificarFuncionario.update({ session: true, tipoSession: "Caja" });
+    await verificarFuncionario.update({
+      session: true,
+      tipoSession: "Caja",
+      ultimaSession: new Date(),
+    });
 
     //ENVIA COOKIE CON TOKEN AL NAVEGADOR
     res.cookie("token", token, {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias de session activa
     });
 
     //ENVIA DATOS PARA SESSION ABIERTA
@@ -198,7 +203,7 @@ async function loginCodigo(req, res) {
 }
 
 async function logout(req, res) {
-  // console.log("antes de", req.cookies);
+  
   const { token } = req.cookies;
   if (!token) {
     return res.status(203).send({ message: "Sin cookies" });

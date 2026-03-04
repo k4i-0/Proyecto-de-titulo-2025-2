@@ -10,7 +10,8 @@ const lote = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    codigo: {
+    //LT202612345678 , es un codigo con LT seguido del año y un numero correlativo de 8 digitos 40.320 Lotes al año
+    codigoLote: {
       type: DataTypes.STRING(50),
       allowNull: false,
       unique: true,
@@ -29,42 +30,42 @@ const lote = sequelize.define(
         "disponible",
         "agotado",
         "vencido",
-        "rechazado"
+        "rechazado",
       ),
       allowNull: false,
       defaultValue: "creado",
     },
-    stockInicial: {
+    cantidad: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
     },
-    precioUnitario: {
+    idEstante: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      defaultValue: 0,
+      references: {
+        model: "estante",
+        key: "idEstante",
+      },
     },
-
-    // idBodega: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    //   references: {
-    //     model: "bodega",
-    //     key: "idBodega",
-    //   },
-    //   onDelete: "CASCADE",
-    // },
-    // idProducto: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    //   references: {
-    //     model: "productos",
-    //     key: "idProducto",
-    //   },
-    //   onDelete: "CASCADE",
-    // },
+    idProducto: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "productos",
+        key: "idProducto",
+      },
+    },
+    idDetalleDespacho: {
+      type: DataTypes.BIGINT,
+      allowNull: true,
+      references: {
+        model: "detalledespacho",
+        key: "idDetalledespacho",
+      },
+    },
   },
-  { tableName: "lote", timestamps: false }
+  { tableName: "lote", timestamps: false },
 );
 
 module.exports = lote;

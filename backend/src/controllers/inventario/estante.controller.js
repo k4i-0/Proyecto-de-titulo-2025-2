@@ -40,6 +40,20 @@ exports.createEstante = async (req, res) => {
       .status(422)
       .json({ error: "Faltan datos obligatorios para crear el estante" });
   }
+
+  //verificar que no exista un estante con el mismo codigo en la misma bodega
+  const busquedaEstante = await Estante.findOne({
+    where: { codigo, idBodega },
+  });
+  if (busquedaEstante) {
+    return res.status(422).json({ error: "Estante ya existe" });
+  }
+
+  //verificar que exista la bodega
+  const busquedaBodega = await Bodega.findByPk(idBodega);
+  if (!busquedaBodega) {
+    return res.status(422).json({ error: "Bodega no encontrada" });
+  }
   try {
     const nuevoEstante = await Estante.create({
       codigo,

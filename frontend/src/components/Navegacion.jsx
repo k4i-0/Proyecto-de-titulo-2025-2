@@ -117,11 +117,10 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                   icon: <ReconciliationOutlined />,
                   children: [
                     {
-                      key: "recepcionar_ordenes_compra",
-                      label: "Recepcionar Órdenes De Compra",
+                      key: "recepcionar_compra_directa",
+                      label: "Recepcionar Compra Directa",
                       icon: <InboxOutlined />,
-                      onClick: () =>
-                        navigate("gestion/recepcion-ordenes-compra"),
+                      onClick: () => navigate("gestion/recepcionar_compra_directa"),
                     },
                     {
                       key: "devolucion_ordenes_compra",

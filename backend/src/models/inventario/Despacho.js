@@ -10,6 +10,12 @@ const despacho = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
+    //DP202612345678 , es un codigo con DE seguido del año y un numero correlativo de 8 digitos 40.320 Despachos al año
+    codigoDespacho: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      unique: true,
+    },
     fechaDespacho: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -21,13 +27,13 @@ const despacho = sequelize.define(
     },
     tipoDespacho: {
       type: DataTypes.ENUM(
-        "Proveedor",
-        "Entre Sucursales",
-        "Compra Directa",
-        "Devolucion"
+        "proveedor",
+        "entre sucursales",
+        "compra directa",
+        "otro",
       ),
       allowNull: false,
-      defaultValue: "Proveedor",
+      defaultValue: "proveedor",
     },
     numeroDocumento: {
       type: DataTypes.STRING(50),
@@ -41,10 +47,10 @@ const despacho = sequelize.define(
       type: DataTypes.ENUM(
         "En espera aprobacion",
         "Pendiente Entrega",
-        "Entregado",
+        "Recepcionado",
         "Entregado Con Faltantes",
         "En Inventario",
-        "Cancelado"
+        "Cancelado",
       ),
       allowNull: false,
       defaultValue: "Pendiente Entrega",
@@ -53,35 +59,16 @@ const despacho = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    // idProveedor: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    //   references: {
-    //     model: "proveedor",
-    //     key: "idProveedor",
-    //   },
-    //   onDelete: "CASCADE",
-    // },
-    // idLote: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    //   references: {
-    //     model: "lote",
-    //     key: "idLote",
-    //   },
-    //   onDelete: "CASCADE",
-    // },
-    // idSucursal: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    //   references: {
-    //     model: "sucursal",
-    //     key: "idSucursal",
-    //   },
-    //   onDelete: "CASCADE",
-    // },
+    idOrdenCompra: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "ordencompra",
+        key: "idOrdenCompra",
+      },
+    },
   },
-  { tableName: "despacho", timestamps: true }
+  { tableName: "despacho", timestamps: true },
 );
 
 module.exports = despacho;

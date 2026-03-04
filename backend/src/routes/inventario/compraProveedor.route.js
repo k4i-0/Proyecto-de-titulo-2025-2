@@ -1,44 +1,56 @@
 const router = require("express").Router();
 const compraProveedorController = require("../../controllers/inventario/OrdenCompra.controller");
+const authMiddleware = require("../../middleware/auth.middleware");
 
-// Rutas para compra a proveedor
+// Rutas para compra a proveedor directas
 router.post(
-  "/crear-oc-directa",
-  /*authMiddleware, roleMiddleware(['admin']),*/ compraProveedorController.createOrdenCompraDirecta
+  "/ocdirecta",
+  /*authMiddleware, roleMiddleware(['admin']),*/ compraProveedorController.createOrdenCompraDirecta,
 );
 
 router.get(
-  "/buscar-oc-directa",
-  /*authMiddleware, roleMiddleware(['admin']),*/ compraProveedorController.obtenerOrdenesCompraDirecta
+  "/ocdirecta",
+  /*authMiddleware, roleMiddleware(['admin']),*/ compraProveedorController.obtenerOrdenesCompraDirecta,
 );
 
 router.delete(
-  "/eliminar-oc-directa/:idCompraProveedor",
-  /*authMiddleware, roleMiddleware(['admin']),*/ compraProveedorController.cancelarOrdenCompra
+  "/ocdirecta/:nombreOrden",
+  /*authMiddleware, roleMiddleware(['admin']),*/ compraProveedorController.cancelarOrdenCompra,
 );
 
 router.put(
-  "/cambiar-estado-oc/:idCompraProveedor",
-  /*authMiddleware, roleMiddleware(['admin']),*/ compraProveedorController.cambiarEstadoOrdenCompra
+  "/ocdirecta/:nombreOrden/estado",
+  /*authMiddleware, roleMiddleware(['admin']),*/ compraProveedorController.cambiarEstadoOrdenCompra,
 );
 
 router.put(
-  "/editar-oc/:idCompraProveedor",
-  /*authMiddleware, roleMiddleware(['admin']),*/ compraProveedorController.editarOrdenCompraProveedor
+  "/ocdirecta/:nombreOrden/anular",
+  compraProveedorController.anularOrdenCompraDirecta,
 );
 
+router.put(
+  "/ocdirecta/:nombreOrden/editar",
+  /*authMiddleware, roleMiddleware(['admin']),*/ compraProveedorController.editarOrdenCompraProveedor,
+);
+
+router.put(
+  "/ocdirecta/:nombreOrden/recepcionar",
+  compraProveedorController.recepcionarOrdenCompraDirecta,
+);
+
+//----------------Rutas para orden de compra a proveedor------------------------------------
 router.post(
-  "/crear-orden",
-  /*authMiddleware, roleMiddleware(['vendedor']),*/ compraProveedorController.crearOrdenCompraProveedor
+  "/orden-compra",
+  /*authMiddleware, roleMiddleware(['vendedor']),*/ compraProveedorController.crearOrdenCompraProveedor,
 );
 router.get(
-  "/buscar-ordenes",
-  /*authMiddleware, roleMiddleware(['vendedor']),*/ compraProveedorController.obtenerOrdenesCompraProveedores
+  "/orden-compra",
+  /*authMiddleware, roleMiddleware(['vendedor']),*/ compraProveedorController.obtenerOrdenesCompraProveedores,
 );
 
 //rutas para recepcion de ordenes de compra
 router.get(
-  "/buscar-ordenes-recepcion/:rutProveedor",
-  /*authMiddleware, roleMiddleware(['admin']),*/ compraProveedorController.buscarOrdenesCompraParaRecepcion
+  "/orden-compra/:rutProveedor/recepcion",
+  /*authMiddleware, roleMiddleware(['admin']),*/ compraProveedorController.buscarOrdenesCompraParaRecepcion,
 );
 module.exports = router;

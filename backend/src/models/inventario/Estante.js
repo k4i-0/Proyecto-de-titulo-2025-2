@@ -10,9 +10,11 @@ const estante = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    codigo: {
+    //ET12345 , es un codigo con ET  y un numero correlativo de 5 digitos 120 Estantes al año
+    codigoEstante: {
       type: DataTypes.STRING(50),
       allowNull: false,
+      unique: true,
     },
     capacidad: {
       type: DataTypes.INTEGER,
@@ -28,7 +30,7 @@ const estante = sequelize.define(
         "Inhabilitado",
         "Mantenimiento",
         "Completo",
-        "Reservado"
+        "Reservado",
       ),
       allowNull: false,
     },
@@ -36,7 +38,7 @@ const estante = sequelize.define(
   {
     tableName: "estante",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = estante;
