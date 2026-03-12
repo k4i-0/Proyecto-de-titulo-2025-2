@@ -1,26 +1,27 @@
 const CompraProveedorDetalle = require("../../models/inventario/CompraProveedorDetalle");
 const Producto = require("../../models/inventario/Productos");
 
+const sequelizer = require("../../models/");
+
 //---------------DETALLE ORDEN DE COMPRA----------------
 async function crearDetalleOC(productos, idOrdenCompra) {
   try {
     for (const item of productos) {
-      const { productoSeleccionado, cantidadProducto, valorUnitarioProducto } =
-        item;
-      const totalProducto = cantidadProducto * valorUnitarioProducto;
-      const comprobarProducto = await Producto.findByPk(productoSeleccionado);
+      const { idProducto, cantidad, precioUnitario } = item;
+      const totalProducto = cantidad * precioUnitario;
+      const comprobarProducto = await Producto.findByPk(idProducto);
       if (!comprobarProducto) {
         return {
-          code: 1241,
-          error: `Producto con ID ${productoSeleccionado} no encontrado`,
+          code: 404,
+          error: `Producto con ID ${idProducto} no encontrado`,
         };
       }
       const nuevaCompraProveedorDetalle = await CompraProveedorDetalle.create({
         idOrdenCompra: idOrdenCompra,
         nombreProducto: comprobarProducto.nombre,
-        idProducto: productoSeleccionado,
-        cantidad: cantidadProducto,
-        precioUnitario: valorUnitarioProducto,
+        idProducto: idProducto,
+        cantidad: cantidad,
+        precioUnitario: precioUnitario,
         total: totalProducto,
       });
     }

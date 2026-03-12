@@ -6,15 +6,14 @@ const jwt = require("jsonwebtoken");
 
 // Crear una nueva categoria
 exports.createCategoria = async (req, res) => {
-  const { nombre, subcategoria, estado } = req.body;
-  if (!nombre || !subcategoria || !estado) {
+  const { nombre, estado } = req.body;
+  if (!nombre || !estado) {
     return res.status(422).json({ error: "Faltan datos obligatorios" });
   }
   //Validacion de datos con Joi
   try {
     const nuevaCategoria = await Categoria.create({
-      nombre,
-      subcategoria,
+      nombreCategoria: nombre,
       estado,
     });
 
@@ -101,7 +100,7 @@ exports.updateCategoria = async (req, res) => {
       },
       {
         where: { idCategoria: req.params.id },
-      }
+      },
     );
 
     const updatedCategoria = await Categoria.findByPk(req.params.id);

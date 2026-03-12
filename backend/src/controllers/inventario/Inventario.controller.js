@@ -2,6 +2,8 @@ const Inventario = require("../../models/inventario/Inventario");
 const Estante = require("../../models/inventario/Estante");
 const Lote = require("../../models/inventario/Lote");
 const Bodega = require("../../models/inventario/Bodega");
+const Productos = require("../../models/inventario/Productos");
+const Sucursal = require("../../models/inventario/Sucursal");
 const { Op } = require("sequelize");
 
 exports.createInventario = async (req, res) => {
@@ -37,31 +39,44 @@ exports.createInventario = async (req, res) => {
   }
 };
 
-// Obtener todos los inventarios
+// Obtener todos los inventarios (con relaciones Producto y Bodega)
 exports.getAllInventario = async (req, res) => {
   try {
-    const inventarios = await Inventario.findAll({
-      include: [
-        {
-          model: Estante,
-          include: [
-            {
-              model: Bodega,
-            },
-          ],
-        },
-        {
-          model: Lote,
-        },
-      ],
-    });
+    const { idSucursal } = req.query; // filtro opcional por sucursal
 
-    if (inventarios.length === 0 || !inventarios) {
-      return res
-        .status(204)
-        .json({ code: 1113, error: "No hay inventarios disponibles" });
+    // Si se filtra por sucursal, buscar primero las bodegas de esa sucursal
+    let whereInventario = {};
+    if (idSucursal) {
+      const bodegas = await Bodega.findAll({
+        where: { idSucursal },
+        attributes: ["idBodega"],
+      });
+      const idBodegas = bodegas.map((b) => b.idBodega);
+      if (idBodegas.length === 0) {
+        return res.status(200).json([]);
+      }
+      whereInventario.idBodega = { [Op.in]: idBodegas };
     }
 
+    const inventarios = await Inventario.findAll({
+      where: whereInventario,
+      include: [
+        {
+          model: Productos,
+          attributes: ["idProducto", "nombre", "codigo", "marca"],
+        },
+        {
+          model: Bodega,
+          attributes: ["idBodega", "nombre"],
+          include: [{ model: Sucursal, attributes: ["idSucursal", "nombre"] }],
+        },
+      ],
+      order: [["idInventario", "ASC"]],
+    });
+
+    if (inventarios.length === 0) {
+      return res.status(200).json([]);
+    }
     res.status(200).json(inventarios);
   } catch (error) {
     console.error("Error al obtener los inventarios:", error);
@@ -105,7 +120,7 @@ exports.updateInventario = async (req, res) => {
       },
       {
         where: { idInventario: req.params.id },
-      }
+      },
     );
 
     const updatedInventario = await Inventario.findByPk(req.params.id);

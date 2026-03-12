@@ -9,7 +9,6 @@ async function crearDetalleDespacho(
   cantidadRechazadaDD,
   observacionesDD,
   idDespacho,
-  idProducto,
 ) {
   try {
     const detalleDespacho = await DetalleDespacho.create({
@@ -19,7 +18,6 @@ async function crearDetalleDespacho(
       cantidadRechazada: cantidadRechazadaDD,
       observaciones: observacionesDD,
       idDespacho: idDespacho,
-      idProducto: idProducto,
     });
 
     return { code: 201, data: detalleDespacho };

@@ -1,9 +1,12 @@
 const OrdenCompra = require("../../models/inventario/OrdenCompra");
+const CrearOrdenCompra = require("../../models/inventario/CreaOrdenCompra");
 const CompraProveedorDetalle = require("../../models/inventario/CompraProveedorDetalle");
 const Producto = require("../../models/inventario/Productos");
 
 const { generarCodigo } = require("../../function/generarCodigo");
 //Generar codigo para despacho, detalle despacho y lote
+
+const { sequelize } = require("../../models");
 
 // funciones sobre tablas en bd
 
@@ -13,6 +16,10 @@ async function crearOrdenCompra(
   totalCompra,
   observaciones,
   destalleEstadoOrdenCompra,
+  idProveedor,
+  idSucursal,
+  idFuncionarioSolicita,
+  idFuncionarioAutoriza,
 ) {
   try {
     const nuevaOrdenCompra = await OrdenCompra.create({
@@ -23,6 +30,16 @@ async function crearOrdenCompra(
       total: totalCompra,
       observaciones,
       detalleEstado: destalleEstadoOrdenCompra,
+    });
+
+    const nuevaCreacionOrdenCompra = await CrearOrdenCompra.create({
+      idOrdenCompra: nuevaOrdenCompra.idOrdenCompra,
+      idProveedor: idProveedor,
+      idSucursal: idSucursal,
+      idFuncionarioSolicita: idFuncionarioSolicita,
+      idFuncionarioAutoriza: idFuncionarioAutoriza
+        ? idFuncionarioAutoriza
+        : null,
     });
 
     return { code: 201, data: nuevaOrdenCompra };
@@ -43,6 +60,7 @@ async function obtenerOrdenCompra(whereClause, attributes, include, order) {
     if (!ordenesCompra || ordenesCompra.length === 0) {
       return { code: 404, error: "No se encontraron ordenes de compra" };
     }
+
     return { code: 200, data: ordenesCompra };
   } catch (error) {
     console.error("Error al obtener las ordenes de compra:", error);
@@ -76,6 +94,7 @@ async function obtenerOConDetalles(whereClause) {
     if (!ordenesCompra || ordenesCompra.length === 0) {
       return { code: 404, error: "No se encontraron ordenes de compra" };
     }
+
     return { code: 200, data: ordenesCompra };
   } catch (error) {
     console.error(
@@ -126,6 +145,7 @@ async function editarOrdenCompra(nombreOrden, productos, observaciones) {
       }
       await ordenCompra.update({ total: totalOrden });
     }
+
     return { code: 200, message: "Orden de compra editada correctamente" };
   } catch (error) {
     console.error("Error al editar la orden de compra:", error);
@@ -133,13 +153,19 @@ async function editarOrdenCompra(nombreOrden, productos, observaciones) {
   }
 }
 
-async function cambiarEstadoOC(numeroOrden, estado, observaciones) {
+async function cambiarEstadoOC(nombreOrden, estado, observaciones) {
   try {
     const ordenCompra = await OrdenCompra.findOne({
-      where: { numeroOrden: numeroOrden },
+      where: { nombreOrden: nombreOrden },
     });
     if (!ordenCompra) {
       return { code: 404, error: "Orden de compra no encontrada" };
+    }
+    if (ordenCompra.estado === estado) {
+      return {
+        code: 400,
+        error: "La orden de compra ya se encuentra en el estado seleccionado",
+      };
     }
     await ordenCompra.update({
       estado: estado,
@@ -147,6 +173,7 @@ async function cambiarEstadoOC(numeroOrden, estado, observaciones) {
         ? `${ordenCompra.observaciones}\n${observaciones}`
         : observaciones,
     });
+
     return {
       code: 200,
       message: "Estado de la orden de compra actualizado correctamente",

@@ -40,11 +40,11 @@ async function login(req, res) {
         .json({ code: 1011, message: "Contraseña incorrecta" });
 
     //VERIFICAR ESTADO DE LA SESSION
-    if (funcionarioEncontrado.session === true) {
-      return res
-        .status(409)
-        .json({ code: 1020, message: "Usuario ya tiene sesión activa" });
-    }
+    // if (funcionarioEncontrado.session === true) {
+    //   return res
+    //     .status(409)
+    //     .json({ code: 1020, message: "Usuario ya tiene sesión activa" });
+    // }
     //VERIFICAR ESTADO DEL USUARIO
     if (funcionarioEncontrado.estado !== "Activo") {
       return res.status(401).json({ code: 1012, message: "Usuario inactivo" });
@@ -148,11 +148,11 @@ async function loginCodigo(req, res) {
     }
 
     //VERIFICAR ESTADO DE LA SESSION
-    if (verificarFuncionario.session === true) {
-      return res
-        .status(409)
-        .json({ code: 1020, message: "Usuario ya tiene sesión activa" });
-    }
+    // if (verificarFuncionario.session === true) {
+    //   return res
+    //     .status(409)
+    //     .json({ code: 1020, message: "Usuario ya tiene sesión activa" });
+    // }
 
     //CREAR TOKEN
     const token = jwt.sign(
@@ -203,8 +203,12 @@ async function loginCodigo(req, res) {
 }
 
 async function logout(req, res) {
-  
   const { token } = req.cookies;
+  const { email } = req.body;
+  if (!email) {
+    return res.status(404).send("Email no proporcionado");
+  }
+  console.log("Token recibido en logout:", req.cookies);
   if (!token) {
     return res.status(203).send({ message: "Sin cookies" });
   }
@@ -220,7 +224,7 @@ async function logout(req, res) {
     if (funcionarioEncontrado) {
       await funcionarioEncontrado.update({
         session: false,
-        tipoSession: "Sin session",
+        tipoSession: "Sin Session",
       });
     } else {
       console.warn(

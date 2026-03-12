@@ -3,15 +3,16 @@ import URL from "../Constante";
 
 const API_URL = `${URL}/inventario`;
 
-export default async function obtenerInventarios() {
+export default async function obtenerInventarios(idSucursal = null) {
   try {
-    const response = await axios.get(`${API_URL}/buscar`, null, {
+    const params = idSucursal ? { idSucursal } : {};
+    const response = await axios.get(`${API_URL}/buscar`, {
       withCredentials: true,
+      params,
     });
-    //console.log("inventarios obtenidas:", response);
     return response;
   } catch (error) {
-    console.error("Error al obtener inventarios:", error.response.data.error);
+    console.error("Error al obtener inventarios:", error);
     if (error.response?.data?.error == undefined) {
       return { code: 500, error: "Error del servidor" };
     }

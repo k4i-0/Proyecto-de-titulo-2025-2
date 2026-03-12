@@ -93,11 +93,11 @@ Estante.belongsTo(Bodega, {
   foreignKey: "idBodega",
 });
 
-//Inventario y bodega (1:N)
-Inventario.hasMany(Bodega, {
+//Bodega -> Inventario (1:N) — una Bodega agrupa el stock de varios productos
+Bodega.hasMany(Inventario, {
   foreignKey: "idBodega",
 });
-Bodega.belongsTo(Inventario, {
+Inventario.belongsTo(Bodega, {
   foreignKey: "idBodega",
 });
 
@@ -157,13 +157,11 @@ DetalleDespacho.belongsTo(Despacho, {
   foreignKey: "idDespacho",
 });
 
-//Producto a Detalle Despacho (1:N)
-Productos.hasMany(DetalleDespacho, {
-  foreignKey: "idProducto",
-});
-DetalleDespacho.belongsTo(Productos, {
-  foreignKey: "idProducto",
-});
+// Asociación Producto ↔ DetalleDespacho eliminada:
+// idProducto fue removido de DetalleDespacho. El producto
+// ahora se registra en cada Lote (Lote.idProducto + Lote.idDetalleDespacho).
+// Productos.hasMany(DetalleDespacho, { foreignKey: "idProducto" });
+// DetalleDespacho.belongsTo(Productos, { foreignKey: "idProducto" });
 
 //Orden de compra con Despacho
 OrdenCompra.hasOne(Despacho, {
@@ -179,6 +177,12 @@ Productos.hasMany(CompraProveedorDetalle, {
 });
 CompraProveedorDetalle.belongsTo(Productos, {
   foreignKey: "idProducto",
+});
+OrdenCompra.hasMany(CompraProveedorDetalle, {
+  foreignKey: "idOrdenCompra",
+});
+CompraProveedorDetalle.belongsTo(OrdenCompra, {
+  foreignKey: "idOrdenCompra",
 });
 
 // ========== tablas 1:n Modulo Usuarios ==========
@@ -258,7 +262,7 @@ Descuento.belongsTo(VentaCliente, {
 // GeneraDespacho.belongsTo(Proveedor, { foreignKey: "idProveedor" });
 
 //Compra
-OrdenCompra.hasOne(CreaOrdenCompra, { foreignKey: "idOrden" });
+OrdenCompra.hasOne(CreaOrdenCompra, { foreignKey: "idOrdenCompra" });
 Proveedor.hasMany(CreaOrdenCompra, { foreignKey: "idProveedor" });
 Sucursal.hasMany(CreaOrdenCompra, { foreignKey: "idSucursal" });
 Funcionario.hasMany(CreaOrdenCompra, {
@@ -270,7 +274,7 @@ Funcionario.hasMany(CreaOrdenCompra, {
   as: "administrador",
 });
 
-CreaOrdenCompra.belongsTo(OrdenCompra, { foreignKey: "idOrden" });
+CreaOrdenCompra.belongsTo(OrdenCompra, { foreignKey: "idOrdenCompra" });
 CreaOrdenCompra.belongsTo(Proveedor, { foreignKey: "idProveedor" });
 CreaOrdenCompra.belongsTo(Sucursal, { foreignKey: "idSucursal" });
 CreaOrdenCompra.belongsTo(Funcionario, {

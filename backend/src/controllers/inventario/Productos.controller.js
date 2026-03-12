@@ -14,25 +14,21 @@ const jwt = require("jsonwebtoken");
 exports.createProducto = async (req, res) => {
   try {
     const {
-      idProducto,
       codigo,
       nombre,
       marca,
-      precioCompra,
       precioVenta,
       peso,
-      estado,
       descripcion,
       nameCategoria,
     } = req.body;
+
     if (
-      !idProducto ||
       !codigo ||
+      !precioVenta ||
       !nombre ||
       !marca ||
-      !precioCompra ||
       !peso ||
-      !precioVenta ||
       !nameCategoria
     ) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
@@ -50,17 +46,15 @@ exports.createProducto = async (req, res) => {
     }
 
     const nuevoProducto = await Producto.create({
-      idProducto,
       codigo,
       nombre,
       marca,
-      estado,
-      precioCompra,
-      precioVenta,
+      estado: "Activo",
       peso,
       fechaCreacion: new Date(),
       descripcion,
       idCategoria: categoriaExistente[0].dataValues.idCategoria,
+      precioVenta,
     });
     if (!nuevoProducto) {
       res.status(500).json({ error: "Error al crear el producto" });
@@ -185,7 +179,6 @@ exports.updateProducto = async (req, res) => {
       codigo,
       nombre,
       marca,
-      precioCompra,
       precioVenta,
       peso,
       descripcion,
@@ -213,7 +206,6 @@ exports.updateProducto = async (req, res) => {
         nombre,
         marca,
         descripcion,
-        precioCompra,
         precioVenta,
         peso,
         estado,
@@ -221,7 +213,7 @@ exports.updateProducto = async (req, res) => {
       },
       {
         where: { idProducto: req.params.id },
-      }
+      },
     );
 
     const updatedProducto = await Producto.findByPk(req.params.id);

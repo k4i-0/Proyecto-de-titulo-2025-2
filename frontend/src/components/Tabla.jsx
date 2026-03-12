@@ -108,7 +108,7 @@ export default function DataTable({
                 </Text>
               )}
             </Col>
-            {headerButtons && <Col>{headerButtons}</Col>}
+            {/* {headerButtons && <Col>{headerButtons}</Col>} */}
           </Row>
         </div>
       )}
@@ -121,102 +121,102 @@ export default function DataTable({
           boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
         }}
       >
-      {/* 1. Botones de Acción (Header) */}
-      {headerButtons && (
+        {/* 1. Botones de Acción (Header) */}
+        {headerButtons && (
+          <Row
+            justify="space-between"
+            align="middle"
+            style={{ marginBottom: 16 }}
+          >
+            <Col span={24}>{headerButtons}</Col>
+          </Row>
+        )}
+
+        {/* 2. Barra de Filtros */}
         <Row
-          justify="space-between"
+          justify="start"
           align="middle"
+          gutter={[16, 16]}
           style={{ marginBottom: 16 }}
         >
-          <Col span={24}>{headerButtons}</Col>
-        </Row>
-      )}
-
-      {/* 2. Barra de Filtros */}
-      <Row
-        justify="start"
-        align="middle"
-        gutter={[16, 16]}
-        style={{ marginBottom: 16 }}
-      >
-        {/* Buscador General */}
-        <Col xs={24} sm={12} md={8}>
-          <Input
-            placeholder="Buscar..."
-            prefix={<SearchOutlined />}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            allowClear
-          />
-        </Col>
-
-        {/* Filtros Dinámicos (Dropdowns) */}
-        {filterConfig.map((filter) => (
-          <Col xs={12} sm={6} md={4} key={filter.key}>
-            <Select
-              placeholder={filter.placeholder}
-              style={{ width: "100%" }}
-              value={activeFilters[filter.key]}
-              onChange={(value) => handleFilterChange(filter.key, value)}
+          {/* Buscador General */}
+          <Col xs={24} sm={12} md={8}>
+            <Input
+              placeholder="Buscar..."
+              prefix={<SearchOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
               allowClear
-              options={filter.options}
             />
           </Col>
-        ))}
 
-        {/* Botón Limpiar */}
-        <Col xs={12} sm={6} md={4}>
-          <Button
-            icon={<FilterOutlined />}
-            onClick={handleLimpiarFiltros}
-            block
-            disabled={!searchText && Object.keys(activeFilters).length === 0}
-          >
-            Limpiar
-          </Button>
-        </Col>
+          {/* Filtros Dinámicos (Dropdowns) */}
+          {filterConfig.map((filter) => (
+            <Col xs={12} sm={6} md={4} key={filter.key}>
+              <Select
+                placeholder={filter.placeholder}
+                style={{ width: "100%" }}
+                value={activeFilters[filter.key]}
+                onChange={(value) => handleFilterChange(filter.key, value)}
+                allowClear
+                options={filter.options}
+              />
+            </Col>
+          ))}
 
-        {/* Contador de resultados */}
-        {(searchText || Object.keys(activeFilters).length > 0) && (
-          <Col span={24}>
-            <Text type="secondary">
-              Mostrando {filteredData.length} de {data.length} registros
-            </Text>
+          {/* Botón Limpiar */}
+          <Col xs={12} sm={6} md={4}>
+            <Button
+              icon={<FilterOutlined />}
+              onClick={handleLimpiarFiltros}
+              block
+              disabled={!searchText && Object.keys(activeFilters).length === 0}
+            >
+              Limpiar
+            </Button>
           </Col>
-        )}
-      </Row>
 
-      {/* 3. Tabla Ant Design */}
-      <Table
-        dataSource={filteredData}
-        columns={columns}
-        rowKey={rowKey}
-        loading={loading}
-        bordered
-        size="middle"
-        pagination={
-          pagination
-            ? {
-                pageSize: 10,
-                showSizeChanger: true,
-                showTotal: (total) => `Total ${total} registros`,
-              }
-            : false
-        }
-        onRow={(record) => ({
-          onClick: () => onRowClick && onRowClick(record),
-          style: {
-            cursor: onRowClick ? "pointer" : "default",
-            backgroundColor:
-              selectedRow && selectedRow[rowKey] === record[rowKey]
-                ? "#e6f7ff"
-                : "transparent",
-            transition: "background-color 0.3s ease",
-          },
-        })}
-        summary={summaryRow}
-      />
-    </Card>
+          {/* Contador de resultados */}
+          {(searchText || Object.keys(activeFilters).length > 0) && (
+            <Col span={24}>
+              <Text type="secondary">
+                Mostrando {filteredData.length} de {data.length} registros
+              </Text>
+            </Col>
+          )}
+        </Row>
+
+        {/* 3. Tabla Ant Design */}
+        <Table
+          dataSource={filteredData}
+          columns={columns}
+          rowKey={rowKey}
+          loading={loading}
+          bordered
+          size="middle"
+          pagination={
+            pagination
+              ? {
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  showTotal: (total) => `Total ${total} registros`,
+                }
+              : false
+          }
+          onRow={(record) => ({
+            onClick: () => onRowClick && onRowClick(record),
+            style: {
+              cursor: onRowClick ? "pointer" : "default",
+              backgroundColor:
+                selectedRow && selectedRow[rowKey] === record[rowKey]
+                  ? "#e6f7ff"
+                  : "transparent",
+              transition: "background-color 0.3s ease",
+            },
+          })}
+          summary={summaryRow}
+        />
+      </Card>
     </>
   );
 }

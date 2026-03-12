@@ -1,25 +1,25 @@
 const Lote = require("../../models/inventario/Lote");
-
 const { generarCodigo } = require("../../function/generarCodigo");
 
 //---------------LOTE----------------
 async function crearLote(
   estadoLote,
   cantidad,
-  idEstante,
+  fechaVencimiento,
   idProducto,
   idDetalleDespacho,
+  idEstante,
 ) {
   try {
     const nuevoLote = await Lote.create({
       codigoLote: await generarCodigo("lote"),
       fechaCreacion: new Date(),
-      fechaVencimiento: new Date(
-        new Date().setFullYear(new Date().getFullYear() + 1),
-      ), // 1 año de vencimiento
+      fechaVencimiento:
+        fechaVencimiento ||
+        new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // 1 año de vencimiento
       estado: estadoLote,
       cantidad: cantidad,
-      idEstante: idEstante,
+      idEstante: idEstante || null,
       idProducto: idProducto,
       idDetalleDespacho: idDetalleDespacho,
     });

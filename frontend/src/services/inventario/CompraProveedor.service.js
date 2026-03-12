@@ -153,3 +153,21 @@ export async function buscarTodasOrdenesParaRecepcion(rutProveedor) {
     return error.response.data;
   }
 }
+
+// Recepcionar una orden de compra directa
+export async function recepcionarOrdenCompraDirecta(nombreOrden, datos) {
+  try {
+    const response = await axios.put(
+      `${API_URL}/ocdirecta/${nombreOrden}/recepcionar`,
+      datos,
+      { withCredentials: true },
+    );
+    return response;
+  } catch (error) {
+    console.error("Error al recepcionar la orden de compra directa:", error);
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response.data;
+  }
+}

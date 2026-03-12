@@ -2,6 +2,7 @@ import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { Spin } from "antd";
+import Cookies from "js-cookie";
 
 const ProtectedRoute = ({
   allowedRoles,
@@ -27,7 +28,11 @@ const ProtectedRoute = ({
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/cajas/login" replace fullscreen />;
+    const modoCaja = Cookies.get("modoCaja");
+    if (modoCaja === "true") {
+      return <Navigate to="/cajas/login" replace fullscreen />;
+    }
+    return <Navigate to="/login" replace fullscreen />;
   }
 
   const userRole = user?.nombreRol;

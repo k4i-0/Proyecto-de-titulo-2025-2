@@ -5,6 +5,7 @@ const producto = sequelize.define(
   "productos",
   {
     idProducto: {
+      // Numero Producto de Uso Interno (CUI)
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
@@ -24,6 +25,14 @@ const producto = sequelize.define(
       allowNull: false,
     },
     peso: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
+    precioVenta: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
+    precioCompra: {
       type: DataTypes.FLOAT,
       allowNull: true,
     },
@@ -53,7 +62,7 @@ const producto = sequelize.define(
   {
     tableName: "productos",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = producto;

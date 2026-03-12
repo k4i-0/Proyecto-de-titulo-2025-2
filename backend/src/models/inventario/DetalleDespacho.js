@@ -46,14 +46,8 @@ const detalledespacho = sequelize.define(
         key: "idDespacho",
       },
     },
-    idProducto: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "productos",
-        key: "idProducto",
-      },
-    },
+    // idProducto eliminado: el producto se registra en cada Lote (Lote.idProducto),
+    // permitiendo 1 DetalleDespacho → N Lotes (uno por producto recibido).
   },
   { tableName: "detalledespacho", timestamps: true },
 );

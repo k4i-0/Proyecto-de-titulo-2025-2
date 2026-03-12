@@ -39,30 +39,27 @@ const inventario = sequelize.define(
       allowNull: false,
       defaultValue: "Bueno",
     },
-
-    // idBodega: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    //   references: {
-    //     model: "bodega",
-    //     key: "idBodega",
-    //   },
-    //   onDelete: "CASCADE",
-    // },
-    // idProducto: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    //   references: {
-    //     model: "producto",
-    //     key: "idProducto",
-    //   },
-    //   onDelete: "CASCADE",
-    // },
+    idProducto: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "productos",
+        key: "idProducto",
+      },
+    },
+    idBodega: {
+      type: DataTypes.INTEGER,
+      allowNull: true, // null si aún no se asignó a una bodega
+      references: {
+        model: "bodega",
+        key: "idBodega",
+      },
+    },
   },
   {
     tableName: "inventario",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = inventario;

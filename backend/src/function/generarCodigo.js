@@ -11,10 +11,9 @@ async function generarCodigo(tipo) {
       order: [["idOrdenCompra", "DESC"]],
     });
     if (ultimoOrdenCompra) {
-      const ultimoCodigo = parseInt(
-        ultimoOrdenCompra.codigoOrdenCompra.slice(-8),
-      );
+      const ultimoCodigo = parseInt(ultimoOrdenCompra.nombreOrden.slice(-8));
       const nuevoCodigo = `OC${new Date().getFullYear()}${String(ultimoCodigo + 1).padStart(8, "0")}`;
+      console.log("nuevoCodigo:", nuevoCodigo);
       return nuevoCodigo;
     }
     return `OC${new Date().getFullYear()}00000001`;

@@ -26,13 +26,13 @@ const estante = sequelize.define(
     },
     estado: {
       type: DataTypes.ENUM(
-        "Disponible",
-        "Inhabilitado",
-        "Mantenimiento",
-        "Completo",
-        "Reservado",
+        "Disponible",   // Con espacio libre para recibir lotes
+        "Completo",     // Capacidad alcanzada (set automáticamente al recepcionar)
+        "Inhabilitado", // Fuera de uso temporal
+        "Mantenimiento",// En reparación
       ),
       allowNull: false,
+      defaultValue: "Disponible",
     },
   },
   {

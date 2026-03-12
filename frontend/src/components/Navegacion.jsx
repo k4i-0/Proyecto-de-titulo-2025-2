@@ -19,7 +19,7 @@ import {
   OrderedListOutlined,
 } from "@ant-design/icons";
 
-export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
+export default function Navegacion({ nombreRol, onLogout }) {
   const [collapsed, setCollapsed] = useState(true);
   const navigate = useNavigate();
   const siderRef = useRef(null);
@@ -107,7 +107,7 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                       key: "compra_directa",
                       label: "Compra Directa",
                       icon: <InboxOutlined />,
-                      onClick: () => navigate("gestion/compra_directa"),
+                      onClick: () => navigate("/admin/gestion/compra_directa"),
                     },
                   ],
                 },
@@ -120,7 +120,8 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                       key: "recepcionar_compra_directa",
                       label: "Recepcionar Compra Directa",
                       icon: <InboxOutlined />,
-                      onClick: () => navigate("gestion/recepcionar_compra_directa"),
+                      onClick: () =>
+                        navigate("/admin/gestion/recepcionar_compra_directa"),
                     },
                     {
                       key: "devolucion_ordenes_compra",
@@ -138,7 +139,7 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                   key: "inventario",
                   label: "Inventario",
                   icon: <InboxOutlined />,
-                  onClick: () => navigate("inventario"),
+                  onClick: () => navigate("/admin/inventario"),
                 },
               ],
             },
@@ -151,25 +152,25 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                   key: "sucursales",
                   label: "Sucursales",
                   icon: <BankOutlined />,
-                  onClick: () => navigate("sucursales"),
+                  onClick: () => navigate("/admin/sucursales"),
                 },
                 {
                   key: "productos",
                   label: "Productos",
                   icon: <ProductOutlined />,
-                  onClick: () => navigate("productos"),
+                  onClick: () => navigate("/admin/productos"),
                 },
                 {
                   key: "categorias",
                   label: "Categorías",
                   icon: <TagsOutlined />,
-                  onClick: () => navigate("categorias"),
+                  onClick: () => navigate("/admin/categorias"),
                 },
                 {
                   key: "proveedores",
                   label: "Proveedores",
                   icon: <InboxOutlined />,
-                  onClick: () => navigate("proveedores"),
+                  onClick: () => navigate("/admin/proveedores"),
                 },
                 {
                   key: "colaboradores",
@@ -180,13 +181,14 @@ export default function Navegacion({ nombreRol, onLogout, colorBgContainer }) {
                       icon: <UserAddOutlined />,
                       key: "Gestion_colaboradores",
                       label: "Gestion Colaborador",
-                      onClick: () => navigate("gestion/colaboradores"),
+                      onClick: () => navigate("/admin/gestion/colaboradores"),
                     },
                     {
                       icon: <UsergroupAddOutlined />,
                       key: "Contratos_colaboradores",
                       label: "Trabajadores por sucursal",
-                      onClick: () => navigate("gestion/colaboradores/sucursal"),
+                      onClick: () =>
+                        navigate("/admin/gestion/colaboradores/sucursal"),
                     },
                     {
                       key: "Roles_Permisos",

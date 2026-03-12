@@ -1,10 +1,11 @@
 const Estante = require("../../models/inventario/Estante");
+const Bodega = require("../../models/inventario/Bodega");
 const jwt = require("jsonwebtoken");
 
 exports.getAllEstantes = async (req, res) => {
   try {
     const estantes = await Estante.findAll({});
-    if (estantes.length === 0 || !sucursales) {
+    if (estantes.length === 0) {
       return res.status(204).json({ message: "No hay estantes registrados" });
     }
     res.status(200).json(estantes);
@@ -34,29 +35,30 @@ exports.getEstanteByIdBodega = async (req, res) => {
 
 exports.createEstante = async (req, res) => {
   const { codigo, tipo, estado, capacidad, idBodega } = req.body;
-  // console.log(req.body);
   if (!codigo || !tipo || !estado || !idBodega) {
     return res
       .status(422)
       .json({ error: "Faltan datos obligatorios para crear el estante" });
   }
-
-  //verificar que no exista un estante con el mismo codigo en la misma bodega
-  const busquedaEstante = await Estante.findOne({
-    where: { codigo, idBodega },
-  });
-  if (busquedaEstante) {
-    return res.status(422).json({ error: "Estante ya existe" });
-  }
-
-  //verificar que exista la bodega
-  const busquedaBodega = await Bodega.findByPk(idBodega);
-  if (!busquedaBodega) {
-    return res.status(422).json({ error: "Bodega no encontrada" });
-  }
   try {
+    // Verificar que no exista un estante con el mismo código en la misma bodega
+    const busquedaEstante = await Estante.findOne({
+      where: { codigoEstante: codigo, idBodega },
+    });
+    if (busquedaEstante) {
+      return res
+        .status(422)
+        .json({ error: "Ya existe un estante con ese código en esta bodega" });
+    }
+
+    // Verificar que exista la bodega
+    const busquedaBodega = await Bodega.findByPk(idBodega);
+    if (!busquedaBodega) {
+      return res.status(422).json({ error: "Bodega no encontrada" });
+    }
+
     const nuevoEstante = await Estante.create({
-      codigo,
+      codigoEstante: codigo,
       tipo,
       estado,
       capacidad,
@@ -95,7 +97,7 @@ exports.updateEstante = async (req, res) => {
         idBodega,
         idInventario: estante.dataValues.idInventario,
       },
-      { where: { idEstante: id } }
+      { where: { idEstante: id } },
     );
     console.log("Estante actualizado:", updatedEstante);
     res.status(200).json(updatedEstante);

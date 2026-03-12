@@ -6,110 +6,13 @@ import ProtectedRoute from "./context/ProteccionRutas.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 //import "bootstrap/dist/css/bootstrap.min.css";
 
-import NoEncontrado from "./pages/NoEncontrado.jsx";
-
-//inicio de sesion
-import Login from "./pages/login.jsx";
-import LoginCodigo from "./pages/LoginCodigo.jsx";
-import RedireccionPorRol from "./pages/RedireccionPorRol.jsx";
-
-//admin
-import DashboardAdmin from "./pages/DashboardAdmin.jsx";
-import Bodega from "./pages/Bodega.jsx";
-
-import "./styles/main.css";
-import Inicio from "./pages/Inicio.jsx";
-import Sucursal from "./pages/Sucursal.jsx";
-import SucursalDetalle from "./pages/SucursalDetalle.jsx";
-import Productos from "./pages/Productos.jsx";
-import Inventario from "./pages/Inventario.jsx";
-import Categoria from "./pages/Categoria.jsx";
-import Proveedor from "./pages/Proveedor.jsx";
-import Vendedores from "./pages/Vendedores.jsx";
-import Proveedores from "./pages/Proveedores.jsx";
-
-//vendedor
-import DashboardVendedor from "./pages/Vendedor/DashboardVendedor.jsx";
-import InicioVendedor from "./pages/Vendedor/InicioVendedor.jsx";
-import AprovisionamientoProveedor from "./pages/Vendedor/AprovicionamientoProveedor.jsx";
-
-//Gestiones admin
-import GestionColaborador from "./pages/Gestion/Gestion Colaboradores/GestionColaborador.jsx";
-
-//ordenes de compra
-import OrdenesCompra from "./pages/Gestion/Ordenes Compra/OrdenesCompra.jsx";
-import CompraDirecta from "./pages/Gestion/Ordenes Compra/CompraDirecta.jsx";
-import RecepcionOrdenCompraDirecta from "./pages/Gestion/RecepcionProveedores/RecepcionOrdenCompraDirecta.jsx";
-
-//Pruebas
-import Pruebas from "./pages/Pruebas.jsx";  
+import AppRouter from "./router/AppRouter.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/cajas/login" element={<LoginCodigo />} />
-
-          <Route path="/login" element={<Login />} />
-
-          <Route path="/" element={<RedireccionPorRol />} />
-
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={["Administrador"]}>
-                <DashboardAdmin />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Inicio />} />
-            <Route path="sucursales" element={<Sucursal />} />
-            <Route path="sucursal/:idSucursal" element={<SucursalDetalle />} />
-            <Route path="bodega/:idSucursal" element={<Bodega />} />
-            <Route path="productos" element={<Productos />} />
-            <Route path="inventario" element={<Inventario />} />
-
-            <Route path="categorias" element={<Categoria />} />
-            <Route path="proveedores" element={<Proveedores />} />
-
-            {/* Gestiones */}
-            <Route
-              path="gestion/colaboradores"
-              element={<GestionColaborador />}
-            />
-            <Route
-              path="gestion/colaboradores/sucursal"
-              element={<Pruebas />}
-            />
-
-            {/**orden compras */}
-            <Route path="gestion/compra_directa" element={<CompraDirecta />} />
-
-            {/*Recepcion Orden de compra */}
-            <Route
-              path="gestion/recepcionar_compra_directa"
-              element={<RecepcionOrdenCompraDirecta />}
-            />
-
-            {/**Pruebas Codigo - Deshabilitar */}
-            <Route path="pruebas" element={<Pruebas />} />
-          </Route>
-
-          <Route
-            path="/vendedor"
-            element={
-              <ProtectedRoute allowedRoles={["Vendedor"]}>
-                <DashboardVendedor />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<InicioVendedor />} />
-            <Route path="compra" element={<AprovisionamientoProveedor />} />
-          </Route>
-
-          <Route path="*" element={<NoEncontrado />} />
-        </Routes>
+        <AppRouter />
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
