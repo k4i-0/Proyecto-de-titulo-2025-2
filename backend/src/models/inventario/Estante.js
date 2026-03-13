@@ -16,9 +16,20 @@ const estante = sequelize.define(
       allowNull: false,
       unique: true,
     },
+    /// Unidades almacenadas en el estante
     capacidad: {
       type: DataTypes.INTEGER,
       allowNull: false,
+    },
+    capacidadOcupada: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
+    },
+    capacidadDisponible: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
     },
     tipo: {
       type: DataTypes.ENUM("Maquina", "Estante", "Lugar de Piso", "Otro"),
@@ -26,10 +37,10 @@ const estante = sequelize.define(
     },
     estado: {
       type: DataTypes.ENUM(
-        "Disponible",   // Con espacio libre para recibir lotes
-        "Completo",     // Capacidad alcanzada (set automáticamente al recepcionar)
+        "Disponible", // Con espacio libre para recibir lotes
+        "Completo", // Capacidad alcanzada (set automáticamente al recepcionar)
         "Inhabilitado", // Fuera de uso temporal
-        "Mantenimiento",// En reparación
+        "Mantenimiento", // En reparación
       ),
       allowNull: false,
       defaultValue: "Disponible",

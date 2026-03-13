@@ -16,11 +16,7 @@ import { crearEstante } from "../../../../services/inventario/Estante.service";
 // Opciones para los Selects (puedes moverlas o cambiarlas)
 const { Option } = Select;
 const tiposEstante = ["Maquina", "Estante", "Lugar de Piso", "Otro"];
-const estadosEstante = [
-  "Disponible",
-  "Inhabilitado",
-  "Mantenimiento",
-];
+const estadosEstante = ["Disponible", "Inhabilitado", "Mantenimiento"];
 
 export default function CrearEstante({
   show,
@@ -61,6 +57,7 @@ export default function CrearEstante({
 
     try {
       const resultado = await crearEstante(datosEstante);
+
       if (resultado.status === 201) {
         setMensaje("Estante creado exitosamente");
         setError(false);
@@ -69,21 +66,15 @@ export default function CrearEstante({
           handleCerrarModal();
         }, 1200);
       } else if (resultado.status === 422) {
-        setMensaje(
-          "Datos duplicados o inválidos: " +
-            (resultado.data?.message ||
-              resultado.error ||
-              "Error desconocido."),
-        );
+        setMensaje(resultado.data?.error || "Error desconocido.");
         setError(true);
       }
     } catch (error) {
       setError(true);
       setMensaje(
-        error.response?.data?.message ||
-          "Error de conexión al crear el estante.",
+        error.response?.data?.error || "Error de conexión al crear el estante.",
       );
-      console.error(error);
+      //console.error(error);
     } finally {
       setLoading(false);
     }

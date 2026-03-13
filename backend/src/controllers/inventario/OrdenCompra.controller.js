@@ -35,6 +35,10 @@ const {
 } = require("../../services/inventario/detalleDespacho.service");
 const { crearLote } = require("../../services/inventario/lote.service");
 
+const {
+  asociarProductosProveedor,
+} = require("../../services/inventario/proveedor.service");
+
 ///------------------------funciones importantes------------------------///
 // Crear una nueva compra a proveedor
 exports.crearOrdenCompraProveedor = async (req, res) => {
@@ -243,6 +247,15 @@ exports.createOrdenCompraDirecta = async (req, res) => {
     const rDetalle = await crearDetalleOC(productos, r.data.idOrdenCompra);
     if (rDetalle.code !== 201) {
       return res.status(rDetalle.code).json({ error: rDetalle.error });
+    }
+
+    //asocia productos a proveedor
+    const rAsociar = await asociarProductosProveedor(
+      productos,
+      comprobarProveedor.idProveedor,
+    );
+    if (rAsociar.code !== 201) {
+      return res.status(rAsociar.code).json({ error: rAsociar.error });
     }
 
     // Si todo sale bien, actualizar el estado de la orden a pendiente recibir
@@ -600,7 +613,7 @@ exports.recepcionarOrdenCompraDirecta = async (req, res) => {
       });
     }
 
-    // 5. Crear 1 Lote por producto recibido + asignar estante + actualizar Inventario
+    //5. Crear 1 Lote por producto recibido + asignar estante + actualizar Inventario
     for (const prod of productos) {
       if (!prod.idProducto || Number(prod.cantidadRecibida) <= 0) continue;
 

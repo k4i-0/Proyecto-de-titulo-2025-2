@@ -194,7 +194,7 @@ export default function GestionEstantes({ bodegaId }) {
       key: "tipo",
     },
     {
-      title: "Capacidad",
+      title: "Capacidad (Unidades)",
       dataIndex: "capacidad",
       key: "capacidad",
     },

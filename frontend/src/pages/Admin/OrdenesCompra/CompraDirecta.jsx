@@ -30,7 +30,7 @@ import {
   InboxOutlined,
 } from "@ant-design/icons";
 
-import dayjs from "dayjs";
+// import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -42,12 +42,10 @@ import { useAuth } from "../../../context/AuthContext";
 import { getAllProveedores } from "../../../services/inventario/Proveedor.service";
 import obtenerSucursales from "../../../services/inventario/Sucursal.service";
 import { anularOrdenCompraDirecta } from "../../../services/inventario/CompraProveedor.service";
-import { obtenerProductosPorProveedor } from "../../../services/inventario/Productos.service";
+import obtenerProductos from "../../../services/inventario/Productos.service";
 import {
   crearOrdenCompraDirecta,
   obtenerOrdenesCompraDirecta,
-  cancelarOrdenCompra,
-  cambiarEstadoOrdenCompra,
   editarOrdenCompraProveedor,
   recepcionarOrdenCompraDirecta,
 } from "../../../services/inventario/CompraProveedor.service";
@@ -180,10 +178,10 @@ export default function CompraDirecta() {
     }
   };
 
-  const cargarProductos = async (rutProveedor) => {
+  const cargarProductos = async () => {
     try {
       setLoading(true);
-      const response = await obtenerProductosPorProveedor(rutProveedor);
+      const response = await obtenerProductos();
       console.log("Productos obtenidos en OC Directa:", response);
       if (response.status === 304) return;
       if (response.status === 200) {
@@ -230,7 +228,7 @@ export default function CompraDirecta() {
   };
 
   const handleAgregarProducto = () => {
-    console.log("Agregar Producto:", formProducto.getFieldsValue());
+    //console.log("Agregar Producto:", formProducto.getFieldsValue());
     const productoAgregar = formProducto.getFieldsValue();
 
     if (
@@ -266,7 +264,7 @@ export default function CompraDirecta() {
       subtotal: productoAgregar.cantidad * productoAgregar.precioUnitario,
     };
 
-    console.log("Nuevo Producto a agregar:", nuevoProducto);
+    //console.log("Nuevo Producto a agregar:", nuevoProducto);
     setProductosOrdenDirecta([...productosOrdenDirecta, nuevoProducto]);
     formProducto.resetFields();
     notification.success({
@@ -279,7 +277,8 @@ export default function CompraDirecta() {
 
   const accionDrawerAgregarProducto = () => {
     setDrawerVisible(true);
-    cargarProductos(form.getFieldValue("rutProveedor"));
+    cargarProductos();
+    //form.getFieldValue("rutProveedor")
   };
 
   const cerrarDrawerAgregarProducto = () => {
@@ -1806,7 +1805,10 @@ export default function CompraDirecta() {
       >
         <Form form={formRecepcionar} layout="vertical">
           {/* ── Sección 1: Datos del Despacho ── */}
-          <Divider orientation="left" style={{ color: "#1890ff", fontWeight: 600 }}>
+          <Divider
+            orientation="left"
+            style={{ color: "#1890ff", fontWeight: 600 }}
+          >
             Datos del Documento de Recepción
           </Divider>
           <Row gutter={[16, 0]}>
@@ -1847,13 +1849,19 @@ export default function CompraDirecta() {
             </Col>
             <Col xs={24} md={6}>
               <Form.Item label="Observaciones" name="observacionesDespacho">
-                <Input.TextArea rows={1} placeholder="Observaciones generales" />
+                <Input.TextArea
+                  rows={1}
+                  placeholder="Observaciones generales"
+                />
               </Form.Item>
             </Col>
           </Row>
 
           {/* ── Sección 2: Detalle de productos ── */}
-          <Divider orientation="left" style={{ color: "#1890ff", fontWeight: 600 }}>
+          <Divider
+            orientation="left"
+            style={{ color: "#1890ff", fontWeight: 600 }}
+          >
             Detalle del Despacho
           </Divider>
           <Table

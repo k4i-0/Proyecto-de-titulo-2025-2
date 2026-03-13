@@ -23,10 +23,26 @@ const provee = sequelize.define(
       type: DataTypes.DATE,
       allowNull: false,
     },
+    idProducto: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "productos",
+        key: "idProducto",
+      },
+    },
+    idProveedor: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "proveedor",
+        key: "idProveedor",
+      },
+    },
   },
   {
     tableName: "provee",
     timestamps: false,
-  }
+  },
 );
 module.exports = provee;

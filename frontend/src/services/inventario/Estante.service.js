@@ -40,11 +40,11 @@ export async function crearEstante(estanteData) {
     });
     return response;
   } catch (error) {
-    console.error("Error al crear el estante:", error);
+    //console.error("Error al crear el estante:", error);
     if (error.response?.data?.error == undefined) {
       return { code: 500, error: "Error del servidor" };
     }
-    return error.response.data;
+    return error.response;
   }
 }
 
@@ -55,7 +55,7 @@ export async function editarEstante(estanteData, id) {
       estanteData,
       {
         withCredentials: true,
-      }
+      },
     );
     return response;
   } catch (error) {

@@ -6,12 +6,12 @@ import { editarEstante } from "../../../../services/inventario/Estante.service";
 // Opciones para los Selects (igual que en CrearEstante)
 const { Option } = Select;
 const tiposEstante = ["Maquina", "Estante", "Lugar de Piso", "Otro"];
-const estadosEstante = [
-  "Habilitado",
-  "Inhabilitado",
-  "Mantenimiento",
-  "Reservado",
-];
+// const estadosEstante = [
+//   "Habilitado",
+//   "Inhabilitado",
+//   "Mantenimiento",
+//   "Reservado",
+// ];
 
 export default function EditarEstante({
   estante,
@@ -27,9 +27,8 @@ export default function EditarEstante({
   useEffect(() => {
     if (show && estante) {
       form.setFieldsValue({
-        codigo: estante.codigo,
+        codigoEstante: estante.codigoEstante,
         tipo: estante.tipo,
-        estado: estante.estado,
         capacidad: estante.capacidad,
         idBodega: estante.idBodega,
       });
@@ -47,9 +46,8 @@ export default function EditarEstante({
     // Datos que se enviarán a la API
 
     const formData = {
-      codigo: values.codigo,
+      codigo: values.codigoEstante,
       tipo: values.tipo,
-      estado: values.estado,
       capacidad: Number(values.capacidad),
       idBodega: values.idBodega,
     };
@@ -130,7 +128,7 @@ export default function EditarEstante({
       >
         <Form.Item
           label="Código de Estante"
-          name="codigo"
+          name="codigoEstante"
           rules={[{ required: true, message: "Por favor ingrese un código" }]}
         >
           <Input placeholder="Ej: A-01-N1" />
@@ -153,7 +151,7 @@ export default function EditarEstante({
           <Input placeholder="Ingrese Capacidad" />
         </Form.Item>
 
-        <Form.Item
+        {/* <Form.Item
           label="Estado"
           name="estado"
           rules={[
@@ -167,7 +165,7 @@ export default function EditarEstante({
               </Option>
             ))}
           </Select>
-        </Form.Item>
+        </Form.Item> */}
 
         <Form.Item label="Bodega de Pertenencia (ID)" name="idBodega">
           <Input disabled />
