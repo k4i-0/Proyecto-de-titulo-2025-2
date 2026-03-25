@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { Alert, Button, Form, Modal, Input, Select } from "antd";
+import { Alert, Button, Form, Modal, Input, Select, AutoComplete } from "antd";
+
+import { useDebouncedCallback } from "use-debounce";
 
 import { editarSucursal } from "../../../../services/inventario/Sucursal.service";
 
@@ -13,6 +15,41 @@ export default function EditarSucursal({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [opciones, setOpciones] = useState([]);
+  const [cargando, setCargando] = useState(false);
+
+  const buscarDireccion = useDebouncedCallback(async (texto) => {
+    if (!texto || texto.length < 3) return setOpciones([]);
+
+    setCargando(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?` +
+          new URLSearchParams({
+            q: texto,
+            format: "jsonv2",
+            countrycodes: "cl",
+            limit: 5,
+            addressdetails: 1,
+          }),
+        { headers: { "Accept-Language": "es" } },
+      );
+
+      const data = await res.json();
+      setOpciones(
+        data.map((lugar) => ({
+          value: lugar.display_name,
+          label: lugar.display_name,
+          data: lugar,
+        })),
+      );
+    } catch (error) {
+      console.error("Error buscando dirección:", error);
+    } finally {
+      setCargando(false);
+    }
+  }, 500);
 
   useEffect(() => {
     //console.log("Sucursal para editar cambiada:", sucursal);
@@ -120,7 +157,12 @@ export default function EditarSucursal({
             { required: true, message: "Por favor ingrese la dirección" },
           ]}
         >
-          <Input placeholder="Ingrese dirección" />
+          <AutoComplete
+            options={opciones}
+            onSearch={buscarDireccion}
+            placeholder="Ingrese una dirección"
+            notFoundContent={cargando ? "Buscando..." : "Sin resultados"}
+          />
         </Form.Item>
 
         <Form.Item

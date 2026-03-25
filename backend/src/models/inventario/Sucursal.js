@@ -14,7 +14,7 @@ const sucursal = sequelize.define(
       allowNull: false,
     },
     direccion: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING(500),
       allowNull: true,
     },
     estado: {
@@ -26,7 +26,7 @@ const sucursal = sequelize.define(
   {
     tableName: "sucursal",
     timestamps: true,
-  }
+  },
 );
 
 module.exports = sucursal;

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
 import {
   Row,
   Col,
@@ -12,6 +13,7 @@ import {
   Checkbox,
   Divider,
   Space,
+  AutoComplete,
 } from "antd";
 import { PlusOutlined, MinusCircleOutlined } from "@ant-design/icons";
 
@@ -29,6 +31,41 @@ export default function AgregarSucursal({
   const [error, setError] = useState(false);
   const [agregarBodega, setAgregarBodega] = useState(false); // Estado para controlar si se agrega bodega
 
+  const [opciones, setOpciones] = useState([]);
+  const [cargando, setCargando] = useState(false);
+
+  const buscarDireccion = useDebouncedCallback(async (texto) => {
+    if (!texto || texto.length < 3) return setOpciones([]);
+
+    setCargando(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?` +
+          new URLSearchParams({
+            q: texto,
+            format: "jsonv2",
+            countrycodes: "cl",
+            limit: 5,
+            addressdetails: 1,
+          }),
+        { headers: { "Accept-Language": "es" } },
+      );
+
+      const data = await res.json();
+      setOpciones(
+        data.map((lugar) => ({
+          value: lugar.display_name,
+          label: lugar.display_name,
+          data: lugar,
+        })),
+      );
+    } catch (error) {
+      console.error("Error buscando dirección:", error);
+    } finally {
+      setCargando(false);
+    }
+  }, 500);
+
   const handleSubmit = async (values) => {
     setLoading(true);
     setMensaje("");
@@ -40,6 +77,7 @@ export default function AgregarSucursal({
       estado: values.estadoSucursal,
     };
 
+    console.log("Datos de la sucursal:", datosSucursal);
     try {
       const resultado = await crearSucursal(datosSucursal);
 
@@ -106,6 +144,11 @@ export default function AgregarSucursal({
     setAgregarBodega(false);
     form.resetFields();
     handleClose();
+  };
+
+  const onSelectDireccion = (value, option) => {
+    console.log(value);
+    form.setFieldsValue({ direccion: option.value });
   };
 
   return (
@@ -191,7 +234,13 @@ export default function AgregarSucursal({
                   { required: true, message: "Por favor ingrese la dirección" },
                 ]}
               >
-                <Input placeholder="Ingrese dirección de la sucursal" />
+                <AutoComplete
+                  options={opciones}
+                  onSelect={onSelectDireccion}
+                  onSearch={buscarDireccion}
+                  placeholder="Ingrese una dirección"
+                  notFoundContent={cargando ? "Buscando..." : "Sin resultados"}
+                />
               </Form.Item>
             </Col>
           </Row>
