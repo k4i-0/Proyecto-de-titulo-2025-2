@@ -10,7 +10,7 @@ const { desencriptar } = require("../config/AES");
 async function login(req, res) {
   const { email, password } = req.body;
   if (!email || !password) {
-    res.status(203).send({ code: 1238, message: "Faltan Datos" });
+    return res.status(203).send({ code: 1238, message: "Faltan Datos" });
   }
   try {
     //BUSCO FUNCIONARIO POR EMAIL
@@ -24,9 +24,15 @@ async function login(req, res) {
     });
     //SI NO EXISTE RETURN 404
     if (!funcionarioEncontrado) {
-      res
+      return res
         .status(404)
         .send({ code: 1010, message: "Usuario No encontrado, verifique" });
+    }
+    if (funcionarioEncontrado.estado !== "Activo") {
+      return res.status(401).json({
+        code: 1012,
+        message: "Usuario inactivo, verifique con el administrador",
+      });
     }
     //COMPROBAR CONTRASEÑA
     const passwordMatch = await bcrypt.compare(
@@ -34,10 +40,18 @@ async function login(req, res) {
       funcionarioEncontrado.password,
     );
     //SI CONTRASEÑA INCORRECTA RETURN 401
-    if (!passwordMatch)
+    if (!passwordMatch) {
+      await funcionarioEncontrado.increment("intentosFallidos");
+      if (funcionarioEncontrado.intentosFallidos >= 3) {
+        await funcionarioEncontrado.update({
+          estado: "Bloqueado",
+        });
+      }
       return res
         .status(401)
         .json({ code: 1011, message: "Contraseña incorrecta" });
+    }
+    //VERIFICAR ESTADO DEL USUARIO
 
     //VERIFICAR ESTADO DE LA SESSION
     // if (funcionarioEncontrado.session === true) {
@@ -45,10 +59,6 @@ async function login(req, res) {
     //     .status(409)
     //     .json({ code: 1020, message: "Usuario ya tiene sesión activa" });
     // }
-    //VERIFICAR ESTADO DEL USUARIO
-    if (funcionarioEncontrado.estado !== "Activo") {
-      return res.status(401).json({ code: 1012, message: "Usuario inactivo" });
-    }
 
     //CREAR TOKEN
     const token = jwt.sign(
@@ -62,7 +72,9 @@ async function login(req, res) {
     );
     //SI NO SE CREA TOKEN RETURN 404
     if (!token) {
-      res.status(404).json({ code: 1013, message: "Error al crear Token" });
+      return res
+        .status(404)
+        .json({ code: 1013, message: "Error al crear Token" });
     }
 
     //REGISTRAR BITACORA ACTIVIDAD LOGIN
@@ -99,8 +111,11 @@ async function login(req, res) {
       },
     });
   } catch (error) {
-    res.status(500).send({ message: "Error interno" });
     console.log(error);
+    if (res.headersSent) {
+      return;
+    }
+    return res.status(500).send({ message: "Error interno" });
   }
 }
 
@@ -208,7 +223,7 @@ async function logout(req, res) {
   if (!email) {
     return res.status(404).send("Email no proporcionado");
   }
-  console.log("Token recibido en logout:", req.cookies);
+  //console.log("Token recibido en logout:", req.cookies);
   if (!token) {
     return res.status(203).send({ message: "Sin cookies" });
   }

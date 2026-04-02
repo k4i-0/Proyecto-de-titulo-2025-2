@@ -1,99 +1,12 @@
-/* Importar sistema de diseño personalizado */
-@import "./design-system.css";
 
-/* Reset y estilos globales */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+:root{
+    padding: 0;
+    margin: 0;
 }
 
-html, body {
-  font-family: var(--font-family);
-  font-size: var(--font-size-base);
-  color: var(--text-primary);
-  background-color: var(--bg-gray);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
+html,
+body,
 #root {
-  padding: 0;
-  margin: 0;
-  min-height: 100vh;
-}
-
-/* Mejoras para componentes de Ant Design */
-.ant-layout {
-  background: var(--bg-gray);
-}
-
-.ant-layout-header {
-  background: var(--bg-white);
-  padding: 0 var(--spacing-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.ant-card {
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-card);
-  transition: all var(--transition-base);
-}
-
-.ant-card:hover {
-  box-shadow: var(--shadow-hover);
-}
-
-.ant-btn {
-  border-radius: var(--border-radius-md);
-  font-weight: var(--font-weight-medium);
-  transition: all var(--transition-base);
-}
-
-.ant-btn-primary {
-  box-shadow: var(--shadow-sm);
-}
-
-.ant-btn-primary:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
-}
-
-.ant-menu {
-  border-radius: var(--border-radius-md);
-}
-
-.ant-menu-item,
-.ant-menu-submenu-title {
-  border-radius: var(--border-radius-sm);
-  margin: 4px 8px;
-  transition: all var(--transition-base);
-}
-
-.ant-menu-item:hover,
-.ant-menu-submenu-title:hover {
-  background-color: var(--color-primary-bg) !important;
-}
-
-.ant-menu-item-selected {
-  background-color: var(--color-primary-bg) !important;
-  color: var(--color-primary) !important;
-  font-weight: var(--font-weight-semibold);
-}
-
-/* Estilos para el dropdown del usuario */
-.user-menu-trigger:hover {
-  background-color: var(--bg-light) !important;
-}
-
-/* Transiciones suaves globales */
-a, button {
-  transition: all var(--transition-base);
-}
-
-/* Mejoras de accesibilidad */
-:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+    margin: 0;
+    padding: 0;
 }

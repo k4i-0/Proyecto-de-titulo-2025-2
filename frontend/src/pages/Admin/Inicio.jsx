@@ -1,197 +1,3 @@
-// // import { useState, useEffect } from "react";
-// import { ArrowDownOutlined, ArrowUpOutlined } from "@ant-design/icons";
-// import {
-//   Row,
-//   Col,
-//   Card,
-//   Button,
-//   Typography,
-//   Alert,
-//   Statistic,
-//   Divider,
-// } from "antd";
-
-// const { Title, Text } = Typography;
-
-// import { useAuth } from "../context/AuthContext";
-
-// // import { useNavigate } from "react-router-dom";
-
-// //funciones
-// // import obtenerSucursales from "../services/inventario/Sucursal.service";
-
-// export default function Inicio() {
-//   const { user } = useAuth();
-//   // const [flag, setFlag] = useState(false);
-//   // const [mensaje, setMensaje] = useState("");
-
-//   // const navigate = useNavigate();
-
-//   // useEffect(() => {
-//   //   const consultaSucursal = async () => {
-//   //     const respuesta = await obtenerSucursales();
-//   //     //console.log(respuesta);
-//   //     if (respuesta.status === 200) {
-//   //       setFlag(false);
-//   //       setMensaje("");
-//   //     }
-//   //     if (respuesta.status === 204) {
-//   //       setFlag(true);
-//   //       setMensaje(
-//   //         "No existen sucursales disponibles, debe crear una sucursal"
-//   //       );
-//   //     }
-//   //   };
-//   //   consultaSucursal();
-//   // }, []);
-//   return (
-//     <>
-//       <Row justify="center" align="middle" style={{ margin: 20 }}>
-//         <Title level={1}>Bienvenido {user.nombre}</Title>
-//       </Row>
-//       <Row justify="start" align="middle" gutter={16}>
-//         <Divider
-//           orientation="left"
-//           orientationMargin={0}
-//           style={{ borderColor: "#000" }}
-//         >
-//           <Title type="success" level={3}>
-//             Indicadores Diarios
-//           </Title>
-//         </Divider>
-//       </Row>
-
-//       <Row
-//         justify="center"
-//         align="middle"
-//         gutter={16}
-//         style={{ marginTop: 20, textAlign: "center" }}
-//       >
-//         <Col style={{ marginBottom: 20 }}>
-//           <Card
-//             hoverable
-//             title="Ventas Totales"
-//             style={{ width: 200, height: 180 }}
-//             variant="borderless"
-//           >
-//             <Statistic
-//               formatter={() => "20.000.000"}
-//               value={20000000}
-//               precision={0}
-//               valueStyle={{ color: "#3f8600" }}
-//               prefix="$"
-//             />
-//             <Text type="success">M</Text>
-//           </Card>
-//         </Col>
-//         <Col style={{ marginBottom: 20 }}>
-//           <Card
-//             hoverable
-//             title="Sucursales Activas"
-//             style={{ width: 200, height: 180 }}
-//           >
-//             <Title level={2}>2</Title>
-//             <Text type="success">Sucursales</Text>
-//           </Card>
-//         </Col>
-//         <Col style={{ marginBottom: 20 }}>
-//           <Card
-//             hoverable
-//             title="Productos Vendidos"
-//             style={{ width: 200, height: 180 }}
-//           >
-//             <Title level={2}>1500</Title>
-//             <Text type="success">Productos</Text>
-//           </Card>
-//         </Col>
-//         <Col style={{ marginBottom: 20 }}>
-//           <Card
-//             hoverable
-//             title="Mayor venta"
-//             style={{ width: 200, height: 180 }}
-//           >
-//             <Title level={2}>$1.500.000</Title>
-//             <Text type="success">Sucusal A</Text>
-//           </Card>
-//         </Col>
-//       </Row>
-
-//       {/* Kpis Financieros Relevantes */}
-//       <Row style={{ margin: 20 }}>
-//         <Divider orientation="left" style={{ borderColor: "#000" }}>
-//           <Title type="success" level={3}>
-//             Indicadores Financieros Mensuales
-//           </Title>
-//         </Divider>
-//       </Row>
-//       <Row
-//         justify="center"
-//         align="middle"
-//         gutter={16}
-//         style={{ marginTop: "20", textAlign: "center" }}
-//       >
-//         <Col style={{ marginBottom: 20 }}>
-//           <Card
-//             hoverable
-//             title="Margen Utilitario"
-//             style={{ width: "auto", height: 180 }}
-//           >
-//             {/* (Ingresos Totales-Costos Totales) / Ingresos Totales*/}
-//             <Title level={2}>1.500.000</Title>
-//             <Text type="success">Millones</Text>
-//           </Card>
-//         </Col>
-
-//         <Col style={{ marginBottom: 20 }}>
-//           <Card
-//             hoverable
-//             title="Rotacion Inventario"
-//             style={{ width: "auto", height: 180 }}
-//           >
-//             {/* Valor Venta / Valor Promedio Inventario */}
-//             <Title level={2}>2</Title>
-//             <Text type="success">Cantidad</Text>
-//           </Card>
-//         </Col>
-
-//         <Col style={{ marginBottom: 20 }}>
-//           <Card
-//             hoverable
-//             title="Productos Mas vendido"
-//             style={{ width: "auto", height: 180 }}
-//           >
-//             <Title level={3}>Producto A</Title>
-//             <Text type="success">n veces</Text>
-//           </Card>
-//         </Col>
-
-//         <Col style={{ marginBottom: 20 }}>
-//           <Card
-//             hoverable
-//             title="Productos menos vendido"
-//             style={{ width: "auto", height: 180 }}
-//           >
-//             <Title level={3}>Producto b</Title>
-//             <Text type="danger">x veces</Text>
-//           </Card>
-//         </Col>
-
-//         <Col style={{ marginBottom: 20 }}>
-//           {/* Perdidas por productos dañados, vencidos , robados, o consumidos internamente */}
-//           <Card
-//             hoverable
-//             title="Perdidas Stock"
-//             style={{ width: "auto", height: 180 }}
-//           >
-//             <Title level={3}>25.000.000</Title>
-//             <Text type="danger">Millones</Text>
-//           </Card>
-//         </Col>
-//       </Row>
-//     </>
-//   );
-// }
-
 import React, { useState, useEffect } from "react";
 import {
   Card,
@@ -210,43 +16,15 @@ import {
   Timeline,
   List,
   Switch,
+  notification,
 } from "antd";
 import {
-  ArrowUpOutlined,
-  ArrowDownOutlined,
-  DollarOutlined,
-  ShoppingCartOutlined,
-  TeamOutlined,
-  ShopOutlined,
-  RiseOutlined,
-  FallOutlined,
-  UserOutlined,
-  InboxOutlined,
   BarChartOutlined,
   ClockCircleOutlined,
-  FireOutlined,
-  TrophyOutlined,
   EyeOutlined,
-  SettingOutlined,
   BankOutlined,
 } from "@ant-design/icons";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
@@ -255,11 +33,49 @@ import { useAuth } from "../../context/AuthContext";
 
 import Cookies from "js-cookie";
 
+//funciones backend
+import obtenerSucursales from "../../services/inventario/Sucursal.service";
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [sucursales, setSucursales] = useState();
+
+  /**
+   * Modificar
+   {
+  "idSucursal": 1,
+  "nombre": "Sucursal Centro",
+  "estado": "Activa",
+  "ventasHoy": 1250000,
+  "colabActivos": 10,
+  }
+  *Esdo debe traer una funcion de backend
+   */
+  const recuperarSucursales = async () => {
+    try {
+      const respuesta = await obtenerSucursales();
+      if (respuesta.status === 200) {
+        console.log(respuesta.data);
+        setSucursales(respuesta.data);
+        notification.success({
+          message: "Sucursales obtenidas exitamente!!",
+        });
+        return;
+      }
+      notification.error({
+        message: respuesta.error || "error al cargar sucursales!!",
+      });
+    } catch (error) {
+      notification.error({
+        message: error || "error desconocido, contacte a soporte",
+      });
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
+    recuperarSucursales();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -280,9 +96,10 @@ const AdminDashboard = () => {
   // Datos de ventas por sucursal
   const ventasPorSucursal = [
     {
-      key: "1",
+      key: "100",
       sucursal: "Sucursal Centro",
       ventasHoy: 1250000,
+      colabActivos: 10,
       ventasAyer: 1150000,
       transacciones: 285,
       ticketPromedio: 4385,
@@ -290,145 +107,90 @@ const AdminDashboard = () => {
       tendencia: "up",
       cambio: 8.7,
     },
-    {
-      key: "2",
-      sucursal: "Sucursal Mall",
-      ventasHoy: 1580000,
-      ventasAyer: 1620000,
-      transacciones: 342,
-      ticketPromedio: 4620,
-      estado: "Activa",
-      tendencia: "down",
-      cambio: -2.5,
-    },
-    {
-      key: "3",
-      sucursal: "Sucursal Plaza",
-      ventasHoy: 980000,
-      ventasAyer: 920000,
-      transacciones: 198,
-      ticketPromedio: 4949,
-      estado: "Activa",
-      tendencia: "up",
-      cambio: 6.5,
-    },
-    {
-      key: "4",
-      sucursal: "Sucursal Norte",
-      ventasHoy: 750000,
-      ventasAyer: 780000,
-      transacciones: 165,
-      ticketPromedio: 4545,
-      estado: "Activa",
-      tendencia: "down",
-      cambio: -3.8,
-    },
   ];
 
   // Actividad reciente
-  const actividadReciente = [
-    {
-      tipo: "venta",
-      descripcion: "Venta completada en Sucursal Centro",
-      monto: "$45.800",
-      tiempo: "Hace 2 minutos",
-      color: "green",
-    },
-    {
-      tipo: "inventario",
-      descripcion: "Stock bajo: Leche Entera 1L",
-      sucursal: "Sucursal Mall",
-      tiempo: "Hace 15 minutos",
-      color: "orange",
-    },
-    {
-      tipo: "empleado",
-      descripcion: "Nuevo turno iniciado",
-      empleado: "Juan Pérez",
-      tiempo: "Hace 30 minutos",
-      color: "blue",
-    },
-    {
-      tipo: "venta",
-      descripcion: "Venta completada en Sucursal Plaza",
-      monto: "$128.500",
-      tiempo: "Hace 45 minutos",
-      color: "green",
-    },
-  ];
+  // const actividadReciente = [
+  //   {
+  //     tipo: "venta",
+  //     descripcion: "Venta completada en Sucursal Centro",
+  //     monto: "$45.800",
+  //     tiempo: "Hace 2 minutos",
+  //     color: "green",
+  //   },
+  //   {
+  //     tipo: "inventario",
+  //     descripcion: "Stock bajo: Leche Entera 1L",
+  //     sucursal: "Sucursal Mall",
+  //     tiempo: "Hace 15 minutos",
+  //     color: "orange",
+  //   },
+  //   {
+  //     tipo: "empleado",
+  //     descripcion: "Nuevo turno iniciado",
+  //     empleado: "Juan Pérez",
+  //     tiempo: "Hace 30 minutos",
+  //     color: "blue",
+  //   },
+  //   {
+  //     tipo: "venta",
+  //     descripcion: "Venta completada en Sucursal Plaza",
+  //     monto: "$128.500",
+  //     tiempo: "Hace 45 minutos",
+  //     color: "green",
+  //   },
+  // ];
 
   const columnasSucursales = [
     {
       title: "Sucursal",
-      dataIndex: "sucursal",
-      key: "sucursal",
-      render: (text, record) => (
+      dataIndex: "nombre",
+      key: "nombre",
+      render: (text) => (
         <Space>
-          <Avatar
-            icon={<ShopOutlined />}
-            style={{ backgroundColor: "#1890ff" }}
-          />
           <div>
             <div style={{ fontWeight: 500 }}>{text}</div>
-            <Badge status="success" text={record.estado} />
+          </div>
+        </Space>
+      ),
+    },
+    {
+      title: "Estado",
+      key: "estado",
+      dataIndex: "estado",
+      render: (text) => (
+        <Space>
+          <div>
+            <Badge status="success" text={text} />
           </div>
         </Space>
       ),
     },
     {
       title: "Ventas Hoy",
-      dataIndex: "ventasHoy",
-      key: "ventasHoy",
-      render: (value) => (
-        <Text strong style={{ fontSize: "15px" }}>
-          ${value.toLocaleString("es-CL")}
-        </Text>
-      ),
     },
     {
-      title: "Transacciones",
-      dataIndex: "transacciones",
-      key: "transacciones",
-      render: (value) => <Tag color="blue">{value}</Tag>,
-    },
-    {
-      title: "Ticket Promedio",
-      dataIndex: "ticketPromedio",
-      key: "ticketPromedio",
-      render: (value) => `$${value.toLocaleString("es-CL")}`,
-    },
-    {
-      title: "Tendencia",
-      key: "tendencia",
-      render: (_, record) => (
+      title: "Colaboradores Activos",
+      key: "colabActivos",
+      dataIndex: "colabActivos",
+      render: (text) => (
         <Space>
-          {record.tendencia === "up" ? (
-            <ArrowUpOutlined style={{ color: "#52c41a" }} />
-          ) : (
-            <ArrowDownOutlined style={{ color: "#ff4d4f" }} />
-          )}
-          <Text
-            style={{
-              color: record.tendencia === "up" ? "#52c41a" : "#ff4d4f",
-              fontWeight: 500,
-            }}
-          >
-            {record.cambio > 0 ? "+" : ""}
-            {record.cambio}%
-          </Text>
+          <div style={{ textAlign: "center" }}>
+            <Text>{text}</Text>
+          </div>
         </Space>
       ),
     },
     {
-      title: "Acciones",
+      title: "Administracion",
       key: "acciones",
-      render: () => (
+      render: (_, record) => (
         <Button
           type="link"
           icon={<EyeOutlined />}
-          onClick={() => navigate("/admin/sucursales")}
+          onClick={() => navigate(`/admin/sucursal/${record.idSucursal}`)}
         >
-          Ver Detalles
+          Ir sucursal
         </Button>
       ),
     },
@@ -507,17 +269,15 @@ const AdminDashboard = () => {
                 unCheckedChildren="Admin"
               />
               <span>{esCaja ? "Modo Caja" : "Modo Administración"}</span>
-              <Button icon={<BarChartOutlined />} size="large">
-                Reportes
-              </Button>
-              <Button
+
+              {/* <Button
                 type="primary"
                 icon={<SettingOutlined />}
                 size="large"
                 onClick={() => navigate("/admin/configuracion")}
               >
                 Configuración
-              </Button>
+              </Button> */}
             </Space>
           </Col>
         </Row>
@@ -588,7 +348,7 @@ const AdminDashboard = () => {
 
       {/* Tabla de Sucursales */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} lg={16}>
+        <Col span={24}>
           <Card
             title={
               <Space>
@@ -597,55 +357,23 @@ const AdminDashboard = () => {
               </Space>
             }
             extra={
-              <Button type="link" onClick={() => navigate("/admin/sucursales")}>
-                Ver Todas
-              </Button>
+              <>
+                <Button icon={<BarChartOutlined />} size="large">
+                  Reportes
+                </Button>
+                <Button
+                  type="link"
+                  onClick={() => navigate("/admin/sucursales")}
+                >
+                  Ver Todas
+                </Button>
+              </>
             }
           >
             <Table
               columns={columnasSucursales}
-              dataSource={ventasPorSucursal}
+              dataSource={sucursales}
               pagination={false}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} lg={8}>
-          <Card
-            title={
-              <Space>
-                <ClockCircleOutlined />
-                <span>Actividad Reciente</span>
-              </Space>
-            }
-            style={{ padding: "12px 24px" }}
-          >
-            <Timeline
-              items={actividadReciente.map((item) => ({
-                color: item.color,
-                children: (
-                  <div>
-                    <Text strong style={{ display: "block" }}>
-                      {item.descripcion}
-                    </Text>
-                    {item.monto && (
-                      <Text style={{ color: "#52c41a", fontWeight: 500 }}>
-                        {item.monto}
-                      </Text>
-                    )}
-                    {item.sucursal && (
-                      <Text type="secondary"> - {item.sucursal}</Text>
-                    )}
-                    {item.empleado && (
-                      <Text type="secondary"> - {item.empleado}</Text>
-                    )}
-                    <div>
-                      <Text type="secondary" style={{ fontSize: "12px" }}>
-                        {item.tiempo}
-                      </Text>
-                    </div>
-                  </div>
-                ),
-              }))}
             />
           </Card>
         </Col>

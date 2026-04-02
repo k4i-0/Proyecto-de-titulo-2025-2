@@ -170,7 +170,9 @@ export default function Sucursal() {
       render: (text, record) => (
         <Space direction="vertical" size={0}>
           <Typography.Text strong style={{ fontSize: "15px" }}>
-            {text}
+            <a onClick={() => navigate(`/admin/sucursal/${record.idSucursal}`)}>
+              {text}
+            </a>
           </Typography.Text>
           <Typography.Text type="secondary" style={{ fontSize: "12px" }}>
             ID: {record.idSucursal}

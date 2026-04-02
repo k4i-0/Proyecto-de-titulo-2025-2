@@ -55,10 +55,8 @@ app.use(cookieParser());
 app.use(helmet());
 const corsOptions = {
   origin: [
-    "http://localhost:1768",
-    "https://localhost:1768",
-    "http://localhost:443",
-    "https://localhost:443",
+    "https://localhost:5250",
+    "http://localhost:5250",
     "http://146.83.194.142:1768",
     "https://146.83.194.142:1768",
   ],
@@ -91,108 +89,110 @@ async function syncDataBase() {
   const isDevelopment = process.env.NODE_ENV === "desarrollo";
   const syncOptions = isDevelopment ? { force: true } : { alter: true };
   try {
-    // NIVEL 1: Tablas sin dependencias
-    await Categoria.sync(syncOptions);
-    console.log("  ✓ Categoria");
+    await sequelize.sync(syncOptions);
 
-    await Sucursal.sync(syncOptions);
-    console.log("  ✓ Sucursal");
+    // // NIVEL 1: Tablas sin dependencias
+    // await Categoria.sync(syncOptions);
+    // console.log("  ✓ Categoria");
 
-    await Cliente.sync(syncOptions);
-    console.log("  ✓ Cliente");
+    // await Sucursal.sync(syncOptions);
+    // console.log("  ✓ Sucursal");
 
-    await Descuento.sync(syncOptions);
-    console.log("  ✓ Descuento");
+    // await Cliente.sync(syncOptions);
+    // console.log("  ✓ Cliente");
 
-    await Proveedor.sync(syncOptions);
-    console.log("  ✓ Proveedor");
+    // await Descuento.sync(syncOptions);
+    // console.log("  ✓ Descuento");
 
-    // NIVEL 2: Roles y Bitacora (sin dependencias entre ellas)
-    await Roles.sync(syncOptions);
-    console.log("  ✓ Roles");
+    // await Proveedor.sync(syncOptions);
+    // console.log("  ✓ Proveedor");
 
-    await Bitacora.sync(syncOptions);
-    console.log("  ✓ Bitacora");
+    // // NIVEL 2: Roles y Bitacora (sin dependencias entre ellas)
+    // await Roles.sync(syncOptions);
+    // console.log("  ✓ Roles");
 
-    // NIVEL 3: Tablas que dependen de Roles y Bitacora
-    await Actividad.sync(syncOptions);
-    console.log("  ✓ Actividad");
+    // await Bitacora.sync(syncOptions);
+    // console.log("  ✓ Bitacora");
 
-    await Funcionario.sync(syncOptions);
-    console.log("  ✓ Funcionario");
+    // // NIVEL 3: Tablas que dependen de Roles y Bitacora
+    // await Actividad.sync(syncOptions);
+    // console.log("  ✓ Actividad");
 
-    // NIVEL 4: Tablas que dependen de nivel anterior
-    await Vendedor.sync(syncOptions);
-    console.log("  ✓ Vendedor");
+    // await Funcionario.sync(syncOptions);
+    // console.log("  ✓ Funcionario");
 
-    await Bodega.sync(syncOptions);
-    console.log("  ✓ Bodega");
+    // // NIVEL 4: Tablas que dependen de nivel anterior
+    // await Vendedor.sync(syncOptions);
+    // console.log("  ✓ Vendedor");
 
-    await Estante.sync(syncOptions);
-    console.log("  ✓ Estante");
+    // await Bodega.sync(syncOptions);
+    // console.log("  ✓ Bodega");
 
-    await Caja.sync(syncOptions);
-    console.log("  ✓ Caja");
+    // await Estante.sync(syncOptions);
+    // console.log("  ✓ Estante");
 
-    await Productos.sync(syncOptions);
-    console.log("  ✓ Productos");
+    // await Caja.sync(syncOptions);
+    // console.log("  ✓ Caja");
 
-    await ContratoFuncionario.sync(syncOptions);
-    console.log("  ✓ ContratoFuncionario");
+    // await Productos.sync(syncOptions);
+    // console.log("  ✓ Productos");
 
-    await CajaFuncionario.sync(syncOptions);
-    console.log("  ✓ CajaFuncionario");
+    // await ContratoFuncionario.sync(syncOptions);
+    // console.log("  ✓ ContratoFuncionario");
 
-    // NIVEL 5: Tablas que dependen de Productos y Bodega
+    // await CajaFuncionario.sync(syncOptions);
+    // console.log("  ✓ CajaFuncionario");
 
-    await Despacho.sync(syncOptions);
-    console.log("  ✓ Despacho");
+    // // NIVEL 5: Tablas que dependen de Productos y Bodega
 
-    await Inventario.sync(syncOptions);
-    console.log("  ✓ Inventario");
+    // await Despacho.sync(syncOptions);
+    // console.log("  ✓ Despacho");
 
-    await DetalleDespacho.sync(syncOptions);
-    console.log("  ✓ DetalleDespacho");
+    // await Inventario.sync(syncOptions);
+    // console.log("  ✓ Inventario");
 
-    await Lote.sync(syncOptions);
-    console.log("  ✓ Lote");
+    // await DetalleDespacho.sync(syncOptions);
+    // console.log("  ✓ DetalleDespacho");
 
-    await RealizaVenta.sync(syncOptions);
-    console.log("  ✓ RealizaVenta");
+    // await Lote.sync(syncOptions);
+    // console.log("  ✓ Lote");
 
-    await OrdenCompra.sync(syncOptions);
-    console.log("  ✓ OrdenCompra");
+    // await RealizaVenta.sync(syncOptions);
+    // console.log("  ✓ RealizaVenta");
 
-    await EntregaProveedor.sync(syncOptions);
-    console.log("  ✓ EntregaProveedor");
+    // await OrdenCompra.sync(syncOptions);
+    // console.log("  ✓ OrdenCompra");
 
-    await DetalleVenta.sync(syncOptions);
-    console.log("  ✓ DetalleVenta");
+    // await EntregaProveedor.sync(syncOptions);
+    // console.log("  ✓ EntregaProveedor");
 
-    // NIVEL 6: Tablas intermedias finales
-    await CompraProveedor.sync(syncOptions);
-    console.log("  ✓ CompraProveedor");
+    // await DetalleVenta.sync(syncOptions);
+    // console.log("  ✓ DetalleVenta");
 
-    await VentaCliente.sync(syncOptions);
-    console.log("  ✓ VentaCliente");
+    // // NIVEL 6: Tablas intermedias finales
+    // await CompraProveedor.sync(syncOptions);
+    // console.log("  ✓ CompraProveedor");
 
-    await BitacoraActividad.sync(syncOptions);
-    console.log("  ✓ BitacoraActividad");
+    // await VentaCliente.sync(syncOptions);
+    // console.log("  ✓ VentaCliente");
 
-    await DescuentoSobre.sync(syncOptions);
-    console.log("  ✓ DescuentoSobre");
+    // await BitacoraActividad.sync(syncOptions);
+    // console.log("  ✓ BitacoraActividad");
 
-    await CompraProveedorDetalle.sync(syncOptions);
-    console.log("  ✓ CompraProveedorDetalle");
+    // await DescuentoSobre.sync(syncOptions);
+    // console.log("  ✓ DescuentoSobre");
 
-    await Provee.sync(syncOptions);
-    console.log("  ✓ Provee");
+    // await CompraProveedorDetalle.sync(syncOptions);
+    // console.log("  ✓ CompraProveedorDetalle");
 
-    await CreaOrdenCompra.sync(syncOptions);
-    console.log("  ✓ CreaOrdenCompra");
+    // await Provee.sync(syncOptions);
+    // console.log("  ✓ Provee");
 
-    // await LoteProducto.sync(syncOptions);
-    // console.log("  ✓ LoteProducto");
+    // await CreaOrdenCompra.sync(syncOptions);
+    // console.log("  ✓ CreaOrdenCompra");
+
+    // // await LoteProducto.sync(syncOptions);
+    // // console.log("  ✓ LoteProducto");
 
     console.log("✅ Todas las tablas sincronizadas correctamente");
   } catch (error) {

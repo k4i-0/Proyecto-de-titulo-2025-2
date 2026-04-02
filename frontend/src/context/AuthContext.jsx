@@ -42,8 +42,8 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
-    finSesion();
+  const logout = (email) => {
+    finSesion(email);
     sessionStorage.removeItem("userData");
     setUser(null);
     setIsAuthenticated(false);

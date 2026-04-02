@@ -1,12 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import tailwindcss from "@tailwindcss/vite";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
   server: {
-    port: 443,
+    port: 5250,
     host: true,
     strictPort: true,
   },

@@ -58,8 +58,13 @@ const funcionario = sequelize.define(
       allowNull: false,
       defaultValue: "Sin Session",
     },
+    intentosFallidos: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
     estado: {
-      type: DataTypes.ENUM("Activo", "Inactivo", "Eliminado"),
+      type: DataTypes.ENUM("Activo", "Inactivo", "Eliminado", "Bloqueado"),
       allowNull: false,
       defaultValue: "Activo",
     },

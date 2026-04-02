@@ -17,6 +17,7 @@ import {
   Spin,
   List,
   Avatar,
+  notification,
 } from "antd";
 import {
   ShoppingCartOutlined,
@@ -57,8 +58,8 @@ export default function SucursalDetalle() {
     ventasHora: 0,
     crecimiento: 0,
   });
-  const [verProveedores, setVerProveedores] = useState(false);
-  const [proveedores, setProveedores] = useState([]);
+  // const [verProveedores, setVerProveedores] = useState(false);
+  // const [proveedores, setProveedores] = useState([]);
 
   //llamar api para obtener inventario
   const cargarInventarios = async () => {
@@ -115,36 +116,22 @@ export default function SucursalDetalle() {
       return;
     }
   }, [idSucursal]);
-  // const obtenerProveedores = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const response = await getAllProveedores();
-  //     console.log("Respuesta proveedores:", response);
-  //     if (response.status === 200) {
-  //       console.log("Proveedores:", response.data);
-  //       setProveedores(response.data);
-  //       setLoading(false);
-  //       return;
-  //     }
-  //     if (response.status === 204) {
-  //       message.info("No hay proveedores registrados");
-  //       setProveedores([]);
-  //       setLoading(false);
-  //       return;
-  //     }
-  //     message.error("Error en el servidor al obtener los proveedores");
-  //     setLoading(false);
-  //   } catch (error) {
-  //     message.error("Error al obtener los proveedores");
-  //     console.error("Error al obtener los proveedores:", error);
-  //     setLoading(false);
-  //   }
-  // };
 
   useEffect(() => {
+    console.log("Dentro de useEffect :", idSucursal === "undefined");
+    if (idSucursal == "undefined" || idSucursal == "null") {
+      notification.warning({
+        message: "Error al obtener sucursal!!",
+      });
+      navigate("/");
+      return;
+    }
+
     cargarInventarios();
     cargarMetricas();
-  }, [cargarMetricas]);
+  }, [cargarMetricas, idSucursal, navigate]);
+
+  if (!idSucursal) return null;
 
   const columnsInventario = [
     {
@@ -229,25 +216,8 @@ export default function SucursalDetalle() {
     navigate("/admin/productos");
   };
 
-  // const handleVerProveedores = async () => {
-  //   await obtenerProveedores();
-  //   setVerProveedores(!verProveedores);
-  // };
-
   return (
     <>
-      <Row style={{ marginBottom: 16 }}>
-        <Col span={24}>
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/admin/sucursales")}
-            type="primary"
-          >
-            Volver
-          </Button>
-        </Col>
-      </Row>
-
       <Row justify="center" style={{ marginBottom: 24 }}>
         <Col span={24}>
           <Space direction="vertical" size="small" style={{ width: "100%" }}>

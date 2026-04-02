@@ -319,66 +319,69 @@ async function poblarBD() {
     }
 
     //Crear sucursales iniciales si no existen 3 digitos
-    // console.log(" Creando sucursales y bodegas iniciales...");
-    // const [sucursal1, sucursal1Created] = await Sucursal.findOrCreate({
-    //   where: { nombre: "Casa Matriz" },
-    //   defaults: {
-    //     idSucursal: 100,
-    //     nombre: "Casa Matriz",
-    //     direccion: "Calle Dos 522, Chiguayante",
-    //     estado: "Abierta",
-    //     idFuncionario: admin.idFuncionario,
-    //   },
-    // });
-    // //Crear bodegas iniciales si no existen
-    // const [bodega1, bodega1Created] = await Bodega.findOrCreate({
-    //   where: { nombre: "Bodega Central" },
-    //   defaults: {
-    //     nombre: "Bodega Central",
-    //     capacidad: 400,
-    //     estado: "En Funcionamiento",
-    //     idSucursal: sucursal1.idSucursal,
-    //   },
-    // });
-    // //Crear estantes iniciales si no existen
-    // for (let i = 1; i <= 5; i++) {
-    //   await Estante.findOrCreate({
-    //     where: { codigoEstante: `ET${1000 + i}` },
-    //     defaults: {
-    //       codigoEstante: `ET${1000 + i}`,
-    //       capacidad: 80,
-    //       tipo: "Estante",
-    //       estado: "Disponible",
-    //       idBodega: bodega1.idBodega,
-    //     },
-    //   });
-    // }
+    console.log(" Creando sucursales y bodegas iniciales...");
+    const [sucursal1, sucursal1Created] = await Sucursal.findOrCreate({
+      where: { nombre: "Casa Matriz" },
+      defaults: {
+        idSucursal: 100,
+        nombre: "Casa Matriz",
+        direccion: "Calle Dos 522, Chiguayante",
+        estado: "Abierta",
+        idFuncionario: admin.idFuncionario,
+      },
+    });
 
-    // //Crear Proveedores
-    // const [proveedor, proveedorCreated] = await Proveedor.findOrCreate({
-    //   where: { rut: "77200300-1" },
-    //   defaults: {
-    //     nombre: "Proveedor 1",
-    //     telefono: "+56912345678",
-    //     email: "proveedor@test.cl",
-    //     fechaIngreso: new Date(),
-    //     rubro: "Abarrotes",
-    //     giro: "960011 - default",
-    //     estado: "Activo",
-    //   },
-    // });
+    //Crear bodegas iniciales si no existen
+    const [bodega1, bodega1Created] = await Bodega.findOrCreate({
+      where: { nombre: "Bodega Central" },
+      defaults: {
+        nombre: "Bodega Central",
+        capacidad: 400,
+        estado: "En Funcionamiento",
+        idSucursal: sucursal1.idSucursal,
+      },
+    });
 
-    // //Crear vendedor
-    // await VendedorProveedor.findOrCreate({
-    //   where: { rut: "12369852-9" },
-    //   defaults: {
-    //     nombre: "Coca Cola Company",
-    //     rut: "12369852-9",
-    //     telefono: "+56912345678",
-    //     email: "pedro@coca.cl",
-    //     idProveedor: proveedor.idProveedor,
-    //   },
-    // });
+    //Crear estantes iniciales si no existen
+    for (let i = 1; i <= 5; i++) {
+      await Estante.findOrCreate({
+        where: { codigoEstante: `ET${1000 + i}` },
+        defaults: {
+          capacidad: 80,
+          capacidadOcupada: 80,
+          capacidadDisponible: 80,
+          tipo: "Estante",
+          estado: "Disponible",
+          idBodega: bodega1.idBodega,
+        },
+      });
+    }
+
+    //Crear Proveedores
+    const [proveedor, proveedorCreated] = await Proveedor.findOrCreate({
+      where: { rut: "77200300-1" },
+      defaults: {
+        nombre: "Proveedor 1",
+        telefono: "+56912345678",
+        email: "proveedor@test.cl",
+        fechaIngreso: new Date(),
+        rubro: "Abarrotes",
+        giro: "960011 - default",
+        estado: "Activo",
+      },
+    });
+
+    //Crear vendedor
+    await VendedorProveedor.findOrCreate({
+      where: { rut: "12369852-9" },
+      defaults: {
+        nombre: "Coca Cola Company",
+        rut: "12369852-9",
+        telefono: "+56912345678",
+        email: "pedro@coca.cl",
+        idProveedor: proveedor.idProveedor,
+      },
+    });
 
     // //Orden de compra
     // const OC = await OrdenCompra.findOrCreate({

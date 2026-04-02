@@ -24,6 +24,7 @@ const { Title, Text } = Typography;
 
 function Dashboard() {
   const { user, logout } = useAuth();
+  const dataUser = JSON.parse(sessionStorage.getItem("userData"));
   const navigate = useNavigate();
   const { Content, Header } = Layout;
   const {
@@ -32,13 +33,14 @@ function Dashboard() {
 
   const cerrarSesion = async () => {
     try {
-      const response = await finSesion();
+      const response = await finSesion(dataUser.email);
       console.log(response);
       logout();
     } catch (error) {
       console.log(error);
     }
   };
+
   const userMenuItems = [
     {
       key: "profile",

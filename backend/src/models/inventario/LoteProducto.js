@@ -32,12 +32,6 @@ const LoteProducto = sequelize.define(
   {
     tableName: "loteproducto",
     timestamps: false,
-    indexes: [
-      {
-        unique: true,
-        fields: ["idLote", "idProducto"], // Prevenir duplicado
-      },
-    ],
   }
 );
 module.exports = LoteProducto;
