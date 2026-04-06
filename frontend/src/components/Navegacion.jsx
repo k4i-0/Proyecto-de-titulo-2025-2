@@ -127,11 +127,13 @@ export default function Navegacion({ nombreRol, onLogout }) {
                       key: "devolucion_ordenes_compra",
                       label: "Devolución Órdenes De Compra",
                       icon: <InboxOutlined />,
+                      disabled: true,
                     },
                     {
                       key: "incidentes_ordenes_compra",
                       label: "Incidentes Órdenes De Compra",
                       icon: <InboxOutlined />,
+                      disabled: true,
                     },
                   ],
                 },
@@ -176,33 +178,7 @@ export default function Navegacion({ nombreRol, onLogout }) {
                   key: "colaboradores",
                   label: "Colaboradores",
                   icon: <UserSwitchOutlined />,
-                  children: [
-                    {
-                      icon: <UserAddOutlined />,
-                      key: "Gestion_colaboradores",
-                      label: "Gestion Colaborador",
-                      onClick: () => navigate("/admin/gestion/colaboradores"),
-                    },
-                    {
-                      icon: <UsergroupAddOutlined />,
-                      key: "Contratos_colaboradores",
-                      label: "Trabajadores por sucursal",
-                      onClick: () =>
-                        navigate("/admin/gestion/colaboradores/sucursal"),
-                    },
-                    {
-                      key: "Roles_Permisos",
-                      label: "Roles y Permisos",
-                      icon: <UserOutlined />,
-                      disabled: true,
-                    },
-                    {
-                      key: "Administracion Cajas",
-                      label: "Administración de Cajas",
-                      icon: <InboxOutlined />,
-                      disabled: true,
-                    },
-                  ],
+                  onClick: () => navigate("/admin/gestion/colaboradores"),
                 },
               ],
             },
