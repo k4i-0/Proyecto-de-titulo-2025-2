@@ -3,9 +3,11 @@ const Estante = require("../../models/inventario/Estante");
 const Sucursal = require("../../models/inventario/Sucursal");
 const { Op, where } = require("sequelize");
 
-const { crearBitacora } = require("../../services/bitacora.service");
 const jwt = require("jsonwebtoken");
 // const bodega = require("../../models/inventario/Bodega");
+
+//registro actividad
+const { crearBitacora } = require("../../services/bitacora.service");
 
 exports.createBodega = async (req, res) => {
   const { nombre, capacidad, estado, idSucursal } = req.body;
@@ -109,7 +111,7 @@ exports.updateBodega = async (req, res) => {
       },
       {
         where: { idBodega: req.params.id },
-      }
+      },
     );
     if (!respuesta[0]) {
       return res

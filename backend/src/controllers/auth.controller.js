@@ -78,14 +78,11 @@ async function login(req, res) {
     }
 
     //REGISTRAR BITACORA ACTIVIDAD LOGIN
-    await crearBitacora({
-      nombre: `login usuario ${email}`,
-      fechaCreacion: new Date(),
-      descripcion: `Inicio de sesión del usuario: ${email}`,
-      funcionOcupo: "login controller",
-      usuariosCreador: ` Sistema por ${email} `,
-      nivelAlerta: "Bajo",
-    });
+    await crearBitacora(
+      "login controller",
+      `Inicio de sesión del usuario: ${email}`,
+      funcionarioEncontrado.dataValues.idFuncionario,
+    );
     //ACTUALIZAR ESTADO DE SESSION A ACTIVADA
     await funcionarioEncontrado.update({
       session: true,
@@ -255,14 +252,11 @@ async function logout(req, res) {
     );
   }
   try {
-    await crearBitacora({
-      nombre: "logout usuario",
-      fechaCreacion: new Date(),
-      descripcion: `Cierre de sesión del usuario: ${emailDelToken}`,
-      funcionOcupo: "logout controller",
-      usuariosCreador: ` Sistema por ${emailDelToken} `,
-      nivelAlerta: "Bajo",
-    });
+    await crearBitacora(
+      "logout controller",
+      `Cierre de sesión del usuario: ${emailDelToken}`,
+      0,
+    );
 
     res.clearCookie("token", {
       httpOnly: true,

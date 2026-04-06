@@ -208,42 +208,27 @@ async function poblarBD() {
     );
 
     //Crear Bitacora inicial
-    const bitacora0 = await crearBitacora({
-      nombre: "Inicialización del sistema",
-      descripcion: "Se Crea base de sistema por sistema",
-      nivelAlerta: "Bajo",
-      funcionOcupo: "crearBitacora Service",
-      fechaCreacion: new Date(),
-      idFuncionario: sistemaUser.dataValues.idFuncionario,
-    });
+    const bitacora0 = await crearBitacora(
+      "Se Crea base de sistema por sistema",
+      "CREADE Bitacora Service",
+      sistemaUser.dataValues.idFuncionario,
+    );
 
-    const bitacora1 = await crearBitacora({
-      nombre: "Inicialización del sistema",
-      descripcion:
-        "Se Crea Bitacora para Administrador durante la inicialización del sistema",
-      nivelAlerta: "Bajo",
-      funcionOcupo: "crearBitacora Service",
-      fechaCreacion: new Date(),
-      idFuncionario: sistemaUser.dataValues.idFuncionario,
-    });
-    const bitacora2 = await crearBitacora({
-      nombre: "Inicialización del sistema",
-      descripcion:
-        "Se Crea Bitacora para Cajero durante la inicialización del sistema",
-      nivelAlerta: "Bajo",
-      funcionOcupo: "crearBitacora Service",
-      fechaCreacion: new Date(),
-      idFuncionario: sistemaUser.dataValues.idFuncionario,
-    });
-    const bitacora3 = await crearBitacora({
-      nombre: "Inicialización del sistema",
-      descripcion:
-        "Se Crea Bitacora para Vendedor durante la inicialización del sistema",
-      nivelAlerta: "Bajo",
-      funcionOcupo: "crearBitacora Service",
-      fechaCreacion: new Date(),
-      idFuncionario: sistemaUser.dataValues.idFuncionario,
-    });
+    const bitacora1 = await crearBitacora(
+      "Se Crea Bitacora para Administrador durante la inicialización del sistema",
+      "crearBitacora Service",
+      sistemaUser.dataValues.idFuncionario,
+    );
+    const bitacora2 = await crearBitacora(
+      "Se Crea Bitacora para Cajero durante la inicialización del sistema",
+      "crearBitacora Service",
+      sistemaUser.dataValues.idFuncionario,
+    );
+    const bitacora3 = await crearBitacora(
+      "Se Crea Bitacora para Vendedor durante la inicialización del sistema",
+      "crearBitacora Service",
+      sistemaUser.dataValues.idFuncionario,
+    );
     console.log(" Bitacoras iniciales creadas");
 
     console.log(" Usuarios iniciales verificados/creados exitosamente");

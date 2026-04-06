@@ -10,32 +10,30 @@ const bitacora = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    nombre: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    fechaCreacion: {
-      type: DataTypes.DATE,
-      allowNull: false,
+    operacion: {
+      // Ejemplo: CRUD, LOGIN, LOGOUT, etc.
+      type: DataTypes.STRING(255),
+      allowNull: true,
     },
     descripcion: {
       type: DataTypes.STRING(255),
-      allowNull: false,
-    },
-    funcionOcupo: {
-      type: DataTypes.STRING(100),
       allowNull: true,
     },
-    nivelAlerta: {
-      type: DataTypes.ENUM("Bajo", "Medio", "Alto"),
-      allowNull: false,
-      defaultValue: "Bajo",
+    idFuncionario: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "funcionario",
+        key: "idFuncionario",
+      },
     },
   },
   {
     tableName: "bitacora",
-    timestamps: false,
-  }
+    timestamps: true,
+    createdAt: "fechaCreacion",
+    updatedAt: false,
+  },
 );
 
 module.exports = bitacora;

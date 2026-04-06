@@ -8,6 +8,7 @@ import {
   Tooltip,
   notification,
   Popconfirm,
+  Dropdown,
 } from "antd";
 import {
   CheckCircleOutlined,
@@ -20,6 +21,9 @@ import {
   EnvironmentOutlined,
   InboxOutlined,
   EyeOutlined,
+  UserOutlined,
+  DownOutlined,
+  CheckCircleFilled,
 } from "@ant-design/icons";
 
 import { useNavigate } from "react-router-dom";
@@ -353,23 +357,44 @@ export default function Sucursal() {
             >
               Nueva Sucursal
             </Button>
-            <Button
-              size="large"
-              icon={<ShopOutlined />}
-              onClick={() => navigate("/admin/proveedores")}
-              disabled={loading}
-              style={{ borderRadius: "8px" }}
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: 2,
+                    label: (
+                      <Button
+                        size="large"
+                        type="link"
+                        onClick={() => navigate("/admin/proveedores")}
+                        disabled={loading}
+                      >
+                        Proveedores
+                      </Button>
+                    ),
+                  },
+                  {
+                    key: 3,
+                    label: (
+                      <Button
+                        size="large"
+                        type="link"
+                        onClick={() => navigate("/admin/productos")}
+                        disabled={loading}
+                      >
+                        Productos
+                      </Button>
+                    ),
+                  },
+                ],
+              }}
+              placement="bottomLeft"
+              arrow
             >
-              Proveedores
-            </Button>
-            <Button
-              size="large"
-              onClick={() => navigate("/admin/productos")}
-              disabled={loading}
-              style={{ borderRadius: "8px" }}
-            >
-              Productos
-            </Button>
+              <Button icon={<CheckCircleFilled />}>
+                Accesos <DownOutlined />
+              </Button>
+            </Dropdown>
           </Space>
         }
       />

@@ -1,9 +1,16 @@
 const Bitacora = require("../models/Usuarios/Bitacora");
 
-async function crearBitacora(data) {
+async function crearBitacora(operacion, descripcion, idFuncionario) {
   try {
-    const nuevaBitacora = await Bitacora.create(data);
-    return nuevaBitacora;
+    const nuevaBitacora = await Bitacora.create({
+      operacion,
+      descripcion,
+      idFuncionario,
+    });
+    if (!nuevaBitacora) {
+      throw new Error("No se pudo crear la Bitacora");
+    }
+    return { code: 201, message: "Bitacora Creada Correctamente" };
   } catch (error) {
     throw new Error("Error al crear la Bitacora: " + error.message);
   }
@@ -15,51 +22,42 @@ async function obtenerTodasBitacora() {
     if (!consultaBitacora) {
       throw new Error("No se encontraron Bitacora");
     }
-    return consultaBitacora;
+    return {
+      code: 200,
+      message: "Bitacora obtenida correctamente",
+      data: consultaBitacora,
+    };
   } catch (error) {
     throw new Error("Error al obtener las Bitacora: " + error.message);
   }
 }
 
-async function editarBitacora(datos) {
+async function obtenerBitacoraUsuario(rutFuncionario) {
   try {
-    const { idBitacora } = datos;
-
-    const consultaBitacora = await Bitacora.findByPk(idBitacora);
+    const consultaBitacora = await Bitacora.findAll({
+      where: {
+        rutFuncionario: rutFuncionario,
+      },
+    });
     if (!consultaBitacora) {
-      throw new Error("No se encontró la bitacora con el ID proporcionado");
+      throw new Error(
+        "No se encontraron Bitacora para el usuario especificado",
+      );
     }
-    consultaBitacora.nombre = nombre;
-    consultaBitacora.descripcion = descripcion;
-    consultaBitacora.nivelAlerta = nivelAlerta;
-    consultaBitacora.funcionOcupo = funcionOcupo;
-    consultaBitacora.usuariosCreador = usuariosCreador;
-    await consultaBitacora.save();
-    return consultaBitacora;
+    return {
+      code: 200,
+      message: "Bitacora obtenida correctamente",
+      data: consultaBitacora,
+    };
   } catch (error) {
-    throw new Error("Error al editar la bitacora: " + error.message);
-  }
-}
-
-async function eliminarBitacora(idBitacora) {
-  try {
-    if (!idBitacora) {
-      throw new Error("Falta el ID de la bitacora a eliminar");
-    }
-    const consultaBitacora = await Bitacora.findByPk(idBitacora);
-    if (!consultaBitacora) {
-      throw new Error("No se encontró la bitacora con el ID proporcionado");
-    }
-    await consultaBitacora.destroy();
-    return true;
-  } catch (error) {
-    throw new Error("Error al eliminar la bitacora: " + error.message);
+    throw new Error(
+      "Error al obtener las Bitacora del usuario: " + error.message,
+    );
   }
 }
 
 module.exports = {
   crearBitacora,
   obtenerTodasBitacora,
-  editarBitacora,
-  eliminarBitacora,
+  obtenerBitacoraUsuario,
 };
