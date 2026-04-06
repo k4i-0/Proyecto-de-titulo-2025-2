@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  Table,
   Button,
   Space,
   Tag,
@@ -22,7 +21,6 @@ import {
   Popconfirm,
   Tooltip,
   Typography,
-  InputNumber,
   notification,
 } from "antd";
 import {
@@ -40,13 +38,14 @@ import {
   HomeOutlined,
   IdcardOutlined,
   CalendarOutlined,
-  DollarOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
+
+import DataTable from "../../../components/Tabla";
 
 import obtenerTodosFuncionarios, {
   crearFuncionario,
@@ -62,13 +61,6 @@ const GestionColaborador = () => {
   const [editMode, setEditMode] = useState(false);
   const [selectedColaborador, setSelectedColaborador] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [filters, setFilters] = useState({
-    cargo: null,
-    sucursal: null,
-    estado: null,
-    turno: null,
-  });
   const [colaboradores, setColaboradores] = useState([]);
 
   const [sucursales, setSucursales] = useState([]);
@@ -169,55 +161,49 @@ const GestionColaborador = () => {
     inactivos: colaboradores.filter((c) => c.estado === "Inactivo").length,
   };
 
-  // Filtrado de datos
+  const dataTableFilters = useMemo(() => {
+    const uniqueValues = (field) => {
+      return [
+        ...new Set(colaboradores.map((item) => item[field]).filter(Boolean)),
+      ]
+        .map((value) => String(value))
+        .sort((a, b) => a.localeCompare(b, "es"))
+        .map((value) => ({ value, label: value }));
+    };
 
-  const filteredData = useMemo(() => {
-    return colaboradores.filter((item) => {
-      const matchesSearch =
-        !searchText ||
-        (() => {
-          const searchLower = searchText.toLowerCase().trim();
-          const searchSinFormato = searchText
-            .replace(/[.-]/g, "")
-            .toLowerCase();
-          const rutSinFormato = item.rut?.replace(/[.-]/g, "").toLowerCase();
+    const sucursalOptions = [
+      ...new Set(sucursales.map((item) => item.nombre).filter(Boolean)),
+    ]
+      .map((value) => String(value))
+      .sort((a, b) => a.localeCompare(b, "es"))
+      .map((value) => ({ value, label: value }));
 
-          return (
-            item.nombre?.toLowerCase().includes(searchLower) ||
-            item.apellido?.toLowerCase().includes(searchLower) ||
-            item.rut?.toLowerCase().includes(searchLower) ||
-            rutSinFormato?.includes(searchSinFormato) ||
-            `${item.nombre} ${item.apellido}`
-              .toLowerCase()
-              .includes(searchLower)
-          );
-        })();
-
-      const matchesCargo = !filters.cargo || item.cargo === filters.cargo;
-      const matchesSucursal =
-        !filters.sucursal || item.sucursal === filters.sucursal;
-      const matchesEstado = !filters.estado || item.estado === filters.estado;
-      const matchesTurno = !filters.turno || item.turno === filters.turno;
-
-      return (
-        matchesSearch &&
-        matchesCargo &&
-        matchesSucursal &&
-        matchesEstado &&
-        matchesTurno
-      );
-    });
-  }, [colaboradores, searchText, filters]);
-
-  const handleResetFilters = () => {
-    setSearchText("");
-    setFilters({
-      cargo: null,
-      sucursal: null,
-      estado: null,
-      turno: null,
-    });
-  };
+    return [
+      {
+        key: "cargo",
+        placeholder: "Cargo",
+        options: uniqueValues("cargo"),
+      },
+      {
+        key: "sucursal",
+        placeholder: "Sucursal",
+        options:
+          sucursalOptions.length > 0
+            ? sucursalOptions
+            : uniqueValues("sucursal"),
+      },
+      {
+        key: "turno",
+        placeholder: "Turno",
+        options: uniqueValues("turno"),
+      },
+      {
+        key: "estado",
+        placeholder: "Estado",
+        options: uniqueValues("estado"),
+      },
+    ];
+  }, [colaboradores, sucursales]);
 
   const columns = [
     {
@@ -416,7 +402,7 @@ const GestionColaborador = () => {
         });
       } catch (error) {
         notification.error({
-          message: error.message || "Error de servidor",
+          message: error || "Error de servidor",
           description: "No se pudo conectar al servidor.",
           duration: 5,
         });
@@ -453,6 +439,12 @@ const GestionColaborador = () => {
         setLoading(false);
       }
     }
+  };
+
+  const handleCerrarModal = () => {
+    setDetailDrawerVisible(false);
+    setDrawerVisible(false);
+    obtenerColaboradores();
   };
 
   return (
@@ -519,147 +511,14 @@ const GestionColaborador = () => {
 
       {/* Tabla */}
       <Card>
-        {/* Sección de Filtros */}
-        <div style={{ marginBottom: 16 }}>
-          <Row gutter={[16, 16]}>
-            <Col xs={24} sm={24} md={8} lg={6}>
-              <Input
-                placeholder="Nombre, apellido o RUT"
-                prefix={<UserOutlined />}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                allowClear
-                size="large"
-              />
-            </Col>
-            <Col xs={12} sm={12} md={8} lg={4}>
-              <Select
-                placeholder="Cargo"
-                style={{ width: "100%" }}
-                value={filters.cargo}
-                onChange={(value) => setFilters({ ...filters, cargo: value })}
-                allowClear
-                size="large"
-              >
-                <Option value="Administrador">Administrador</Option>
-                <Option value="Cajero">Cajero</Option>
-                <Option value="Vendedor">Vendedor</Option>
-              </Select>
-            </Col>
-
-            <Col xs={12} sm={12} md={8} lg={4}>
-              <Select
-                placeholder="Turno"
-                style={{ width: "100%" }}
-                value={filters.turno}
-                onChange={(value) => setFilters({ ...filters, turno: value })}
-                allowClear
-                size="large"
-              >
-                <Option value="Mañana">Mañana</Option>
-                <Option value="Tarde">Tarde</Option>
-                <Option value="Noche">Noche</Option>
-                <Option value="Rotativo">Rotativo</Option>
-              </Select>
-            </Col>
-            <Col xs={12} sm={12} md={8} lg={4}>
-              <Select
-                placeholder="Estado"
-                style={{ width: "100%" }}
-                value={filters.estado}
-                onChange={(value) => setFilters({ ...filters, estado: value })}
-                allowClear
-                size="large"
-              >
-                <Option value="Activo">Activo</Option>
-                <Option value="Inactivo">Inactivo</Option>
-              </Select>
-            </Col>
-            <Col xs={24} sm={24} md={8} lg={2}>
-              <Button
-                onClick={handleResetFilters}
-                block
-                size="large"
-                icon={<DeleteOutlined />}
-              >
-                Limpiar
-              </Button>
-            </Col>
-          </Row>
-
-          {/* Indicador de filtros activos */}
-          {(searchText ||
-            filters.cargo ||
-            filters.sucursal ||
-            filters.estado ||
-            filters.turno) && (
-            <div style={{ marginTop: 12 }}>
-              <Space wrap>
-                <Text type="secondary">Filtros activos:</Text>
-                {searchText && (
-                  <Tag closable onClose={() => setSearchText("")} color="blue">
-                    Búsqueda: {searchText}
-                  </Tag>
-                )}
-                {filters.cargo && (
-                  <Tag
-                    key="cargo"
-                    closable
-                    onClose={() => setFilters({ ...filters, cargo: null })}
-                    color="purple"
-                  >
-                    Cargo: {filters.cargo}
-                  </Tag>
-                )}
-                {filters.sucursal && (
-                  <Tag
-                    key="sucursal"
-                    closable
-                    onClose={() => setFilters({ ...filters, sucursal: null })}
-                    color="green"
-                  >
-                    Sucursal: {filters.sucursal}
-                  </Tag>
-                )}
-                {filters.turno && (
-                  <Tag
-                    key="turno"
-                    closable
-                    onClose={() => setFilters({ ...filters, turno: null })}
-                    color="orange"
-                  >
-                    Turno: {filters.turno}
-                  </Tag>
-                )}
-                {filters.estado && (
-                  <Tag
-                    key="estado"
-                    closable
-                    onClose={() => setFilters({ ...filters, estado: null })}
-                    color="red"
-                  >
-                    Estado: {filters.estado}
-                  </Tag>
-                )}
-                <Text type="secondary">
-                  ({filteredData.length} resultado
-                  {filteredData.length !== 1 ? "s" : ""})
-                </Text>
-              </Space>
-            </div>
-          )}
-        </div>
-
-        <Table
+        <DataTable
           columns={columns}
-          dataSource={filteredData}
+          data={colaboradores}
           rowKey="id"
-          scroll={{ x: 1200 }}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `Total ${total} colaboradores`,
-          }}
+          loading={loading}
+          searchPlaceholder="Nombre o RUT"
+          searchableFields={["nombre", "apellido", "rut"]}
+          filterConfig={dataTableFilters}
         />
       </Card>
 
@@ -672,11 +531,11 @@ const GestionColaborador = () => {
           </Space>
         }
         width={720}
-        onClose={() => setDrawerVisible(false)}
+        onClose={handleCerrarModal}
         open={drawerVisible}
         extra={
           <Space>
-            <Button onClick={() => setDrawerVisible(false)}>Cancelar</Button>
+            <Button onClick={handleCerrarModal}>Cancelar</Button>
             <Button
               type="primary"
               onClick={() => form.submit()}
@@ -901,7 +760,7 @@ const GestionColaborador = () => {
                   <Option value="Mañana">Mañana </Option>
                   <Option value="Tarde">Tarde</Option>
                   <Option value="Noche">Noche</Option>
-                  <Option value="Completo">Jornada Completa</Option>
+                  <Option value="Rotativo">Rotativo</Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -930,12 +789,16 @@ const GestionColaborador = () => {
             <Col span={12}>
               <Form.Item
                 name="estadoContrato"
-                label="Estado Del Contrato"
+                label="Estado Relacion Laboral"
                 rules={[
                   { required: true, message: "Por favor seleccione el estado" },
                 ]}
               >
-                <Select placeholder="Seleccione el estado">
+                <Select
+                  placeholder="Seleccione el estado"
+                  disabled={!editMode}
+                  initialValue="Activo"
+                >
                   <Option value="Activo">Activo</Option>
                   <Option value="Inactivo">Inactivo</Option>
                 </Select>
@@ -963,7 +826,7 @@ const GestionColaborador = () => {
           </Space>
         }
         width={640}
-        onClose={() => setDetailDrawerVisible(false)}
+        onClose={handleCerrarModal}
         open={detailDrawerVisible}
         extra={
           <Space>
@@ -1072,16 +935,20 @@ const GestionColaborador = () => {
             <Card title="Información Laboral" style={{ marginBottom: 16 }}>
               <Descriptions column={1}>
                 <Descriptions.Item label="Sucursal">
-                  {selectedColaborador.sucursal}
+                  {selectedColaborador.sucursal || "Sin Informacion"}
                 </Descriptions.Item>
                 <Descriptions.Item label="Cargo">
-                  <Tag color="blue">{selectedColaborador.cargo}</Tag>
+                  <Tag color="blue">
+                    {selectedColaborador.cargo || "Sin Informacion"}
+                  </Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="Turno">
-                  <Tag color="orange">{selectedColaborador.turno}</Tag>
+                  <Tag color="orange">
+                    {selectedColaborador.turno || "Sin Informacion"}
+                  </Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="Tipo de Contrato">
-                  {selectedColaborador.tipoContrato}
+                  {selectedColaborador.tipoContrato || "Sin Informacion"}
                 </Descriptions.Item>
                 <Descriptions.Item
                   label={
@@ -1091,7 +958,11 @@ const GestionColaborador = () => {
                     </span>
                   }
                 >
-                  {dayjs(selectedColaborador.fechaIngreso).format("DD/MM/YYYY")}
+                  {selectedColaborador?.fechaIngreso
+                    ? dayjs(selectedColaborador?.fechaIngreso).format(
+                        "DD/MM/YYYY",
+                      )
+                    : "Sin Informacion"}
                 </Descriptions.Item>
               </Descriptions>
             </Card>
@@ -1101,20 +972,28 @@ const GestionColaborador = () => {
                 <Col span={12}>
                   <Statistic
                     title="Días Trabajando"
-                    value={dayjs().diff(
-                      dayjs(selectedColaborador.fechaIngreso),
-                      "day"
-                    )}
+                    value={
+                      selectedColaborador.fechaIngreso
+                        ? dayjs().diff(
+                            dayjs(selectedColaborador.fechaIngreso),
+                            "day",
+                          )
+                        : "N/A"
+                    }
                     suffix="días"
                   />
                 </Col>
                 <Col span={12}>
                   <Statistic
                     title="Antigüedad"
-                    value={dayjs().diff(
-                      dayjs(selectedColaborador.fechaIngreso),
-                      "month"
-                    )}
+                    value={
+                      selectedColaborador.fechaIngreso
+                        ? dayjs().diff(
+                            dayjs(selectedColaborador.fechaIngreso),
+                            "month",
+                          )
+                        : "N/A"
+                    }
                     suffix="meses"
                   />
                 </Col>

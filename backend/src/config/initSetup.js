@@ -9,6 +9,7 @@ const Categoria = require("../models/inventario/Categoria");
 const Sucursal = require("../models/inventario/Sucursal");
 const Bodega = require("../models/inventario/Bodega");
 const Estante = require("../models/inventario/Estante");
+const ContratoFuncionario = require("../models/Usuarios/ContratoFuncionario");
 const Proveedor = require("../models/inventario/Proveedor");
 const VendedorProveedor = require("../models/inventario/VendedorProveedor");
 const Productos = require("../models/inventario/Productos");
@@ -315,6 +316,32 @@ async function poblarBD() {
         idFuncionario: admin.idFuncionario,
       },
     });
+
+    const funcionarios = await Funcionario.findAll({
+      where: {
+        estado: {
+          [require("sequelize").Op.not]: "Eliminado",
+        },
+      },
+    });
+
+    for (const funcionario of funcionarios) {
+      await ContratoFuncionario.findOrCreate({
+        where: {
+          idFuncionario: funcionario.idFuncionario,
+          idSucursal: sucursal1.idSucursal,
+        },
+        defaults: {
+          idFuncionario: funcionario.idFuncionario,
+          idSucursal: sucursal1.idSucursal,
+          fechaIngreso: new Date(),
+          tipoContrato: "Plazo Fijo",
+          turno: "Mañana",
+          fechaTermino: null,
+          estado: "Activo",
+        },
+      });
+    }
 
     //Crear bodegas iniciales si no existen
     const [bodega1, bodega1Created] = await Bodega.findOrCreate({

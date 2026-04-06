@@ -46,6 +46,7 @@ export async function editarFuncionario(datos) {
     if (error.response?.data?.error == undefined) {
       return { code: 500, error: "Error del servidor" };
     }
+    return error.response?.data;
   }
 }
 
@@ -69,7 +70,7 @@ export async function eliminarFuncionario(idFuncionario) {
   try {
     const response = await axios.delete(
       `${API_URL}/eliminar/${idFuncionario}`,
-      { withCredentials: true }
+      { withCredentials: true },
     );
     //console.log("funcionario desvinculado:", response);
     return response;

@@ -29,6 +29,7 @@ const { Text } = Typography;
  * @param {String} title - Título de la página (opcional).
  * @param {String} description - Descripción de la página (opcional).
  * @param {Object} selectedRow - Fila seleccionada actualmente (opcional).
+ * @param {String} searchPlaceholder - Placeholder del buscador principal (opcional).
  */
 export default function DataTable({
   data = [],
@@ -44,6 +45,7 @@ export default function DataTable({
   title,
   description,
   selectedRow,
+  searchPlaceholder = "Buscar...",
 }) {
   const [searchText, setSearchText] = useState("");
   // Estado para manejar múltiples filtros dinámicos { estado: "Activo", rubro: "Tecnologia" }
@@ -142,7 +144,7 @@ export default function DataTable({
           {/* Buscador General */}
           <Col xs={24} sm={12} md={8}>
             <Input
-              placeholder="Buscar..."
+              placeholder={searchPlaceholder}
               prefix={<SearchOutlined />}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}

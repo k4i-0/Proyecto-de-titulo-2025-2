@@ -183,7 +183,7 @@ exports.crearFuncionario = async (req, res) => {
     const passwordInicial = await bcrypt.hash(rut.split("-")[0], 10);
     const passwordCajaInicial = await bcrypt.hash(
       rut.split("-")[0].slice(-4),
-      10
+      10,
     );
     const rolEncontrado = await Roles.findOne({
       where: { nombreRol: cargo },
@@ -269,11 +269,11 @@ exports.editarFuncionario = async (req, res) => {
       direccion,
       cargo,
       estado,
-      sucursal,
-      turno,
       contrato,
+      turno,
       estadoContrato,
     } = req.body;
+    console.log("Datos recibidos para editar funcionario:", req.body);
     if (
       !rut ||
       !nombre ||
@@ -283,9 +283,8 @@ exports.editarFuncionario = async (req, res) => {
       !direccion ||
       !cargo ||
       !estado ||
-      !sucursal ||
-      !turno ||
       !contrato ||
+      !turno ||
       !estadoContrato
     ) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
@@ -315,7 +314,7 @@ exports.editarFuncionario = async (req, res) => {
         estado,
       },
 
-      { where: { rut: rut } }
+      { where: { rut: rut } },
     );
     if (!funcionarioActualizado) {
       return res
@@ -339,7 +338,7 @@ exports.editarFuncionario = async (req, res) => {
       },
       {
         where: { idFuncionario: funcionario.idFuncionario },
-      }
+      },
     );
     if (!contratoFuncionarioActualizado) {
       return res
@@ -376,7 +375,7 @@ exports.eliminarFuncionario = async (req, res) => {
       },
       {
         where: { idFuncionario: idFuncionario },
-      }
+      },
     );
     if (!eliminado) {
       return res
@@ -389,7 +388,7 @@ exports.eliminarFuncionario = async (req, res) => {
       },
       {
         where: { idFuncionario: idFuncionario },
-      }
+      },
     );
     if (!funcionarioEliminado) {
       return res
