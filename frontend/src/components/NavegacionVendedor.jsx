@@ -5,14 +5,11 @@ const { Sider } = Layout;
 import {
   AreaChartOutlined,
   ProductOutlined,
+  ShoppingCartOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 
-export default function NavegacionVendedor({
-  nombreRol,
-  onLogout,
-  colorBgContainer,
-}) {
+export default function NavegacionVendedor({ nombreRol, onLogout }) {
   const [collapsed, setCollapsed] = useState(true);
   const navigate = useNavigate();
 
@@ -48,8 +45,15 @@ export default function NavegacionVendedor({
               children: [
                 {
                   key: "Compra_Proveedores",
+                  icon: <ShoppingCartOutlined />,
                   label: "Compra a Proveedores",
                   onClick: () => navigate("compra"),
+                },
+                {
+                  key: "Inventario_Productos",
+                  icon: <ProductOutlined />,
+                  label: "Inventario de Productos",
+                  onClick: () => navigate("inventario"),
                 },
               ],
             },

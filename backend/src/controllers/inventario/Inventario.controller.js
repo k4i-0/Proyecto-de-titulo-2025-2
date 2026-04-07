@@ -84,6 +84,78 @@ exports.getAllInventario = async (req, res) => {
   }
 };
 
+// Obtener inventario agrupado por sucursal
+exports.getInventarioPorSucursal = async (req, res) => {
+  try {
+    const sucursales = await Sucursal.findAll({
+      attributes: ["idSucursal", "nombre", "direccion", "estado"],
+      include: [
+        {
+          model: Bodega,
+          attributes: ["idBodega", "nombre"],
+          include: [
+            {
+              model: Inventario,
+              attributes: [
+                "idInventario",
+                "stock",
+                "stockMinimo",
+                "stockMaximo",
+                "stockReservado",
+                "estado",
+              ],
+              include: [
+                {
+                  model: Productos,
+                  attributes: ["idProducto", "codigo", "nombre", "marca"],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      order: [
+        ["idSucursal", "ASC"],
+        [Bodega, "idBodega", "ASC"],
+        [Bodega, Inventario, "idInventario", "ASC"],
+      ],
+    });
+
+    const resultado = sucursales.map((sucursal) => {
+      const inventarios = (sucursal.bodegas || []).flatMap((bodega) =>
+        (bodega.inventarios || []).map((inventario) => ({
+          idInventario: inventario.idInventario,
+          stock: inventario.stock,
+          stockMinimo: inventario.stockMinimo,
+          stockMaximo: inventario.stockMaximo,
+          stockReservado: inventario.stockReservado,
+          estado: inventario.estado,
+          bodega: {
+            idBodega: bodega.idBodega,
+            nombre: bodega.nombre,
+          },
+          producto: inventario.producto || null,
+        })),
+      );
+
+      return {
+        idSucursal: sucursal.idSucursal,
+        nombre: sucursal.nombre,
+        direccion: sucursal.direccion,
+        estado: sucursal.estado,
+        totalInventarios: inventarios.length,
+        totalStock: inventarios.reduce((acc, item) => acc + (item.stock || 0), 0),
+        inventarios,
+      };
+    });
+
+    res.status(200).json(resultado);
+  } catch (error) {
+    console.error("Error al obtener inventario por sucursal:", error);
+    res.status(500).json({ error: "Error al obtener inventario por sucursal" });
+  }
+};
+
 // Obtener un inventario por ID
 exports.getInventarioById = async (req, res) => {
   try {

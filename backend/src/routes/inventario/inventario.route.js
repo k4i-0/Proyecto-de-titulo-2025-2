@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const inventarioController = require("../../controllers/inventario/Inventario.controller");
+const { verifyToken, isVendedor } = require("../../middleware/auth.middleware");
 // const authMiddleware = require('../../middleware/authMiddleware');
 // const roleMiddleware = require('../../middleware/roleMiddleware');
 
@@ -11,6 +12,12 @@ router.post(
 router.get(
   "/buscar",
   /*authMiddleware,*/ inventarioController.getAllInventario
+);
+router.get(
+  "/por-sucursal",
+  verifyToken,
+  isVendedor,
+  inventarioController.getInventarioPorSucursal
 );
 router.get(
   "/buscar/:id",

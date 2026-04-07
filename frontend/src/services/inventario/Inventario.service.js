@@ -20,6 +20,21 @@ export default async function obtenerInventarios(idSucursal = null) {
   }
 }
 
+export async function obtenerInventarioPorSucursal() {
+  try {
+    const response = await axios.get(`${API_URL}/por-sucursal`, {
+      withCredentials: true,
+    });
+    return response;
+  } catch (error) {
+    console.error("Error al obtener inventario por sucursal:", error);
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response;
+  }
+}
+
 export async function crearInventarios(datos) {
   try {
     const response = await axios.post(`${API_URL}/crear`, datos, {

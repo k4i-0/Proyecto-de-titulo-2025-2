@@ -2,7 +2,6 @@ import {
   Layout,
   theme,
   Typography,
-  Menu,
   notification,
   Space,
   Avatar,
@@ -12,25 +11,31 @@ import {
 
 const { Title, Text } = Typography;
 
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { finSesion } from "../../services/Auth.services";
 import { useAuth } from "../../context/AuthContext";
 
 import NavegacionVendedor from "../../components/NavegacionVendedor";
+import VendedorPageHeader from "../../components/VendedorPageHeader";
 import {
   UserOutlined,
   LogoutOutlined,
   HomeOutlined,
+  DashboardOutlined,
+  ShoppingCartOutlined,
+  ProductOutlined,
+  ArrowLeftOutlined,
 } from "@ant-design/icons";
 
 export default function DashboardVendedor() {
   const { user, logout } = useAuth();
   const { Content, Header } = Layout;
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
-    token: { colorBgContainer, borderRadiusLG },
+    token: { borderRadiusLG },
   } = theme.useToken();
 
   const cerrarSesion = async () => {
@@ -66,6 +71,49 @@ export default function DashboardVendedor() {
       danger: true,
     },
   ];
+
+  const pageHeaderConfig = (() => {
+    if (location.pathname.includes("/vendedor/compra")) {
+      return {
+        title: "Compra a Proveedores",
+        description: "Gestiona ordenes de compra de tu sucursal",
+        icon: (
+          <ShoppingCartOutlined style={{ fontSize: 28, color: "#52c41a" }} />
+        ),
+        extra: (
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/vendedor")}
+          >
+            Volver al inicio
+          </Button>
+        ),
+      };
+    }
+
+    if (location.pathname.includes("/vendedor/inventario")) {
+      return {
+        title: "Inventario de Productos",
+        description: "Consulta el stock y detalle de productos por sucursal",
+        icon: <ProductOutlined style={{ fontSize: 28, color: "#52c41a" }} />,
+        extra: (
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/vendedor")}
+          >
+            Volver al inicio
+          </Button>
+        ),
+      };
+    }
+
+    return {
+      title: "Dashboard de Vendedor",
+      description: `Resumen operativo de ${user.nombre || "vendedor"}`,
+      icon: <DashboardOutlined style={{ fontSize: 28, color: "#52c41a" }} />,
+      extra: null,
+    };
+  })();
 
   return (
     <>
@@ -189,18 +237,23 @@ export default function DashboardVendedor() {
           <NavegacionVendedor
             nombreRol={user.nombreRol}
             onLogout={cerrarSesion}
-            colorBgContainer={colorBgContainer}
           />
           <Content
             style={{
-              marginLeft: "15px",
-              marginRight: "15px",
+              margin: "15px",
+
               padding: 24,
               background: "white",
               borderRadius: borderRadiusLG,
               overflow: "auto",
             }}
           >
+            <VendedorPageHeader
+              title={pageHeaderConfig.title}
+              description={pageHeaderConfig.description}
+              icon={pageHeaderConfig.icon}
+              extra={pageHeaderConfig.extra}
+            />
             <Outlet context={{ nombreUsuario: user.nombreRol }} />
           </Content>
         </Layout>

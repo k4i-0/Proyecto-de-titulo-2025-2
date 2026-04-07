@@ -35,8 +35,6 @@ import {
 
 const { Title, Text } = Typography;
 
-import { useNavigate } from "react-router-dom";
-
 import {
   getAllProveedores,
   getAllProveedoresVendedor,
@@ -51,8 +49,6 @@ import crearOrdenCompraProveedor, {
 } from "../../services/inventario/CompraProveedor.service";
 
 const AprovicionamientoProveedor = () => {
-  const navigate = useNavigate();
-
   // const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [miDatos, setMiDatos] = useState([]);
   const [ordenesCompra, setOrdenesCompra] = useState([]);
@@ -464,17 +460,6 @@ const AprovicionamientoProveedor = () => {
 
   return (
     <>
-      {/* Titulo */}
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col justify="start" style={{ textAlign: "left" }}>
-          <Button onClick={() => navigate("/vendedor")}>Volver</Button>
-        </Col>
-        <Col justify="center" style={{ flex: 1, textAlign: "center" }}>
-          <Title level={2}>Compra Proveedor</Title>
-        </Col>
-      </Row>
-
-      <Divider />
       {/* Tabla de Ordenes de Compra */}
       <Row>
         <Col span={24} style={{ marginTop: 16 }}>
