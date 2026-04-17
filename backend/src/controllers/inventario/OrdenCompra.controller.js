@@ -657,7 +657,7 @@ exports.obtenerOrdenesCompraVendedor = async (req, res) => {
     const respuesta = await obtenerOrdenCompra(
       {
         tipo: "compra sucursal",
-        estado: { [Op.notIn]: ["rechazada", "recepcionada", "cancelada"] },
+        estado: { [Op.notIn]: ["cancelada"] },
       },
       null,
       [
@@ -1047,7 +1047,7 @@ exports.obtenerOrdenesCompraAdmin = async (req, res) => {
     const respuesta = await obtenerOrdenCompra(
       {
         tipo: "compra sucursal",
-        estado: { [Op.notIn]: ["rechazada", "recepcionada", "cancelada"] },
+        estado: { [Op.notIn]: ["cancelada"] },
       },
       null,
       [
