@@ -349,25 +349,26 @@ async function poblarBD() {
       defaults: {
         nombre: "Bodega Central",
         capacidad: 400,
+        capacidadDisponible: 400,
         estado: "En Funcionamiento",
         idSucursal: sucursal1.idSucursal,
       },
     });
 
-    //Crear estantes iniciales si no existen
-    for (let i = 1; i <= 5; i++) {
-      await Estante.findOrCreate({
-        where: { codigoEstante: `ET${1000 + i}` },
-        defaults: {
-          capacidad: 80,
-          capacidadOcupada: 80,
-          capacidadDisponible: 80,
-          tipo: "Estante",
-          estado: "Disponible",
-          idBodega: bodega1.idBodega,
-        },
-      });
-    }
+    // //Crear estantes iniciales si no existen
+    // for (let i = 1; i <= 5; i++) {
+    //   await Estante.findOrCreate({
+    //     where: { codigoEstante: `ET${1000 + i}` },
+    //     defaults: {
+    //       capacidad: 80,
+    //       capacidadOcupada: 80,
+    //       capacidadDisponible: 80,
+    //       tipo: "Estante",
+    //       estado: "Disponible",
+    //       idBodega: bodega1.idBodega,
+    //     },
+    //   });
+    // }
 
     //Crear Proveedores
     const [proveedor, proveedorCreated] = await Proveedor.findOrCreate({

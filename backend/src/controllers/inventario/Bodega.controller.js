@@ -33,6 +33,8 @@ exports.createBodega = async (req, res) => {
     const nuevaBodega = await Bodega.create({
       nombre,
       capacidad,
+      capacidadOcupada: 0,
+      capacidadDisponible: capacidad,
       estado,
       idSucursal,
     });
@@ -106,6 +108,7 @@ exports.updateBodega = async (req, res) => {
       {
         nombre,
         capacidad,
+
         estado,
         idSucursal,
       },
@@ -132,13 +135,13 @@ exports.updateBodega = async (req, res) => {
 // Eliminar una bodega por ID
 exports.deleteBodega = async (req, res) => {
   try {
-    if (!req.params.id) {
+    const { id } = req.params;
+    if (!id) {
       return res.status(422).json({ error: "ID de bodega es obligatorio" });
     }
+    console.log("id:", id);
     //Evita que se borre todas las bodegas
-    const bodegasSucursal = await Bodega.findOne({
-      where: { idBodega: req.params.id },
-    });
+    const bodegasSucursal = await Bodega.findByPk(id);
     const todasBodegas = await Bodega.findAll({
       where: { idSucursal: bodegasSucursal.idSucursal },
     });
@@ -148,9 +151,9 @@ exports.deleteBodega = async (req, res) => {
       });
     }
     //eliminar Estantes
-    await Estante.destroy({
-      where: { idBodega: req.params.id },
-    });
+    // await Estante.destroy({
+    //   where: { idBodega: req.params.id },
+    // });
     //eliminar Bodega
     const busquedaBodega = await Bodega.destroy({
       where: { idBodega: req.params.id },
@@ -163,5 +166,6 @@ exports.deleteBodega = async (req, res) => {
     return res.status(404).json({ error: "Bodega no encontrada" });
   } catch (error) {
     res.status(500).json({ error: "Error al eliminar la bodega" });
+    console.log("Error al eliminar la bodega:", error);
   }
 };

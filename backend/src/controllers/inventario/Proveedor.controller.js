@@ -87,7 +87,7 @@ exports.updateProveedor = async (req, res) => {
     }
     const [updated] = await Proveedor.update(
       { rut, nombre, telefono, email, rubro, giro, estado },
-      { where: { idProveedor: req.params.id } }
+      { where: { idProveedor: req.params.id } },
     );
     if (!updated) {
       return res.status(404).json({ error: "Proveedor no encontrado" });
@@ -203,7 +203,10 @@ exports.updateVendedor = async (req, res) => {
     });
   }
   try {
-    const vendedor = await Vendedor.findByPk(idVendedorProveedor);
+    console.log("Datos de actulizar vendedor", req.body);
+    const vendedor = await Vendedor.findOne({
+      where: { idVendedorProveedor: idProveedor },
+    });
     if (!vendedor) {
       return res.status(404).json({ error: "Vendedor no encontrado" });
     }
@@ -211,7 +214,7 @@ exports.updateVendedor = async (req, res) => {
       { nombre, rut, telefono, email, idProveedor },
       {
         where: { idVendedorProveedor: vendedor.dataValues.idVendedorProveedor },
-      }
+      },
     );
     if (!updated) {
       return res.status(404).json({ error: "Vendedor no encontrado" });

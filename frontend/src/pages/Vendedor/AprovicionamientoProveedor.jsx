@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  Table,
   Input,
   Button,
   Space,
@@ -9,9 +8,6 @@ import {
   Row,
   Col,
   InputNumber,
-  Badge,
-  Drawer,
-  List,
   notification,
   Popconfirm,
   Empty,
@@ -26,11 +22,9 @@ import {
 } from "antd";
 
 import {
-  SearchOutlined,
   ShoppingCartOutlined,
   PlusOutlined,
   DeleteOutlined,
-  SendOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -44,17 +38,28 @@ import obtenerProductos from "../../services/inventario/Productos.service";
 
 import { obtenerQuienSoy } from "../../services/usuario/funcionario.service";
 
-import crearOrdenCompraProveedor, {
-  obtenerOrdenesCompraProveedores,
+import obtenerSucursales from "../../services/inventario/Sucursal.service";
+
+import DataTable from "../../components/Tabla";
+import ModalNuevaOrdenCompra from "../../components/ModalNuevaOrdenCompra";
+
+import {
+  obtenerOrdenesCompraVendedor,
+  crearOrdenCompraVendedor,
 } from "../../services/inventario/CompraProveedor.service";
 
+import { useNavigate } from "react-router-dom";
+
 const AprovicionamientoProveedor = () => {
+  const navigation = useNavigate();
   // const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [miDatos, setMiDatos] = useState([]);
+  const [miDatos, setMiDatos] = useState(null);
   const [ordenesCompra, setOrdenesCompra] = useState([]);
   const [productos, setProductos] = useState([]);
   const [proveedores, setProveedores] = useState([]);
-  const [vendedores, setVendedores] = useState([]);
+  const [sucursales, setSucursales] = useState([]);
+  const [proveedorSeleccionado, setProveedorSeleccionado] = useState(null);
+  const [vendedorSeleccionado, setVendedorSeleccionado] = useState(null);
   const [
     productosSeleccionadosOrdenCompra,
     setProductosSeleccionadosOrdenCompra,
@@ -80,13 +85,13 @@ const AprovicionamientoProveedor = () => {
     try {
       setLoading(true);
       const respuesta = await obtenerQuienSoy();
-      // console.log(respuesta);
+      //console.log("QuienSoy ", respuesta);
       if (respuesta.status === 200) {
-        notification.success({
-          message: "Datos obtenidos con éxito",
-          duration: 3.5,
+        setMiDatos(respuesta.data || {});
+        formOrdenCompra.setFieldsValue({
+          idFuncionario: respuesta.data?.idFuncionario,
+          idSucursal: respuesta.data?.idSucursal,
         });
-        setMiDatos(respuesta.data);
         setLoading(false);
         return;
       }
@@ -95,7 +100,7 @@ const AprovicionamientoProveedor = () => {
           message: "No hay datos disponibles",
           duration: 3.5,
         });
-        setMiDatos([]);
+        setMiDatos(null);
         setLoading(false);
         return;
       }
@@ -113,14 +118,28 @@ const AprovicionamientoProveedor = () => {
       setLoading(false);
     }
   };
+
+  const buscarSucursales = async () => {
+    try {
+      const respuesta = await obtenerSucursales();
+      if (respuesta.status === 200) {
+        setSucursales(Array.isArray(respuesta.data) ? respuesta.data : []);
+        return;
+      }
+    } catch (error) {
+      notification.error({
+        message: "Error al obtener las sucursales",
+        duration: 3.5,
+      });
+      console.error("Error al obtener las sucursales:", error);
+    }
+  };
+
   const buscarOrdenesCompraProveedores = async () => {
     try {
       setLoading(true);
-      const respuesta = await obtenerOrdenesCompraProveedores();
-      // console.log(
-      //   "Respuesta del ordenes de compra a proveedores:",
-      //   respuesta.data
-      // );
+      const respuesta = await obtenerOrdenesCompraVendedor();
+      //console.log("Respuesta del ordenes de compra a proveedores:",respuesta.data);
       if (respuesta.status === 200) {
         notification.success({
           message: "Ordenes de compra a proveedores obtenidas con éxito",
@@ -152,7 +171,7 @@ const AprovicionamientoProveedor = () => {
       });
       console.error(
         "Error al obtener las ordenes de compra a proveedores:",
-        error
+        error,
       );
     } finally {
       setLoading(false);
@@ -165,11 +184,7 @@ const AprovicionamientoProveedor = () => {
       const respuesta = await getAllProveedores();
       // console.log("Respuesta del inventario:", respuesta.data);
       if (respuesta.status === 200) {
-        notification.success({
-          message: "Inventarios obtenidos con éxito",
-          duration: 3.5,
-        });
-        setProveedores(respuesta.data);
+        setProveedores(Array.isArray(respuesta.data) ? respuesta.data : []);
         setLoading(false);
         return;
       }
@@ -204,11 +219,15 @@ const AprovicionamientoProveedor = () => {
       const respuesta = await getAllProveedoresVendedor(rutProveedor);
 
       if (respuesta.status === 200) {
-        notification.success({
-          message: "Inventarios obtenidos con éxito",
-          duration: 3.5,
+        const vendedoresEncontrados = Array.isArray(respuesta.data)
+          ? respuesta.data
+          : [];
+        const vendedorInicial = vendedoresEncontrados[0] || null;
+        setVendedorSeleccionado(vendedorInicial);
+        formOrdenCompra.setFieldsValue({
+          idVendedorProveedor: vendedorInicial?.idVendedorProveedor,
+          vendedorAsociado: vendedorInicial?.nombre,
         });
-        setVendedores(respuesta.data);
         setLoading(false);
         return;
       }
@@ -217,7 +236,11 @@ const AprovicionamientoProveedor = () => {
           message: "No existe productos en el inventario",
           duration: 3.5,
         });
-        setVendedores([]);
+        setVendedorSeleccionado(null);
+        formOrdenCompra.setFieldsValue({
+          idVendedorProveedor: undefined,
+          vendedorAsociado: undefined,
+        });
         setLoading(false);
         // return;
       }
@@ -243,11 +266,7 @@ const AprovicionamientoProveedor = () => {
       const respuesta = await obtenerProductos();
       // console.log("Respuesta del productos:", respuesta.data);
       if (respuesta.status === 200) {
-        notification.success({
-          message: "Productos obtenidos con éxito",
-          duration: 3.5,
-        });
-        setProductos(respuesta.data);
+        setProductos(Array.isArray(respuesta.data) ? respuesta.data : []);
         setLoading(false);
         return;
       }
@@ -279,15 +298,31 @@ const AprovicionamientoProveedor = () => {
     buscarOrdenesCompraProveedores();
   }, []);
 
+  const totalOrdenCompra = productosSeleccionadosOrdenCompra.reduce(
+    (acumulado, producto) =>
+      acumulado +
+      (producto.cantidadProducto || 0) * (producto.valorUnitarioProducto || 0),
+    0,
+  );
+
+  const ordenesCompraTabla = ordenesCompra.map((orden) => ({
+    ...orden,
+    proveedorNombre: orden.creaOrdenCompra?.proveedor?.nombre || "—",
+    sucursalNombre: orden.creaOrdenCompra?.sucursal?.nombre || "—",
+    vendedorNombre: orden.creaOrdenCompra?.vendedor?.nombre || "—",
+  }));
+
   const handleCerrarCompraNueva = () => {
     formOrdenCompra.resetFields();
     formSeleccionarProducto.resetFields();
     setProductosSeleccionadosOrdenCompra([]);
-    setVendedores([]);
+    setProveedorSeleccionado(null);
+    setVendedorSeleccionado(null);
     setVisibleCompraNueva(false);
   };
 
   const handleAbrirCompraNueva = async () => {
+    await buscarSucursales();
     await buscarMiDatos();
     await obtenerProveedores();
     setVisibleCompraNueva(true);
@@ -295,16 +330,27 @@ const AprovicionamientoProveedor = () => {
 
   const seleccionProveedor = async (idProveedorSeleccionado) => {
     const proveedorSeleccionado = proveedores.find(
-      (p) => p.idProveedor === idProveedorSeleccionado
+      (p) => p.idProveedor === idProveedorSeleccionado,
     );
     if (proveedorSeleccionado) {
-      // console.log("Proveedor seleccionado:", proveedorSeleccionado);
-
+      setProveedorSeleccionado(proveedorSeleccionado);
+      formOrdenCompra.setFieldsValue({
+        rutProveedor: proveedorSeleccionado.rut,
+        nombreProveedor: proveedorSeleccionado.nombre,
+      });
       await buscarVenedoresPorProveedor(proveedorSeleccionado.rut);
     } else {
+      setProveedorSeleccionado(null);
+      setVendedorSeleccionado(null);
+      formOrdenCompra.setFieldsValue({
+        rutProveedor: undefined,
+        nombreProveedor: undefined,
+        idVendedorProveedor: undefined,
+        vendedorAsociado: undefined,
+      });
       console.warn(
         "Proveedor no encontrado para el ID:",
-        idProveedorSeleccionado
+        idProveedorSeleccionado,
       );
     }
   };
@@ -315,7 +361,7 @@ const AprovicionamientoProveedor = () => {
   };
   const eliminarProductoOrdenCompra = (key) => {
     setProductosSeleccionadosOrdenCompra(
-      productosSeleccionadosOrdenCompra.filter((item) => item.key !== key)
+      productosSeleccionadosOrdenCompra.filter((item) => item.key !== key),
     );
     notification.success({ message: "Producto eliminado de la orden" });
   };
@@ -323,7 +369,7 @@ const AprovicionamientoProveedor = () => {
   const AgregarProductoOrdenCompra = (values) => {
     // console.log("Valores del formulario:", values);
     const productoExiste = productosSeleccionadosOrdenCompra.some(
-      (item) => item.productoSeleccionado === values.productoSeleccionado
+      (item) => item.productoSeleccionado === values.productoSeleccionado,
     );
 
     if (productoExiste) {
@@ -339,11 +385,23 @@ const AprovicionamientoProveedor = () => {
           : 0;
 
       const newKey = maxKey + 1;
+      const productoSeleccionado = productos.find(
+        (producto) => producto.idProducto === values.productoSeleccionado,
+      );
 
       return [
         ...prevProductos,
         {
           ...values,
+          nombreProducto: productoSeleccionado?.nombre,
+          codigoProducto:
+            productoSeleccionado?.codigoProducto ||
+            productoSeleccionado?.codigo,
+          cantidadProducto: values.cantidadProducto,
+          valorUnitarioProducto: values.valorUnitarioProducto,
+          total:
+            (values.cantidadProducto || 0) *
+            (values.valorUnitarioProducto || 0),
           key: newKey,
         },
       ];
@@ -354,13 +412,25 @@ const AprovicionamientoProveedor = () => {
 
   const enviarOrdenCompra = async (values) => {
     try {
+      const productosPayload = productosSeleccionadosOrdenCompra.map(
+        (item) => ({
+          idProducto: item.productoSeleccionado,
+          cantidad: item.cantidadProducto,
+          precioUnitario: item.valorUnitarioProducto,
+        }),
+      );
+
       const ordenCompleta = {
-        ...values,
-        productos: productosSeleccionadosOrdenCompra,
+        rutProveedor: proveedorSeleccionado?.rut,
+        idSucursal: miDatos?.idSucursal,
+        observaciones: values.observaciones,
+        idFuncionario: miDatos?.idFuncionario,
+        productos: productosPayload,
+        total: totalOrdenCompra,
       };
       // console.log("Orden de compra completa:", ordenCompleta);
       setLoading(true);
-      const respuesta = await crearOrdenCompraProveedor(ordenCompleta);
+      const respuesta = await crearOrdenCompraVendedor(ordenCompleta);
       if (respuesta.status === 201) {
         notification.success({
           message: "Orden de compra creada con éxito",
@@ -390,71 +460,94 @@ const AprovicionamientoProveedor = () => {
 
   const columnas = [
     {
-      title: "ID",
-      dataIndex: "idCompraProveedor",
-      key: "idCompraProveedor",
-    },
-    {
-      title: " Orden Compra",
+      title: "N° Orden",
       dataIndex: "nombreOrden",
       key: "nombreOrden",
     },
     {
       title: "Proveedor",
-      dataIndex: ["proveedor", "nombre"],
-      key: "proveedor.nombre",
+      dataIndex: "proveedorNombre",
+      key: "proveedorNombre",
     },
     {
-      title: "Fecha Compra",
-      dataIndex: "fechaCompra",
-      key: "fechaCompra",
-      render: (fecha) => new Date(fecha).toLocaleDateString(),
+      title: "Sucursal",
+      dataIndex: "sucursalNombre",
+      key: "sucursalNombre",
     },
     {
-      title: "Hora",
-      dataIndex: "fechaCompra",
-      key: "fechaCompra",
-      render: (fecha) =>
-        new Date(fecha).toLocaleTimeString("es-CL", {
-          hour12: false,
-        }),
+      title: "Solicitante",
+      dataIndex: "vendedorNombre",
+      key: "vendedorNombre",
     },
     {
-      title: "Estados",
+      title: "Fecha",
+      dataIndex: "fechaOrden",
+      key: "fechaOrden",
+      render: (fecha) => new Date(fecha).toLocaleDateString("es-CL"),
+    },
+    {
+      title: "Estado",
       dataIndex: "estado",
       key: "estado",
       render: (estado) => {
-        let color = "gray";
-        if (estado === "pendiente") {
-          color = "yellow";
-        } else if (estado === "aprobada") {
+        let color = "default";
+        if (estado === "pendiente de aprobacion") {
+          color = "gold";
+        } else if (estado === "creada") {
           color = "blue";
-        } else if (estado === "recibida") {
+        } else if (estado === "aprobada") {
           color = "green";
-        } else if (estado === "cancelada") {
+        } else if (estado === "aceptada con modificaciones") {
+          color = "orange";
+        } else if (estado === "rechazada" || estado === "cancelada") {
           color = "red";
         }
-        return <Tag color={color}>{estado.toUpperCase()}</Tag>;
+        return <Tag color={color}>{estado?.toUpperCase()}</Tag>;
       },
     },
     {
-      title: "Total Compra",
-      dataIndex: "total",
-      key: "total",
+      title: "Tipo",
+      dataIndex: "tipo",
+      key: "tipo",
+      render: (tipo) => tipo || "—",
     },
     {
-      title: "Ver detalles",
-      key: "detalles",
+      title: "Total",
+      dataIndex: "total",
+      key: "total",
+      render: (total) => `$${Number(total || 0).toLocaleString("es-CL")}`,
+    },
+    {
+      title: "Detalle",
+      dataIndex: "detalleEstado",
+      key: "detalleEstado",
+      render: (detalleEstado) => detalleEstado || "—",
+    },
+    {
+      title: "Acciones",
+      key: "acciones",
       render: (_, record) => (
-        <Button type="link" onClick={() => handleAbrirModalDetalles(record)}>
-          Ver Detalles
-        </Button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {/* <Button type="link" onClick={() => handleAbrirModalDetalles(record)}>
+            Ver Detalles
+          </Button> */}
+          <Button
+            disabled={record.estado !== "pendiente recibir"}
+            onClick={() =>
+              navigation(
+                `/vendedor/despachos/${record.creaOrdenCompra.proveedor.rut}`,
+              )
+            }
+          >
+            Recepcionar
+          </Button>
+        </div>
       ),
     },
   ];
 
   const handleAbrirModalDetalles = (compraProveedor) => {
-    // console.log("Detalles de la compra proveedor:", compraProveedor);
+    //console.log("Detalles de la compra proveedor:", compraProveedor);
     setModalDetalle({ visible: true, compraProveedor: compraProveedor });
   };
 
@@ -463,333 +556,82 @@ const AprovicionamientoProveedor = () => {
       {/* Tabla de Ordenes de Compra */}
       <Row>
         <Col span={24} style={{ marginTop: 16 }}>
-          <Card>
-            <Table
-              title={() => (
-                <div style={{ marginBottom: 8 }}>
-                  <Row
-                    justify="space-between"
-                    align="middle"
-                    gutter={16}
-                    style={{ marginBottom: 12 }}
-                  >
-                    <Col>
-                      <Title level={4} style={{ margin: 0 }}>
-                        Ordenes de compra
-                      </Title>
-                    </Col>
-                    <Col>
-                      <Text type="secondary">
-                        Total: {ordenesCompra.length} Ordenes De Compra
-                      </Text>
-                    </Col>
-                  </Row>
-                  <Row gutter={8}>
-                    <Col>
-                      <Button
-                        type="primary"
-                        icon={<ShoppingCartOutlined />}
-                        onClick={handleAbrirCompraNueva}
-                      >
-                        Crear Oden de Compra
-                      </Button>
-                    </Col>
-                    {/* <Col>
-                      <Button disabled={ordenesCompra.length === 0}>
-                        Crear Lista de productos faltantes
-                      </Button>
-                    </Col> */}
-                  </Row>
-                </div>
-              )}
-              rowKey="idCompraProveedor"
-              columns={columnas}
-              pagination={{ pageSize: 10 }}
-              dataSource={ordenesCompra}
-              loading={loading}
-            />
-          </Card>
+          <DataTable
+            title="Ordenes de compra"
+            description={`Total: ${ordenesCompra.length} ordenes de compra`}
+            data={ordenesCompraTabla}
+            columns={columnas}
+            loading={loading}
+            rowKey="idOrdenCompra"
+            searchableFields={[
+              "nombreOrden",
+              "estado",
+              "tipo",
+              "observaciones",
+              "detalleEstado",
+              "proveedorNombre",
+              "sucursalNombre",
+              "vendedorNombre",
+            ]}
+            filterConfig={[
+              {
+                key: "estado",
+                placeholder: "Estado",
+                options: [
+                  { value: "creada", label: "Creada" },
+                  {
+                    value: "pendiente de aprobacion",
+                    label: "Pendiente de aprobación",
+                  },
+                  { value: "aprobada", label: "Aprobada" },
+                  { value: "rechazada", label: "Rechazada" },
+                  { value: "cancelada", label: "Cancelada" },
+                ],
+              },
+              {
+                key: "tipo",
+                placeholder: "Tipo",
+                options: [
+                  { value: "compra sucursal", label: "Compra sucursal" },
+                ],
+              },
+            ]}
+            headerButtons={
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button
+                  type="primary"
+                  icon={<ShoppingCartOutlined />}
+                  onClick={handleAbrirCompraNueva}
+                >
+                  Crear orden de compra
+                </Button>
+              </div>
+            }
+            onRowClick={handleAbrirModalDetalles}
+          />
         </Col>
       </Row>
       {/* Modal Nueva Orden de Compra */}
-      <Modal
-        title="Nueva Orden de Compra"
-        open={visibleCompraNueva}
+      <ModalNuevaOrdenCompra
+        visible={visibleCompraNueva}
         onCancel={handleCerrarCompraNueva}
-        footer={[
-          <Button key="cancel" onClick={handleCerrarCompraNueva}>
-            Cancelar
-          </Button>,
-          <Button
-            key="submit"
-            type="primary"
-            disabled={
-              proveedores.length === 0 ||
-              productosSeleccionadosOrdenCompra.length === 0 ||
-              productos.length === 0
-            }
-            onClick={() => {
-              formOrdenCompra.submit();
-            }}
-          >
-            Crear Orden de Compra
-          </Button>,
-        ]}
-        width={800}
-      >
-        <Form
-          form={formOrdenCompra}
-          layout="vertical"
-          onFinish={enviarOrdenCompra}
-        >
-          {proveedores.length === 0 && (
-            <Alert
-              message="Debes Solicitar la creación de proveedores antes de crear una orden de compra."
-              type="warning"
-              showIcon
-              style={{ marginBottom: 16 }}
-            />
-          )}
-          {/*Funcionario - Sucursal disabled */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="CodFuncionario"
-                name="idFuncionario"
-                initialValue={miDatos.idFuncionario}
-              >
-                <Input disabled placeholder="CodFuncionario" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="CodSucursal"
-                name="idSucursal"
-                initialValue={miDatos.idSucursal}
-              >
-                <Input disabled placeholder="CodSucursal" />
-              </Form.Item>
-            </Col>
-          </Row>
-          {/*Proveedor - Vendedor */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Proveedor"
-                name="idProveedor"
-                rules={[
-                  { required: true, message: "Proveedor es obligatorio" },
-                ]}
-              >
-                <Select
-                  disabled={proveedores.length === 0}
-                  options={proveedores.map((proveedor) => ({
-                    value: proveedor.idProveedor,
-                    label: `${proveedor.rut} - ${proveedor.nombre}`,
-                  }))}
-                  onChange={seleccionProveedor}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Vendedor"
-                name="idVendedorProveedor"
-                dependencies={["idProveedor"]}
-                rules={[
-                  {
-                    required: vendedores.length > 0,
-                    message: "Vendedor es Requerido",
-                  },
-                ]}
-              >
-                <Select
-                  placeholder={
-                    vendedores.length > 0
-                      ? "Seleccione un vendedor"
-                      : "Seleccione un proveedor primero"
-                  }
-                  disabled={vendedores.length === 0}
-                  options={vendedores.map((vendedor) => ({
-                    value: vendedor.idVendedorProveedor,
-                    label: vendedor.nombre,
-                  }))}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Divider />
-          <Row gutter={16} align="middle" style={{ marginBottom: 16 }}>
-            <Col>
-              <Button
-                type="default"
-                icon={<PlusOutlined />}
-                // disabled={productos.length === 0}
-                onClick={() => handleAgregarProductoOrdenCompra()}
-              >
-                Agregar Producto
-              </Button>
-            </Col>
-            <Col>
-              <Button type="default" disabled={ordenesCompra.length === 0}>
-                Crear Lista de productos faltantes
-              </Button>
-            </Col>
-          </Row>
-
-          <Drawer
-            title="Seleccionar Producto"
-            width={350}
-            onClose={() => setDrawerSelectProductoOrdenCompra(false)}
-            open={drawerSelectProductoOrdenCompra}
-          >
-            <Title level={4}>Seleccionar Producto</Title>
-            {productos.length === 0 && (
-              <Alert
-                message="Debes Solicitar la creación de productos antes de agregar a la orden de compra."
-                type="warning"
-                showIcon
-                style={{ marginBottom: 16 }}
-              />
-            )}
-            <Form
-              layout="vertical"
-              form={formSeleccionarProducto}
-              onFinish={AgregarProductoOrdenCompra}
-            >
-              <Form.Item
-                label="Producto"
-                name="productoSeleccionado"
-                rules={[{ required: true, message: "Producto es obligatorio" }]}
-              >
-                <Select
-                  showSearch
-                  placeholder={
-                    productos.length > 0
-                      ? "Seleccione un producto"
-                      : "No hay productos disponibles"
-                  }
-                  disabled={productos.length === 0}
-                  options={productos.map((producto) => ({
-                    value: producto.idProducto,
-                    label: `${producto.nombre} - ${producto.marca}`,
-                  }))}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="Cantidad"
-                name="cantidadProducto"
-                rules={[{ required: true, message: "Cantidad es obligatoria" }]}
-                initialValue={1}
-              >
-                <InputNumber min={1} style={{ width: "100%" }} />
-              </Form.Item>
-
-              <Form.Item
-                label="Valor Unitario"
-                name="valorUnitarioProducto"
-                rules={[
-                  {
-                    required: true,
-                    message: "Valor Unitario es obligatorio",
-                  },
-                ]}
-                initialValue={0}
-              >
-                <InputNumber
-                  min={0}
-                  step="0.01"
-                  precision={0}
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
-
-              <Form.Item>
-                <Button type="primary" htmlType="submit">
-                  Agregar a la Orden
-                </Button>
-              </Form.Item>
-            </Form>
-          </Drawer>
-
-          <Table
-            // rowSelection={rowSelection}
-            columns={[
-              {
-                title: "ID",
-                dataIndex: "key",
-                key: "key",
-              },
-              {
-                title: "Producto",
-                dataIndex: "productoSeleccionado",
-                key: "productoSeleccionado",
-                render: (id) => {
-                  const prod = productos.find((p) => p.idProducto === id);
-                  return prod ? `${prod.nombre} - ${prod.marca}` : id;
-                },
-              },
-              {
-                title: "Cantidad",
-                dataIndex: "cantidadProducto",
-                key: "cantidadProducto",
-              },
-              {
-                title: "Valor Unitario",
-                dataIndex: "valorUnitarioProducto",
-                key: "valorUnitarioProducto",
-              },
-              {
-                title: "Total",
-                dataIndex: "total",
-                key: "total",
-                render: (_, record) => {
-                  const cantidad = record.cantidadProducto || 0;
-                  const valor = record.valorUnitarioProducto || 0; // Corregido el nombre de la propiedad
-                  return cantidad * valor;
-                },
-              },
-              {
-                title: "Acciones",
-                key: "acciones",
-                render: (_, record) => (
-                  <Popconfirm
-                    title="¿Eliminar producto?"
-                    description="¿Está seguro de eliminar este producto de la orden?"
-                    onConfirm={() => eliminarProductoOrdenCompra(record.key)}
-                    okText="Sí"
-                    cancelText="No"
-                  >
-                    <Button
-                      type="text"
-                      danger
-                      icon={<DeleteOutlined />}
-                    ></Button>
-                  </Popconfirm>
-                ),
-              },
-            ]}
-            dataSource={productosSeleccionadosOrdenCompra}
-            scroll={{ x: 400 }}
-          />
-          <Form.Item
-            label="Observaciones"
-            name="observaciones"
-            rules={[
-              { required: true, message: "Observaciones son obligatorias" },
-            ]}
-          >
-            <Input.TextArea rows={4} placeholder="Observaciones adicionales" />
-          </Form.Item>
-          {/* <Form.Item>
-              <Button type="primary" htmlType="submit">
-                Crear Orden de Compra
-              </Button>
-            </Form.Item> */}
-        </Form>
-      </Modal>
+        formOrdenCompra={formOrdenCompra}
+        formSeleccionarProducto={formSeleccionarProducto}
+        proveedores={proveedores}
+        sucursales={sucursales}
+        productos={productos}
+        proveedorSeleccionado={proveedorSeleccionado}
+        vendedorSeleccionado={vendedorSeleccionado}
+        productosSeleccionados={productosSeleccionadosOrdenCompra}
+        onSeleccionarProveedor={seleccionProveedor}
+        onAgregarProducto={handleAgregarProductoOrdenCompra}
+        onEliminarProducto={eliminarProductoOrdenCompra}
+        onAgregarProductoOrden={AgregarProductoOrdenCompra}
+        onGuardarOrden={enviarOrdenCompra}
+        loading={loading}
+        drawerSelectProductoOpen={drawerSelectProductoOrdenCompra}
+        setDrawerSelectProductoOpen={setDrawerSelectProductoOrdenCompra}
+      />
 
       {/* Modal Detalles Orden de Compra */}
       <Modal
@@ -812,152 +654,238 @@ const AprovicionamientoProveedor = () => {
       >
         {modalDetalle.compraProveedor && (
           <>
-            {/* Información General */}
-            <Descriptions
-              bordered
-              column={2}
-              size="small"
-              style={{ marginBottom: 16 }}
-            >
-              <Descriptions.Item label="Sucursal" span={2}>
-                {modalDetalle.compraProveedor.sucursal?.nombre} -{" "}
-                {modalDetalle.compraProveedor.sucursal?.direccion}
-              </Descriptions.Item>
-              <Descriptions.Item label="N° Orden">
-                {modalDetalle.compraProveedor.idCompraProveedor}
-              </Descriptions.Item>
-              <Descriptions.Item label="Nombre Orden">
-                {modalDetalle.compraProveedor.nombreOrden}
-              </Descriptions.Item>
+            {(() => {
+              const orden = modalDetalle.compraProveedor;
+              const creaOrden = orden.creaOrdenCompra;
+              const proveedor = creaOrden?.proveedor;
+              const sucursal = creaOrden?.sucursal;
+              const vendedor = creaOrden?.vendedor;
+              const fechaOrden = orden.fechaOrden
+                ? new Date(orden.fechaOrden)
+                : null;
+              const detallesOrden =
+                orden.compraproveedordetalles ||
+                orden.compraproveedordetalle ||
+                [];
+              const productosOrden = Array.isArray(detallesOrden)
+                ? detallesOrden
+                : [];
+              const totalProductos = productosOrden.reduce((sum, record) => {
+                const subtotalCalculado =
+                  Number(record.subtotal || 0) ||
+                  Number(record.cantidad || 0) *
+                    Number(record.precioUnitario || 0);
+                return sum + subtotalCalculado;
+              }, 0);
 
-              <Descriptions.Item label="Fecha">
-                {new Date(
-                  modalDetalle.compraProveedor.fechaCompra
-                ).toLocaleDateString("es-CL")}
-              </Descriptions.Item>
-              <Descriptions.Item label="Hora">
-                {new Date(
-                  modalDetalle.compraProveedor.fechaCompra
-                ).toLocaleTimeString("es-CL", {
-                  hour12: false,
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Proveedor">
-                {modalDetalle.compraProveedor.proveedor?.nombre}
-              </Descriptions.Item>
-              <Descriptions.Item label="RUT Proveedor">
-                {modalDetalle.compraProveedor.proveedor?.rut}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Funcionario">
-                {modalDetalle.compraProveedor.funcionario?.nombre}
-              </Descriptions.Item>
-              <Descriptions.Item label="Email Funcionario">
-                {modalDetalle.compraProveedor.funcionario?.email}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Estado">
-                <Tag
-                  color={
-                    modalDetalle.compraProveedor.estado === "pendiente"
-                      ? "orange"
-                      : "green"
-                  }
-                >
-                  {modalDetalle.compraProveedor.estado?.toUpperCase()}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Total">
-                <Text strong style={{ fontSize: 16, color: "#1890ff" }}>
-                  ${modalDetalle.compraProveedor.total?.toLocaleString("es-CL")}
-                </Text>
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Observaciones" span={2}>
-                {modalDetalle.compraProveedor.observaciones ||
-                  "Sin observaciones"}
-              </Descriptions.Item>
-            </Descriptions>
-
-            {/* Detalles de Productos */}
-            <Divider>Productos</Divider>
-
-            {modalDetalle.compraProveedor.compraproveedordetalles?.length >
-            0 ? (
-              <Table
-                dataSource={
-                  modalDetalle.compraProveedor.compraproveedordetalles
+              const colorEstado = () => {
+                if (orden.estado === "pendiente de aprobacion") {
+                  return "gold";
                 }
-                rowKey="idCompraProveedorDetalle"
-                pagination={false}
-                size="small"
-                columns={[
-                  {
-                    title: "Producto",
-                    key: "producto",
-                    render: (_, record) => (
-                      <div>
-                        <Text strong>{record.producto?.nombre}</Text>
-                        <br />
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          {record.producto?.marca}
+                if (orden.estado === "creada") {
+                  return "blue";
+                }
+                if (orden.estado === "aprobada") {
+                  return "green";
+                }
+                if (
+                  orden.estado === "rechazada" ||
+                  orden.estado === "cancelada"
+                ) {
+                  return "red";
+                }
+                return "default";
+              };
+
+              return (
+                <>
+                  <Card
+                    style={{
+                      marginBottom: 16,
+                      background:
+                        "linear-gradient(135deg, #f8fbff 0%, #eef5ff 100%)",
+                    }}
+                  >
+                    <Row
+                      justify="space-between"
+                      align="middle"
+                      gutter={[16, 16]}
+                    >
+                      <Col>
+                        <Title level={4} style={{ margin: 0 }}>
+                          {orden.nombreOrden || "Orden de compra"}
+                        </Title>
+                        <Text type="secondary">
+                          {orden.detalleEstado || "Sin detalle de estado"}
                         </Text>
-                      </div>
-                    ),
-                  },
-                  {
-                    title: "Descripción",
-                    dataIndex: ["producto", "descripcion"],
-                    key: "descripcion",
-                  },
-                  {
-                    title: "Cantidad",
-                    dataIndex: "cantidad",
-                    key: "cantidad",
-                    align: "center",
-                  },
-                  {
-                    title: "Precio Unitario",
-                    dataIndex: "precioUnitario",
-                    key: "precioUnitario",
-                    align: "right",
-                    render: (precio) => `$${precio?.toLocaleString("es-CL")}`,
-                  },
-                  {
-                    title: "Total",
-                    dataIndex: "total",
-                    key: "total",
-                    align: "right",
-                    render: (total) => (
-                      <Text strong>${total?.toLocaleString("es-CL")}</Text>
-                    ),
-                  },
-                ]}
-                summary={(pageData) => {
-                  const totalGeneral = pageData.reduce(
-                    (sum, record) => sum + (record.total || 0),
-                    0
-                  );
-                  return (
-                    <Table.Summary.Row style={{ backgroundColor: "#fafafa" }}>
-                      <Table.Summary.Cell colSpan={4} align="right">
-                        <Text strong>Total General:</Text>
-                      </Table.Summary.Cell>
-                      <Table.Summary.Cell align="right">
+                      </Col>
+                      <Col>
+                        <Tag color={colorEstado()} style={{ marginRight: 0 }}>
+                          {orden.estado?.toUpperCase() || "SIN ESTADO"}
+                        </Tag>
+                      </Col>
+                    </Row>
+                  </Card>
+
+                  {/* Resumen de la orden */}
+                  <Descriptions
+                    bordered
+                    column={2}
+                    size="small"
+                    style={{ marginBottom: 16 }}
+                  >
+                    <Descriptions.Item label="N° Orden">
+                      {orden.idOrdenCompra || "—"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Código interno">
+                      {orden.nombreOrden || "—"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Fecha">
+                      {fechaOrden
+                        ? fechaOrden.toLocaleDateString("es-CL")
+                        : "—"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Hora">
+                      {fechaOrden
+                        ? fechaOrden.toLocaleTimeString("es-CL", {
+                            hour12: false,
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Tipo">
+                      {orden.tipo || "—"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Estado">
+                      <Tag color={colorEstado()}>
+                        {orden.estado?.toUpperCase() || "SIN ESTADO"}
+                      </Tag>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Total">
+                      <Text strong style={{ fontSize: 16, color: "#1890ff" }}>
+                        ${Number(orden.total || 0).toLocaleString("es-CL")}
+                      </Text>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Detalle estado">
+                      {orden.detalleEstado || "—"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Observaciones" span={2}>
+                      {orden.observaciones || "Sin observaciones"}
+                    </Descriptions.Item>
+                  </Descriptions>
+
+                  <Card
+                    title="Origen de la orden"
+                    size="small"
+                    style={{ marginBottom: 16 }}
+                  >
+                    <Descriptions bordered column={2} size="small">
+                      <Descriptions.Item label="Proveedor">
+                        {proveedor?.nombre || "—"}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="RUT proveedor">
+                        {proveedor?.rut || "—"}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Email proveedor">
+                        {proveedor?.email || "—"}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Sucursal">
+                        {sucursal?.nombre || "—"}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Dirección sucursal" span={2}>
+                        {sucursal?.direccion || "—"}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Solicitante">
+                        {vendedor?.nombre || "—"}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="RUT solicitante">
+                        {vendedor?.rut || "—"}
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
+
+                  {/* Detalles de Productos */}
+                  <Divider>Productos</Divider>
+
+                  {productosOrden.length > 0 ? (
+                    <>
+                      <DataTable
+                        data={productosOrden}
+                        rowKey="idCompraProveedorDetalle"
+                        pagination={false}
+                        showSearch={false}
+                        showFilters={false}
+                        columns={[
+                          {
+                            title: "Producto",
+                            key: "producto",
+                            render: (_, record) => (
+                              <div>
+                                <Text strong>
+                                  {record.producto?.nombre || "—"}
+                                </Text>
+                                <br />
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                  {record.producto?.marca || "Sin marca"}
+                                </Text>
+                              </div>
+                            ),
+                          },
+                          {
+                            title: "Descripción",
+                            dataIndex: ["producto", "descripcion"],
+                            key: "descripcion",
+                            render: (descripcion) => descripcion || "—",
+                          },
+                          {
+                            title: "Cantidad",
+                            dataIndex: "cantidad",
+                            key: "cantidad",
+                            align: "center",
+                          },
+                          {
+                            title: "Precio unitario",
+                            dataIndex: "precioUnitario",
+                            key: "precioUnitario",
+                            align: "right",
+                            render: (precio) =>
+                              `$${Number(precio || 0).toLocaleString("es-CL")}`,
+                          },
+                          {
+                            title: "Subtotal",
+                            key: "subtotalCalculado",
+                            align: "right",
+                            render: (_, record) => {
+                              const subtotalCalculado =
+                                Number(record.subtotal || 0) ||
+                                Number(record.cantidad || 0) *
+                                  Number(record.precioUnitario || 0);
+                              return (
+                                <Text strong>
+                                  ${subtotalCalculado.toLocaleString("es-CL")}
+                                </Text>
+                              );
+                            },
+                          },
+                        ]}
+                      />
+                      <Card
+                        size="small"
+                        style={{ marginTop: 12, textAlign: "right" }}
+                      >
+                        <Text strong>Total productos: </Text>
                         <Text strong style={{ fontSize: 16, color: "#1890ff" }}>
-                          ${totalGeneral.toLocaleString("es-CL")}
+                          ${totalProductos.toLocaleString("es-CL")}
                         </Text>
-                      </Table.Summary.Cell>
-                    </Table.Summary.Row>
-                  );
-                }}
-              />
-            ) : (
-              <Empty description="No hay productos en esta orden" />
-            )}
+                      </Card>
+                    </>
+                  ) : (
+                    <Empty description="No hay productos asociados a esta orden" />
+                  )}
+                </>
+              );
+            })()}
           </>
         )}
       </Modal>

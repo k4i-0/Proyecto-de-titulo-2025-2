@@ -316,7 +316,7 @@ export default function SucursalDetalle() {
           </Card>
         </Col>
       </Row>
-      <Row gutter={16}>
+      {/* <Row gutter={16}>
         <Col>
           <Button
             type="primary"
@@ -335,7 +335,7 @@ export default function SucursalDetalle() {
             Ver Proveedores
           </Button>
         </Col>
-      </Row>
+      </Row> */}
       {/* <Drawer open={verProveedores} onClose={() => setVerProveedores(false)}>
         <Row justify="end" style={{ marginBottom: 16 }}>
           <Col>
@@ -423,7 +423,7 @@ export default function SucursalDetalle() {
       <Divider />
 
       {/* Sección de Inventario */}
-      <Row style={{ marginBottom: 16 }}>
+      {/* <Row style={{ marginBottom: 16 }}>
         <Col span={24}>
           <div
             style={{
@@ -447,10 +447,10 @@ export default function SucursalDetalle() {
             sucursal
           </Text>
         </Col>
-      </Row>
+      </Row> */}
 
       {/* Tabla de inventario */}
-      <Row>
+      {/* <Row>
         <Col span={24}>
           <Card>
             <Table
@@ -473,7 +473,7 @@ export default function SucursalDetalle() {
             />
           </Card>
         </Col>
-      </Row>
+      </Row> */}
     </>
   );
 }

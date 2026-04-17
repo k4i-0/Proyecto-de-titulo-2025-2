@@ -1,5 +1,5 @@
 const Lote = require("../../models/inventario/Lote");
-const Estante = require("../../models/inventario/Estante");
+const Bodega = require("../../models/inventario/Bodega");
 const { generarCodigo } = require("../../function/generarCodigo");
 
 //---------------LOTE----------------
@@ -9,37 +9,40 @@ async function crearLote(
   fechaVencimiento,
   idProducto,
   idDetalleDespacho,
-  idEstante,
+  idBodega,
   transaccion,
 ) {
   try {
-    const nuevoLote = await Lote.create({
-      codigoLote: await generarCodigo("lote"),
-      fechaCreacion: new Date(),
-      fechaVencimiento:
-        fechaVencimiento ||
-        new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // 1 año de vencimiento
-      estado: estadoLote,
-      cantidad: cantidad,
-      idEstante: idEstante || null,
-      idProducto: idProducto,
-      idDetalleDespacho: idDetalleDespacho,
-    });
+    const nuevoLote = await Lote.create(
+      {
+        codigoLote: await generarCodigo("lote"),
+        fechaCreacion: new Date(),
+        fechaVencimiento:
+          fechaVencimiento ||
+          new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // 1 año de vencimiento
+        estado: estadoLote,
+        cantidad: cantidad,
+        idProducto: idProducto,
+        idDetalleDespacho: idDetalleDespacho,
+        idBodega: idBodega || null,
+      },
+      { transaction: transaccion },
+    );
 
-    //actualizar estante
-    const estante = await Estante.findByPk(idEstante);
-    if (!estante) {
-      return { code: 404, error: "Estante no encontrado" };
+    //actualizar bodega
+    const bodega = await Bodega.findByPk(idBodega);
+    if (!bodega) {
+      return { code: 404, error: "Bodega no encontrada" };
     }
-    if (cantidad > estante.dataValues.capacidadDisponible) {
-      return {
-        code: 422,
-        error: "Cantidad excede la capacidad disponible del estante",
-      };
-    }
-    await estante.update({
-      capacidadOcupada: estante.dataValues.capacidadOcupada + cantidad,
-      capacidadDisponible: estante.dataValues.capacidadDisponible - cantidad,
+    // if (cantidad > bodega.dataValues.capacidadDisponible) {
+    //   return {
+    //     code: 422,
+    //     error: "Cantidad excede la capacidad disponible del estante",
+    //   };
+    // }
+    await bodega.update({
+      capacidadOcupada: bodega.dataValues.capacidadOcupada + 1,
+      capacidadDisponible: bodega.dataValues.capacidadDisponible - 1,
     });
 
     return { code: 201, data: nuevoLote };
@@ -49,6 +52,19 @@ async function crearLote(
   }
 }
 
+async function obtenerLotesInventario(idProducto, idBodega) {
+  try {
+    const lotes = await Lote.findAll({
+      where: { idProducto: idProducto, idBodega: idBodega },
+    });
+    return { code: 200, data: lotes };
+  } catch (error) {
+    console.log("Error Obtener lotes de prodoucto", error);
+    return { code: 500, error: "Error al obtener los lotes" };
+  }
+}
+
 module.exports = {
   crearLote,
+  obtenerLotesInventario,
 };

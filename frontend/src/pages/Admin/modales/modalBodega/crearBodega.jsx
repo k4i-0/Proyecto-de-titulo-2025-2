@@ -177,9 +177,9 @@ export default function AgregarBodega({
           </Col>
           <Col span={12}>
             <Form.Item
-              label="Capacidad (unidades almacenables)"
+              label="Capacidad "
               name="capacidad"
-              tooltip="Número máximo de unidades/lotes que puede contener la bodega en total"
+              tooltip="Número máximo de unidades/lotes (unidades almacenables) que puede contener la bodega en total"
               rules={[
                 { required: true, message: "Por favor ingrese la capacidad" },
               ]}
@@ -193,27 +193,31 @@ export default function AgregarBodega({
             </Form.Item>
           </Col>
         </Row>
-
-        <Form.Item
-          label="Estado"
-          name="estado"
-          rules={[
-            { required: true, message: "Por favor seleccione un estado" },
-          ]}
-        >
-          <Select
-            placeholder="Seleccione un estado"
-            options={[
-              { value: "En Funcionamiento", label: "En Funcionamiento" },
-              { value: "En Mantenimiento", label: "En Mantenimiento" },
-              { value: "Fuera de Servicio", label: "Fuera de Servicio" },
-            ]}
-          />
-        </Form.Item>
-
-        <Form.Item label="Sucursal" name="idSucursal">
-          <Input placeholder="ID de Sucursal" disabled />
-        </Form.Item>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label="Estado"
+              name="estado"
+              rules={[
+                { required: true, message: "Por favor seleccione un estado" },
+              ]}
+            >
+              <Select
+                placeholder="Seleccione un estado"
+                options={[
+                  { value: "En Funcionamiento", label: "En Funcionamiento" },
+                  { value: "En Mantenimiento", label: "En Mantenimiento" },
+                  { value: "Fuera de Servicio", label: "Fuera de Servicio" },
+                ]}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label="Sucursal" name="idSucursal">
+              <Input placeholder="ID de Sucursal" disabled />
+            </Form.Item>
+          </Col>
+        </Row>
       </Form>
       {/* {loading ? (
         <div

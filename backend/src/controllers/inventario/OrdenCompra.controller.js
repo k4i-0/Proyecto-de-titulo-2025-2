@@ -15,6 +15,7 @@ const OrdenCompra = require("../../models/inventario/OrdenCompra");
 const CrearOrdenCompra = require("../../models/inventario/CreaOrdenCompra");
 const { Op } = require("sequelize");
 const { sequelize } = require("../../models");
+const jwt = require("jsonwebtoken");
 
 //service
 const {
@@ -23,13 +24,18 @@ const {
   cambiarEstadoOC,
   editarOrdenCompra,
   obtenerOConDetalles,
+  eliminarOrdenCompra,
 } = require("../../services/inventario/ordenCompra.service");
 
 const {
   crearDetalleOC,
+  modificarDetalleOCAdminSucursal,
 } = require("../../services/inventario/compraProveedorDetalle.service");
 
-const { crearDespacho } = require("../../services/inventario/despacho.service");
+const {
+  crearDespacho,
+  buscarOCIdProveedor,
+} = require("../../services/inventario/despacho.service");
 const {
   crearDetalleDespacho,
 } = require("../../services/inventario/detalleDespacho.service");
@@ -39,130 +45,7 @@ const {
   asociarProductosProveedor,
 } = require("../../services/inventario/proveedor.service");
 
-///------------------------funciones importantes------------------------///
-// Crear una nueva compra a proveedor
-exports.crearOrdenCompraProveedor = async (req, res) => {
-  const t = await sequelize.transaction();
-  try {
-    const {
-      idSucursal,
-      idFuncionario,
-      idProveedor,
-      idVendedorProveedor,
-      productos,
-      tipoOrden,
-      observaciones,
-    } = req.body;
-
-    if (
-      !idSucursal ||
-      !idFuncionario ||
-      !idProveedor ||
-      !idVendedorProveedor ||
-      !productos ||
-      !tipoOrden ||
-      productos.length === 0 ||
-      !observaciones
-    ) {
-      return res
-        .status(422)
-        .json({ code: 1234, error: "Faltan datos obligatorios" });
-    }
-    // Crear la orden de compra
-    const comprobarSucursal = await Sucursal.findByPk(idSucursal);
-    const comprobarProveedor = await Proveedor.findByPk(idProveedor);
-    // const comprobarVendedor = await VendedorProveedor.findOne({
-    //   where: {
-    //     [Op.and]: [
-    //       { idProveedor: idProveedor },
-    //       { idVendedorProveedor: idVendedorProveedor },
-    //     ],
-    //   },
-    // });
-    const comprobarFuncionario = await Funcionario.findByPk(idFuncionario);
-
-    if (!comprobarSucursal) {
-      return res
-        .status(404)
-        .json({ code: 1235, error: "Sucursal no encontrada" });
-    }
-    if (!comprobarProveedor) {
-      return res
-        .status(404)
-        .json({ code: 1236, error: "Proveedor no encontrado" });
-    }
-    // if (!comprobarVendedor) {
-    //   return res.status(404).json({
-    //     code: 1237,
-    //     error:
-    //       "Vendedor del proveedor no encontrado para el proveedor indicado",
-    //   });
-    // }
-    if (!comprobarFuncionario) {
-      return res
-        .status(404)
-        .json({ code: 1238, error: "Funcionario no encontrado" });
-    }
-    const totalCompra = productos.reduce(
-      (total, item) =>
-        total + item.valorUnitarioProducto * item.cantidadProducto,
-      0,
-    );
-
-    // Crear la Orden compra proveedor
-    const r = await crearOrdenCompra(
-      "compra sucursal",
-      totalCompra,
-      observaciones,
-      "Orden creada y pendiente de aprobación",
-      comprobarFuncionario.idFuncionario,
-      comprobarSucursal.idSucursal,
-      comprobarProveedor.idProveedor,
-    );
-    if (r.code !== 201) {
-      return res.status(r.code).json({ error: r.error });
-    }
-
-    // Crear los detalles de la compra
-    const rDetalle = await crearDetalleOC(productos, r.data.idOrdenCompra);
-    if (rDetalle.code !== 201) {
-      return res.status(rDetalle.code).json({ error: rDetalle.error });
-    }
-    await t.commit();
-    res.status(201).json({
-      message: "Orden de compra a proveedor creada con éxito",
-      compraProveedor: r.data,
-    });
-  } catch (error) {
-    await t.rollback();
-    console.error("Error al crear la orden de compra a proveedor:", error);
-    res
-      .status(500)
-      .json({ error: "Error al crear la orden de compra a proveedor" });
-  }
-};
-
-///================== Verificar ya que se cambio los modelos==================///
-exports.obtenerOrdenesCompraProveedores = async (req, res) => {
-  try {
-    const ordenesCompra = obtenerOrdenCompra();
-    if (ordenesCompra.code !== 200) {
-      return res
-        .status(ordenesCompra.code)
-        .json({ error: ordenesCompra.error });
-    }
-    return res.status(200).json(ordenesCompra);
-  } catch (error) {
-    console.error(
-      "Error al obtener las ordenes de compra a proveedores:",
-      error,
-    );
-    res
-      .status(500)
-      .json({ error: "Error al obtener las ordenes de compra a proveedores" });
-  }
-};
-
+///++++++++++++++++++++++++++++++FUNCIONES PARA ORDEN DE COMPRA DIRECTA (CREADA POR ADMIN)++++++++++++++++++++++++++++++///
 // Crear una nueva orden de compra directa (Creada por administrador)
 exports.createOrdenCompraDirecta = async (req, res) => {
   const t = await sequelize.transaction();
@@ -384,122 +267,6 @@ exports.anularOrdenCompraDirecta = async (req, res) => {
   }
 };
 
-//eliminar o cancelar ordenes de compra cualuquiera
-exports.cancelarOrdenCompra = async (req, res) => {
-  try {
-    //verificar que existe la orden
-    const { nombreOrden } = req.params;
-    console.log("ID de la orden a cancelar:", nombreOrden);
-    const t = await sequelize.transaction();
-    if (
-      !nombreOrden ||
-      nombreOrden === "" ||
-      nombreOrden === null ||
-      nombreOrden === undefined
-    ) {
-      return res
-        .status(422)
-        .json({ error: "ID de la orden de compra es obligatorio" });
-    }
-    const r = await cambiarEstadoOC(
-      nombreOrden,
-      "cancelada",
-      "Orden cancelada",
-    );
-    if (r.code !== 200) {
-      return res.status(r.code).json({ error: r.error });
-    }
-    await t.commit();
-    res
-      .status(200)
-      .json({ message: "Orden de compra a proveedor cancelada exitosamente" });
-  } catch (error) {
-    await t.rollback();
-    console.error("Error al cancelar la orden de compra a proveedores:", error);
-    res
-      .status(500)
-      .json({ error: "Error al cancelar la orden de compra a proveedores" });
-  }
-};
-
-// Cambiar el estado de una orden de compra
-exports.cambiarEstadoOrdenCompra = async (req, res) => {
-  try {
-    const { nombreOrden } = req.params;
-    const { estado, observaciones } = req.body;
-
-    if (!estado || estado === "" || estado === null || estado === undefined) {
-      return res.status(422).json({ error: "El nuevo estado es obligatorio" });
-    }
-    if (
-      nombreOrden === "" ||
-      nombreOrden === null ||
-      nombreOrden === undefined
-    ) {
-      return res
-        .status(422)
-        .json({ error: "Nombre de la orden de compra es obligatorio" });
-    }
-    const t = await sequelize.transaction();
-    const r = await cambiarEstadoOC(nombreOrden, estado, observaciones);
-    if (r.code !== 200) {
-      return res.status(r.code).json({ error: r.error });
-    }
-    await t.commit();
-    res.status(200).json({
-      message: "Estado de la orden de compra actualizado exitosamente",
-    });
-  } catch (error) {
-    await t.rollback();
-    console.error("Error al cambiar el estado de la orden de compra:", error);
-    res
-      .status(500)
-      .json({ error: "Error al cambiar el estado de la orden de compra" });
-  }
-};
-
-// Editar una orden de compra a proveedor
-exports.editarOrdenCompraProveedor = async (req, res) => {
-  try {
-    const { nombreOrden } = req.params;
-    const { productos, observaciones } = req.body;
-    if (
-      !productos ||
-      productos.length === 0 ||
-      productos === null ||
-      productos === undefined
-    ) {
-      return res
-        .status(422)
-        .json({ error: "La lista de productos es obligatoria" });
-    }
-    if (
-      nombreOrden === "" ||
-      nombreOrden === null ||
-      nombreOrden === undefined
-    ) {
-      return res
-        .status(422)
-        .json({ error: "ID de la orden de compra es obligatorio" });
-    }
-    const t = await sequelize.transaction();
-    const r = await editarOrdenCompra(nombreOrden, productos, observaciones);
-    if (r.code !== 200) {
-      return res.status(r.code).json({ error: r.error });
-    }
-    await t.commit();
-    res.status(200).json({
-      message: "Orden de compra a proveedor editada exitosamente",
-    });
-  } catch (error) {
-    await t.rollback();
-    console.error("Error al editar la orden de compra a proveedor:", error);
-    res
-      .status(500)
-      .json({ error: "Error al editar la orden de compra a proveedor" });
-  }
-};
-
 //RECEPCIONAR OC DIRECTA
 exports.recepcionarOrdenCompraDirecta = async (req, res) => {
   const t = await sequelize.transaction();
@@ -530,6 +297,21 @@ exports.recepcionarOrdenCompraDirecta = async (req, res) => {
     const rOC = await obtenerOrdenCompra(
       { nombreOrden: nombreOrden, tipo: "compra directa" },
       null,
+      [
+        {
+          model: CrearOrdenCompra,
+          include: [
+            {
+              model: Proveedor,
+              attributes: ["idProveedor", "nombre", "rut", "email"],
+            },
+            {
+              model: Sucursal,
+              attributes: ["idSucursal", "nombre", "direccion"],
+            },
+          ],
+        },
+      ],
     );
     if (rOC.code === 404) {
       return res
@@ -539,7 +321,10 @@ exports.recepcionarOrdenCompraDirecta = async (req, res) => {
     if (rOC.code !== 200) {
       return res.status(rOC.code).json({ error: rOC.error });
     }
+
+    //Asignar la OC encontrada a una variable para trabajar con ella más fácilmente
     const oc = rOC.data[0]; // data es array → tomar el primer elemento
+
     if (!oc) {
       return res
         .status(404)
@@ -551,6 +336,7 @@ exports.recepcionarOrdenCompraDirecta = async (req, res) => {
       });
     }
 
+    //Crea despacho automatico
     // 1. Crear el Despacho
     const despacho = await crearDespacho(
       tipoDocumento,
@@ -559,7 +345,8 @@ exports.recepcionarOrdenCompraDirecta = async (req, res) => {
       repartidor || "no indicado",
       "Recepcionado",
       observaciones || "Recepción de orden de compra directa",
-      oc.idOrdenCompra,
+      oc.dataValues.creaOrdenCompra.dataValues.idOrdenCompra,
+      t,
     );
     if (despacho.code !== 201) {
       await t.rollback();
@@ -587,6 +374,7 @@ exports.recepcionarOrdenCompraDirecta = async (req, res) => {
       totalRechazada,
       observaciones || "Detalle de recepción generado automáticamente",
       despacho.data.idDespacho,
+      t,
     );
     if (detalleDespacho.code !== 201) {
       await t.rollback();
@@ -596,112 +384,73 @@ exports.recepcionarOrdenCompraDirecta = async (req, res) => {
     }
 
     // 4. Obtener la Bodega de la Sucursal de la OC (para asignar Lotes e Inventario)
-    const sucursalOC = await CrearOrdenCompra.findOne({
-      where: { idOrdenCompra: oc.idOrdenCompra },
-      attributes: ["idSucursal"],
+
+    const bodega = await Bodega.findOne({
+      where: {
+        idSucursal: oc.dataValues.creaOrdenCompra.dataValues.idSucursal,
+        estado: "En Funcionamiento",
+        // capacidadDisponible: { [Op.gt]: 0 },
+      },
       transaction: t,
     });
 
-    let bodega = null;
-    if (sucursalOC?.idSucursal) {
-      bodega = await Bodega.findOne({
-        where: {
-          idSucursal: sucursalOC.idSucursal,
-          estado: "En Funcionamiento",
-        },
-        transaction: t,
+    if (!bodega) {
+      await t.rollback();
+      return res.status(400).json({
+        error: "No hay bodega con capacidad disponible en esta sucursal",
       });
     }
 
-    //5. Crear 1 Lote por producto recibido + asignar estante + actualizar Inventario
-    for (const prod of productos) {
-      if (!prod.idProducto || Number(prod.cantidadRecibida) <= 0) continue;
-
-      const cantRecibida = Number(prod.cantidadRecibida);
-
-      // Buscar estante con más espacio libre en la bodega ──
-      let idEstanteAsignado = null;
-      let estanteElegido = null;
-
-      if (bodega) {
-        const estantesDisponibles = await Estante.findAll({
-          where: { idBodega: bodega.idBodega, estado: "Disponible" },
-          include: [{ model: Lote, attributes: ["cantidad"] }],
-          transaction: t,
-        });
-
-        const estantesConEspacio = estantesDisponibles
-          .map((e) => {
-            const ocupado = (e.Lotes || []).reduce(
-              (s, l) => s + (l.cantidad || 0),
-              0,
-            );
-            return { estante: e, libre: e.capacidad - ocupado };
-          })
-          .filter((e) => e.libre > 0)
-          .sort((a, b) => b.libre - a.libre); // mayor espacio primero
-
-        if (estantesConEspacio.length > 0) {
-          estanteElegido = estantesConEspacio[0];
-          idEstanteAsignado = estanteElegido.estante.idEstante;
-        } else {
-          await t.rollback();
-          return res.status(404).json({
-            error: "No hay estantes disponibles para asignar al lote",
-          });
-        }
-      }
-
-      //Crear Lote
-      const loteResult = await crearLote(
+    //5. Crear Lotes y Asignar a Bodega (si hay bodega disponible)
+    for (const p of productos) {
+      const rLote = await crearLote(
         "disponible",
-        cantRecibida,
-        prod.fechaVencimiento || null,
-        prod.idProducto,
+        p.cantidadRecibida,
+        p.fechaVencimiento ? new Date(p.fechaVencimiento) : null,
+        p.idProducto,
         detalleDespacho.data.idDetalledespacho,
-        idEstanteAsignado,
+        bodega?.idBodega || null,
+        t,
       );
-      if (loteResult.code !== 201) {
+      if (rLote.code !== 201) {
         await t.rollback();
-        return res.status(500).json({
-          error: `Error al crear lote para producto ${prod.idProducto}`,
-        });
+        return res.status(rLote.code).json({ error: rLote.error });
       }
-
-      //Marcar estante como Completo si se llenó ──
-      if (estanteElegido) {
-        const librePostLote = estanteElegido.libre - cantRecibida;
-        if (librePostLote <= 0) {
-          await Estante.update(
-            { estado: "Completo" },
-            { where: { idEstante: idEstanteAsignado }, transaction: t },
-          );
-        }
-      }
-
-      //Upsert Inventario (idProducto + idBodega) ──
-      if (bodega) {
-        const [inv, created] = await Inventario.findOrCreate({
-          where: { idProducto: prod.idProducto, idBodega: bodega.idBodega },
-          defaults: {
-            stock: cantRecibida,
-            stockMinimo: 0,
-            stockMaximo: 100,
-            stockReservado: 0,
+      //Actualizar Inventario (stock) de cada producto recibido
+      const busquedaProductoInventario = await Inventario.findOne({
+        where: {
+          idBodega: bodega?.idBodega,
+          idProducto: p.idProducto,
+        },
+        transaction: t,
+      });
+      if (!busquedaProductoInventario) {
+        //crear nuevo registro en inventario con la cantidad recibida
+        const nuevoRegistroInventario = await Inventario.create(
+          {
+            stock: p.cantidadRecibida,
             estado: "Bueno",
+            idProducto: p.idProducto,
+            idBodega: bodega?.idBodega,
           },
-          transaction: t,
-        });
-        if (!created) {
-          await inv.update(
-            { stock: inv.stock + cantRecibida },
-            { transaction: t },
-          );
+          { transaction: t },
+        );
+        if (!nuevoRegistroInventario) {
+          await t.rollback();
+          return res
+            .status(500)
+            .json({ error: "Error al actualizar inventario" });
         }
-        console.log("inventario: ", inv);
+      } else {
+        //actualizar el stock sumando la cantidad recibida
+        const nuevoStock =
+          busquedaProductoInventario.stock + p.cantidadRecibida;
+        await busquedaProductoInventario.update(
+          { stock: nuevoStock },
+          { transaction: t },
+        );
       }
     }
-
     //Cambiar estado OC a recepcionada
     await cambiarEstadoOC(
       nombreOrden,
@@ -711,10 +460,8 @@ exports.recepcionarOrdenCompraDirecta = async (req, res) => {
 
     await t.commit();
     return res.status(200).json({
-      message: "Orden de compra directa recepcionada exitosamente",
+      message: "Recepción completada",
       idDespacho: despacho.data.idDespacho,
-      idDetalleDespacho: detalleDespacho.data.idDetalledespacho,
-      bodegaAsignada: bodega?.idBodega || null,
     });
   } catch (error) {
     await t.rollback();
@@ -724,6 +471,8 @@ exports.recepcionarOrdenCompraDirecta = async (req, res) => {
       .json({ error: "Error al recepcionar la orden de compra directa" });
   }
 };
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //------------------Funciones de despacho relacionadas con compra proveedor------------------//
 exports.buscarTodasOrdenesParaRecepcion = async (req, res) => {
@@ -897,5 +646,642 @@ exports.confirmacionRecepcionOrdenCompra = async (req, res) => {
     res
       .status(500)
       .json({ error: "Error al confirmar la recepción de la orden de compra" });
+  }
+};
+
+//----------------------Funciones de orden de compra a proveedor para vendedores------------------//
+
+exports.obtenerOrdenesCompraVendedor = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const respuesta = await obtenerOrdenCompra(
+      {
+        tipo: "compra sucursal",
+        estado: { [Op.notIn]: ["rechazada", "recepcionada", "cancelada"] },
+      },
+      null,
+      [
+        {
+          model: CrearOrdenCompra,
+          include: [
+            {
+              model: Proveedor,
+              attributes: ["idProveedor", "nombre", "rut", "email"],
+            },
+            {
+              model: Sucursal,
+              attributes: ["idSucursal", "nombre", "direccion"],
+            },
+            {
+              model: Funcionario,
+              as: "vendedor",
+              attributes: ["idFuncionario", "rut", "nombre"],
+            },
+          ],
+        },
+        {
+          model: CompraProveedorDetalle,
+          include: [
+            {
+              model: Producto,
+              attributes: ["idProducto", "nombre", "marca", "descripcion"],
+            },
+          ],
+        },
+      ],
+      [["fechaOrden", "DESC"]],
+      t,
+    );
+
+    if (respuesta.code != 200) {
+      await t.rollback();
+      return res.status(respuesta.code).json({ error: respuesta.error });
+    }
+    await t.commit();
+    res.status(200).json(respuesta.data);
+  } catch (error) {
+    console.warn(
+      "Error al obtener ordenes de compra a proveedor desde vendedor:",
+      error,
+    );
+    res.status(500).json({
+      error: "Error al obtener ordenes de compra a proveedor desde vendedor",
+    });
+  }
+};
+
+exports.crearOrdenCompraVendedor = async (req, res) => {
+  try {
+    const {
+      rutProveedor,
+      idSucursal,
+      observaciones,
+      idFuncionario,
+      productos,
+      total,
+    } = req.body;
+
+    if (
+      !rutProveedor ||
+      !idSucursal ||
+      !idFuncionario ||
+      !productos ||
+      !total ||
+      !observaciones
+    ) {
+      return res.status(422).json({ error: "Faltan datos obligatorios" });
+    }
+
+    //verificar que el proveedor, sucursal y funcionario existen
+    const comprobarProveedor = await Proveedor.findOne({
+      where: { rut: rutProveedor },
+    });
+    const comprobarSucursal = await Sucursal.findByPk(idSucursal);
+    const comprobarFuncionario = await Funcionario.findByPk(idFuncionario);
+
+    if (!comprobarProveedor) {
+      return res.status(404).json({ error: "Proveedor no encontrado" });
+    }
+    if (!comprobarSucursal) {
+      return res.status(404).json({ error: "Sucursal no encontrada" });
+    }
+    if (!comprobarFuncionario) {
+      return res.status(404).json({ error: "Funcionario no encontrado" });
+    }
+
+    //crear orden de compra a proveedor desde vendedor
+    const respuestaOC = await crearOrdenCompra(
+      "compra sucursal",
+      total,
+      observaciones,
+      "Orden creada y pendiente de aprobación",
+      comprobarProveedor.idProveedor,
+      idSucursal,
+      idFuncionario,
+      null,
+    );
+    if (respuestaOC.code !== 201) {
+      console.log("fallo crear Orden compra");
+      return res.status(respuestaOC.code).json({ error: respuestaOC.error });
+    }
+    //crear detalle de orden de compra
+    const rDetalle = await crearDetalleOC(
+      productos,
+      respuestaOC.data.idOrdenCompra,
+    );
+    if (rDetalle.code !== 201) {
+      console.log("Fallo Crear Detalle orden compra");
+      return res.status(rDetalle.code).json({ error: rDetalle.error });
+    }
+
+    //actualizar estado de la orden a pendiente de aprobacion
+    await respuestaOC.data.update({ estado: "pendiente de aprobacion" });
+
+    //notificar a admiistrador mediante correo o similar.
+    res
+      .status(201)
+      .json({ message: "Orden de compra a proveedor creada exitosamente" });
+  } catch (error) {
+    console.warn(
+      "Error al crear orden de compra a proveedor desde vendedor:",
+      error,
+    );
+    res.status(500).json({
+      error: "Error al crear orden de compra a proveedor desde vendedor",
+    });
+  }
+};
+
+exports.buscarOrdenesCompraSucursalVendedor = async (req, res) => {
+  try {
+    const { rutProveedor } = req.params;
+    if (!rutProveedor) {
+      return res.status(422).json({ error: "Rut de proveedor es requerido" });
+    }
+    //verificar con joi rut
+
+    //verificar que el proveedor existe
+    const comprobarProveedor = await Proveedor.findOne({
+      where: { rut: rutProveedor },
+    });
+    if (!comprobarProveedor) {
+      return res.status(404).json({ error: "Proveedor no encontrado" });
+    }
+    //encontrar ordenes de compra asociadas al proveedor
+
+    console.log("Proveedor encontrado:", comprobarProveedor.idProveedor);
+
+    const ordenesCompra = await buscarOCIdProveedor(
+      comprobarProveedor.idProveedor,
+    );
+    if (ordenesCompra.code === 404) {
+      return res.status(200).json([]);
+    }
+    if (ordenesCompra.code !== 200) {
+      return res
+        .status(ordenesCompra.code)
+        .json({ error: ordenesCompra.error });
+    }
+    res.status(200).json(ordenesCompra.data);
+  } catch (error) {
+    console.warn(
+      "Error al recepcionar orden de compra a proveedor desde vendedor:",
+      error,
+    );
+    res.status(500).json({
+      error: "Error al recepcionar orden de compra a proveedor desde vendedor",
+    });
+  }
+};
+
+exports.crearOrdenCompraSucursalVendedor = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const {
+      idOrdenCompra,
+      idProveedor,
+      tipoDocumento,
+      numeroDocumento,
+      repartidor,
+      observaciones,
+      productos,
+      idSucursal,
+    } = req.body;
+
+    //verificar con joi los datos recibidos
+
+    //verificar que la orden de compra existe y esta en estado pendiente de aprobacion
+    const verificarOC = await obtenerOrdenCompra(
+      { idOrdenCompra: idOrdenCompra, tipo: "compra sucursal" },
+      null,
+      null,
+      null,
+      t,
+    );
+    if (verificarOC.code === 404) {
+      await t.rollback();
+      return res
+        .status(404)
+        .json({ error: "Orden de compra a proveedor no encontrada" });
+    }
+    if (verificarOC.code !== 200) {
+      await t.rollback();
+      return res.status(verificarOC.code).json({ error: verificarOC.error });
+    }
+
+    //Asignar la OC encontrada a una variable para trabajar con ella más fácilmente
+    const oc = verificarOC.data.map((p) => p.get({ plain: true }))[0];
+    //console.log("Orden de compra encontrada linea 874:", oc);
+
+    //verificar si hay faltantantes
+    let estadoRecepcion = "Recepcionado";
+    let faltantes = 0;
+    for (const p of productos) {
+      if (p.cantidadRecibida < p.cantidad) {
+        faltantes += p.cantidad - p.cantidadRecibida;
+      }
+    }
+    if (faltantes > 0) {
+      estadoRecepcion = "Entregado Con Faltantes";
+    }
+
+    //crear despacho automatico
+    const rDespacho = await crearDespacho(
+      tipoDocumento,
+      "proveedor",
+      numeroDocumento || "no indicado",
+      repartidor || "no indicado",
+      estadoRecepcion,
+      observaciones || "Recepción de orden de compra a proveedor",
+      oc.idOrdenCompra,
+      t,
+    );
+    if (rDespacho.code !== 201) {
+      await t.rollback();
+      return res.status(rDespacho.code).json({ error: rDespacho.error });
+    }
+
+    const despacho = rDespacho.data.get({ plain: true });
+    //console.log("Despacho creado linea 905:", despacho);
+
+    //buscar bodegas sucursal
+    const bodegasSucursal = await Bodega.findAll({
+      where: {
+        idSucursal: idSucursal,
+        estado: "En Funcionamiento",
+        capacidadDisponible: { [Op.gt]: 0 },
+      },
+      transaction: t,
+      raw: true,
+    });
+    const bodegasSucursalLimpias = bodegasSucursal[0];
+    //console.log("Bodegas encontradas linea 917:", bodegasSucursalLimpias);
+    if (!bodegasSucursalLimpias) {
+      await t.rollback();
+      return res
+        .status(404)
+        .json({ error: "No hay bodegas disponibles en la sucursal" });
+    }
+
+    //crear detalle de despacho
+    for (const p of productos) {
+      const rDetalleDespacho = await crearDetalleDespacho(
+        p.cantidadSolicitada,
+        p.cantidadRecibida,
+        p.cantidadRechazada,
+        observaciones || "Detalle de recepción generado automáticamente",
+        despacho.idDespacho,
+        t,
+      );
+      if (rDetalleDespacho.code !== 201) {
+        await t.rollback();
+        return res
+          .status(rDetalleDespacho.code)
+          .json({ error: rDetalleDespacho.error });
+      }
+      let rDetalleDespachoData = rDetalleDespacho.data.toJSON();
+      //console.log(
+      //  "Detalle de despacho creado linea 943:",
+      //  rDetalleDespachoData,
+      //);
+
+      //crear lote para cada producto
+      const rLote = await crearLote(
+        "disponible",
+        p.cantidadRecibida,
+        null,
+        p.idProducto,
+        rDetalleDespachoData.idDetalledespacho,
+        bodegasSucursalLimpias.idBodega,
+        t,
+      );
+      if (rLote.code !== 201) {
+        await t.rollback();
+        return res.status(rLote.code).json({ error: rLote.error });
+      }
+      //console.log("Lote linea 959:", rLote);
+      //Agregar a inventario cantidad recibida del producto
+      const inventarioEncontrado = await Inventario.findOne({
+        where: {
+          idBodega: bodegasSucursalLimpias.idBodega,
+          idProducto: p.idProducto,
+        },
+        transaction: t,
+      });
+      //console.log("Inventario encontrado 968:", inventarioEncontrado);
+      if (!inventarioEncontrado) {
+        //crear nuevo registro en inventario con la cantidad recibida
+        const nuevoRegistroInventario = await Inventario.create(
+          {
+            stock: p.cantidadRecibida,
+            estado: "Bueno",
+            idProducto: p.idProducto,
+            idBodega: bodegasSucursalLimpias.idBodega,
+          },
+          { transaction: t },
+        );
+        if (!nuevoRegistroInventario) {
+          await t.rollback();
+          return res
+            .status(500)
+            .json({ error: "Error al actualizar inventario" });
+        }
+      } else if (p.cantidadRecibida > 0) {
+        //actualizar el stock sumando la cantidad recibida
+        const updatedInventario = await inventarioEncontrado.update(
+          { stock: inventarioEncontrado.stock + Number(p.cantidadRecibida) },
+          { transaction: t },
+        );
+        console.log("Inventario actualizado 992:", updatedInventario);
+      }
+    }
+    //cambiar estado de la orden de compra a recepcionada
+    const updatedDespacho = await rDespacho.data.update(
+      { estado: "En Inventario" },
+      { transaction: t },
+    );
+    //console.log("Despacho actualizado 1000:", updatedDespacho);
+
+    //actualizar estado Orden de compra a recepcionada
+    const ocUpdate = await OrdenCompra.findOne({
+      where: { idOrdenCompra: idOrdenCompra },
+      transaction: t,
+    });
+    //console.log("Orden Compra linea 1007", ocUpdate);
+
+    if (faltantes > 0) {
+      const updatedOcUpdate = await ocUpdate.update(
+        { estado: "recibida con faltante" },
+        { transaction: t },
+      );
+      //console.log("Orden Compra actualizada 1014:", updatedOcUpdate);
+    } else {
+      const updatedOcUpdate = await ocUpdate.update(
+        { estado: "recepcionada" },
+        { transaction: t },
+      );
+      //console.log("Orden Compra actualizada 1017:", updatedOcUpdate);
+    }
+    await t.commit();
+    return res.status(200).json({
+      message:
+        "Función para crear orden de compra desde vendedor recibida correctamente",
+    });
+  } catch (error) {
+    await t.rollback();
+    //console.log(
+    //  "Error al crear orden de compra a proveedor desde vendedor:",
+    // error,
+    //);
+    res.status(500).json({
+      error: "Error al crear orden de compra a proveedor desde vendedor",
+    });
+  }
+};
+
+//-----------------------Funciones de orden de compra a proveedor para admin------------------//
+
+exports.obtenerOrdenesCompraAdmin = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const respuesta = await obtenerOrdenCompra(
+      {
+        tipo: "compra sucursal",
+        estado: { [Op.notIn]: ["rechazada", "recepcionada", "cancelada"] },
+      },
+      null,
+      [
+        {
+          model: CrearOrdenCompra,
+          include: [
+            {
+              model: Proveedor,
+              attributes: ["idProveedor", "nombre", "rut", "email"],
+            },
+            {
+              model: Sucursal,
+              attributes: ["idSucursal", "nombre", "direccion"],
+            },
+            {
+              model: Funcionario,
+              as: "vendedor",
+              attributes: ["idFuncionario", "rut", "nombre"],
+            },
+          ],
+        },
+        {
+          model: CompraProveedorDetalle,
+          include: [
+            {
+              model: Producto,
+              attributes: ["idProducto", "nombre", "marca", "descripcion"],
+            },
+          ],
+        },
+      ],
+      [["fechaOrden", "DESC"]],
+      t,
+    );
+
+    if (respuesta.code != 200) {
+      await t.rollback();
+      return res.status(respuesta.code).json({ error: respuesta.error });
+    }
+    await t.commit();
+    res.status(200).json(respuesta.data);
+  } catch (error) {
+    console.warn(
+      "Error al obtener ordenes de compra a proveedor desde vendedor:",
+      error,
+    );
+    res.status(500).json({
+      error: "Error al obtener ordenes de compra a proveedor desde vendedor",
+    });
+  }
+};
+
+exports.anularOrdenCompraAdmin = async (req, res) => {
+  try {
+    const { nombreOrden } = req.params;
+
+    //validar con joi
+
+    //verificar oc
+    const verificarOC = await obtenerOrdenCompra(
+      { nombreOrden: nombreOrden, tipo: "compra sucursal" },
+      null,
+      null,
+    );
+    if (verificarOC.code === 404) {
+      return res
+        .status(404)
+        .json({ error: "Orden de compra a proveedor no encontrada" });
+    }
+    if (verificarOC.code !== 200) {
+      return res.status(verificarOC.code).json({ error: verificarOC.error });
+    }
+
+    //modificar estado a anulada
+    const r = await cambiarEstadoOC(
+      nombreOrden,
+      "anulada",
+      "Orden anulada por administrador",
+    );
+    if (r.code !== 200) {
+      return res.status(r.code).json({ error: r.error });
+    }
+    res.status(200).json({
+      message: "Orden de compra a proveedor anulada exitosamente",
+    });
+  } catch (error) {
+    console.warn(
+      "Error al anular orden de compra a proveedor desde admin:",
+      error,
+    );
+    res.status(500).json({
+      error: "Error al anular orden de compra a proveedor desde admin",
+    });
+  }
+};
+
+exports.aprobarOrdenCompraAdmin = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { nombreOrden } = req.params;
+
+    //validar con joi
+    //verificar oc
+    const { token } = req.cookies;
+    if (!token) {
+      return res
+        .status(401)
+        .json({ error: "Token de autenticación no proporcionado" });
+    }
+
+    const decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decodedPayload) {
+      return res.status(401).json({ error: "Token inválido" });
+    }
+    //verificar funcionario
+    const funcionario = await Funcionario.findOne({
+      where: { rut: decodedPayload.rut },
+    });
+    if (!funcionario) {
+      return res.status(404).json({ error: "Funcionario no encontrado" });
+    }
+
+    const verificarOC = await obtenerOrdenCompra(
+      { nombreOrden: nombreOrden, tipo: "compra sucursal" },
+      null,
+      null,
+    );
+    if (verificarOC.code === 404) {
+      return res
+        .status(404)
+        .json({ error: "Orden de compra a proveedor no encontrada" });
+    }
+    if (verificarOC.code !== 200) {
+      return res.status(verificarOC.code).json({ error: verificarOC.error });
+    }
+
+    //modificar estado a aprobada
+    const r = await cambiarEstadoOC(
+      nombreOrden,
+      "aprobada",
+      "Orden aprobada por administrador",
+      funcionario.dataValues.idFuncionario,
+      t,
+    );
+    if (r.code !== 200) {
+      return res.status(r.code).json({ error: r.error });
+    }
+
+    //cambiar estado de la oc a pendiente recibir, se actualiza en el service cambiarEstadoOC
+    r.data.estado = "pendiente recibir";
+    await r.data.save({ transaction: t });
+
+    await t.commit();
+    res.status(200).json({
+      message: "Orden de compra a proveedor aprobada exitosamente",
+    });
+  } catch (error) {
+    console.warn(
+      "Error al aprobar orden de compra a proveedor desde admin:",
+      error,
+    );
+    res.status(500).json({
+      error: "Error al aprobar orden de compra a proveedor desde admin",
+    });
+  }
+};
+
+exports.modificarOrdenCompraAdmin = async (req, res) => {
+  try {
+    const { nombreOrden } = req.params;
+    const { productos, observaciones } = req.body;
+
+    if (
+      !nombreOrden ||
+      !productos ||
+      productos.length === 0 ||
+      !observaciones
+    ) {
+      return res.status(422).json({
+        error:
+          "Faltan datos obligatorios: productos y observaciones son requeridos",
+      });
+    }
+    //validar con joi
+
+    //encontar ocDetalle
+    /**
+     * productos es en formato array de objetos con idCompraproveedordetalle, idProducto, cantidad, precioUnitario, observaciones (opcional)
+     */
+    const rOCDetalle = await modificarDetalleOCAdminSucursal(
+      nombreOrden,
+      productos,
+      observaciones,
+    );
+    if (rOCDetalle.code !== 200) {
+      return res.status(rOCDetalle.code).json({ error: rOCDetalle.error });
+    }
+
+    //cambiar estado de la oc a pendiente recibir
+    rOCDetalle.data.update({ estado: "pendiente recibir" });
+
+    res.status(200).json({
+      message: "Orden de compra a proveedor modificada exitosamente",
+    });
+  } catch (error) {
+    console.warn(
+      "Error al modificar orden de compra a proveedor desde admin:",
+      error,
+    );
+    res.status(500).json({
+      error: "Error al modificar orden de compra a proveedor desde admin",
+    });
+  }
+};
+
+exports.eliminarOrdenCompraAdmin = async (req, res) => {
+  try {
+    const { nombreOrden } = req.params;
+
+    //validar con joi
+    const r = await eliminarOrdenCompra(nombreOrden);
+    if (r.code !== 200) {
+      return res.status(r.code).json({ error: r.error });
+    }
+    res.status(200).json({
+      message: "Orden de compra a proveedor eliminada exitosamente",
+    });
+  } catch (error) {
+    console.warn(
+      "Error al eliminar orden de compra a proveedor desde admin:",
+      error,
+    );
+    res.status(500).json({
+      error: "Error al eliminar orden de compra a proveedor desde admin",
+    });
   }
 };

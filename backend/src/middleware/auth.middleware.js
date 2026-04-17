@@ -7,18 +7,17 @@ const verifyToken = (req, res, next) => {
   // Intentar obtener token del header Authorization primero
   const authHeader = req.headers.authorization || req.headers.Authorization;
   let token = null;
-  
+
   // Prioridad 1: Header Authorization
   if (authHeader?.startsWith("Bearer ")) {
     token = authHeader.split(" ")[1];
   }
-  
+
   // Prioridad 2: Cookie (si no hay header)
   if (!token && req.cookies?.token) {
     token = req.cookies.token;
   }
-  
-  
+
   // Si no hay token en ningún lado
   if (!token) {
     return res.status(401).json({
@@ -26,9 +25,9 @@ const verifyToken = (req, res, next) => {
       error: "No hay token válido en header ni en cookies",
     });
   }
-  
+
   try {
-    const decoded = jwt.verify(token, jwtSecret); 
+    const decoded = jwt.verify(token, jwtSecret);
     req.user = decoded;
     next();
   } catch (error) {
@@ -48,10 +47,14 @@ const verifyRole = (rolesPermitidos) => {
           message: "Usuario no autenticado",
         });
       }
-      const funcionario = await Funcionario.findOne({where: {rut: req.user.rut}, include: [{
-          model: Roles,
-          attributes: ['nombreRol']
-        }]
+      const funcionario = await Funcionario.findOne({
+        where: { rut: req.user.rut },
+        include: [
+          {
+            model: Roles,
+            attributes: ["nombreRol"],
+          },
+        ],
       });
       //console.log(funcionario.role);
       if (!funcionario) {
@@ -60,17 +63,17 @@ const verifyRole = (rolesPermitidos) => {
         });
       }
       const rolUsuario = funcionario.role?.nombreRol;
-      //console.log(rolUsuario);
+      console.log(rolUsuario);
       if (!rolesPermitidos.includes(rolUsuario)) {
         return res.status(403).json({
           message: "No tienes permisos para realizar esta acción",
           requiredRoles: rolesPermitidos,
-          userRole: rolUsuario
+          userRole: rolUsuario,
         });
       }
       next();
     } catch (error) {
-      console.log(error); 
+      console.log(error);
       return res.status(500).json({
         message: "Error al verificar permisos",
         error: error.message,
@@ -84,10 +87,10 @@ const isAdmin = verifyRole(["Administrador"]);
 const isVendedor = verifyRole(["Vendedor"]);
 // Middleware para admin o vendedor
 const isAdminOrVendedor = verifyRole(["Administrador", "Vendedor"]);
-module.exports = { 
-  verifyToken, 
-  verifyRole, 
-  isAdmin, 
-  isVendedor, 
-  isAdminOrVendedor 
+module.exports = {
+  verifyToken,
+  verifyRole,
+  isAdmin,
+  isVendedor,
+  isAdminOrVendedor,
 };

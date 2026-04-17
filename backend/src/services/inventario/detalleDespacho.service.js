@@ -9,16 +9,20 @@ async function crearDetalleDespacho(
   cantidadRechazadaDD,
   observacionesDD,
   idDespacho,
+  transaction,
 ) {
   try {
-    const detalleDespacho = await DetalleDespacho.create({
-      codigoDetalleDespacho: await generarCodigo("detalleDespacho"),
-      cantidad: cantidadDD,
-      cantidadRecibida: cantidadRecibidaDD,
-      cantidadRechazada: cantidadRechazadaDD,
-      observaciones: observacionesDD,
-      idDespacho: idDespacho,
-    });
+    const detalleDespacho = await DetalleDespacho.create(
+      {
+        codigoDetalleDespacho: await generarCodigo("detalleDespacho"),
+        cantidad: cantidadDD,
+        cantidadRecibida: cantidadRecibidaDD,
+        cantidadRechazada: cantidadRechazadaDD,
+        observaciones: observacionesDD,
+        idDespacho: idDespacho,
+      },
+      { transaction: transaction },
+    );
 
     return { code: 201, data: detalleDespacho };
   } catch (error) {

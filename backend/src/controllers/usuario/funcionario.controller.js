@@ -205,6 +205,19 @@ exports.crearFuncionario = async (req, res) => {
             "El RUT pertenece a un funcionario eliminado, solicite activacion",
         });
       }
+      return res.status(409).json({ error: "El RUT ya está registrado" });
+    }
+    const emailExistente = await Funcionario.findOne({
+      where: { email: email },
+    });
+    if (emailExistente) {
+      if (emailExistente.estado === "Eliminado") {
+        return res.status(409).json({
+          error:
+            "El email pertenece a un funcionario eliminado, solicite activacion",
+        });
+      }
+      return res.status(409).json({ error: "El email ya está registrado" });
     }
     const nuevoFuncionario = await Funcionario.create({
       rut,
@@ -321,20 +334,19 @@ exports.editarFuncionario = async (req, res) => {
         .status(500)
         .json({ error: "No se pudo actualizar el funcionario" });
     }
-    //busca la sucursal por nombre
-    const sucursalEncontrada = await Sucursal.findOne({
-      where: { nombre: sucursal },
-    });
-    if (!sucursalEncontrada) {
-      return res.status(404).json({ error: "Sucursal no encontrada" });
-    }
+    // //busca la sucursal por nombre
+    // const sucursalEncontrada = await Sucursal.findOne({
+    //   where: { nombre: sucursal },
+    // });
+    // if (!sucursalEncontrada) {
+    //   return res.status(404).json({ error: "Sucursal no encontrada" });
+    // }
     //Actualiza contrato
     const contratoFuncionarioActualizado = await ContratoFuncionario.update(
       {
         tipoContrato: contrato,
         turno: turno,
         estado: estadoContrato,
-        idSucursal: sucursalEncontrada.idSucursal,
       },
       {
         where: { idFuncionario: funcionario.idFuncionario },
@@ -362,21 +374,17 @@ exports.eliminarFuncionario = async (req, res) => {
     }
     //elimina contrato del funcionario si no tiene contrato activo
     const funcionarioContrato = await ContratoFuncionario.findOne({
-      where: { idFuncionario: idFuncionario },
+      where: { idFuncionario: idFuncionario, estado: "Activo" },
     });
     if (funcionarioContrato) {
       return res.status(409).json({
         error: "No se puede eliminar el funcionario con contrato activo",
       });
     }
-    const eliminado = await Funcionario.update(
-      {
-        estado: "Eliminado",
-      },
-      {
-        where: { idFuncionario: idFuncionario },
-      },
-    );
+    const eliminado = await Funcionario.destroy({
+      where: { idFuncionario: idFuncionario },
+    });
+
     if (!eliminado) {
       return res
         .status(500)

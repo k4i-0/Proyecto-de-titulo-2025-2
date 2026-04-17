@@ -435,6 +435,12 @@ export default function Proveedor() {
         message.error("Vendedor no encontrado");
         return;
       }
+      notification.error({
+        message: "Error",
+        description:
+          respuesta.error || "Error en el servidor al editar el vendedor",
+        placement: "topLeft",
+      });
     } catch (error) {
       message.error("Error al editar el vendedor");
       console.error("Error al editar el vendedor:", error);
@@ -878,13 +884,14 @@ export default function Proveedor() {
         headerButtons={
           <Space size="middle">
             <Button
+              type="primary"
               size="large"
-              icon={<ReloadOutlined />}
-              onClick={obtenerProveedores}
-              loading={loading}
+              icon={<PlusOutlined />}
+              onClick={handleCrearProveedor}
+              disabled={loading}
               style={{ borderRadius: "8px" }}
             >
-              Actualizar
+              Nuevo Proveedor
             </Button>
             <Button
               size="large"
@@ -897,23 +904,22 @@ export default function Proveedor() {
             </Button>
             <Button
               size="large"
+              icon={<ReloadOutlined />}
+              onClick={obtenerProveedores}
+              loading={loading}
+              style={{ borderRadius: "8px" }}
+            >
+              Actualizar
+            </Button>
+            {/* <Button
+              size="large"
               disabled={!proveedorSeleccionado}
               icon={<LinkOutlined />}
               onClick={handleDrawerEnlazar}
               style={{ borderRadius: "8px" }}
             >
               Enlazar Productos
-            </Button>
-            <Button
-              type="primary"
-              size="large"
-              icon={<PlusOutlined />}
-              onClick={handleCrearProveedor}
-              disabled={loading}
-              style={{ borderRadius: "8px" }}
-            >
-              Nuevo Proveedor
-            </Button>
+            </Button> */}
           </Space>
         }
       />

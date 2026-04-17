@@ -23,9 +23,16 @@ import {
   ClockCircleOutlined,
   EyeOutlined,
   BankOutlined,
+  ShoppingCartOutlined,
+  ProductOutlined,
+  ShopOutlined,
+  TeamOutlined,
+  TruckOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 
 import { useNavigate } from "react-router-dom";
+import "./Inicio.css";
 
 const { Title, Text } = Typography;
 
@@ -56,7 +63,7 @@ const AdminDashboard = () => {
     try {
       const respuesta = await obtenerSucursales();
       if (respuesta.status === 200) {
-        console.log(respuesta.data);
+        //console.log(respuesta.data);
         setSucursales(respuesta.data);
         notification.success({
           message: "Sucursales obtenidas exitamente!!",
@@ -237,6 +244,45 @@ const AdminDashboard = () => {
     0,
   );
 
+  const accesosDirectos = [
+    {
+      title: "Solicitudes Compra",
+      icon: <InboxOutlined />,
+      path: "/admin/gestion/solicitudes_compra",
+      tone: "teal",
+    },
+    {
+      title: "Compra Directa",
+      icon: <ShoppingCartOutlined />,
+      path: "/admin/gestion/compra_directa",
+      tone: "amber",
+    },
+    {
+      title: "Inventario",
+      icon: <ProductOutlined />,
+      path: "/admin/inventario",
+      tone: "teal",
+    },
+    {
+      title: "Sucursales",
+      icon: <ShopOutlined />,
+      path: "/admin/sucursales",
+      tone: "blue",
+    },
+    {
+      title: "Proveedores",
+      icon: <TruckOutlined />,
+      path: "/admin/proveedores",
+      tone: "coral",
+    },
+    {
+      title: "Colaboradores",
+      icon: <TeamOutlined />,
+      path: "/admin/gestion/colaboradores",
+      tone: "indigo",
+    },
+  ];
+
   return (
     <div style={{ padding: "24px", background: "#f0f2f5", minHeight: "100vh" }}>
       <Title level={1} style={{ marginBottom: 24, textAlign: "center" }}>
@@ -346,6 +392,43 @@ const AdminDashboard = () => {
         </Col>
       </Row> */}
 
+      {/* Acceso Directo */}
+      <section className="admin-quick-access">
+        <div className="admin-quick-access__head">
+          <Title level={2} style={{ margin: 0 }}>
+            Acceso Directo
+          </Title>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            gap: 7,
+            flexWrap: "nowrap",
+            overflowX: "auto",
+          }}
+        >
+          {accesosDirectos.map((item) => (
+            <Card
+              key={item.title}
+              hoverable
+              className={`admin-quick-card admin-quick-card--${item.tone}`}
+              onClick={() => navigate(item.path)}
+              style={{
+                minWidth: 100,
+                textAlign: "center",
+                flex: "1 1 0",
+              }}
+              styles={{ body: { padding: "12px 8px" } }}
+            >
+              <div style={{ fontSize: 26, marginBottom: 4 }}>{item.icon}</div>
+              <Text style={{ fontSize: 18, fontWeight: 600 }}>
+                {item.title}
+              </Text>
+            </Card>
+          ))}
+        </div>
+      </section>
+
       {/* Tabla de Sucursales */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col span={24}>
@@ -374,6 +457,7 @@ const AdminDashboard = () => {
               columns={columnasSucursales}
               dataSource={sucursales}
               pagination={false}
+              rowKey="idSucursal"
             />
           </Card>
         </Col>

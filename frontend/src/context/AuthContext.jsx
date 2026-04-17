@@ -22,8 +22,6 @@ export const AuthProvider = ({ children }) => {
           setUser(userData);
           setIsAuthenticated(true);
           sessionStorage.setItem("userData", JSON.stringify(userData));
-        } else {
-          logout();
         }
       } catch (error) {
         console.log("Error en autenticación:", error);
@@ -42,8 +40,8 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
   };
 
-  const logout = (email) => {
-    finSesion(email);
+  const logout = () => {
+    finSesion();
     sessionStorage.removeItem("userData");
     setUser(null);
     setIsAuthenticated(false);

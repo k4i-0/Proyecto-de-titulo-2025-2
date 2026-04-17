@@ -11,7 +11,8 @@ const estanteRoutes = require("./inventario/estante.route");
 const proveedorRoutes = require("./inventario/Proveedor.route");
 
 const funcionarioRoutes = require("./usuarios/funcionario.route");
-const compraProveedorRoutes = require("./inventario/compraProveedor.route");
+const ordenesCompra = require("./inventario/ordenesCompra.route");
+const loteRoutes = require("./inventario/lote.route");
 
 //Autenticacion
 router.use("/auth", AuthRoutes);
@@ -41,6 +42,9 @@ router.use("/proveedores", proveedorRoutes);
 router.use("/funcionarios", funcionarioRoutes);
 
 //Rutas Compra a Proveedor
-router.use("/compra-proveedor", compraProveedorRoutes);
+router.use("/compras", ordenesCompra);
+
+//Rutas Lotes
+router.use("/lotes", loteRoutes);
 
 module.exports = router;

@@ -36,15 +36,11 @@ export async function inicioSesionCodigo(codigo) {
   }
 }
 
-export async function finSesion(email) {
+export async function finSesion() {
   try {
-    const response = await axios.post(
-      `${API_URL}/logout`,
-      { email },
-      {
-        withCredentials: true,
-      },
-    );
+    const response = await axios.post(`${API_URL}/logout`, null, {
+      withCredentials: true,
+    });
     //console.log("Respuesta logout", response);
     if (!response.data) {
       return "No se recibió respuesta del servidor";

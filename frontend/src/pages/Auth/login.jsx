@@ -31,11 +31,11 @@ const Login = () => {
   const { login, isAuthenticated, user } = useAuth();
 
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    if (token || isAuthenticated) {
-      if (user && user.rol === "Administrador") {
+    console.log("autenticado:", isAuthenticated, "usuario:", user);
+    if (isAuthenticated) {
+      if (user && user.nombreRol === "Administrador") {
         navigate("/admin");
-      } else if (user && user.rol === "Vendedor") {
+      } else if (user && user.nombreRol === "Vendedor") {
         navigate("/vendedor");
       }
     }

@@ -40,14 +40,6 @@ const lote = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
-    idEstante: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: "estante",
-        key: "idEstante",
-      },
-    },
     idProducto: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -62,6 +54,14 @@ const lote = sequelize.define(
       references: {
         model: "detalledespacho",
         key: "idDetalledespacho",
+      },
+    },
+    idBodega: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "bodega",
+        key: "idBodega",
       },
     },
   },

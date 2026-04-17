@@ -26,6 +26,10 @@ const creaOrdenCompra = sequelize.define(
         key: "idProveedor",
       },
     },
+    fechaAutorizacion: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     idSucursal: {
       type: DataTypes.INTEGER,
       allowNull: false,

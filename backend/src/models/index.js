@@ -86,12 +86,12 @@ Bodega.belongsTo(Sucursal, {
 });
 
 // Bodega -> Estantes (1:N)
-Bodega.hasMany(Estante, {
-  foreignKey: "idBodega",
-});
-Estante.belongsTo(Bodega, {
-  foreignKey: "idBodega",
-});
+// Bodega.hasMany(Estante, {
+//   foreignKey: "idBodega",
+// });
+// Estante.belongsTo(Bodega, {
+//   foreignKey: "idBodega",
+// });
 
 //Bodega -> Inventario (1:N) — una Bodega agrupa el stock de varios productos
 Bodega.hasMany(Inventario, {
@@ -133,12 +133,12 @@ Vendedor.belongsTo(Proveedor, {
   foreignKey: "idProveedor",
 });
 
-// Estante -> Lote (1:N)
-Estante.hasMany(Lote, {
-  foreignKey: "idEstante",
+// Bodega -> Lote (1:N)
+Bodega.hasMany(Lote, {
+  foreignKey: "idBodega",
 });
-Lote.belongsTo(Estante, {
-  foreignKey: "idEstante",
+Lote.belongsTo(Bodega, {
+  foreignKey: "idBodega",
 });
 
 // Deatlle Despacho -> Lote (1:N)

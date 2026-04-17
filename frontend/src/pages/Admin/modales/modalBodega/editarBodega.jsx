@@ -1,5 +1,15 @@
 import { useState, useEffect } from "react";
-import { Alert, Button, Form, Modal, Input, Select, InputNumber } from "antd";
+import {
+  Alert,
+  Button,
+  Form,
+  Modal,
+  Input,
+  Select,
+  InputNumber,
+  Row,
+  Col,
+} from "antd";
 
 import { editarBodega } from "../../../../services/inventario/Bodega.service";
 
@@ -98,39 +108,43 @@ export default function EditarBodega({
         >
           <Input placeholder="Ingrese nombre" />
         </Form.Item>
-
-        <Form.Item
-          label="Capacidad (unidades almacenables)"
-          name="capacidad"
-          tooltip="Número máximo de unidades/lotes que puede contener la bodega en total"
-          rules={[
-            { required: true, message: "Por favor ingrese la capacidad" },
-          ]}
-        >
-          <InputNumber
-            placeholder="Ej: 500"
-            min={1}
-            style={{ width: "100%" }}
-            addonAfter="uds."
-          />
-        </Form.Item>
-
-        <Form.Item
-          label="Estado"
-          name="estado"
-          rules={[
-            { required: true, message: "Por favor seleccione un estado" },
-          ]}
-        >
-          <Select
-            placeholder="Seleccione un estado"
-            options={[
-              { value: "En Funcionamiento", label: "En Funcionamiento" },
-              { value: "En Mantenimiento", label: "En Mantenimiento" },
-              { value: "Fuera de Servicio", label: "Fuera de Servicio" },
-            ]}
-          />
-        </Form.Item>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label="Capacidad"
+              name="capacidad"
+              tooltip="Número máximo de unidades/lotes (unidades almacenables) que puede contener la bodega en total"
+              rules={[
+                { required: true, message: "Por favor ingrese la capacidad" },
+              ]}
+            >
+              <InputNumber
+                placeholder="Ej: 500"
+                min={1}
+                style={{ width: "100%" }}
+                addonAfter="uds."
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label="Estado"
+              name="estado"
+              rules={[
+                { required: true, message: "Por favor seleccione un estado" },
+              ]}
+            >
+              <Select
+                placeholder="Seleccione un estado"
+                options={[
+                  { value: "En Funcionamiento", label: "En Funcionamiento" },
+                  { value: "En Mantenimiento", label: "En Mantenimiento" },
+                  { value: "Fuera de Servicio", label: "Fuera de Servicio" },
+                ]}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
       </Form>
       {/* <Form onSubmit={handleSubmitEdicion}>
           <Form.Group controlId="formNombre">

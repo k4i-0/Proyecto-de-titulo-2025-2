@@ -7,6 +7,7 @@ const { generarCodigo } = require("../../function/generarCodigo");
 //Generar codigo para despacho, detalle despacho y lote
 
 const { sequelize } = require("../../models");
+const { where } = require("sequelize");
 
 // funciones sobre tablas en bd
 
@@ -49,16 +50,19 @@ async function crearOrdenCompra(
   }
 }
 
-async function obtenerOrdenCompra(whereClause, attributes, include, order) {
+async function obtenerOrdenCompra(whereClause, attributes, include, order, t) {
   try {
-    const ordenesCompra = await OrdenCompra.findAll({
-      where: whereClause,
-      attributes: attributes,
-      include: include,
-      order: order || [["fechaOrden", "DESC"]],
-    });
+    const ordenesCompra = await OrdenCompra.findAll(
+      {
+        where: whereClause,
+        attributes: attributes,
+        include: include,
+        order: order || [["fechaOrden", "DESC"]],
+      },
+      { transaction: t },
+    );
     if (!ordenesCompra || ordenesCompra.length === 0) {
-      return { code: 404, error: "No se encontraron ordenes de compra" };
+      return { code: 204, error: "No se encontraron ordenes de compra" };
     }
 
     return { code: 200, data: ordenesCompra };
@@ -108,7 +112,37 @@ async function obtenerOConDetalles(whereClause) {
   }
 }
 
-async function eliminarOrdenCompra(params) {}
+async function eliminarOrdenCompra(nombreOrden) {
+  try {
+    const ordenCompra = await OrdenCompra.findOne({
+      where: { nombreOrden: nombreOrden },
+    });
+    if (!ordenCompra) {
+      return { code: 404, error: "Orden de compra no encontrada" };
+    }
+    //buscar las ordenes detalle
+    const ordenesDetalle = await CompraProveedorDetalle.findAll({
+      where: { idOrdenCompra: ordenCompra.idOrdenCompra },
+    });
+    if (ordenesDetalle && ordenesDetalle.length > 0) {
+      for (const detalle of ordenesDetalle) {
+        await detalle.destroy();
+      }
+    }
+    //buscar en crear orden compra
+    const crearOrdenCompra = await CrearOrdenCompra.findOne({
+      where: { idOrdenCompra: ordenCompra.idOrdenCompra },
+    });
+    if (crearOrdenCompra) {
+      await crearOrdenCompra.destroy();
+    }
+    await ordenCompra.destroy();
+    return { code: 200, message: "Orden de compra eliminada correctamente" };
+  } catch (error) {
+    console.error("Error al eliminar la orden de compra:", error);
+    return { code: 500, error: "Error al eliminar la orden de compra" };
+  }
+}
 
 async function editarOrdenCompra(nombreOrden, productos, observaciones) {
   try {
@@ -153,12 +187,22 @@ async function editarOrdenCompra(nombreOrden, productos, observaciones) {
   }
 }
 
-async function cambiarEstadoOC(nombreOrden, estado, observaciones) {
+async function cambiarEstadoOC(
+  nombreOrden,
+  estado,
+  observaciones,
+  idFuncionario,
+  transaction,
+) {
   try {
-    const ordenCompra = await OrdenCompra.findOne({
-      where: { nombreOrden: nombreOrden },
-    });
+    const ordenCompra = await OrdenCompra.findOne(
+      {
+        where: { nombreOrden: nombreOrden },
+      },
+      { transaction },
+    );
     if (!ordenCompra) {
+      await transaction.rollback();
       return { code: 404, error: "Orden de compra no encontrada" };
     }
     if (ordenCompra.estado === estado) {
@@ -167,18 +211,39 @@ async function cambiarEstadoOC(nombreOrden, estado, observaciones) {
         error: "La orden de compra ya se encuentra en el estado seleccionado",
       };
     }
-    await ordenCompra.update({
-      estado: estado,
-      observaciones: ordenCompra.observaciones
-        ? `${ordenCompra.observaciones}\n${observaciones}`
-        : observaciones,
-    });
+    await ordenCompra.update(
+      {
+        estado: estado,
+        observaciones: ordenCompra.observaciones
+          ? `${ordenCompra.observaciones}\n${observaciones}`
+          : observaciones,
+      },
+      { transaction },
+    );
+
+    //agregar a tabla crearordencompra el id del funcionario que autoriza y la fecha de autorizacion
+
+    if (estado === "aprobada") {
+      const crearOrdenCompra = await CrearOrdenCompra.findOne(
+        {
+          where: { idOrdenCompra: ordenCompra.idOrdenCompra },
+        },
+        { transaction },
+      );
+      if (crearOrdenCompra) {
+        crearOrdenCompra.idFuncionarioAutoriza = idFuncionario;
+        crearOrdenCompra.fechaAutorizacion = new Date();
+        await crearOrdenCompra.save({ transaction });
+      }
+    }
 
     return {
       code: 200,
       message: "Estado de la orden de compra actualizado correctamente",
+      data: ordenCompra,
     };
   } catch (error) {
+    await transaction.rollback();
     console.error("Error al cambiar el estado de la orden de compra:", error);
     return {
       code: 500,

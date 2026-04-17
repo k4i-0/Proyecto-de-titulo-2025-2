@@ -46,6 +46,8 @@ export default function DataTable({
   description,
   selectedRow,
   searchPlaceholder = "Buscar...",
+  showSearch = true,
+  showFilters = true,
 }) {
   const [searchText, setSearchText] = useState("");
   // Estado para manejar múltiples filtros dinámicos { estado: "Activo", rubro: "Tecnologia" }
@@ -134,59 +136,62 @@ export default function DataTable({
           </Row>
         )}
 
-        {/* 2. Barra de Filtros */}
-        <Row
-          justify="start"
-          align="middle"
-          gutter={[16, 16]}
-          style={{ marginBottom: 16 }}
-        >
-          {/* Buscador General */}
-          <Col xs={24} sm={12} md={8}>
-            <Input
-              placeholder={searchPlaceholder}
-              prefix={<SearchOutlined />}
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              allowClear
-            />
-          </Col>
+        {(showSearch || showFilters) && (
+          <Row
+            justify="start"
+            align="middle"
+            gutter={[16, 16]}
+            style={{ marginBottom: 16 }}
+          >
+            {showSearch && (
+              <Col xs={24} sm={12} md={8}>
+                <Input
+                  placeholder={searchPlaceholder}
+                  prefix={<SearchOutlined />}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  allowClear
+                />
+              </Col>
+            )}
 
-          {/* Filtros Dinámicos (Dropdowns) */}
-          {filterConfig.map((filter) => (
-            <Col xs={12} sm={6} md={4} key={filter.key}>
-              <Select
-                placeholder={filter.placeholder}
-                style={{ width: "100%" }}
-                value={activeFilters[filter.key]}
-                onChange={(value) => handleFilterChange(filter.key, value)}
-                allowClear
-                options={filter.options}
-              />
-            </Col>
-          ))}
+            {showFilters &&
+              filterConfig.map((filter) => (
+                <Col xs={12} sm={6} md={4} key={filter.key}>
+                  <Select
+                    placeholder={filter.placeholder}
+                    style={{ width: "100%" }}
+                    value={activeFilters[filter.key]}
+                    onChange={(value) => handleFilterChange(filter.key, value)}
+                    allowClear
+                    options={filter.options}
+                  />
+                </Col>
+              ))}
 
-          {/* Botón Limpiar */}
-          <Col xs={12} sm={6} md={4}>
-            <Button
-              icon={<FilterOutlined />}
-              onClick={handleLimpiarFiltros}
-              block
-              disabled={!searchText && Object.keys(activeFilters).length === 0}
-            >
-              Limpiar
-            </Button>
-          </Col>
+            {showSearch && showFilters && (
+              <Col xs={12} sm={6} md={4}>
+                <Button
+                  icon={<FilterOutlined />}
+                  onClick={handleLimpiarFiltros}
+                  block
+                  disabled={!searchText && Object.keys(activeFilters).length === 0}
+                >
+                  Limpiar
+                </Button>
+              </Col>
+            )}
 
-          {/* Contador de resultados */}
-          {(searchText || Object.keys(activeFilters).length > 0) && (
-            <Col span={24}>
-              <Text type="secondary">
-                Mostrando {filteredData.length} de {data.length} registros
-              </Text>
-            </Col>
-          )}
-        </Row>
+            {(showSearch || showFilters) &&
+              (searchText || Object.keys(activeFilters).length > 0) && (
+                <Col span={24}>
+                  <Text type="secondary">
+                    Mostrando {filteredData.length} de {data.length} registros
+                  </Text>
+                </Col>
+              )}
+          </Row>
+        )}
 
         {/* 3. Tabla Ant Design */}
         <Table

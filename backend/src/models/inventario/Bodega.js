@@ -18,29 +18,30 @@ const bodega = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    capacidadOcupada: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    capacidadDisponible: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
     estado: {
       type: DataTypes.ENUM(
         "En Funcionamiento",
         "En Mantenimiento",
-        "Fuera de Servicio"
+        "Fuera de Servicio",
       ),
       allowNull: false,
       defaultValue: "En Funcionamiento",
     },
-    // idSucursal: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    //   references: {
-    //     model: "sucursal",
-    //     key: "idSucursal",
-    //   },
-    //   onDelete: "CASCADE",
-    // },
   },
   {
     tableName: "bodega",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = bodega;

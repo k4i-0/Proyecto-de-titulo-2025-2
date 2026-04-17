@@ -84,9 +84,22 @@ async function login(req, res) {
       funcionarioEncontrado.dataValues.idFuncionario,
     );
     //ACTUALIZAR ESTADO DE SESSION A ACTIVADA
+    let sesionTipo = "";
+    if (
+      funcionarioEncontrado.dataValues.role.dataValues.nombreRol ===
+      "Administrador"
+    )
+      sesionTipo = "Administracion";
+    if (
+      funcionarioEncontrado.dataValues.role.dataValues.nombreRol === "Vendedor"
+    )
+      sesionTipo = "Vendedor";
+    if (funcionarioEncontrado.dataValues.role.dataValues.nombreRol === "Cajero")
+      sesionTipo = "Caja";
+
     await funcionarioEncontrado.update({
       session: true,
-      tipoSession: "Administracion",
+      tipoSession: sesionTipo,
       ultimaSession: new Date(),
     });
     res.cookie("token", token, {
@@ -101,7 +114,7 @@ async function login(req, res) {
         email: funcionarioEncontrado.email,
         nombreRol: funcionarioEncontrado.dataValues.role.dataValues.nombreRol,
         nombre: funcionarioEncontrado.dataValues.nombre,
-        tipoSession: "Administracion",
+        tipoSession: funcionarioEncontrado.dataValues.tipoSession,
       },
       token: {
         token,
@@ -216,10 +229,7 @@ async function loginCodigo(req, res) {
 
 async function logout(req, res) {
   const { token } = req.cookies;
-  const { email } = req.body;
-  if (!email) {
-    return res.status(404).send("Email no proporcionado");
-  }
+
   //console.log("Token recibido en logout:", req.cookies);
   if (!token) {
     return res.status(203).send({ message: "Sin cookies" });
@@ -255,7 +265,7 @@ async function logout(req, res) {
     await crearBitacora(
       "logout controller",
       `Cierre de sesión del usuario: ${emailDelToken}`,
-      0,
+      1,
     );
 
     res.clearCookie("token", {

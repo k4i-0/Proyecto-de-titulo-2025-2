@@ -42,7 +42,7 @@ exports.createSucursal = async (req, res) => {
   var nuevoId = parseInt(
     fechaHora.getHours().toString() +
       fechaHora.getMinutes().toString() +
-      fechaHora.getSeconds().toString()
+      fechaHora.getSeconds().toString(),
   );
 
   if (SucursalExistente) {
@@ -129,7 +129,7 @@ exports.updateSucursal = async (req, res) => {
       },
       {
         where: { idSucursal: req.params.id },
-      }
+      },
     );
 
     const updatedSucursal = await Sucursal.findByPk(req.params.id);
@@ -145,7 +145,8 @@ exports.updateSucursal = async (req, res) => {
 // Eliminar una sucursal por ID
 exports.deleteSucursal = async (req, res) => {
   try {
-    if (!req.params.id) {
+    const { id } = req.params;
+    if (!id) {
       return res.status(400).json({ error: "ID de sucursal es obligatorio" });
     }
     //Mantiene simpre al menos 1 sucursal en el sistema
@@ -155,22 +156,15 @@ exports.deleteSucursal = async (req, res) => {
         .status(400)
         .json({ error: "No se puede eliminar la última sucursal" });
     }
-    const bodegasSucursal = await Bodega.findAll({
-      where: { idSucursal: req.params.id },
-    });
-    for (const bodega of bodegasSucursal) {
-      //eliminar Estantes de la bodega
-      await Estante.destroy({
-        where: { idBodega: bodega.dataValues.idBodega },
-      });
-    }
+
     //eliminar Bodegas de la sucursal
     await Bodega.destroy({
-      where: { idSucursal: req.params.id },
+      where: { idSucursal: id },
     });
+
     //eliminar Sucursal
     const busquedaSucursal = await Sucursal.destroy({
-      where: { idSucursal: req.params.id },
+      where: { idSucursal: id },
     });
     if (busquedaSucursal) {
       return res.status(200).json({

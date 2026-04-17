@@ -125,6 +125,7 @@ export default function DashboardVendedor() {
           height: "100vh",
           margin: 0,
           padding: 0,
+          paddingTop: "5px",
           background: "#fff",
         }}
       >
@@ -188,11 +189,12 @@ export default function DashboardVendedor() {
                 <Space
                   style={{
                     cursor: "pointer",
-                    padding: "8px 16px",
+                    padding: "auto 16px",
                     borderRadius: "12px",
                     transition: "all 0.3s",
                     border: "1px solid #f0f0f0",
                     background: "#ffffff",
+                    marginBottom: "4px",
                   }}
                   className="user-menu-trigger"
                   align="center"
@@ -248,12 +250,12 @@ export default function DashboardVendedor() {
               overflow: "auto",
             }}
           >
-            <VendedorPageHeader
+            {/* <VendedorPageHeader
               title={pageHeaderConfig.title}
               description={pageHeaderConfig.description}
               icon={pageHeaderConfig.icon}
               extra={pageHeaderConfig.extra}
-            />
+            /> */}
             <Outlet context={{ nombreUsuario: user.nombreRol }} />
           </Content>
         </Layout>

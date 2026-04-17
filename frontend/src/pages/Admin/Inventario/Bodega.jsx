@@ -184,7 +184,7 @@ export default function Bodega() {
       key: "capacidad",
       width: "15%",
       align: "center",
-      render: (v) => v ? `${v.toLocaleString("es-CL")} uds.` : "—",
+      render: (v) => (v ? `${v.toLocaleString("es-CL")} uds.` : "—"),
     },
     {
       title: "Estado",
@@ -216,7 +216,7 @@ export default function Bodega() {
       align: "center",
       render: (_, record) => (
         <Space size="small">
-          <Button
+          {/* <Button
             type="link"
             size="small"
             icon={<ShopOutlined />}
@@ -226,7 +226,7 @@ export default function Bodega() {
             }}
           >
             Estantes
-          </Button>
+          </Button> */}
           <Button
             type="link"
             size="small"

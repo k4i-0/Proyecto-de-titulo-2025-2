@@ -209,30 +209,38 @@ const GestionColaborador = () => {
     {
       title: "Colaborador",
       key: "colaborador",
+      render: (_, record) => {
+        // Extraemos con valores por defecto para evitar errores de [0]
+        const nombre = record?.nombre || "N";
+        const apellido = record?.apellido || "A";
 
-      render: (_, record) => (
-        <Space>
-          <Avatar
-            size={40}
-            icon={<UserOutlined />}
-            style={{ backgroundColor: "#1890ff" }}
-          >
-            {record.nombre[0]}
-            {record.apellido[0]}
-          </Avatar>
-          <div>
-            <div style={{ fontWeight: 500 }}>
-              {record.nombre} {record.apellido}
+        return (
+          <Space key={`colaborador-${record?.id || record?.idFuncionario}`}>
+            <Avatar
+              key="avatar"
+              size={40}
+              icon={<UserOutlined />}
+              style={{ backgroundColor: "#1890ff" }}
+            >
+              {/* Usamos el primer caracter de forma segura */}
+              {nombre.charAt(0).toUpperCase()}
+              {apellido.charAt(0).toUpperCase()}
+            </Avatar>
+            <div key="info">
+              <div style={{ fontWeight: 500 }}>
+                {nombre} {apellido}
+              </div>
             </div>
-          </div>
-        </Space>
-      ),
+          </Space>
+        );
+      },
     },
     {
       title: "Rut",
       dataIndex: "rut",
       key: "rut",
       width: 150,
+      render: (rut) => rut || "S/R", // Maneja si el rut viene nulo
     },
     {
       title: "Cargo",
@@ -244,9 +252,11 @@ const GestionColaborador = () => {
           Administrador: "purple",
           Vendedor: "blue",
           Cajero: "green",
-          Otro: "orange",
         };
-        return <Tag color={colors[cargo] || "default"}>{cargo}</Tag>;
+        // Si no viene cargo en el objeto aplanado, ponemos "No asignado"
+        return (
+          <Tag color={colors[cargo] || "default"}>{cargo || "No asignado"}</Tag>
+        );
       },
     },
     {
@@ -255,7 +265,7 @@ const GestionColaborador = () => {
       key: "sucursal",
       width: 150,
       render: (sucursal) => (
-        <Tag color="green">{sucursal || "Sin Información"}</Tag>
+        <Tag color="green">{sucursal || "Casa Matriz"}</Tag>
       ),
     },
     {
@@ -263,19 +273,18 @@ const GestionColaborador = () => {
       key: "contacto",
       width: 250,
       render: (_, record) => (
-        <div>
-          <div style={{ fontSize: "12px" }}>
+        <div key={`contacto-${record?.id || record?.idFuncionario}`}>
+          <div key="phone" style={{ fontSize: "12px" }}>
             <PhoneOutlined style={{ marginRight: 4 }} />
-            {record.telefono}
+            {record?.telefono || "N/A"}
           </div>
-          <div style={{ fontSize: "12px", marginTop: 4 }}>
+          <div key="email" style={{ fontSize: "12px", marginTop: 4 }}>
             <MailOutlined style={{ marginRight: 4 }} />
-            {record.email}
+            {record?.email || "N/A"}
           </div>
         </div>
       ),
     },
-
     {
       title: "Estado",
       dataIndex: "estado",
@@ -284,7 +293,7 @@ const GestionColaborador = () => {
       render: (estado) => (
         <Badge
           status={estado === "Activo" ? "success" : "error"}
-          text={estado}
+          text={estado || "Desconocido"}
         />
       ),
     },
@@ -294,26 +303,28 @@ const GestionColaborador = () => {
       fixed: "right",
       width: 150,
       render: (_, record) => (
-        <Space>
-          <Tooltip title="Ver Detalles">
+        <Space key={`acciones-${record?.id || record?.idFuncionario}`}>
+          <Tooltip key="view" title="Ver Detalles">
             <Button
               type="link"
               icon={<EyeOutlined />}
               onClick={() => handleViewDetails(record)}
             />
           </Tooltip>
-          <Tooltip title="Editar">
+          <Tooltip key="edit" title="Editar">
             <Button
               type="link"
               icon={<EditOutlined />}
               onClick={() => handleEdit(record)}
             />
           </Tooltip>
-          <Tooltip title="Eliminar">
+          <Tooltip key="delete" title="Eliminar">
             <Popconfirm
               title="¿Está seguro de eliminar este colaborador?"
               description="Esta acción no se puede deshacer."
-              onConfirm={() => handleDelete(record.id)}
+              // IMPORTANTE: Asegúrate de que el ID que pasas aquí
+              // coincida con el que viene del backend (idFuncionario)
+              onConfirm={() => handleDelete(record.id || record.idFuncionario)}
               okText="Sí, eliminar"
               cancelText="Cancelar"
               okButtonProps={{ danger: true }}
@@ -381,8 +392,8 @@ const GestionColaborador = () => {
     if (editMode) {
       console.log("Valores del formulario edit:", values);
       setLoading(true);
-      const response = await editarFuncionario(values);
       try {
+        const response = await editarFuncionario(values);
         if (response.status === 200) {
           notification.success({
             message: response.data.message || "Colaborador actualizado",
@@ -412,13 +423,15 @@ const GestionColaborador = () => {
     } else {
       try {
         const response = await crearFuncionario(values);
+        console.log("respuesta", response);
         if (response.status === 201) {
           notification.success({
             message: "Colaborador creado",
             description: "El colaborador se ha creado correctamente.",
             duration: 3,
           });
-          setColaboradores([...colaboradores, response.data]);
+          //setColaboradores([...colaboradores, response.data]);
+          obtenerColaboradores();
           setDrawerVisible(false);
           form.resetFields();
           setLoading(false);
@@ -550,11 +563,11 @@ const GestionColaborador = () => {
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
-          initialValues={{
-            estadoContrato: "Activo",
-            turno: "Mañana",
-            contrato: "Plazo Fijo",
-          }}
+          // initialValues={{
+          //   estadoContrato: "Activo",
+          //   turno: "Mañana",
+          //   contrato: "Plazo Fijo",
+          // }}
         >
           <Title level={5}>Información Personal</Title>
           <Divider style={{ marginTop: 8, marginBottom: 16 }} />
@@ -639,7 +652,6 @@ const GestionColaborador = () => {
                 initialValue={dayjs()}
               >
                 <DatePicker
-                  disabled
                   style={{ width: "100%" }}
                   format="DD/MM/YYYY"
                   placeholder="Seleccione fecha"
@@ -793,12 +805,9 @@ const GestionColaborador = () => {
                 rules={[
                   { required: true, message: "Por favor seleccione el estado" },
                 ]}
+                initialValue="Activo"
               >
-                <Select
-                  placeholder="Seleccione el estado"
-                  disabled={!editMode}
-                  initialValue="Activo"
-                >
+                <Select placeholder="Seleccione el estado">
                   <Option value="Activo">Activo</Option>
                   <Option value="Inactivo">Inactivo</Option>
                 </Select>

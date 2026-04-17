@@ -52,10 +52,8 @@ app.use(express.json()); // permite JSON
 app.use(express.urlencoded({ extended: true })); // req.body para formularios
 
 app.use(cookieParser());
-app.use(helmet());
 const corsOptions = {
   origin: [
-    "https://localhost:5250",
     "http://localhost:5250",
     "http://146.83.194.142:1768",
     "https://146.83.194.142:1768",
@@ -65,6 +63,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+app.use(helmet());
 
 app.use(morgan("dev"));
 
