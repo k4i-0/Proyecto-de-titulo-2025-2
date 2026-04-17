@@ -123,7 +123,11 @@ export default function OrdenesCompra() {
         },
         {
           color: colorTerminal,
-          children: <Typography.Text strong>{obtenerEtiquetaEstado(estado)}</Typography.Text>,
+          children: (
+            <Typography.Text strong>
+              {obtenerEtiquetaEstado(estado)}
+            </Typography.Text>
+          ),
         },
       ];
     }
@@ -142,7 +146,9 @@ export default function OrdenesCompra() {
         color,
         children:
           index === indiceActual ? (
-            <Typography.Text strong>{obtenerEtiquetaEstado(paso)}</Typography.Text>
+            <Typography.Text strong>
+              {obtenerEtiquetaEstado(paso)}
+            </Typography.Text>
           ) : (
             obtenerEtiquetaEstado(paso)
           ),
@@ -781,7 +787,8 @@ export default function OrdenesCompra() {
                   disabled={
                     record.estado === "aceptada con modificaciones" ||
                     record.estado === "aprobada" ||
-                    record.estado === "rechazada"
+                    record.estado === "rechazada" ||
+                    record.estado === "recepcionada"
                   }
                   onClick={(e) => {
                     e.stopPropagation();
