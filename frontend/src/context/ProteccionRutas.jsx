@@ -1,5 +1,5 @@
-import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { Spin } from "antd";
 import Cookies from "js-cookie";
@@ -9,7 +9,13 @@ const ProtectedRoute = ({
   children,
   fallbackPath = "/login",
 }) => {
-  const { user, isAuthenticated, initializing } = useAuth();
+  const { user, isAuthenticated, initializing, checkAuth } = useAuth();
+  const location = useLocation();
+
+  useEffect(() => {
+    console.log("Verificando autenticación...");
+    checkAuth();
+  }, [checkAuth, isAuthenticated, location.pathname]);
 
   if (initializing) {
     return (

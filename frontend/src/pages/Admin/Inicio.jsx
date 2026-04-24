@@ -284,16 +284,23 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div style={{ padding: "24px", background: "#f0f2f5", minHeight: "100vh" }}>
-      <Title level={1} style={{ marginBottom: 24, textAlign: "center" }}>
+    <div
+      style={{
+        padding: "24px",
+        //background: "#abaeb2",
+        minHeight: "100vh",
+        height: "100%",
+      }}
+    >
+      {/* <Title level={1} style={{ marginBottom: 24, textAlign: "center" }}>
         Panel de Administración
-      </Title>
+      </Title> */}
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <Row align="middle" justify="space-between">
           <Col>
             <Title level={2} style={{ margin: 0, marginBottom: 4 }}>
-              Bienvenido {user.nombre}
+              Bienvenido {user.nombre}, a tu panel de administración
             </Title>
             <Text type="secondary" style={{ fontSize: "16px" }}>
               <ClockCircleOutlined style={{ marginRight: 8 }} />

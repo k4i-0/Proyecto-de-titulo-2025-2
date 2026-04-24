@@ -323,6 +323,7 @@ const AprovicionamientoProveedor = () => {
 
   const handleAbrirCompraNueva = async () => {
     await buscarSucursales();
+    await buscarProductos();
     await buscarMiDatos();
     await obtenerProveedores();
     setVisibleCompraNueva(true);
@@ -356,7 +357,7 @@ const AprovicionamientoProveedor = () => {
   };
 
   const handleAgregarProductoOrdenCompra = async () => {
-    await buscarProductos();
+    //await buscarProductos();
     setDrawerSelectProductoOrdenCompra(true);
   };
   const eliminarProductoOrdenCompra = (key) => {
@@ -366,8 +367,29 @@ const AprovicionamientoProveedor = () => {
     notification.success({ message: "Producto eliminado de la orden" });
   };
 
+  const editarProductoOrdenCompra = (key, campo, valor) => {
+    const valorNormalizado = Number(valor || 0);
+
+    if (campo === "cantidadProducto" && valorNormalizado < 1) return;
+    if (campo === "valorUnitarioProducto" && valorNormalizado < 1) return;
+
+    setProductosSeleccionadosOrdenCompra((prevProductos) =>
+      prevProductos.map((item) => {
+        if (item.key !== key) return item;
+
+        const actualizado = { ...item, [campo]: valorNormalizado };
+        return {
+          ...actualizado,
+          total:
+            (actualizado.cantidadProducto || 0) *
+            (actualizado.valorUnitarioProducto || 0),
+        };
+      }),
+    );
+  };
+
   const AgregarProductoOrdenCompra = (values) => {
-    // console.log("Valores del formulario:", values);
+    console.log("Valores del formulario producto agregado:", values);
     const productoExiste = productosSeleccionadosOrdenCompra.some(
       (item) => item.productoSeleccionado === values.productoSeleccionado,
     );
@@ -421,14 +443,14 @@ const AprovicionamientoProveedor = () => {
       );
 
       const ordenCompleta = {
-        rutProveedor: proveedorSeleccionado?.rut,
-        idSucursal: miDatos?.idSucursal,
+        rutProveedor: values?.rutProveedor,
+        idSucursal: values?.idSucursal,
         observaciones: values.observaciones,
-        idFuncionario: miDatos?.idFuncionario,
+        idFuncionario: values?.idFuncionario,
         productos: productosPayload,
         total: totalOrdenCompra,
       };
-      // console.log("Orden de compra completa:", ordenCompleta);
+      console.log("Orden de compra completa:", ordenCompleta);
       setLoading(true);
       const respuesta = await crearOrdenCompraVendedor(ordenCompleta);
       if (respuesta.status === 201) {
@@ -628,6 +650,7 @@ const AprovicionamientoProveedor = () => {
         onEliminarProducto={eliminarProductoOrdenCompra}
         onAgregarProductoOrden={AgregarProductoOrdenCompra}
         onGuardarOrden={enviarOrdenCompra}
+        onEditarProducto={editarProductoOrdenCompra}
         loading={loading}
         drawerSelectProductoOpen={drawerSelectProductoOrdenCompra}
         setDrawerSelectProductoOpen={setDrawerSelectProductoOrdenCompra}

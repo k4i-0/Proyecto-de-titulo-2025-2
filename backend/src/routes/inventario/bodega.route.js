@@ -6,20 +6,20 @@ const bodegaController = require("../../controllers/inventario/Bodega.controller
 // Rutas para bodegas
 router.post(
   "/crear",
-  /*authMiddleware, roleMiddleware(['admin']),*/ bodegaController.createBodega
+  /*authMiddleware, roleMiddleware(['admin']),*/ bodegaController.createBodega,
 );
 router.get("/buscar", /*authMiddleware,*/ bodegaController.getAllBodega);
 router.get(
   "/buscar/:id",
-  /*authMiddleware,*/ bodegaController.getBodegaPorSucursal
+  /*authMiddleware,*/ bodegaController.getBodegaPorSucursal,
 );
 router.put(
   "/actualizar/:id",
-  /*authMiddleware, roleMiddleware(['admin']),*/ bodegaController.updateBodega
+  /*authMiddleware, roleMiddleware(['admin']),*/ bodegaController.updateBodega,
 );
 router.delete(
   "/eliminar/:id",
-  /*authMiddleware, roleMiddleware(['admin']),*/ bodegaController.deleteBodega
+  /*authMiddleware, roleMiddleware(['admin']),*/ bodegaController.deleteBodega,
 );
 
 module.exports = router;

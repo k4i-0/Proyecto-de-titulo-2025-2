@@ -28,6 +28,7 @@ import {
   EditOutlined,
   CloseCircleOutlined,
   InboxOutlined,
+  RedoOutlined,
 } from "@ant-design/icons";
 
 // import dayjs from "dayjs";
@@ -52,6 +53,7 @@ import {
 
 //componentes
 import DateTable from "../../../components/Tabla";
+import { data } from "react-router-dom";
 
 export default function CompraDirecta() {
   const { user } = useAuth();
@@ -702,8 +704,9 @@ export default function CompraDirecta() {
                 size="large"
                 onClick={handelVerOrdenesDirectas}
                 style={{ borderRadius: "8px" }}
+                icon={<RedoOutlined />}
               >
-                Buscar Órdenes Existentes
+                Refrescar
               </Button>
             </Space>
           </Col>
@@ -731,6 +734,11 @@ export default function CompraDirecta() {
             title: "Nombre Orden",
             dataIndex: "nombreOrden",
             key: "nombre",
+          },
+          {
+            title: "Tipo",
+            dataIndex: "tipo",
+            key: "tipo",
           },
           {
             title: "Proveedor",

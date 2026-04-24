@@ -14,6 +14,8 @@ const funcionarioRoutes = require("./usuarios/funcionario.route");
 const ordenesCompra = require("./inventario/ordenesCompra.route");
 const loteRoutes = require("./inventario/lote.route");
 
+const despachoRoutes = require("./inventario/despacho.route");
+
 //Autenticacion
 router.use("/auth", AuthRoutes);
 
@@ -43,6 +45,9 @@ router.use("/funcionarios", funcionarioRoutes);
 
 //Rutas Compra a Proveedor
 router.use("/compras", ordenesCompra);
+
+//Rutas Despachos
+router.use("/despachos", despachoRoutes);
 
 //Rutas Lotes
 router.use("/lotes", loteRoutes);

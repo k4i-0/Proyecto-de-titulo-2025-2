@@ -4,6 +4,7 @@ import InicioVendedor from "../pages/Vendedor/InicioVendedor.jsx";
 import AprovisionamientoProveedor from "../pages/Vendedor/AprovicionamientoProveedor.jsx";
 import GestionInventario from "../pages/Vendedor/GestionInventario.jsx";
 import RecepcionDespachos from "../pages/Vendedor/RecepcionDespachos.jsx";
+import GestionDespachos from "../pages/Vendedor/GestionDespachos.jsx";
 
 import NoEncontrado from "../pages/Compartidas/NoEncontrado.jsx";
 
@@ -17,6 +18,10 @@ const VendedorRouter = () => {
         <Route
           path="despachos/:rutProveedor?"
           element={<RecepcionDespachos />}
+        />
+        <Route
+          path="/gestion/despachos/:idOrdenCompra?"
+          element={<GestionDespachos />}
         />
 
         <Route path="*" element={<NoEncontrado />} />

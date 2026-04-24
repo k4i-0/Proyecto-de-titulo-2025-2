@@ -13,11 +13,14 @@ import {
   Typography,
   Popconfirm,
   Alert,
+  notification,
 } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import DataTable from "./Tabla";
 
 const { Title, Text } = Typography;
+
+import { verificarStockProductosOrdenCompra } from "../services/inventario/CompraProveedor.service";
 
 const ModalNuevaOrdenCompra = ({
   visible,
@@ -35,10 +38,12 @@ const ModalNuevaOrdenCompra = ({
   onEliminarProducto,
   onAgregarProductoOrden,
   onGuardarOrden,
+  onEditarProducto = () => {},
   loading,
   drawerSelectProductoOpen,
   setDrawerSelectProductoOpen,
 }) => {
+  //console.log("usuario:", user.nombreRol);
   const totalOrdenCompra = productosSeleccionados.reduce(
     (acumulado, producto) =>
       acumulado +
@@ -46,6 +51,58 @@ const ModalNuevaOrdenCompra = ({
     0,
   );
 
+  const verificarStock = async (idSucursal, idProveedor) => {
+    try {
+      const respuesta = await verificarStockProductosOrdenCompra(
+        idSucursal,
+        idProveedor,
+      );
+
+      if (respuesta.status === 200) {
+        for (let i = 0; i < respuesta.data.length; i++) {
+          //console.log("Productos con stock suficiente:", respuesta.data[i]);
+          onAgregarProductoOrden({
+            productoSeleccionado: respuesta.data[i].productoSeleccionado,
+            cantidadProducto: respuesta.data[i].cantidadProducto,
+            valorUnitarioProducto: respuesta.data[i].valorUnitarioProducto,
+          });
+        }
+      }
+      if (respuesta.status === 404) {
+        notification.error({
+          message: "Verificación de stock:",
+          description:
+            respuesta.data.error ||
+            "No se encontraron productos con stock suficiente para recomendar.",
+          duration: 5,
+        });
+      }
+    } catch (error) {
+      console.log("Error al obtener VerificarStock", error);
+
+      notification.error({
+        message: "Error al verificar stock",
+        description:
+          error.error ||
+          "Ocurrió un error al verificar el stock de los productos. Por favor, intenta nuevamente.",
+      });
+    }
+  };
+
+  const handleVerificarStock = () => {
+    const idSucursal = formOrdenCompra.getFieldValue("idSucursal");
+    const idProveedor = formOrdenCompra.getFieldValue("idProveedor");
+    console.log("handle datos:", idSucursal, idProveedor);
+    if (idSucursal && idProveedor) {
+      verificarStock(idSucursal, idProveedor);
+    } else {
+      notification.warning({
+        message: "Datos incompletos",
+        description:
+          "Por favor, selecciona una sucursal y un proveedor para verificar el stock.",
+      });
+    }
+  };
   return (
     <>
       {/* Modal Nueva Orden de Compra */}
@@ -111,7 +168,7 @@ const ModalNuevaOrdenCompra = ({
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="Sucursal" name="idSucursal">
+              <Form.Item label="Sucursal" name="idSucursal" initialValue={100}>
                 <Select
                   showSearch
                   placeholder="Selecciona una sucursal"
@@ -162,6 +219,17 @@ const ModalNuevaOrdenCompra = ({
                   disabled={!proveedorSeleccionado}
                 >
                   Agregar producto
+                </Button>
+                <Button
+                  type="default"
+                  icon={<PlusOutlined />}
+                  onClick={handleVerificarStock}
+                  disabled={
+                    !proveedorSeleccionado ||
+                    !formOrdenCompra.getFieldValue("idSucursal")
+                  }
+                >
+                  Productos Recomendados
                 </Button>
               </Space>
             </Col>
@@ -282,13 +350,41 @@ const ModalNuevaOrdenCompra = ({
                 title: "Cantidad",
                 dataIndex: "cantidadProducto",
                 key: "cantidadProducto",
+                render: (valor, record) => (
+                  <InputNumber
+                    min={1}
+                    value={Number(valor || 0)}
+                    style={{ width: "100%" }}
+                    onChange={(nuevoValor) =>
+                      onEditarProducto(
+                        record.key,
+                        "cantidadProducto",
+                        nuevoValor,
+                      )
+                    }
+                  />
+                ),
               },
               {
                 title: "Valor Unitario",
                 dataIndex: "valorUnitarioProducto",
                 key: "valorUnitarioProducto",
-                render: (valor) =>
-                  `$${Number(valor || 0).toLocaleString("es-CL")}`,
+                render: (valor, record) => (
+                  <InputNumber
+                    min={1}
+                    step="1"
+                    precision={0}
+                    value={Number(valor || 0)}
+                    style={{ width: "100%" }}
+                    onChange={(nuevoValor) =>
+                      onEditarProducto(
+                        record.key,
+                        "valorUnitarioProducto",
+                        nuevoValor,
+                      )
+                    }
+                  />
+                ),
               },
               {
                 title: "Total",

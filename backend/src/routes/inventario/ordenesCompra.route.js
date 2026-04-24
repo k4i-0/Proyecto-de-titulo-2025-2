@@ -50,7 +50,7 @@ router.get(
 
 router.post(
   "/vendedor/orden/recepcion/compra-sucursal",
-  compraProveedorController.crearOrdenCompraSucursalVendedor,
+  compraProveedorController.recepcionarOrdenCompraSucursalVendedor,
 );
 
 //-----------------Rutas de orden de compra a proveedor administradores-----------------------------
@@ -75,5 +75,12 @@ router.put(
 router.delete(
   "/admin/orden/:nombreOrden",
   compraProveedorController.eliminarOrdenCompraAdmin,
+);
+
+//-----------------Rutas compartidad para orden de compra a proveedor vendedores y administradores-----------------------------
+
+router.get(
+  "/funcionalidades/orden-compra/verificar-stock/:idSucursal/:idProveedor",
+  compraProveedorController.verificarStockProductosOrdenCompra,
 );
 module.exports = router;

@@ -29,18 +29,24 @@ import {
 } from "../../services/inventario/CompraProveedor.service";
 
 import obtenerSucursales from "../../services/inventario/Sucursal.service";
+import { obtenerBodegasPorSucursal } from "../../services/inventario/Bodega.service";
+
+import { useNavigate } from "react-router-dom";
 
 export default function RecepcionDespachos() {
   const { rutProveedor } = useParams();
+  const navigate = useNavigate();
 
   const [ordenes, setOrdenes] = useState([]);
   const [sucursales, setSucursales] = useState([]);
+  const [bodegas, setBodegas] = useState([]);
   const [modalDetalleAbierto, setModalDetalleAbierto] = useState(false);
   const [modalRecepcionAbierto, setModalRecepcionAbierto] = useState(false);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
 
   const [form] = Form.useForm();
   const [formRecepcion] = Form.useForm();
+  const idSucursalSeleccionada = Form.useWatch("idSucursal", formRecepcion);
 
   const buscarSucursales = async () => {
     try {
@@ -73,6 +79,32 @@ export default function RecepcionDespachos() {
       notification.error({
         message: "Error",
         description: "Error al buscar las sucursales",
+      });
+    }
+  };
+
+  const buscarBodegas = async (idSucursal) => {
+    try {
+      const respuesta = await obtenerBodegasPorSucursal(idSucursal);
+      console.log("Respuesta de bodegas", respuesta);
+      if (respuesta.status === 200) {
+        setBodegas(respuesta.data);
+        notification.success({
+          message: "Éxito",
+          description: "Bodegas encontradas",
+        });
+        return;
+      }
+      notification.error({
+        message: "Error",
+        description: respuesta.error || "Error al buscar las bodegas",
+      });
+      setBodegas([]);
+    } catch (error) {
+      console.log("Error", error);
+      notification.error({
+        message: "Error",
+        description: "Error al buscar las bodegas",
       });
     }
   };
@@ -126,11 +158,23 @@ export default function RecepcionDespachos() {
               record.ordencompra.estado === "recepcionada" ||
               record.ordencompra.estado === "recibida con faltante"
             }
-            onClick={() => handleRecepcionar(record)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRecepcionar(record);
+            }}
           >
             Recepcionar
           </Button>
-          {/* <Button onClick={() => handleVerDetalle(record)}>Ver detalle</Button> */}
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(
+                `/vendedor/gestion/despachos/${record.ordencompra.idOrdenCompra}`,
+              );
+            }}
+          >
+            Despachos
+          </Button>
         </div>
       ),
     },
@@ -141,7 +185,7 @@ export default function RecepcionDespachos() {
       const respuesta = await buscarOrdenesCompraSucursalVendedor(
         values.rutProveedor,
       );
-      //console.log("Respuesta de la búsqueda:", respuesta);
+      console.log("Respuesta de la búsqueda:", respuesta);
       if (respuesta.status === 200) {
         const ordenesCompra = Array.isArray(respuesta.data)
           ? respuesta.data
@@ -223,9 +267,10 @@ export default function RecepcionDespachos() {
   }));
 
   const handleRecepcionar = (record) => {
-    //console.log("orden seleccionada", record.sucursal.idSucursal);
+    console.log("orden seleccionada", record);
     buscarSucursales();
     setOrdenSeleccionada(record);
+    formRecepcion.resetFields();
     const detallesIniciales =
       record?.ordencompra?.compraproveedordetalles?.map((detalle) => ({
         idProducto: detalle.producto?.idProducto,
@@ -263,7 +308,8 @@ export default function RecepcionDespachos() {
       numeroDocumento: values.numeroDocumento,
       repartidor: values.repartidor,
       observaciones: values.observacionesRecepcion,
-      idSucursal: ordenSeleccionada?.sucursal?.idSucursal,
+      idSucursal: values.idSucursal,
+      idBodega: values.idBodega,
       productos: (values.detalles || []).map((detalle) => ({
         idProducto: detalle.idProducto,
         productoCodigo: detalle.productoCodigo,
@@ -273,7 +319,7 @@ export default function RecepcionDespachos() {
       })),
     };
 
-    //console.log("Payload recepción:", payloadRecepcion);
+    console.log("Payload recepción:", payloadRecepcion);
     try {
       const respuesta =
         await crearOrdenCompraSucursalVendedor(payloadRecepcion);
@@ -283,6 +329,7 @@ export default function RecepcionDespachos() {
           description: "La recepción del despacho fue preparada correctamente.",
         });
         handleCerrarRecepcion();
+        handleBuscar({ rutProveedor: ordenSeleccionada?.proveedor?.rut });
         return;
       }
       notification.error({
@@ -307,6 +354,18 @@ export default function RecepcionDespachos() {
       handleBuscar({ rutProveedor: rutProveedor });
     }
   }, [rutProveedor, form]);
+
+  useEffect(() => {
+    if (!modalRecepcionAbierto) return;
+
+    if (!idSucursalSeleccionada) {
+      setBodegas([]);
+      return;
+    }
+
+    buscarBodegas(idSucursalSeleccionada);
+  }, [idSucursalSeleccionada, modalRecepcionAbierto]);
+
   return (
     <div>
       <Typography.Title level={3}>Recepción de Despachos</Typography.Title>
@@ -361,8 +420,8 @@ export default function RecepcionDespachos() {
         {ordenSeleccionada && (
           <>
             <Descriptions column={2} size="small" bordered>
-              <Descriptions.Item label="ID proveedor">
-                {ordenSeleccionada.idProveedor || "-"}
+              <Descriptions.Item label="Rut Proveedor">
+                {ordenSeleccionada.proveedor?.rut || "-"}
               </Descriptions.Item>
               <Descriptions.Item label="ID orden compra">
                 {ordenSeleccionada.ordencompra?.idOrdenCompra || "-"}
@@ -370,8 +429,29 @@ export default function RecepcionDespachos() {
               <Descriptions.Item label="Nombre orden">
                 {ordenSeleccionada.ordencompra?.nombreOrden || "-"}
               </Descriptions.Item>
+              <Descriptions.Item label="Fecha">
+                {ordenSeleccionada.ordencompra?.fechaOrden
+                  ? new Date(
+                      ordenSeleccionada.ordencompra.fechaOrden,
+                    ).toLocaleDateString("es-CL")
+                  : "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Estado">
+                <Tag color="purple">
+                  {ordenSeleccionada.ordencompra?.estado?.toUpperCase() || "-"}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Sucursal">
+                {ordenSeleccionada.sucursal?.nombre || "-"}
+              </Descriptions.Item>
               <Descriptions.Item label="RUT solicitante">
                 {ordenSeleccionada.vendedor?.rut || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Total" span={2}>
+                $
+                {Number(
+                  ordenSeleccionada.ordencompra?.total || 0,
+                ).toLocaleString("es-CL")}
               </Descriptions.Item>
               <Descriptions.Item label="Observaciones" span={2}>
                 <div style={{ whiteSpace: "pre-line" }}>
@@ -426,18 +506,27 @@ export default function RecepcionDespachos() {
       >
         {ordenSeleccionada && (
           <>
-            <Descriptions column={3} size="small" bordered>
-              <Descriptions.Item label="ID proveedor">
-                {ordenSeleccionada.idProveedor || "-"}
+            <Descriptions column={2} size="small" bordered>
+              <Descriptions.Item label="Proveedor">
+                {ordenSeleccionada.proveedor?.nombre || "-"}
               </Descriptions.Item>
-              <Descriptions.Item label="ID orden compra">
-                {ordenSeleccionada.ordencompra?.idOrdenCompra || "-"}
+              <Descriptions.Item label="RUT proveedor">
+                {ordenSeleccionada.proveedor?.rut || "-"}
               </Descriptions.Item>
               <Descriptions.Item label="Nombre orden">
                 {ordenSeleccionada.ordencompra?.nombreOrden || "-"}
               </Descriptions.Item>
+              <Descriptions.Item label="ID orden compra">
+                {ordenSeleccionada.ordencompra?.idOrdenCompra || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Solicitante">
+                {ordenSeleccionada.vendedor?.nombre || "-"}
+              </Descriptions.Item>
               <Descriptions.Item label="RUT solicitante">
                 {ordenSeleccionada.vendedor?.rut || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sucursal" span={2}>
+                {ordenSeleccionada.sucursal?.nombre || "-"}
               </Descriptions.Item>
             </Descriptions>
 
@@ -492,6 +581,7 @@ export default function RecepcionDespachos() {
                   <Form.Item
                     label="Sucursal"
                     name="idSucursal"
+                    initialValue={ordenSeleccionada.sucursal.idSucursal}
                     rules={[
                       {
                         required: true,
@@ -523,6 +613,25 @@ export default function RecepcionDespachos() {
                     ]}
                   >
                     <Input placeholder="Nombre del repartidor" />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row>
+                <Col>
+                  <Form.Item label="Bodega de destino" name="idBodega">
+                    <Select
+                      placeholder="Seleccione bodega de destino"
+                      disabled={bodegas.length === 0}
+                    >
+                      {bodegas.map((bodega) => (
+                        <Select.Option
+                          key={bodega.idBodega}
+                          value={bodega.idBodega}
+                        >
+                          {bodega.nombre} - {bodega.capacidad} unidades
+                        </Select.Option>
+                      ))}
+                    </Select>
                   </Form.Item>
                 </Col>
               </Row>
@@ -574,7 +683,7 @@ export default function RecepcionDespachos() {
                           style={{ marginBottom: 12, background: "#fafafa" }}
                         >
                           <Typography.Text strong>
-                            {idProducto || "Producto sin nombre"}
+                            {idProducto || "-"}
                           </Typography.Text>
                           <Typography.Text strong>
                             {productoNombre || "Producto sin nombre"}
@@ -589,7 +698,6 @@ export default function RecepcionDespachos() {
                           <Row gutter={12}>
                             <Col xs={24} md={8}>
                               <Form.Item
-                                {...field}
                                 label="Cantidad solicitada"
                                 name={[field.name, "cantidadSolicitada"]}
                               >
@@ -602,7 +710,6 @@ export default function RecepcionDespachos() {
                             </Col>
                             <Col xs={24} md={8}>
                               <Form.Item
-                                {...field}
                                 label="Cantidad recibida"
                                 name={[field.name, "cantidadRecibida"]}
                                 rules={[
@@ -652,7 +759,6 @@ export default function RecepcionDespachos() {
                             </Col>
                             <Col xs={24} md={8}>
                               <Form.Item
-                                {...field}
                                 label="Cantidad rechazada"
                                 name={[field.name, "cantidadRechazada"]}
                                 rules={[
@@ -703,24 +809,18 @@ export default function RecepcionDespachos() {
                           </Row>
 
                           <Form.Item
-                            {...field}
                             name={[field.name, "productoNombre"]}
                             hidden
                           >
                             <Input />
                           </Form.Item>
                           <Form.Item
-                            {...field}
                             name={[field.name, "productoCodigo"]}
                             hidden
                           >
                             <Input />
                           </Form.Item>
-                          <Form.Item
-                            {...field}
-                            name={[field.name, "idProducto"]}
-                            hidden
-                          >
+                          <Form.Item name={[field.name, "idProducto"]} hidden>
                             <Input />
                           </Form.Item>
                         </Card>

@@ -52,7 +52,8 @@ export default function Navegacion({ nombreRol, onLogout }) {
         width={280}
         ref={siderRef}
         style={{
-          background: "#ffffff",
+          background: "#000000",
+          border: "1px solid #f0f0f0",
           boxShadow: "2px 0 8px rgba(0,0,0,0.06)",
           borderRight: "1px solid #f0f0f0",
         }}
@@ -66,6 +67,8 @@ export default function Navegacion({ nombreRol, onLogout }) {
             height: "100%",
             borderInlineEnd: 0,
             padding: "8px 0",
+            border: "1px solid #f0f0f0",
+            background: "#ffffff",
           }}
           items={[
             {
@@ -108,6 +111,13 @@ export default function Navegacion({ nombreRol, onLogout }) {
                       label: "Compra Directa",
                       icon: <InboxOutlined />,
                       onClick: () => navigate("/admin/gestion/compra_directa"),
+                    },
+                    {
+                      key: "compra_sucursal",
+                      label: "Compra por Sucursal",
+                      icon: <InboxOutlined />,
+                      onClick: () =>
+                        navigate("/admin/gestion/solicitudes_compra"),
                     },
                   ],
                 },

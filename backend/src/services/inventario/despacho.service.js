@@ -6,6 +6,7 @@ const Funcionario = require("../../models/Usuarios/Funcionario");
 const OrdenCompra = require("../../models/inventario/OrdenCompra");
 const CompraProveedorDetalle = require("../../models/inventario/CompraProveedorDetalle");
 const Producto = require("../../models/inventario/Productos");
+const Proveedor = require("../../models/inventario/Proveedor");
 const Lote = require("../../models/inventario/Lote");
 
 const { generarCodigo } = require("../../function/generarCodigo");
@@ -49,6 +50,10 @@ async function buscarOCIdProveedor(idProveedor) {
       where: { idProveedor: idProveedor },
       attributes: ["idProveedor"],
       include: [
+        {
+          model: Proveedor,
+          attributes: ["idProveedor", "rut", "nombre"],
+        },
         {
           model: OrdenCompra,
           where: {

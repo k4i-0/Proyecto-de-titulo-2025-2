@@ -72,7 +72,7 @@ function Dashboard() {
           height: "100vh",
           margin: 0,
           padding: 0,
-          background: "#fff",
+          //background: "#3c0d0d",
         }}
       >
         <Header
@@ -81,10 +81,10 @@ function Dashboard() {
             alignItems: "center",
             justifyContent: "space-between",
             padding: "0 32px",
-            background: "linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%)",
+            background: "linear-gradient(135deg, #bbb8d2 0%, #c2c7cf 100%)",
             boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
             zIndex: 10,
-            height: "72px",
+            height: "100px",
             borderBottom: "1px solid #f0f0f0",
           }}
         >
@@ -191,9 +191,10 @@ function Dashboard() {
             style={{
               marginLeft: "15px",
               marginRight: "15px",
-              padding: 24,
-              // minHeight: 280,
-              background: "white",
+              padding: 10,
+              marginTop: "15px",
+              minHeight: 280,
+              background: "#d2dae3",
               borderRadius: borderRadiusLG,
               overflow: "auto",
             }}

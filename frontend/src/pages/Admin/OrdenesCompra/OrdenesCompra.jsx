@@ -592,7 +592,29 @@ export default function OrdenesCompra() {
     notification.success({ message: "Producto eliminado de la orden" });
   };
 
+  const editarProductoOrdenCompra = (key, campo, valor) => {
+    const valorNormalizado = Number(valor || 0);
+
+    if (campo === "cantidadProducto" && valorNormalizado < 1) return;
+    if (campo === "valorUnitarioProducto" && valorNormalizado < 1) return;
+
+    setProductosSeleccionadosOrdenCompra((prevProductos) =>
+      prevProductos.map((item) => {
+        if (item.key !== key) return item;
+
+        const actualizado = { ...item, [campo]: valorNormalizado };
+        return {
+          ...actualizado,
+          total:
+            (actualizado.cantidadProducto || 0) *
+            (actualizado.valorUnitarioProducto || 0),
+        };
+      }),
+    );
+  };
+
   const agregarProductoOrdenCompra = (values) => {
+    console.log("Valores en OC ADMIN", values);
     const productoExiste = productosSeleccionadosOrdenCompra.some(
       (item) => item.productoSeleccionado === values.productoSeleccionado,
     );
@@ -647,6 +669,7 @@ export default function OrdenesCompra() {
 
   const handleAbrirCompraNueva = async () => {
     await buscarSucursales();
+    await buscarProductos();
     await buscarMiDatos();
     await obtenerProveedores();
     setVisibleCompraNueva(true);
@@ -708,7 +731,7 @@ export default function OrdenesCompra() {
 
   return (
     <div>
-      <Typography.Title level={2}>Órdenes de Compra</Typography.Title>
+      {/* <Typography.Title level={2}>Órdenes de Compra</Typography.Title> */}
       <DataTable
         title="Órdenes de compra"
         description={`Total: ${ordenesTabla.length} órdenes`}
@@ -1194,6 +1217,7 @@ export default function OrdenesCompra() {
         onEliminarProducto={eliminarProductoOrdenCompra}
         onAgregarProductoOrden={agregarProductoOrdenCompra}
         onGuardarOrden={enviarOrdenCompra}
+        onEditarProducto={editarProductoOrdenCompra}
         loading={loading}
         drawerSelectProductoOpen={drawerSelectProductoOrdenCompra}
         setDrawerSelectProductoOpen={setDrawerSelectProductoOrdenCompra}

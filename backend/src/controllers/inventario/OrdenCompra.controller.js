@@ -13,7 +13,8 @@ const Bodega = require("../../models/inventario/Bodega");
 const Estante = require("../../models/inventario/Estante");
 const OrdenCompra = require("../../models/inventario/OrdenCompra");
 const CrearOrdenCompra = require("../../models/inventario/CreaOrdenCompra");
-const { Op } = require("sequelize");
+const Provee = require("../../models/inventario/Provee");
+const { Op, where } = require("sequelize");
 const { sequelize } = require("../../models");
 const jwt = require("jsonwebtoken");
 
@@ -163,7 +164,7 @@ exports.obtenerOrdenesCompraDirecta = async (req, res) => {
 
     //obetner ordenes de compra directa
     const r = await obtenerOrdenCompra(
-      {},
+      { tipo: "compra directa" },
       null,
       [
         {
@@ -731,7 +732,7 @@ exports.crearOrdenCompraVendedor = async (req, res) => {
     ) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
     }
-
+    console.log("Crear OC idsucursal", idSucursal);
     //verificar que el proveedor, sucursal y funcionario existen
     const comprobarProveedor = await Proveedor.findOne({
       where: { rut: rutProveedor },
@@ -834,7 +835,7 @@ exports.buscarOrdenesCompraSucursalVendedor = async (req, res) => {
   }
 };
 
-exports.crearOrdenCompraSucursalVendedor = async (req, res) => {
+exports.recepcionarOrdenCompraSucursalVendedor = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const {
@@ -846,9 +847,12 @@ exports.crearOrdenCompraSucursalVendedor = async (req, res) => {
       observaciones,
       productos,
       idSucursal,
+      idBodega,
     } = req.body;
 
-    //verificar con joi los datos recibidos
+    //console.log("Datos back", req.body);
+
+    //verific ar con joi los datos recibidos
 
     //verificar que la orden de compra existe y esta en estado pendiente de aprobacion
     const verificarOC = await obtenerOrdenCompra(
@@ -877,14 +881,15 @@ exports.crearOrdenCompraSucursalVendedor = async (req, res) => {
     let estadoRecepcion = "Recepcionado";
     let faltantes = 0;
     for (const p of productos) {
-      if (p.cantidadRecibida < p.cantidad) {
-        faltantes += p.cantidad - p.cantidadRecibida;
+      if (p.cantidadRecibida < p.cantidadSolicitada) {
+        faltantes += p.cantidadSolicitada - p.cantidadRecibida;
       }
     }
     if (faltantes > 0) {
       estadoRecepcion = "Entregado Con Faltantes";
     }
-
+    console.log("Estado de recepción calculado linea 890:", estadoRecepcion);
+    console.log("Faltantes calculados linea 891:", faltantes);
     //crear despacho automatico
     const rDespacho = await crearDespacho(
       tipoDocumento,
@@ -904,23 +909,21 @@ exports.crearOrdenCompraSucursalVendedor = async (req, res) => {
     const despacho = rDespacho.data.get({ plain: true });
     //console.log("Despacho creado linea 905:", despacho);
 
-    //buscar bodegas sucursal
-    const bodegasSucursal = await Bodega.findAll({
+    //buscar bodega con idBodega recibido y que este en funcionamiento y tenga capacidad disponible
+    const bodegasSucursal = await Bodega.findOne({
       where: {
-        idSucursal: idSucursal,
+        idBodega: idBodega,
         estado: "En Funcionamiento",
         capacidadDisponible: { [Op.gt]: 0 },
       },
       transaction: t,
       raw: true,
     });
-    const bodegasSucursalLimpias = bodegasSucursal[0];
+    //const bodegasSucursalLimpias = bodegasSucursal[0];
     //console.log("Bodegas encontradas linea 917:", bodegasSucursalLimpias);
-    if (!bodegasSucursalLimpias) {
+    if (!bodegasSucursal) {
       await t.rollback();
-      return res
-        .status(404)
-        .json({ error: "No hay bodegas disponibles en la sucursal" });
+      return res.status(404).json({ error: "Bodega sin capacidad" });
     }
 
     //crear detalle de despacho
@@ -952,7 +955,7 @@ exports.crearOrdenCompraSucursalVendedor = async (req, res) => {
         null,
         p.idProducto,
         rDetalleDespachoData.idDetalledespacho,
-        bodegasSucursalLimpias.idBodega,
+        bodegasSucursal.idBodega,
         t,
       );
       if (rLote.code !== 201) {
@@ -963,7 +966,7 @@ exports.crearOrdenCompraSucursalVendedor = async (req, res) => {
       //Agregar a inventario cantidad recibida del producto
       const inventarioEncontrado = await Inventario.findOne({
         where: {
-          idBodega: bodegasSucursalLimpias.idBodega,
+          idBodega: bodegasSucursal.idBodega,
           idProducto: p.idProducto,
         },
         transaction: t,
@@ -976,7 +979,7 @@ exports.crearOrdenCompraSucursalVendedor = async (req, res) => {
             stock: p.cantidadRecibida,
             estado: "Bueno",
             idProducto: p.idProducto,
-            idBodega: bodegasSucursalLimpias.idBodega,
+            idBodega: bodegasSucursal.idBodega,
           },
           { transaction: t },
         );
@@ -1282,6 +1285,93 @@ exports.eliminarOrdenCompraAdmin = async (req, res) => {
     );
     res.status(500).json({
       error: "Error al eliminar orden de compra a proveedor desde admin",
+    });
+  }
+};
+
+//-----------------------Funciones comunes para ordenes de compra------------------//
+
+exports.verificarStockProductosOrdenCompra = async (req, res) => {
+  try {
+    const { idSucursal, idProveedor } = req.params;
+
+    console.log("datos en back", idSucursal, idProveedor);
+
+    //verificar que los datos sean validos con joi
+
+    //verificar que la sucursal y el proveedor existen
+    const comprobarSucursal = await Sucursal.findByPk(idSucursal);
+    const comprobarProveedor = await Proveedor.findByPk(idProveedor);
+    if (!comprobarSucursal) {
+      return res.status(404).json({ error: "Sucursal no encontrada" });
+    }
+    if (!comprobarProveedor) {
+      return res.status(404).json({ error: "Proveedor no encontrado" });
+    }
+    //Buscar Bodegas de la sucursal
+    const bodegas = await Bodega.findAll({
+      where: { idSucursal: idSucursal, estado: "En Funcionamiento" },
+    });
+    if (!bodegas || bodegas.length === 0) {
+      return res.status(404).json({ error: "No hay bodegas disponibles" });
+    }
+    const idBodegas = bodegas.map((b) => b.idBodega);
+    console.log("IdBodegas:", idBodegas);
+    //buscar productos asociados al proveedor
+    const productosProveedor = await Provee.findAll({
+      where: { idProveedor: idProveedor },
+    });
+    if (!productosProveedor || productosProveedor.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "El proveedor no tiene productos asociados" });
+    }
+    const idProductos = productosProveedor.map((p) => p.idProducto);
+    console.log("idProductos:", idProductos);
+    //buscar inventario de los productos del proveedor en las bodegas de la sucursal y que esten con un stock menor o igual a 10 unidades
+    const inventario = await Inventario.findAll({
+      where: {
+        idBodega: { [Op.in]: idBodegas },
+        idProducto: { [Op.in]: idProductos },
+        stock: { [Op.lte]: 10 },
+      },
+    });
+    if (!inventario || inventario.length === 0) {
+      return res.status(404).json({
+        error:
+          "No Existen Productos con Bajo Stock (10 unidades o menos) en las bodegas de la sucursal asociados al proveedor",
+      });
+    }
+
+    console.log("Inventario:", JSON.stringify(inventario, null, 2));
+
+    //Crear Data set para Frontend
+    const productosRecomendados = [];
+    for (const i of inventario) {
+      //buscar producto para obtener precio de compra
+      let precioCompra = 1000; //valor por defecto en caso de no encontrar precio de compra del producto
+      const producto = await Producto.findByPk(i.idProducto);
+      if (producto.precioCompra) {
+        precioCompra = producto.precioCompra;
+      }
+      productosRecomendados.push({
+        productoSeleccionado: i.idProducto,
+        cantidadProducto: i.stock + 10,
+        valorUnitarioProducto: precioCompra,
+      });
+    }
+    console.log(
+      "Productos recomendados:",
+      JSON.stringify(productosRecomendados, null, 2),
+    );
+    return res.status(200).send(productosRecomendados);
+  } catch (error) {
+    console.warn(
+      "Error al verificar stock de productos para orden de compra:",
+      error,
+    );
+    res.status(500).json({
+      error: "Error al verificar stock de productos para orden de compra",
     });
   }
 };

@@ -88,6 +88,22 @@ export default function InicioVendedor() {
           {/* Agrega más tarjetas de acceso directo aquí */}
         </Row>
       </Button>
+      <Button
+        style={{ width: 200, height: "auto", padding: "20px" }}
+        onClick={() => navigate("/vendedor/gestion/despachos")}
+      >
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} md={8} lg={6}>
+            <Space direction="vertical" align="center" size="large">
+              <ProductOutlined style={{ fontSize: 32 }} />
+
+              <Text>Despachos</Text>
+            </Space>
+          </Col>
+
+          {/* Agrega más tarjetas de acceso directo aquí */}
+        </Row>
+      </Button>
     </div>
   );
 }

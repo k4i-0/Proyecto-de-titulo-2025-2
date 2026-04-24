@@ -328,3 +328,27 @@ export async function eliminarOrdenCompraAdmin(nombreOrden) {
     return error.response.data;
   }
 }
+
+//-----------------Funciones compartidas para orden de compra a proveedor vendedores y administradores-----------------------------
+
+export async function verificarStockProductosOrdenCompra(
+  idSucursal,
+  idProveedor,
+) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/funcionalidades/orden-compra/verificar-stock/${idSucursal}/${idProveedor}`,
+      { withCredentials: true },
+    );
+    return response;
+  } catch (error) {
+    console.error(
+      "Error al verificar el stock de los productos para la orden de compra:",
+      error,
+    );
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response;
+  }
+}
