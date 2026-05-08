@@ -133,6 +133,25 @@ export async function obtenerOrdenesCompraProveedores() {
   }
 }
 
+export async function obtenerOrdenCompraProveedorPorNombre(nombreOrden) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/vendedor/orden/${nombreOrden}/ver-orden`,
+      {
+        withCredentials: true,
+      },
+    );
+    return response;
+  } catch (error) {
+    console.error(
+      "Error al obtener la orden de compra a proveedor por nombre:",
+      error,
+    );
+
+    return error.response.data;
+  }
+}
+
 export async function buscarTodasOrdenesParaRecepcion(rutProveedor) {
   try {
     const response = await axios.get(

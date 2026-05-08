@@ -30,6 +30,8 @@ const { Text } = Typography;
  * @param {String} description - Descripción de la página (opcional).
  * @param {Object} selectedRow - Fila seleccionada actualmente (opcional).
  * @param {String} searchPlaceholder - Placeholder del buscador principal (opcional).
+ * @param {String|null} sortField - Campo por el cual ordenar (opcional).
+ * @param {"asc"|"desc"} sortOrder - Orden de la tabla (opcional, por defecto: "asc").
  */
 export default function DataTable({
   data = [],
@@ -48,6 +50,9 @@ export default function DataTable({
   searchPlaceholder = "Buscar...",
   showSearch = true,
   showFilters = true,
+  tableProps = {},
+  sortField = null,
+  sortOrder = "asc",
 }) {
   const [searchText, setSearchText] = useState("");
   // Estado para manejar múltiples filtros dinámicos { estado: "Activo", rubro: "Tecnologia" }
@@ -55,12 +60,17 @@ export default function DataTable({
 
   // Lógica de Filtrado Unificada
   const filteredData = useMemo(() => {
+    // Helper para acceder a propiedades anidadas con notación de puntos
+    const getNestedValue = (obj, path) => {
+      return path.split(".").reduce((current, prop) => current?.[prop], obj);
+    };
+
     return data.filter((item) => {
       // 1. Filtrado por Buscador de Texto (SearchText)
       const matchesSearch =
         !searchText ||
         searchableFields.some((field) => {
-          const fieldValue = item[field]?.toString().toLowerCase();
+          const fieldValue = getNestedValue(item, field)?.toString().toLowerCase();
           return fieldValue?.includes(searchText.toLowerCase());
         });
 
@@ -74,6 +84,31 @@ export default function DataTable({
       return matchesSearch && matchesFilters;
     });
   }, [data, searchText, activeFilters, searchableFields, filterConfig]);
+
+  const sortedData = useMemo(() => {
+    if (!sortField) return filteredData;
+
+    const direction = sortOrder === "desc" ? -1 : 1;
+    return [...filteredData].sort((a, b) => {
+      const valueA = a?.[sortField];
+      const valueB = b?.[sortField];
+
+      if (valueA == null && valueB == null) return 0;
+      if (valueA == null) return 1;
+      if (valueB == null) return -1;
+
+      if (typeof valueA === "number" && typeof valueB === "number") {
+        return (valueA - valueB) * direction;
+      }
+
+      return (
+        valueA.toString().localeCompare(valueB.toString(), "es", {
+          numeric: true,
+          sensitivity: "base",
+        }) * direction
+      );
+    });
+  }, [filteredData, sortField, sortOrder]);
 
   // Manejadores de cambios
   const handleFilterChange = (key, value) => {
@@ -175,7 +210,9 @@ export default function DataTable({
                   icon={<FilterOutlined />}
                   onClick={handleLimpiarFiltros}
                   block
-                  disabled={!searchText && Object.keys(activeFilters).length === 0}
+                  disabled={
+                    !searchText && Object.keys(activeFilters).length === 0
+                  }
                 >
                   Limpiar
                 </Button>
@@ -195,7 +232,7 @@ export default function DataTable({
 
         {/* 3. Tabla Ant Design */}
         <Table
-          dataSource={filteredData}
+          dataSource={sortedData}
           columns={columns}
           rowKey={rowKey}
           loading={loading}
@@ -222,6 +259,7 @@ export default function DataTable({
             },
           })}
           summary={summaryRow}
+          {...tableProps}
         />
       </Card>
     </>

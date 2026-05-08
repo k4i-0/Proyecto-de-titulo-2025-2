@@ -149,7 +149,7 @@ export default function EditarCategoria({
           <Select placeholder="Seleccione un estado">
             <Select.Option value="Activo">Activo</Select.Option>
             <Select.Option value="Inactivo">Inactivo</Select.Option>
-            <Select.Option value="Depreciado">Depreciado</Select.Option>
+            <Select.Option value="Suspendido">Suspendido</Select.Option>
           </Select>
         </Form.Item>
       </Form>

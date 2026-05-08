@@ -20,7 +20,7 @@ const VendedorRouter = () => {
           element={<RecepcionDespachos />}
         />
         <Route
-          path="/gestion/despachos/:idOrdenCompra?"
+          path="/gestion/despachos/:nombreOrden?"
           element={<GestionDespachos />}
         />
 

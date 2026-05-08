@@ -7,29 +7,37 @@ const { verifyToken, isVendedor } = require("../../middleware/auth.middleware");
 // Rutas para productos
 router.post(
   "/crear",
-  /*authMiddleware, roleMiddleware(['admin']),*/ inventarioController.createInventario
+  /*authMiddleware, roleMiddleware(['admin']),*/ inventarioController.createInventario,
 );
 router.get(
   "/buscar",
-  /*authMiddleware,*/ inventarioController.getAllInventario
+  /*authMiddleware,*/ inventarioController.getAllInventario,
 );
 router.get(
   "/por-sucursal",
   verifyToken,
   isVendedor,
-  inventarioController.getInventarioPorSucursal
+  inventarioController.getInventarioPorSucursal,
 );
 router.get(
   "/buscar/:id",
-  /*authMiddleware,*/ inventarioController.getInventarioById
+  /*authMiddleware,*/ inventarioController.getInventarioById,
 );
 router.put(
   "/actualizar/:id",
-  /*authMiddleware, roleMiddleware(['admin']),*/ inventarioController.updateInventario
+  /*authMiddleware, roleMiddleware(['admin']),*/ inventarioController.updateInventario,
 );
 router.delete(
   "/eliminar/:id",
-  /*authMiddleware, roleMiddleware(['admin']),*/ inventarioController.deleteInventario
+  /*authMiddleware, roleMiddleware(['admin']),*/ inventarioController.deleteInventario,
+);
+
+//ingreso manual de productos a una o varias sucursales
+router.post(
+  "/vendedor/ingreso-manual",
+  verifyToken,
+  isVendedor,
+  inventarioController.ingresoManualProductos,
 );
 
 module.exports = router;

@@ -82,3 +82,26 @@ export async function eliminarInventario(id) {
     return error.response.data;
   }
 }
+
+export async function ingresoManualProductos(datos) {
+  try {
+    const respuesta = await axios.post(
+      `${API_URL}/vendedor/ingreso-manual`,
+      datos,
+      {
+        withCredentials: true,
+      },
+    );
+    console.log("Ingreso manual de productos exitoso:", respuesta);
+    return respuesta;
+  } catch (error) {
+    console.log(
+      "Error al ingresar productos manualmente:",
+      error.response.data.error,
+    );
+    if (error.response.data.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response.data;
+  }
+}

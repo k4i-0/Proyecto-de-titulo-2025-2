@@ -78,7 +78,37 @@ async function buscarOCIdProveedor(idProveedor) {
             },
             {
               model: Despacho,
-              attributes: ["idDespacho", "codigoDespacho", "estado"],
+              attributes: [
+                "idDespacho",
+                "codigoDespacho",
+                "fechaDespacho",
+                "tipoDocumento",
+                "tipoDespacho",
+                "repartidor",
+                "estado",
+              ],
+              include: [
+                {
+                  model: DespachoDetalle,
+                  attributes: [
+                    "cantidad",
+                    "cantidadRecibida",
+                    "cantidadRechazada",
+                  ],
+                  include: [
+                    {
+                      model: Lote,
+                      attributes: ["idLote", "codigoLote", "fechaVencimiento"],
+                      include: [
+                        {
+                          model: Producto,
+                          attributes: ["idProducto", "codigo", "nombre"],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
             },
           ],
         },

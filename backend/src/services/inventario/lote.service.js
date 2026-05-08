@@ -15,7 +15,7 @@ async function crearLote(
   try {
     const nuevoLote = await Lote.create(
       {
-        codigoLote: await generarCodigo("lote"),
+        codigoLote: await generarCodigo("lote", transaccion),
         fechaCreacion: new Date(),
         fechaVencimiento:
           fechaVencimiento ||
@@ -23,7 +23,7 @@ async function crearLote(
         estado: estadoLote,
         cantidad: cantidad,
         idProducto: idProducto,
-        idDetalleDespacho: idDetalleDespacho,
+        idDetalleDespacho: idDetalleDespacho || null,
         idBodega: idBodega || null,
       },
       { transaction: transaccion },
@@ -32,6 +32,7 @@ async function crearLote(
     //actualizar bodega
     const bodega = await Bodega.findByPk(idBodega);
     if (!bodega) {
+      transaccion.rollback();
       return { code: 404, error: "Bodega no encontrada" };
     }
     // if (cantidad > bodega.dataValues.capacidadDisponible) {
@@ -40,10 +41,13 @@ async function crearLote(
     //     error: "Cantidad excede la capacidad disponible del estante",
     //   };
     // }
-    await bodega.update({
-      capacidadOcupada: bodega.dataValues.capacidadOcupada + 1,
-      capacidadDisponible: bodega.dataValues.capacidadDisponible - 1,
-    });
+    await bodega.update(
+      {
+        capacidadOcupada: bodega.dataValues.capacidadOcupada + 1,
+        capacidadDisponible: bodega.dataValues.capacidadDisponible - 1,
+      },
+      { transaction: transaccion },
+    );
 
     return { code: 201, data: nuevoLote };
   } catch (error) {

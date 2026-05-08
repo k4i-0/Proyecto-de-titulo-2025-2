@@ -4,7 +4,10 @@ const Lote = require("../../models/inventario/Lote");
 const Bodega = require("../../models/inventario/Bodega");
 const Productos = require("../../models/inventario/Productos");
 const Sucursal = require("../../models/inventario/Sucursal");
+const { sequelize } = require("../../models");
 const { Op } = require("sequelize");
+
+const { crearLote } = require("../../services/inventario/lote.service");
 
 exports.createInventario = async (req, res) => {
   const { nombre, fechaCreacion, encargado, stock, idBodega, idProducto } =
@@ -144,7 +147,10 @@ exports.getInventarioPorSucursal = async (req, res) => {
         direccion: sucursal.direccion,
         estado: sucursal.estado,
         totalInventarios: inventarios.length,
-        totalStock: inventarios.reduce((acc, item) => acc + (item.stock || 0), 0),
+        totalStock: inventarios.reduce(
+          (acc, item) => acc + (item.stock || 0),
+          0,
+        ),
         inventarios,
       };
     });
@@ -222,5 +228,100 @@ exports.deleteInventario = async (req, res) => {
     return res.status(404).json({ error: "Inventario no encontrado" });
   } catch (error) {
     res.status(500).json({ error: "Error al eliminar el inventario" });
+  }
+};
+
+// ingreso manual de productos a una o varias sucursales
+exports.ingresoManualProductos = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const productos = req.body;
+    console.log("Datos de front", productos);
+    for (const item of productos) {
+      const { idProducto, cantidad, idSucursal, idBodega } = item;
+      //comprobaciones
+      const producto = await Productos.findByPk(idProducto, { transaction: t });
+      if (!producto) {
+        console.log(`Producto con ID ${idProducto} no encontrado`);
+        return res.status(422).json({
+          code: 1114,
+          error: `Producto con ID ${idProducto} no encontrado`,
+        });
+      }
+      const sucursal = await Sucursal.findByPk(idSucursal, { transaction: t });
+      if (!sucursal) {
+        console.log(`Sucursal con ID ${idSucursal} no encontrada`);
+        return res.status(422).json({
+          code: 1115,
+          error: `Sucursal con ID ${idSucursal} no encontrada`,
+        });
+      }
+      const bodega = await Bodega.findByPk(idBodega, { transaction: t });
+      if (!bodega) {
+        console.log(`Bodega con ID ${idBodega} no encontrada`);
+        return res.status(422).json({
+          code: 1116,
+          error: `Bodega con ID ${idBodega} no encontrada`,
+        });
+      }
+      if (bodega.idSucursal !== idSucursal) {
+        console.log(
+          `La bodega con ID ${idBodega} no pertenece a la sucursal con ID ${idSucursal}`,
+        );
+        return res.status(422).json({
+          code: 1117,
+          error: `La bodega con ID ${idBodega} no pertenece a la sucursal con ID ${idSucursal}`,
+        });
+      }
+      //crear lote
+      const nLote = await crearLote(
+        "disponible",
+        cantidad,
+        null,
+        idProducto,
+        null,
+        idBodega,
+        t,
+      );
+      if (nLote.code !== 201) {
+        console.log(
+          `Error al crear lote para producto ID ${idProducto}:`,
+          nLote.error,
+        );
+        await t.rollback();
+        return res.status(nLote.code).json({ error: nLote.error });
+      }
+      //actualizar inventario
+      const inventario = await Inventario.findOne({
+        where: { idProducto, idBodega },
+        transaction: t,
+      });
+      if (inventario) {
+        await inventario.update(
+          { stock: inventario.stock + cantidad },
+          { transaction: t },
+        );
+      } else {
+        await Inventario.create(
+          {
+            stock: cantidad,
+            idBodega,
+            idProducto,
+            estado: "Bueno",
+            idProducto: idProducto,
+            idBodega: idBodega,
+          },
+          { transaction: t },
+        );
+      }
+    }
+    t.commit();
+    return res
+      .status(200)
+      .json({ message: "Ingreso manual de productos recibido" });
+  } catch (error) {
+    t.rollback();
+    console.error("Error al ingresar productos manualmente:", error);
+    res.status(500).json({ error: "Error al ingresar productos manualmente" });
   }
 };

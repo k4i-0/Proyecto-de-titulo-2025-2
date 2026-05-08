@@ -164,7 +164,7 @@ DetalleDespacho.belongsTo(Despacho, {
 // DetalleDespacho.belongsTo(Productos, { foreignKey: "idProducto" });
 
 //Orden de compra con Despacho
-OrdenCompra.hasOne(Despacho, {
+OrdenCompra.hasMany(Despacho, {
   foreignKey: "idOrdenCompra",
 });
 Despacho.belongsTo(OrdenCompra, {

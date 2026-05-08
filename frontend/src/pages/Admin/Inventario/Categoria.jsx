@@ -79,11 +79,11 @@ export default function Categoria() {
   };
 
   const handleAbrirModalEditar = () => {
-    if (!categoriaSelect) {
-      setError(true);
-      setMensaje("Por favor seleccione una categoría de la tabla");
-      return;
-    }
+    // if (!categoriaSelect) {
+    //   setError(true);
+    //   setMensaje("Por favor seleccione una categoría de la tabla");
+    //   return;
+    // }
     setError(false);
     setMensaje("");
     setModalEditar(true);
@@ -172,6 +172,51 @@ export default function Categoria() {
         <Tag color={getEstadoColor(estado)} style={{ fontSize: "13px" }}>
           {estado || "N/A"}
         </Tag>
+      ),
+    },
+    {
+      title: "Acciones",
+      key: "acciones",
+      width: "20%",
+      align: "center",
+      render: () => (
+        <Space size="middle">
+          <Button
+            type="primary"
+            size="medium"
+            icon={<PlusOutlined />}
+            onClick={handleCrear}
+            disabled={loading}
+          >
+            Nueva Categoría
+          </Button>
+          <Button
+            size="medium"
+            icon={<EditOutlined />}
+            onClick={handleAbrirModalEditar}
+            disabled={loading}
+          >
+            Editar
+          </Button>
+          <Popconfirm
+            title="¿Eliminar categoría?"
+            description={`Se eliminará: ${categoriaSelect?.nombreCategoria || ""}`}
+            onConfirm={handleEliminarConfirmado}
+            okText="Sí, eliminar"
+            cancelText="Cancelar"
+            okButtonProps={{ danger: true }}
+            disabled={!categoriaSelect}
+          >
+            <Button
+              size="medium"
+              icon={<DeleteOutlined />}
+              disabled={loading || !categoriaSelect}
+              danger
+            >
+              Eliminar
+            </Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -267,48 +312,6 @@ export default function Categoria() {
         ]}
         onRowClick={handleSeleccionarFila}
         selectedRow={categoriaSelect}
-        headerButtons={
-          <Space size="middle">
-            <Button
-              type="primary"
-              size="large"
-              icon={<PlusOutlined />}
-              onClick={handleCrear}
-              disabled={loading}
-              style={{ borderRadius: "8px" }}
-            >
-              Nueva Categoría
-            </Button>
-            <Button
-              size="large"
-              icon={<EditOutlined />}
-              onClick={handleAbrirModalEditar}
-              disabled={loading || !categoriaSelect}
-              style={{ borderRadius: "8px" }}
-            >
-              Editar
-            </Button>
-            <Popconfirm
-              title="¿Eliminar categoría?"
-              description={`Se eliminará: ${categoriaSelect?.nombreCategoria || ""}`}
-              onConfirm={handleEliminarConfirmado}
-              okText="Sí, eliminar"
-              cancelText="Cancelar"
-              okButtonProps={{ danger: true }}
-              disabled={!categoriaSelect || loading}
-            >
-              <Button
-                size="large"
-                icon={<DeleteOutlined />}
-                disabled={loading || !categoriaSelect}
-                danger
-                style={{ borderRadius: "8px" }}
-              >
-                Eliminar
-              </Button>
-            </Popconfirm>
-          </Space>
-        }
       />
 
       {/* Modales */}

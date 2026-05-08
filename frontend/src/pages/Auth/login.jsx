@@ -37,6 +37,8 @@ const Login = () => {
         navigate("/admin");
       } else if (user && user.nombreRol === "Vendedor") {
         navigate("/vendedor");
+      } else if (user && user.nombreRol === "Cajero") {
+        navigate("/cajero");
       }
     }
   }, [isAuthenticated, navigate, user]);

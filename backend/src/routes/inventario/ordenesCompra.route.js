@@ -48,6 +48,11 @@ router.get(
   compraProveedorController.buscarOrdenesCompraSucursalVendedor,
 );
 
+router.get(
+  "/vendedor/orden/:nombreOrden/ver-orden",
+  compraProveedorController.obtenerOrdenCompraVendedorPorNombreOrden,
+);
+
 router.post(
   "/vendedor/orden/recepcion/compra-sucursal",
   compraProveedorController.recepcionarOrdenCompraSucursalVendedor,

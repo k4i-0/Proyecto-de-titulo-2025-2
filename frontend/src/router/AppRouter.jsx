@@ -5,6 +5,7 @@ import RedireccionPorRol from "../pages/Auth/RedireccionPorRol.jsx";
 import NoEncontrado from "../pages/Compartidas/NoEncontrado.jsx";
 import AdminRouter from "./AdminRouter.jsx";
 import VendedorRouter from "./VendedorRouter.jsx";
+import CajeroRouter from "./CajeroRouter.jsx";
 import ProtectedRoute from "../context/ProteccionRutas.jsx";
 
 import Cookies from "js-cookie";
@@ -31,6 +32,15 @@ const AppRouter = () => {
         element={
           <ProtectedRoute allowedRoles={["Vendedor"]}>
             <VendedorRouter />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/cajero/*"
+        element={
+          <ProtectedRoute allowedRoles={["Cajero"]}>
+            <CajeroRouter />
           </ProtectedRoute>
         }
       />

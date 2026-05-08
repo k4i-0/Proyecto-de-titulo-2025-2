@@ -37,6 +37,14 @@ const bodega = sequelize.define(
       allowNull: false,
       defaultValue: "En Funcionamiento",
     },
+    idSucursal: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "sucursal",
+        key: "idSucursal",
+      },
+    },
   },
   {
     tableName: "bodega",

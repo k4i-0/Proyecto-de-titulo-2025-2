@@ -20,31 +20,42 @@ async function crearOrdenCompra(
   idProveedor,
   idSucursal,
   idFuncionarioSolicita,
-  idFuncionarioAutoriza,
+  transaction,
 ) {
   try {
-    const nuevaOrdenCompra = await OrdenCompra.create({
-      nombreOrden: await generarCodigo("ordenCompra"),
-      fechaOrden: new Date(),
-      estado: "creada",
-      tipo: tipoOrden,
-      total: totalCompra,
-      observaciones,
-      detalleEstado: destalleEstadoOrdenCompra,
-    });
+    const nuevaOrdenCompra = await OrdenCompra.create(
+      {
+        nombreOrden: await generarCodigo("ordenCompra", transaction),
+        fechaOrden: new Date(),
+        estado: "creada",
+        tipo: tipoOrden,
+        total: totalCompra,
+        observaciones,
+        detalleEstado: destalleEstadoOrdenCompra,
+      },
+      { transaction },
+    );
 
-    const nuevaCreacionOrdenCompra = await CrearOrdenCompra.create({
-      idOrdenCompra: nuevaOrdenCompra.idOrdenCompra,
-      idProveedor: idProveedor,
-      idSucursal: idSucursal,
-      idFuncionarioSolicita: idFuncionarioSolicita,
-      idFuncionarioAutoriza: idFuncionarioAutoriza
-        ? idFuncionarioAutoriza
-        : null,
-    });
+    const nuevaCreacionOrdenCompra = await CrearOrdenCompra.create(
+      {
+        idOrdenCompra: nuevaOrdenCompra.idOrdenCompra,
+        idProveedor: idProveedor,
+        idSucursal: idSucursal,
+        idFuncionarioSolicita: idFuncionarioSolicita,
+        idFuncionarioAutoriza: null,
+      },
+      { transaction },
+    );
 
+    nuevaOrdenCompra.update(
+      { detalleEstado: `Orden creada y pendiente de aprobación` },
+      { transaction },
+    );
+    console.log("nuevaOrdenCompra", nuevaOrdenCompra);
+    console.log("nuevaCreacionOrdenCompra", nuevaCreacionOrdenCompra);
     return { code: 201, data: nuevaOrdenCompra };
   } catch (error) {
+    transaction.rollback();
     console.error("Error al crear la orden de compra:", error);
     return { code: 500, error: "Error al crear la orden de compra" };
   }

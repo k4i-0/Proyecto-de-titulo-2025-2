@@ -485,6 +485,9 @@ const AprovicionamientoProveedor = () => {
       title: "N° Orden",
       dataIndex: "nombreOrden",
       key: "nombreOrden",
+      onCell: () => ({
+        onClick: (e) => e.stopPropagation(),
+      }),
     },
     {
       title: "Proveedor",

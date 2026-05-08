@@ -33,6 +33,10 @@ const contratoFuncionario = sequelize.define(
       allowNull: false,
       defaultValue: "Activo",
     },
+    motivoCambioContrato: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     // idFuncionario: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,
@@ -53,7 +57,7 @@ const contratoFuncionario = sequelize.define(
   {
     tableName: "contratoFuncionario",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = contratoFuncionario;

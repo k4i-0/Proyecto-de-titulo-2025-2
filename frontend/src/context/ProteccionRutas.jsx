@@ -12,6 +12,7 @@ const ProtectedRoute = ({
   const { user, isAuthenticated, initializing, checkAuth } = useAuth();
   const location = useLocation();
 
+  console.log("ROl", user?.nombreRol);
   useEffect(() => {
     console.log("Verificando autenticación...");
     checkAuth();
@@ -49,6 +50,9 @@ const ProtectedRoute = ({
     }
     if (userRole === "Vendedor") {
       return <Navigate to="/vendedor" replace />;
+    }
+    if (userRole === "Cajero") {
+      return <Navigate to="/cajero" replace />;
     }
     return <Navigate to={fallbackPath} replace />;
   }

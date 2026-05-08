@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, Children } from "react";
 import {
   Button,
   Space,
@@ -22,6 +22,7 @@ import {
   Tooltip,
   Typography,
   notification,
+  Tabs,
 } from "antd";
 import {
   UserAddOutlined,
@@ -38,6 +39,9 @@ import {
   HomeOutlined,
   IdcardOutlined,
   CalendarOutlined,
+  FileTextOutlined,
+  FileAddOutlined,
+  NotificationFilled,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -51,11 +55,19 @@ import obtenerTodosFuncionarios, {
   crearFuncionario,
   editarFuncionario,
   eliminarFuncionario,
+  obtenerContratosFuncionarios,
+  obtenerFuncionariosSinContrato,
+  asignarContratoAFuncionarioSinContrato,
+  cambiarTurnoFuncionario,
+  cambiarTipoContratoFuncionario,
 } from "../../../services/usuario/funcionario.service";
 import obtenerSucursales from "../../../services/inventario/Sucursal.service";
 
 const GestionColaborador = () => {
   const [form] = Form.useForm();
+  const [formContrato] = Form.useForm();
+  const [formEditarTurno] = Form.useForm();
+  const [formEditarContrato] = Form.useForm();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -63,7 +75,20 @@ const GestionColaborador = () => {
   const [loading, setLoading] = useState(false);
   const [colaboradores, setColaboradores] = useState([]);
 
+  const [contratos, setContratos] = useState([]);
   const [sucursales, setSucursales] = useState([]);
+
+  const [modalContratoVisible, setModalContratoVisible] = useState(false);
+  const [contratoSeleccionado, setContratoSeleccionado] = useState(null);
+
+  const [modalCrearContrato, setModalCrearContrato] = useState(false);
+  const [funcionariosSinContrato, setFuncionariosSinContrato] = useState([]);
+  const [modalEditarTurnoVisible, setModalEditarTurnoVisible] = useState(false);
+  const [contratoTurnoEditando, setContratoTurnoEditando] = useState(null);
+  const [modalEditarContratoVisible, setModalEditarContratoVisible] =
+    useState(false);
+  const [contratoEditando, setContratoEditando] = useState(null);
+  const [funcionarioBuscado, setFuncionarioBuscado] = useState(null);
 
   //obtener sucursales
   useEffect(() => {
@@ -71,6 +96,7 @@ const GestionColaborador = () => {
       try {
         setLoading(true);
         const response = await obtenerSucursales();
+        console.log("respuesta sucursales", response);
         if (response.status === 200) {
           setSucursales(response.data);
           setLoading(false);
@@ -153,6 +179,306 @@ const GestionColaborador = () => {
   useEffect(() => {
     obtenerColaboradores();
   }, []);
+
+  //obtener contratos
+  const obtenerContratos = async () => {
+    try {
+      const respuesta = await obtenerContratosFuncionarios();
+      console.log("respuesta de contratos funcionario", respuesta.data);
+      if (respuesta.status === 200) {
+        setContratos(respuesta.data);
+        return;
+      }
+      notification.error({
+        message: respuesta.error || "Error al cargar contratos",
+        description: "Hubo un problema al obtener los contratos.",
+      });
+    } catch (error) {
+      console.log(error);
+      notification.error({
+        message: error.message || "Error de servidor",
+        description: "No se pudo conectar al servidor.",
+        duration: 5,
+      });
+    }
+  };
+
+  //columnas de contratos
+  const columnasContratos = [
+    {
+      title: "Colaborador",
+      key: "colaborador",
+      width: 200,
+      render: (_, record) => {
+        const nombre = record?.funcionario?.nombre || "N";
+        const apellido = record?.funcionario?.apellido || "A";
+
+        return (
+          <Space key={`colaborador-contrato-${record?.idContratoFuncionario}`}>
+            <Avatar
+              key="avatar"
+              size={40}
+              icon={<UserOutlined />}
+              style={{ backgroundColor: "#1890ff" }}
+            >
+              {nombre.charAt(0).toUpperCase()}
+              {apellido.charAt(0).toUpperCase()}
+            </Avatar>
+            <div key="info">
+              <div style={{ fontWeight: 500 }}>
+                {nombre} {apellido}
+              </div>
+              <div style={{ fontSize: "12px", color: "#999" }}>
+                {record?.funcionario?.rut || "S/R"}
+              </div>
+            </div>
+          </Space>
+        );
+      },
+    },
+    {
+      title: "Sucursal",
+      dataIndex: ["sucursal", "nombre"],
+      key: "sucursal",
+      width: 120,
+      render: (sucursal) => (
+        <Tag color="green">{sucursal || "Casa Matriz"}</Tag>
+      ),
+    },
+    {
+      title: "Tipo de Contrato",
+      dataIndex: "tipoContrato",
+      key: "tipoContrato",
+      width: 120,
+      render: (tipoContrato) => {
+        const colors = {
+          Indefinido: "blue",
+          "Plazo Fijo": "orange",
+          Honorarios: "purple",
+        };
+        return (
+          <Tag color={colors[tipoContrato] || "default"}>
+            {tipoContrato || "No asignado"}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Turno",
+      dataIndex: "turno",
+      key: "turno",
+      width: 100,
+      render: (turno) => {
+        const colors = {
+          Mañana: "blue",
+          Tarde: "orange",
+          Noche: "purple",
+          Rotativo: "green",
+        };
+        return (
+          <Tag color={colors[turno] || "default"}>{turno || "No asignado"}</Tag>
+        );
+      },
+    },
+    {
+      title: "Fecha de Ingreso",
+      dataIndex: "fechaIngreso",
+      key: "fechaIngreso",
+      width: 120,
+      render: (fechaIngreso) =>
+        fechaIngreso ? dayjs(fechaIngreso).format("DD/MM/YYYY") : "N/A",
+    },
+    {
+      title: "Estado",
+      dataIndex: "estado",
+      key: "estado",
+      width: 110,
+      render: (estado) => (
+        <Badge
+          status={estado === "Activo" ? "success" : "error"}
+          text={estado || "Desconocido"}
+        />
+      ),
+    },
+    {
+      title: "Acciones",
+      key: "acciones",
+      width: 80,
+      fixed: "right",
+      render: (_, record) => (
+        <Space key={`acciones-contrato-${record.idContratoFuncionario}`}>
+          <Tooltip key="view" title="Ver Detalles">
+            <Button
+              type="link"
+              icon={<EyeOutlined />}
+              onClick={() => abrirModalContrato(record)}
+            />
+          </Tooltip>
+          <Tooltip key="edit-turno" title="Editar turno">
+            <Button
+              type="link"
+              icon={<EditOutlined />}
+              onClick={() => abrirModalEditarTurno(record)}
+            />
+          </Tooltip>
+        </Space>
+      ),
+    },
+  ];
+
+  //obtener funcionarios sin contrato para el select del formulario de contrato
+  const obtenerFuncionarioSC = async () => {
+    try {
+      const respuesta = await obtenerFuncionariosSinContrato();
+      console.log("respuesta funcionarios sin contrato", respuesta.data);
+      if (respuesta.status === 200) {
+        setFuncionariosSinContrato(respuesta.data);
+        return;
+      }
+      if (respuesta.status === 204) {
+        setFuncionariosSinContrato([]);
+        notification.info({
+          message: "No hay funcionarios sin contrato",
+          description:
+            "Todos los funcionarios activos tienen contrato asignado.",
+        });
+      }
+      notification.error({
+        message: respuesta.error || "Error al cargar funcionarios sin contrato",
+        description:
+          "Hubo un problema al obtener los funcionarios sin contrato.",
+      });
+    } catch (error) {
+      console.log(error);
+      notification.error({
+        message: error.message || "Error de servidor",
+        description: "No se pudo conectar al servidor.",
+      });
+    }
+  };
+
+  const abrirModalContrato = (record) => {
+    setContratoSeleccionado(record);
+    setModalContratoVisible(true);
+  };
+
+  const abrirModalEditarTurno = (record) => {
+    setContratoTurnoEditando(record);
+    formEditarTurno.setFieldsValue({
+      idContratoFuncionario: record.idContratoFuncionario,
+      turno: record?.turno,
+    });
+    setModalEditarTurnoVisible(true);
+  };
+
+  const cerrarModalContrato = () => {
+    setContratoSeleccionado(null);
+    setModalContratoVisible(false);
+  };
+
+  const cerrarModalEditarTurno = () => {
+    setContratoTurnoEditando(null);
+    setModalEditarTurnoVisible(false);
+    formEditarTurno.resetFields();
+  };
+
+  const handleSubmitEditarTurno = async (values) => {
+    console.log("Datos en Enviar cambio turno", values);
+    try {
+      const respuesta = await cambiarTurnoFuncionario(values);
+      console.log("Respuesta del cambio de turno", respuesta);
+      if (respuesta.status === 200) {
+        notification.success({
+          message: respuesta.data.message || "Turno actualizado",
+        });
+        formEditarTurno.resetFields();
+        cerrarModalEditarTurno();
+        obtenerContratos();
+        obtenerColaboradores();
+        return;
+      }
+      notification.error({
+        message: respuesta.error || "Error al actualizar turno",
+      });
+    } catch (error) {
+      console.log(error);
+      notification.error({
+        message: error.message || "Error de servidor",
+        description: "No se pudo conectar al servidor.",
+      });
+    } finally {
+      cerrarModalEditarTurno();
+    }
+  };
+
+  // ABRIR/CERRAR Modal Editar Contrato (frontend-only)
+  const abrirModalEditarContrato = (record) => {
+    setContratoEditando(record);
+    // intentar precargar funcionario
+    setFuncionarioBuscado(record?.funcionario || null);
+    formEditarContrato.setFieldsValue({
+      rutBuscar: record?.funcionario?.rut || "",
+      turno: record?.turno || undefined,
+      motivo: "",
+    });
+    setModalEditarContratoVisible(true);
+  };
+
+  const cerrarModalEditarContrato = () => {
+    setContratoEditando(null);
+    setFuncionarioBuscado(null);
+    setModalEditarContratoVisible(false);
+    formEditarContrato.resetFields();
+  };
+
+  const handleBuscarFuncionarioPorRut = (rut) => {
+    if (!rut) {
+      notification.error({ message: "Ingrese RUT para buscar" });
+      return;
+    }
+    const encontrado =
+      colaboradores.find((c) => c.rut === rut) ||
+      funcionariosSinContrato.find((f) => f.rut === rut);
+    if (!encontrado) {
+      setFuncionarioBuscado(null);
+      notification.error({ message: "Funcionario no encontrado" });
+      return;
+    }
+    console.log("encontrado", encontrado);
+    setFuncionarioBuscado(encontrado);
+    notification.success({ message: "Funcionario cargado" });
+  };
+
+  const handleSubmitEditarContrato = async (values) => {
+    console.log("Datos en Editar Contrato", values);
+    if (funcionarioBuscado.tipoContrato === values.nuevoContrato) {
+      notification.info({ message: "El nuevo contrato es igual al actual" });
+      return;
+    }
+    try {
+      const respuesta = await cambiarTipoContratoFuncionario(values);
+      console.log("Respuesta del cambio de contrato", respuesta);
+      if (respuesta.status === 200) {
+        notification.success({
+          message: respuesta.data.message || "Contrato actualizado",
+        });
+        formEditarContrato.resetFields();
+        obtenerContratos();
+        obtenerColaboradores();
+        return;
+      }
+      notification.error({
+        message: respuesta.error || "Error al actualizar contrato",
+      });
+    } catch (error) {
+      console.log("Error al editar contrato", error);
+      notification.error({
+        message: error.message || "Error de servidor",
+      });
+    } finally {
+      cerrarModalEditarContrato();
+    }
+  };
 
   // Estadísticas
   const stats = {
@@ -345,6 +671,7 @@ const GestionColaborador = () => {
   };
 
   const handleEdit = (record) => {
+    console.log("Editar", record);
     setEditMode(true);
     setSelectedColaborador(record);
     form.setFieldsValue({
@@ -460,80 +787,180 @@ const GestionColaborador = () => {
     obtenerColaboradores();
   };
 
+  //contratos
+  const abrirModalCrearContrato = () => {
+    obtenerFuncionarioSC();
+    setModalCrearContrato(true);
+  };
+
+  const cerrarModalCrearContrato = () => {
+    setModalCrearContrato(false);
+  };
+
+  const handleSubmitContrato = async (values) => {
+    console.log("Valores del formulario contrato:", values);
+    try {
+      const response = await asignarContratoAFuncionarioSinContrato(values);
+      console.log("respuesta asignar contrato", response);
+      if (response.status === 201) {
+        notification.success({
+          message: response.data.message || "Contrato asignado",
+          description: "El contrato se ha asignado correctamente.",
+          duration: 3,
+        });
+        cerrarModalCrearContrato();
+        obtenerContratos();
+        obtenerColaboradores();
+        return;
+      }
+      notification.error({
+        message: response.error || "Error al asignar contrato",
+        description: "Hubo un problema al asignar el contrato.",
+        duration: 5,
+      });
+    } catch (error) {
+      console.log(error);
+      notification.error({
+        message: error.message || "Error de servidor",
+        description: "No se pudo conectar al servidor.",
+        duration: 5,
+      });
+    }
+  };
+
   return (
-    <div style={{ padding: "24px" }}>
-      {/* Header con estadísticas */}
-      <Card style={{ marginBottom: 24 }}>
-        <Row gutter={16} align="middle">
-          <Col flex="auto">
-            <Title level={2} style={{ margin: 0 }}>
-              <TeamOutlined style={{ marginRight: 12 }} />
-              Gestión de Colaboradores
-            </Title>
-            <Text type="secondary">
-              Administra el personal de tus sucursales
-            </Text>
-          </Col>
-          <Col>
-            <Button
-              type="primary"
-              size="large"
-              icon={<UserAddOutlined />}
-              onClick={handleAdd}
-            >
-              Nuevo Colaborador
-            </Button>
-          </Col>
-        </Row>
+    <div>
+      <Tabs
+        tabPosition="left"
+        onChange={(key) => {
+          console.log("key de tab", key);
+          if (key === "contratos") {
+            obtenerContratos();
+          }
+        }}
+        items={[
+          {
+            key: "gestion_empleados",
+            label: "Gestion Colaboradores",
+            children: (
+              <>
+                {/* Header con estadísticas */}
+                <Card style={{ marginBottom: 24 }}>
+                  <Row gutter={16} align="middle">
+                    <Col flex="auto">
+                      <Title level={2} style={{ margin: 0 }}>
+                        <TeamOutlined style={{ marginRight: 12 }} />
+                        Gestión de Colaboradores
+                      </Title>
+                      <Text type="secondary">
+                        Administra el personal de tus sucursales
+                      </Text>
+                    </Col>
+                    <Col>
+                      <Button
+                        type="primary"
+                        size="large"
+                        icon={<UserAddOutlined />}
+                        onClick={handleAdd}
+                      >
+                        Nuevo Colaborador
+                      </Button>
+                    </Col>
+                  </Row>
 
-        <Divider />
+                  <Divider />
 
-        <Row gutter={16}>
-          <Col xs={24} sm={8}>
-            <Card>
-              <Statistic
-                title="Total Colaboradores"
-                value={stats.total}
-                prefix={<TeamOutlined />}
-                valueStyle={{ color: "#1890ff" }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Card>
-              <Statistic
-                title="Colaboradores Activos"
-                value={stats.activos}
-                prefix={<CheckCircleOutlined />}
-                valueStyle={{ color: "#52c41a" }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Card>
-              <Statistic
-                title="Colaboradores Inactivos"
-                value={stats.inactivos}
-                prefix={<CloseCircleOutlined />}
-                valueStyle={{ color: "#ff4d4f" }}
-              />
-            </Card>
-          </Col>
-        </Row>
-      </Card>
+                  <Row gutter={16}>
+                    <Col xs={24} sm={8}>
+                      <Card>
+                        <Statistic
+                          title="Total Colaboradores"
+                          value={stats.total}
+                          prefix={<TeamOutlined />}
+                          valueStyle={{ color: "#1890ff" }}
+                        />
+                      </Card>
+                    </Col>
+                    <Col xs={24} sm={8}>
+                      <Card>
+                        <Statistic
+                          title="Colaboradores Activos"
+                          value={stats.activos}
+                          prefix={<CheckCircleOutlined />}
+                          valueStyle={{ color: "#52c41a" }}
+                        />
+                      </Card>
+                    </Col>
+                    <Col xs={24} sm={8}>
+                      <Card>
+                        <Statistic
+                          title="Colaboradores Inactivos"
+                          value={stats.inactivos}
+                          prefix={<CloseCircleOutlined />}
+                          valueStyle={{ color: "#ff4d4f" }}
+                        />
+                      </Card>
+                    </Col>
+                  </Row>
+                </Card>
 
-      {/* Tabla */}
-      <Card>
-        <DataTable
-          columns={columns}
-          data={colaboradores}
-          rowKey="id"
-          loading={loading}
-          searchPlaceholder="Nombre o RUT"
-          searchableFields={["nombre", "apellido", "rut"]}
-          filterConfig={dataTableFilters}
-        />
-      </Card>
+                {/* Tabla */}
+                <Card>
+                  <DataTable
+                    columns={columns}
+                    data={colaboradores}
+                    rowKey="id"
+                    loading={loading}
+                    searchPlaceholder="Buscar por nombre, RUT o sucursal..."
+                    searchableFields={["nombre", "apellido", "rut", "sucursal"]}
+                    filterConfig={dataTableFilters}
+                  />
+                </Card>
+              </>
+            ),
+          },
+          {
+            key: "contratos",
+            label: "Contratos",
+            children: (
+              <>
+                <DataTable
+                  title="Contratos de Colaboradores"
+                  description="Revisa los contratos de tus colaboradores"
+                  columns={columnasContratos}
+                  data={contratos}
+                  rowKey="idContratoFuncionario"
+                  searchPlaceholder="Buscar por nombre, RUT o sucursal..."
+                  searchableFields={[
+                    "funcionario.nombre",
+                    "funcionario.rut",
+                    "sucursal.nombre",
+                  ]}
+                  headerButtons={
+                    <Space>
+                      <Button
+                        type="primary"
+                        icon={<FileAddOutlined />}
+                        onClick={() => abrirModalCrearContrato({})}
+                      >
+                        Nuevo Contrato
+                      </Button>
+
+                      <Button
+                        type="primary"
+                        icon={<FileTextOutlined />}
+                        onClick={() => abrirModalEditarContrato()}
+                      >
+                        Editar Contrato
+                      </Button>
+                    </Space>
+                  }
+                />
+              </>
+            ),
+          },
+        ]}
+      />
 
       {/* Drawer para Crear/Editar */}
       <Drawer
@@ -715,11 +1142,24 @@ const GestionColaborador = () => {
               prefix={<HomeOutlined />}
             />
           </Form.Item>
-
           <Title level={5} style={{ marginTop: 24 }}>
             Información Laboral
           </Title>
           <Divider style={{ marginTop: 8, marginBottom: 16 }} />
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Rol" name="nombreRol">
+                <Select placeholder="Seleccione un rol">
+                  <Option value="Administrador">Administrador</Option>
+                  <Option value="Vendedor">Vendedor</Option>
+                  <Option value="Cajero">Cajero</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* 
+          
 
           <Row gutter={16}>
             <Col span={12}>
@@ -813,7 +1253,7 @@ const GestionColaborador = () => {
                 </Select>
               </Form.Item>
             </Col>
-          </Row>
+          </Row> */}
         </Form>
       </Drawer>
 
@@ -1011,6 +1451,394 @@ const GestionColaborador = () => {
           </>
         )}
       </Drawer>
+
+      {/**Modal Contrato funcionario */}
+      <Modal
+        title={
+          <Space>
+            <FileTextOutlined style={{ fontSize: 18 }} />
+            <span>Contrato - {contratoSeleccionado?.funcionario?.nombre}</span>
+          </Space>
+        }
+        open={modalContratoVisible}
+        onCancel={cerrarModalContrato}
+        width={800}
+        footer={[
+          <Button key="cerrar" onClick={cerrarModalContrato}>
+            Cerrar
+          </Button>,
+        ]}
+      >
+        {contratoSeleccionado && (
+          <>
+            {/* Card Colaborador */}
+            <Card style={{ marginBottom: 16 }}>
+              <Row gutter={24} align="middle">
+                <Col xs={24} sm={6} style={{ textAlign: "center" }}>
+                  <Avatar
+                    size={80}
+                    icon={<UserOutlined />}
+                    style={{ backgroundColor: "#1890ff" }}
+                  >
+                    {contratoSeleccionado?.funcionario?.nombre?.charAt(0)}
+                    {contratoSeleccionado?.funcionario?.apellido?.charAt(0)}
+                  </Avatar>
+                </Col>
+                <Col xs={24} sm={18}>
+                  <Title level={4} style={{ margin: 0, marginBottom: 8 }}>
+                    {contratoSeleccionado?.funcionario?.nombre}{" "}
+                    {contratoSeleccionado?.funcionario?.apellido}
+                  </Title>
+                  <Space direction="vertical" size={0}>
+                    <Text type="secondary">
+                      RUT: {contratoSeleccionado?.funcionario?.rut}
+                    </Text>
+                    <Text type="secondary">
+                      Sucursal: {contratoSeleccionado?.sucursal?.nombre}
+                    </Text>
+                  </Space>
+                  <div style={{ marginTop: 12 }}>
+                    <Badge
+                      status={
+                        contratoSeleccionado?.estado === "Activo"
+                          ? "success"
+                          : "error"
+                      }
+                      text={contratoSeleccionado?.estado}
+                    />
+                  </div>
+                </Col>
+              </Row>
+            </Card>
+
+            {/* Información Personal */}
+            <Card title="Información Personal" style={{ marginBottom: 16 }}>
+              <Descriptions column={2} size="small">
+                <Descriptions.Item label="Fecha Ingreso">
+                  {contratoSeleccionado?.fechaIngreso
+                    ? dayjs(contratoSeleccionado.fechaIngreso).format(
+                        "DD/MM/YYYY",
+                      )
+                    : "Sin información"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Dirección">
+                  {contratoSeleccionado?.sucursal?.direccion || "No informado"}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            {/* Información Contractual */}
+            <Card title="Información Contractual" style={{ marginBottom: 16 }}>
+              <Row gutter={16}>
+                <Col xs={24} sm={12}>
+                  <div style={{ marginBottom: 16 }}>
+                    <Text strong style={{ display: "block", marginBottom: 8 }}>
+                      Tipo de Contrato
+                    </Text>
+                    <Tag
+                      color={
+                        contratoSeleccionado?.tipoContrato === "Indefinido"
+                          ? "blue"
+                          : contratoSeleccionado?.tipoContrato === "Plazo Fijo"
+                            ? "orange"
+                            : "purple"
+                      }
+                    >
+                      {contratoSeleccionado?.tipoContrato || "No informado"}
+                    </Tag>
+                  </div>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <div style={{ marginBottom: 16 }}>
+                    <Text strong style={{ display: "block", marginBottom: 8 }}>
+                      Turno
+                    </Text>
+                    <Tag
+                      color={
+                        contratoSeleccionado?.turno === "Mañana"
+                          ? "blue"
+                          : contratoSeleccionado?.turno === "Tarde"
+                            ? "orange"
+                            : contratoSeleccionado?.turno === "Noche"
+                              ? "purple"
+                              : "green"
+                      }
+                    >
+                      {contratoSeleccionado?.turno || "No informado"}
+                    </Tag>
+                  </div>
+                </Col>
+              </Row>
+
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="Sucursal">
+                  {contratoSeleccionado?.sucursal?.nombre || "No informado"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Estado Sucursal">
+                  <Badge
+                    status={
+                      contratoSeleccionado?.sucursal?.estado === "Activo"
+                        ? "success"
+                        : "error"
+                    }
+                    text={contratoSeleccionado?.sucursal?.estado}
+                  />
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+          </>
+        )}
+      </Modal>
+
+      {/**Modal Editar Turno */}
+      <Modal
+        title="Editar turno"
+        open={modalEditarTurnoVisible}
+        onOk={() => formEditarTurno.submit()}
+        onCancel={cerrarModalEditarTurno}
+        okText="Guardar cambios"
+        cancelText="Cancelar"
+      >
+        <Form
+          form={formEditarTurno}
+          layout="vertical"
+          onFinish={handleSubmitEditarTurno}
+        >
+          <Card style={{ marginBottom: 16 }}>
+            <Space direction="vertical" size={0}>
+              <Text strong>
+                {contratoTurnoEditando?.funcionario?.nombre || "-"}{" "}
+                {contratoTurnoEditando?.funcionario?.apellido || ""}
+              </Text>
+              <Text type="secondary">
+                RUT: {contratoTurnoEditando?.funcionario?.rut || "-"}
+              </Text>
+              <Text type="secondary">
+                Sucursal: {contratoTurnoEditando?.sucursal?.nombre || "-"}
+              </Text>
+            </Space>
+          </Card>
+          <Form.Item
+            name="idContratoFuncionario"
+            hidden
+            initialValue={contratoTurnoEditando?.idContratoFuncionario}
+          >
+            <Input type="hidden" />
+          </Form.Item>
+
+          <Form.Item
+            name="turno"
+            label="Turno"
+            rules={[{ required: true, message: "Seleccione el turno" }]}
+          >
+            <Select placeholder="Seleccione un turno">
+              <Option value="Mañana">Mañana</Option>
+              <Option value="Tarde">Tarde</Option>
+              <Option value="Noche">Noche</Option>
+              <Option value="Rotativo">Rotativo</Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/**Modal Editar Contrato (frontend-only) */}
+      <Modal
+        title="Editar Contrato"
+        open={modalEditarContratoVisible}
+        onOk={() => formEditarContrato.submit()}
+        onCancel={cerrarModalEditarContrato}
+        okText="Guardar cambios"
+        cancelText="Cancelar"
+        width={700}
+      >
+        <Form
+          form={formEditarContrato}
+          layout="vertical"
+          onFinish={handleSubmitEditarContrato}
+        >
+          <Row gutter={16}>
+            <Col span={16}>
+              <Form.Item name="rutBuscar" label="Buscar funcionario por RUT">
+                <Input.Search
+                  placeholder="Ej: 12345678-9"
+                  enterButton="Buscar"
+                  onSearch={handleBuscarFuncionarioPorRut}
+                />
+              </Form.Item>
+
+              <Form.Item label="Funcionario" shouldUpdate>
+                <Input
+                  value={
+                    funcionarioBuscado
+                      ? `${funcionarioBuscado.nombre} ${funcionarioBuscado.apellido} - ${funcionarioBuscado.rut}`
+                      : "Ninguno seleccionado"
+                  }
+                  disabled
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="nuevoContrato"
+                label="Modalidad de Contrato"
+                rules={[
+                  {
+                    required: true,
+                    message: "Seleccione la modalidad de contrato",
+                  },
+                ]}
+              >
+                <Select placeholder="Seleccione un nuevo contrato">
+                  <Option value="Indefinido">Indefinido</Option>
+                  <Option value="Plazo Fijo">Plazo Fijo</Option>
+                  <Option value="Honorarios">Honorarios</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                name="motivo"
+                label="Motivo"
+                rules={[{ required: true, message: "Ingrese motivo" }]}
+              >
+                <TextArea rows={3} placeholder="Motivo del cambio" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Card size="small">
+                <Text strong>Resumen</Text>
+                <div style={{ marginTop: 12 }}>
+                  <div>
+                    <Text type="secondary">Contrato: </Text>
+                    <div>{funcionarioBuscado?.tipoContrato || "-"}</div>
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <Text type="secondary">Sucursal: </Text>
+                    <div>{funcionarioBuscado?.sucursal || "-"}</div>
+                  </div>
+                </div>
+              </Card>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
+
+      {/**Modal Nuevo Contrato */}
+      <Modal
+        title="Nuevo Contrato"
+        open={modalCrearContrato}
+        okText="Crear Contrato"
+        onOk={() => formContrato.submit()}
+        onCancel={() => cerrarModalCrearContrato()}
+        width={600}
+      >
+        <Form
+          form={formContrato}
+          layout="vertical"
+          onFinish={handleSubmitContrato}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="estadoContrato"
+                label="Estado del Contrato"
+                rules={[
+                  {
+                    required: true,
+                    message: "Seleccione el estado del contrato",
+                  },
+                ]}
+                initialValue="Activo"
+              >
+                <Select placeholder="Seleccione el estado" disabled>
+                  <Option value="Activo">Activo</Option>
+                  <Option value="Inactivo">Inactivo</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="fechaIngreso"
+                label="Fecha de Ingreso"
+                rules={[
+                  { required: true, message: "Seleccione la fecha de ingreso" },
+                ]}
+                initialValue={dayjs()}
+              >
+                <DatePicker
+                  style={{ width: "100%" }}
+                  format="DD/MM/YYYY"
+                  placeholder={dayjs().format("DD/MM/YYYY")}
+                  disabled
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="rutFuncionario"
+                label="Funcionario"
+                initialValue={contratoSeleccionado?.funcionario?.rut}
+              >
+                <Select placeholder="Seleccione un funcionario">
+                  {funcionariosSinContrato.map((funcionario) => (
+                    <Option
+                      key={funcionario.idFuncionario}
+                      value={funcionario.rut}
+                    >
+                      {funcionario.nombre} {funcionario.apellido} -{" "}
+                      {funcionario.rut}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="idSucursal"
+                label="Sucursal"
+                rules={[{ required: true, message: "Seleccione la sucursal" }]}
+              >
+                <Select placeholder="Seleccione una sucursal">
+                  {sucursales.map((sucursal) => (
+                    <Option
+                      key={sucursal.idSucursal}
+                      value={sucursal.idSucursal}
+                    >
+                      {sucursal.nombre}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item
+            name="tipoContrato"
+            label="Tipo de Contrato"
+            rules={[
+              { required: true, message: "Seleccione el tipo de contrato" },
+            ]}
+          >
+            <Select placeholder="Seleccione tipo de contrato">
+              <Option value="Indefinido">Indefinido</Option>
+              <Option value="Plazo Fijo">Plazo Fijo</Option>
+              <Option value="Honorarios">Honorarios</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="turno"
+            label="Turno"
+            rules={[{ required: true, message: "Seleccione el turno" }]}
+          >
+            <Select placeholder="Seleccione un turno">
+              <Option value="Mañana">Mañana </Option>
+              <Option value="Tarde">Tarde</Option>
+              <Option value="Noche">Noche</Option>
+              <Option value="Rotativo">Rotativo</Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

@@ -19,9 +19,9 @@ exports.getAllFuncionarios = async (req, res) => {
         idRol: {
           [Op.notIn]: [1],
         },
-        estado: {
-          [Op.not]: "Eliminado",
-        },
+        // estado: {
+        //   [Op.not]: "Eliminado",
+        // },
       },
       attributes: {
         exclude: ["password", "passwordCaja", "createdAt", "updatedAt"],
@@ -36,9 +36,9 @@ exports.getAllFuncionarios = async (req, res) => {
           foreignKey: "idFuncionario",
           as: "contratos",
           required: false,
-          where: {
-            estado: { [Op.not]: "Eliminado" },
-          },
+          // where: {
+          //   estado: { [Op.not]: "Eliminado" },
+          // },
           include: [
             {
               model: Sucursal,
@@ -107,9 +107,15 @@ exports.obtenerColaboradoresPorSucursal = async (req, res) => {
       include: [
         {
           model: Funcionario,
+          where: {
+            idRol: {
+              [Op.notIn]: [1],
+            },
+          },
           include: [
             {
               model: Roles,
+
               attributes: {
                 exclude: [
                   "idRol",
@@ -157,13 +163,15 @@ exports.crearFuncionario = async (req, res) => {
     email,
     telefono,
     direccion,
-    cargo,
-    sucursal,
-    turno,
-    contrato,
-    estadoContrato,
+    nombreRol,
+    // cargo,
+    // sucursal,
+    // turno,
+    // contrato,
+    // estadoContrato,
   } = req.body;
   try {
+    console.log("Datos Crear funcionario:", req.body);
     if (
       !nombre ||
       !apellido ||
@@ -172,11 +180,12 @@ exports.crearFuncionario = async (req, res) => {
       !email ||
       !telefono ||
       !direccion ||
-      !cargo ||
-      !sucursal ||
-      !turno ||
-      !contrato ||
-      !estadoContrato
+      !nombreRol
+      // !cargo ||
+      // !sucursal ||
+      // !turno ||
+      // !contrato ||
+      // !estadoContrato
     ) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
     }
@@ -186,7 +195,7 @@ exports.crearFuncionario = async (req, res) => {
       10,
     );
     const rolEncontrado = await Roles.findOne({
-      where: { nombreRol: cargo },
+      where: { nombreRol: nombreRol },
     });
     if (!rolEncontrado) {
       return res.status(404).json({ error: "Rol no encontrado" });
@@ -234,36 +243,36 @@ exports.crearFuncionario = async (req, res) => {
     if (!nuevoFuncionario) {
       return res.status(500).json({ error: "No se pudo crear el funcionario" });
     }
-    const sucursalEncontrada = await Sucursal.findOne({
-      where: { nombre: sucursal },
-    });
-    if (!sucursalEncontrada) {
-      return res.status(404).json({ error: "Sucursal no encontrada" });
-    }
-    let fechaTermino = null;
-    if (contrato === "Plazo Fijo") {
-      const hoy = new Date();
-      fechaTermino = new Date(hoy);
-      fechaTermino.setMonth(fechaTermino.getMonth() + 1);
-    } else {
-      fechaTermino = null;
-    }
-    const contratoCreado = await ContratoFuncionario.create({
-      idSucursal: sucursalEncontrada.idSucursal,
-      idFuncionario: nuevoFuncionario.idFuncionario,
-      fechaIngreso: fechaIngreso,
-      tipoContrato: contrato,
-      turno: turno,
-      estado: estadoContrato,
-      fechaTermino: fechaTermino || null,
-    });
-    if (!contratoCreado) {
-      return res.status(500).json({ error: "No se pudo crear el contrato" });
-    }
+    // const sucursalEncontrada = await Sucursal.findOne({
+    //   where: { nombre: sucursal },
+    // });
+    // if (!sucursalEncontrada) {
+    //   return res.status(404).json({ error: "Sucursal no encontrada" });
+    // }
+    // let fechaTermino = null;
+    // if (contrato === "Plazo Fijo") {
+    //   const hoy = new Date();
+    //   fechaTermino = new Date(hoy);
+    //   fechaTermino.setMonth(fechaTermino.getMonth() + 1);
+    // } else {
+    //   fechaTermino = null;
+    // }
+    // const contratoCreado = await ContratoFuncionario.create({
+    //   idSucursal: sucursalEncontrada.idSucursal,
+    //   idFuncionario: nuevoFuncionario.idFuncionario,
+    //   fechaIngreso: fechaIngreso,
+    //   tipoContrato: contrato,
+    //   turno: turno,
+    //   estado: estadoContrato,
+    //   fechaTermino: fechaTermino || null,
+    // });
+    // if (!contratoCreado) {
+    //   return res.status(500).json({ error: "No se pudo crear el contrato" });
+    // }
     res.status(201).json({
       message: "Funcionario creado exitosamente",
       nuevoFuncionario,
-      contratoCreado,
+      // contratoCreado,
     });
   } catch (error) {
     console.error("Error al crear el funcionario:", error);
@@ -280,11 +289,11 @@ exports.editarFuncionario = async (req, res) => {
       email,
       telefono,
       direccion,
-      cargo,
-      estado,
-      contrato,
-      turno,
-      estadoContrato,
+      nombreRol,
+      // estado,
+      // contrato,
+      // turno,
+      // estadoContrato,
     } = req.body;
     console.log("Datos recibidos para editar funcionario:", req.body);
     if (
@@ -294,11 +303,12 @@ exports.editarFuncionario = async (req, res) => {
       !email ||
       !telefono ||
       !direccion ||
-      !cargo ||
-      !estado ||
-      !contrato ||
-      !turno ||
-      !estadoContrato
+      !nombreRol
+      // !cargo ||
+      // !estado ||
+      // !contrato ||
+      // !turno ||
+      // !estadoContrato
     ) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
     }
@@ -307,7 +317,7 @@ exports.editarFuncionario = async (req, res) => {
       return res.status(404).json({ error: "Funcionario no encontrado" });
     }
     const rolEncontrado = await Roles.findOne({
-      where: { nombreRol: cargo },
+      where: { nombreRol: nombreRol },
     });
     if (!rolEncontrado) {
       return res.status(404).json({ error: "Rol no encontrado" });
@@ -324,7 +334,6 @@ exports.editarFuncionario = async (req, res) => {
         telefono: `+56${telefono}`,
         direccion,
         idRol: rolEncontrado.idRol,
-        estado,
       },
 
       { where: { rut: rut } },
@@ -342,21 +351,21 @@ exports.editarFuncionario = async (req, res) => {
     //   return res.status(404).json({ error: "Sucursal no encontrada" });
     // }
     //Actualiza contrato
-    const contratoFuncionarioActualizado = await ContratoFuncionario.update(
-      {
-        tipoContrato: contrato,
-        turno: turno,
-        estado: estadoContrato,
-      },
-      {
-        where: { idFuncionario: funcionario.idFuncionario },
-      },
-    );
-    if (!contratoFuncionarioActualizado) {
-      return res
-        .status(500)
-        .json({ error: "No se pudo actualizar el contrato del funcionario" });
-    }
+    // const contratoFuncionarioActualizado = await ContratoFuncionario.update(
+    //   {
+    //     tipoContrato: contrato,
+    //     turno: turno,
+    //     estado: estadoContrato,
+    //   },
+    //   {
+    //     where: { idFuncionario: funcionario.idFuncionario },
+    //   },
+    // );
+    // if (!contratoFuncionarioActualizado) {
+    //   return res
+    //     .status(500)
+    //     .json({ error: "No se pudo actualizar el contrato del funcionario" });
+    // }
     res.status(200).json({
       message: "Funcionario editado exitosamente",
     });
@@ -409,6 +418,47 @@ exports.eliminarFuncionario = async (req, res) => {
   } catch (error) {
     console.log("Error al eliminar el funcionario:", error);
     res.status(500).json({ error: "Error al eliminar el funcionario" });
+  }
+};
+
+//funciones gestion funcionarios
+
+exports.obtenerContratosFuncionarios = async (req, res) => {
+  try {
+    const contratos = await ContratoFuncionario.findAll({
+      where: {
+        estado: "Activo",
+      },
+      include: [
+        {
+          model: Funcionario,
+          where: {
+            idRol: {
+              [Op.notIn]: [1],
+            },
+          },
+          attributes: [
+            "rut",
+            "nombre",
+            "apellido",
+            "email",
+            "telefono",
+            "direccion",
+            "estado",
+          ],
+        },
+        {
+          model: Sucursal,
+          attributes: ["nombre", "direccion", "estado"],
+        },
+      ],
+    });
+    res.status(200).json(contratos);
+  } catch (error) {
+    console.error("Error al obtener los contratos de funcionarios:", error);
+    res
+      .status(500)
+      .json({ error: "Error al obtener los contratos de funcionarios" });
   }
 };
 
@@ -524,5 +574,173 @@ exports.quienSoy = async (req, res) => {
   } catch (error) {
     console.error("Error al obtener el funcionario:", error);
     res.status(500).json({ error: "Error al obtener el funcionario" });
+  }
+};
+
+exports.funcionariosSinContrato = async (req, res) => {
+  try {
+    const funcionarios = await Funcionario.findAll({
+      where: {
+        estado: "Activo",
+        idRol: {
+          [Op.notIn]: [1],
+        },
+        "$contratos.idContratoFuncionario$": { [Op.is]: null },
+      },
+      include: [
+        {
+          model: ContratoFuncionario,
+          as: "contratos",
+          required: false,
+          attributes: [],
+        },
+      ],
+    });
+    console.log("todos los funcionarios", funcionarios);
+
+    return res.status(200).json(funcionarios);
+  } catch (error) {
+    console.error("Error al obtener los funcionarios sin contrato:", error);
+    return res
+      .status(500)
+      .json({ error: "Error al obtener los funcionarios sin contrato" });
+  }
+};
+
+exports.asignarContratoAFuncionario = async (req, res) => {
+  try {
+    const {
+      rutFuncionario,
+      idSucursal,
+      fechaIngreso,
+      tipoContrato,
+      turno,
+      estadoContrato,
+    } = req.body;
+    if (
+      !rutFuncionario ||
+      !idSucursal ||
+      !fechaIngreso ||
+      !tipoContrato ||
+      !turno ||
+      !estadoContrato
+    ) {
+      return res.status(422).json({ error: "Faltan datos obligatorios" });
+    }
+    const verificarFuncionario = await Funcionario.findOne({
+      where: { rut: rutFuncionario },
+    });
+    if (!verificarFuncionario) {
+      return res.status(404).json({ error: "Funcionario no encontrado" });
+    }
+    if (verificarFuncionario.estado !== "Activo") {
+      return res.status(403).json({ error: "Funcionario no activo" });
+    }
+    const verificarSucursal = await Sucursal.findByPk(idSucursal);
+    if (!verificarSucursal) {
+      return res.status(404).json({ error: "Sucursal no encontrada" });
+    }
+    if (verificarSucursal.estado !== "Abierta") {
+      return res.status(403).json({ error: "Sucursal no activa" });
+    }
+
+    //crear contrato
+    const nuevoContrato = await ContratoFuncionario.create({
+      idSucursal,
+      idFuncionario: verificarFuncionario.idFuncionario,
+      fechaIngreso,
+      fechaTermino:
+        tipoContrato === "Plazo Fijo"
+          ? new Date(new Date().setMonth(new Date().getMonth() + 1))
+          : null,
+      tipoContrato,
+      turno,
+      estado: estadoContrato,
+    });
+    if (!nuevoContrato) {
+      return res.status(500).json({ error: "No se pudo crear el contrato" });
+    }
+    return res.status(201).json(nuevoContrato);
+  } catch (error) {
+    console.log("Error funcion nuevo contrato", error);
+    return res.status(500).json({ error: "Error al crear el nuevo contrato" });
+  }
+};
+
+exports.cambiarTurnoFuncionario = async (req, res) => {
+  try {
+    const { idContratoFuncionario, turno } = req.body;
+    console.log("LLEgo a cambio de turno", req.body);
+    console.log("DAtps", idContratoFuncionario, turno);
+    if (!idContratoFuncionario || !turno) {
+      return res.status(422).json({ error: "Faltan datos obligatorios" });
+    }
+    const contrato = await ContratoFuncionario.findByPk(idContratoFuncionario);
+    if (!contrato) {
+      return res.status(404).json({ error: "Contrato no encontrado" });
+    }
+    if (contrato.estado !== "Activo") {
+      return res.status(403).json({ error: "Contrato no activo" });
+    }
+    contrato.turno = turno;
+    await contrato.save();
+    return res.status(200).json({ message: "Turno actualizado correctamente" });
+  } catch (error) {
+    console.error("Error al cambiar el turno del funcionario:", error);
+    return res
+      .status(500)
+      .json({ error: "Error al cambiar el turno del funcionario" });
+  }
+};
+
+exports.cambiarTipoContratoFuncionario = async (req, res) => {
+  try {
+    const { rutBuscar, nuevoContrato, motivo } = req.body;
+    console.log("Datos en funcion cambio contrato:", req.body);
+    if (!rutBuscar || !nuevoContrato || !motivo) {
+      return res.status(422).json({ error: "Faltan datos obligatorios" });
+    }
+    const funcionario = await Funcionario.findOne({
+      where: { rut: rutBuscar },
+    });
+    if (!funcionario) {
+      return res.status(404).json({ error: "Funcionario no encontrado" });
+    }
+    if (funcionario.estado !== "Activo") {
+      return res.status(403).json({ error: "Funcionario no activo" });
+    }
+    const contrato = await ContratoFuncionario.findOne({
+      where: {
+        idFuncionario: funcionario.idFuncionario,
+        estado: "Activo",
+      },
+    });
+    if (!contrato) {
+      return res.status(404).json({ error: "Contrato no encontrado" });
+    }
+    if (contrato.estado !== "Activo") {
+      return res.status(403).json({ error: "Contrato no activo" });
+    }
+    contrato.tipoContrato = nuevoContrato;
+    contrato.motivoCambioContrato = motivo;
+    if (nuevoContrato === "Plazo Fijo") {
+      contrato.fechaTermino = new Date(
+        new Date().setMonth(new Date().getMonth() + 1),
+      );
+    } else {
+      contrato.fechaTermino = null;
+    }
+    await contrato.save();
+    return res
+      .status(200)
+      .json({ message: "Tipo de contrato actualizado correctamente" });
+  } catch (error) {
+    console.error(
+      "Error al cambiar el tipo de contrato del funcionario:",
+      error,
+    );
+    return res
+      .status(500)
+      .json({ error: "Error al cambiar el tipo de contrato del funcionario" });
   }
 };

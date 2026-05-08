@@ -317,31 +317,31 @@ async function poblarBD() {
       },
     });
 
-    const funcionarios = await Funcionario.findAll({
-      where: {
-        estado: {
-          [require("sequelize").Op.not]: "Eliminado",
-        },
-      },
-    });
+    // const funcionarios = await Funcionario.findAll({
+    //   where: {
+    //     estado: {
+    //       [require("sequelize").Op.not]: "Eliminado",
+    //     },
+    //   },
+    // });
 
-    for (const funcionario of funcionarios) {
-      await ContratoFuncionario.findOrCreate({
-        where: {
-          idFuncionario: funcionario.idFuncionario,
-          idSucursal: sucursal1.idSucursal,
-        },
-        defaults: {
-          idFuncionario: funcionario.idFuncionario,
-          idSucursal: sucursal1.idSucursal,
-          fechaIngreso: new Date(),
-          tipoContrato: "Plazo Fijo",
-          turno: "Mañana",
-          fechaTermino: null,
-          estado: "Activo",
-        },
-      });
-    }
+    // for (const funcionario of funcionarios) {
+    //   await ContratoFuncionario.findOrCreate({
+    //     where: {
+    //       idFuncionario: funcionario.idFuncionario,
+    //       idSucursal: sucursal1.idSucursal,
+    //     },
+    //     defaults: {
+    //       idFuncionario: funcionario.idFuncionario,
+    //       idSucursal: sucursal1.idSucursal,
+    //       fechaIngreso: new Date(),
+    //       tipoContrato: "Plazo Fijo",
+    //       turno: "Mañana",
+    //       fechaTermino: null,
+    //       estado: "Activo",
+    //     },
+    //   });
+    // }
 
     //Crear bodegas iniciales si no existen
     const [bodega1, bodega1Created] = await Bodega.findOrCreate({

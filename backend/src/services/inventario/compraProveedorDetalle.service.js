@@ -1,30 +1,47 @@
 const CompraProveedorDetalle = require("../../models/inventario/CompraProveedorDetalle");
 const OrdenCompra = require("../../models/inventario/OrdenCompra");
+const CrearOrdenCompra = require("../../models/inventario/CreaOrdenCompra");
+const Bodega = require("../../models/inventario/Bodega");
+const Sucursal = require("../../models/inventario/Sucursal");
+const Inventario = require("../../models/inventario/Inventario");
 const Producto = require("../../models/inventario/Productos");
+const Provee = require("../../models/inventario/Provee");
 
 const sequelizer = require("../../models/");
 
 //---------------DETALLE ORDEN DE COMPRA----------------
-async function crearDetalleOC(productos, idOrdenCompra) {
+async function crearDetalleOC(productos, idOrdenCompra, transaction) {
   try {
     for (const item of productos) {
       const { idProducto, cantidad, precioUnitario } = item;
       const totalProducto = cantidad * precioUnitario;
-      const comprobarProducto = await Producto.findByPk(idProducto);
+      const comprobarProducto = await Producto.findByPk(idProducto, {
+        transaction: transaction,
+      });
       if (!comprobarProducto) {
         return {
           code: 404,
           error: `Producto con ID ${idProducto} no encontrado`,
         };
       }
-      const nuevaCompraProveedorDetalle = await CompraProveedorDetalle.create({
-        idOrdenCompra: idOrdenCompra,
-        nombreProducto: comprobarProducto.nombre,
-        idProducto: idProducto,
-        cantidad: cantidad,
-        precioUnitario: precioUnitario,
-        total: totalProducto,
-      });
+
+      const nuevaCompraProveedorDetalle = await CompraProveedorDetalle.create(
+        {
+          idOrdenCompra: idOrdenCompra,
+          nombreProducto: comprobarProducto.nombre,
+          idProducto: idProducto,
+          cantidad: cantidad,
+          precioUnitario: precioUnitario,
+          total: totalProducto,
+        },
+        { transaction: transaction },
+      );
+      if (precioUnitario > comprobarProducto.precioCompra) {
+        await comprobarProducto.update(
+          { precioCompra: precioUnitario },
+          { transaction: transaction },
+        );
+      }
     }
     return {
       code: 201,

@@ -6,6 +6,7 @@ const CompraProveedorDetalle = require("../../models/inventario/CompraProveedorD
 const Producto = require("../../models/inventario/Productos");
 const Funcionario = require("../../models/Usuarios/Funcionario");
 const Despacho = require("../../models/inventario/Despacho");
+const DetalleDespacho = require("../../models/inventario/DetalleDespacho");
 const Lote = require("../../models/inventario/Lote");
 const LoteProducto = require("../../models/inventario/LoteProducto");
 const Inventario = require("../../models/inventario/Inventario");
@@ -18,6 +19,7 @@ const { Op, where } = require("sequelize");
 const { sequelize } = require("../../models");
 const jwt = require("jsonwebtoken");
 
+const { enviarCorreo } = require("../../services/mail.service");
 //service
 const {
   crearOrdenCompra,
@@ -711,7 +713,82 @@ exports.obtenerOrdenesCompraVendedor = async (req, res) => {
   }
 };
 
+exports.obtenerOrdenCompraVendedorPorNombreOrden = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { nombreOrden } = req.params;
+
+    //buscar orden de compra por nombreOrden
+    const orden = await CrearOrdenCompra.findOne({
+      include: [
+        {
+          model: Proveedor,
+          attributes: ["idProveedor", "rut", "nombre"],
+        },
+        {
+          model: OrdenCompra,
+          where: {
+            estado: [
+              "pendiente recibir",
+              "recepcionada",
+              "recibida con faltante",
+              "despachada",
+            ],
+            tipo: "compra sucursal",
+            nombreOrden: nombreOrden,
+          },
+          include: [
+            {
+              model: CompraProveedorDetalle,
+              attributes: ["cantidad"],
+              include: [
+                {
+                  model: Producto,
+                  attributes: ["idProducto", "codigo", "nombre"],
+                },
+              ],
+            },
+            {
+              model: Despacho,
+              attributes: ["idDespacho", "codigoDespacho", "estado"],
+              include: [
+                {
+                  model: DetalleDespacho,
+                  attributes: [
+                    "cantidad",
+                    "cantidadRecibida",
+                    "cantidadRechazada",
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: Sucursal,
+          attributes: ["idSucursal", "nombre"],
+        },
+        {
+          model: Funcionario,
+          as: "vendedor",
+          attributes: ["rut", "nombre"],
+        },
+      ],
+    });
+    if (!orden) {
+      return res.status(404).json({ error: "Orden de compra no encontrada" });
+    }
+    return res.status(200).json(orden);
+  } catch (error) {
+    console.warn("Error al recepcionar orden de compra con faltantes:", error);
+    res.status(500).json({
+      error: "Error al recepcionar orden de compra con faltantes",
+    });
+  }
+};
+
 exports.crearOrdenCompraVendedor = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const {
       rutProveedor,
@@ -732,13 +809,19 @@ exports.crearOrdenCompraVendedor = async (req, res) => {
     ) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
     }
-    console.log("Crear OC idsucursal", idSucursal);
+    console.log("Crear OC idsucursal", req.body);
+
     //verificar que el proveedor, sucursal y funcionario existen
     const comprobarProveedor = await Proveedor.findOne({
       where: { rut: rutProveedor },
+      transaction: t,
     });
-    const comprobarSucursal = await Sucursal.findByPk(idSucursal);
-    const comprobarFuncionario = await Funcionario.findByPk(idFuncionario);
+    const comprobarSucursal = await Sucursal.findByPk(idSucursal, {
+      transaction: t,
+    });
+    const comprobarFuncionario = await Funcionario.findByPk(idFuncionario, {
+      transaction: t,
+    });
 
     if (!comprobarProveedor) {
       return res.status(404).json({ error: "Proveedor no encontrado" });
@@ -755,11 +838,11 @@ exports.crearOrdenCompraVendedor = async (req, res) => {
       "compra sucursal",
       total,
       observaciones,
-      "Orden creada y pendiente de aprobación",
+      "Orden creada",
       comprobarProveedor.idProveedor,
       idSucursal,
       idFuncionario,
-      null,
+      t,
     );
     if (respuestaOC.code !== 201) {
       console.log("fallo crear Orden compra");
@@ -769,15 +852,33 @@ exports.crearOrdenCompraVendedor = async (req, res) => {
     const rDetalle = await crearDetalleOC(
       productos,
       respuestaOC.data.idOrdenCompra,
+      t,
     );
     if (rDetalle.code !== 201) {
       console.log("Fallo Crear Detalle orden compra");
       return res.status(rDetalle.code).json({ error: rDetalle.error });
     }
-
+    //asignar como proveedor del los productos al proveedor seleccionado en la orden de compra
+    for (const p of productos) {
+      const proveedorProvee = await Provee.findOrCreate({
+        where: {
+          idProveedor: comprobarProveedor.idProveedor,
+          idProducto: p.idProducto,
+        },
+        defaults: {
+          registradoPor: "Sistema",
+          estado: "Activo",
+          fechaRegistro: new Date(),
+        },
+        transaction: t,
+      });
+    }
     //actualizar estado de la orden a pendiente de aprobacion
-    await respuestaOC.data.update({ estado: "pendiente de aprobacion" });
-
+    await respuestaOC.data.update(
+      { estado: "pendiente de aprobacion" },
+      { transaction: t },
+    );
+    await t.commit();
     //notificar a admiistrador mediante correo o similar.
     res
       .status(201)
@@ -850,43 +951,139 @@ exports.recepcionarOrdenCompraSucursalVendedor = async (req, res) => {
       idBodega,
     } = req.body;
 
-    //console.log("Datos back", req.body);
+    console.log("Datos back", req.body);
 
     //verific ar con joi los datos recibidos
 
     //verificar que la orden de compra existe y esta en estado pendiente de aprobacion
-    const verificarOC = await obtenerOrdenCompra(
-      { idOrdenCompra: idOrdenCompra, tipo: "compra sucursal" },
-      null,
-      null,
-      null,
-      t,
-    );
-    if (verificarOC.code === 404) {
+    const verificarOC = await OrdenCompra.findOne({
+      where: { idOrdenCompra: idOrdenCompra, tipo: "compra sucursal" },
+      transaction: t,
+    });
+    if (!verificarOC) {
       await t.rollback();
-      return res
-        .status(404)
-        .json({ error: "Orden de compra a proveedor no encontrada" });
-    }
-    if (verificarOC.code !== 200) {
-      await t.rollback();
-      return res.status(verificarOC.code).json({ error: verificarOC.error });
+      return res.status(404).json({ error: "Orden de compra no encontrada" });
     }
 
     //Asignar la OC encontrada a una variable para trabajar con ella más fácilmente
-    const oc = verificarOC.data.map((p) => p.get({ plain: true }))[0];
-    //console.log("Orden de compra encontrada linea 874:", oc);
+    //const oc = verificarOC.data.map((p) => p.get({ plain: true }))[0];
+    //console.log("Orden de compra encontrada linea 874:", verificarOC);
 
-    //verificar si hay faltantantes
     let estadoRecepcion = "Recepcionado";
     let faltantes = 0;
-    for (const p of productos) {
-      if (p.cantidadRecibida < p.cantidadSolicitada) {
-        faltantes += p.cantidadSolicitada - p.cantidadRecibida;
+
+    //verificar que la OC esta en estadorecibida con faltante recibida con faltante
+    if (verificarOC.estado === "recibida con faltante") {
+      //buscar despacho asociado a la OC
+      const despachoAsociado = await Despacho.findAll({
+        where: { idOrdenCompra: idOrdenCompra },
+        transaction: t,
+      });
+      console.log("Despachos asociado:", despachoAsociado);
+
+      if (!despachoAsociado || despachoAsociado.length === 0) {
+        console.info(
+          "No se encontró despacho asociado a la OC con faltante, creando nuevo despacho",
+        );
+        //cambiando estado de la OC a pendiente de recibir para que se pueda crear un nuevo despacho
+        await verificarOC.update(
+          { estado: "pendiente recibir" },
+          { transaction: t },
+        );
+      } else {
+        console.info(
+          "Despacho asociado a la OC con faltante encontrado, actualizando despacho existente",
+        );
+        //calcular cuanto se entrego y cuanto falta por entregar sumando los detalles del despacho
+
+        for (const p of productos) {
+          const detalleDespacho = await DetalleDespacho.findAll({
+            where: {
+              idDespacho: {
+                [Op.in]: despachoAsociado.map((d) => d.idDespacho),
+              },
+            },
+            include: [
+              {
+                model: Lote,
+                where: { idProducto: p.idProducto },
+              },
+            ],
+            transaction: t,
+          });
+
+          const detalleOrden = await CompraProveedorDetalle.findOne({
+            where: { idOrdenCompra: idOrdenCompra, idProducto: p.idProducto },
+          });
+          console.log(
+            "detalle despacho",
+            JSON.stringify(detalleDespacho, null, 2),
+          );
+          console.log("detalle orden", JSON.stringify(detalleOrden, null, 2));
+
+          //crear un objeto para ingresarlo al array con cantidad recibida, cantidad rechazada y cantidad pendiente por recibir y producto
+          const cantidadRecibidaInv = detalleDespacho.reduce(
+            (acc, lotes) => acc + lotes?.cantidadRecibida,
+            0,
+          );
+          const cantidadRechazadaInf = detalleDespacho.reduce(
+            (acc, lotes) => acc + lotes?.cantidadRechazada,
+            0,
+          );
+          console.log(
+            "Cantidades:",
+            cantidadRecibidaInv,
+            cantidadRechazadaInf,
+            detalleOrden.cantidad,
+          );
+
+          if (cantidadRecibidaInv === detalleOrden.cantidad) {
+            verificarOC.update({ estado: "recepcionada" }, { transaction: t });
+            console.log("Orden Cambiada a Recepcionada");
+            return res
+              .status(400)
+              .json({ error: "Producto ya fue completamente recibido" });
+          }
+          if (
+            p.cantidadRecibida + cantidadRecibidaInv >
+            detalleOrden.cantidad
+          ) {
+            await t.rollback();
+            return res.status(400).json({
+              error:
+                "La cantidad recibida no puede ser mayor a la cantidad solicitada",
+            });
+          }
+          if (
+            p.cantidadRechazada + cantidadRechazadaInf >
+            detalleOrden.cantidad
+          ) {
+            await t.rollback();
+            return res.status(400).json({
+              error:
+                "La cantidad rechazada no puede ser mayor a la cantidad solicitada",
+            });
+          }
+          if (
+            p.cantidadRecibida + cantidadRecibidaInv <
+            detalleOrden.cantidad
+          ) {
+            estadoRecepcion = "Entregado Con Faltantes";
+          }
+        }
       }
     }
-    if (faltantes > 0) {
-      estadoRecepcion = "Entregado Con Faltantes";
+    if (verificarOC.estado === "pendiente recibir") {
+      //verificar si hay faltantantes
+
+      for (const p of productos) {
+        if (p.cantidadRecibida < p.cantidadSolicitada) {
+          faltantes += p.cantidadSolicitada - p.cantidadRecibida;
+        }
+      }
+      if (faltantes > 0) {
+        estadoRecepcion = "Entregado Con Faltantes";
+      }
     }
     console.log("Estado de recepción calculado linea 890:", estadoRecepcion);
     console.log("Faltantes calculados linea 891:", faltantes);
@@ -898,7 +1095,7 @@ exports.recepcionarOrdenCompraSucursalVendedor = async (req, res) => {
       repartidor || "no indicado",
       estadoRecepcion,
       observaciones || "Recepción de orden de compra a proveedor",
-      oc.idOrdenCompra,
+      verificarOC.idOrdenCompra,
       t,
     );
     if (rDespacho.code !== 201) {
@@ -1006,13 +1203,14 @@ exports.recepcionarOrdenCompraSucursalVendedor = async (req, res) => {
     //console.log("Despacho actualizado 1000:", updatedDespacho);
 
     //actualizar estado Orden de compra a recepcionada
+
     const ocUpdate = await OrdenCompra.findOne({
       where: { idOrdenCompra: idOrdenCompra },
       transaction: t,
     });
     //console.log("Orden Compra linea 1007", ocUpdate);
 
-    if (faltantes > 0) {
+    if (faltantes > 0 || estadoRecepcion === "Entregado Con Faltantes") {
       const updatedOcUpdate = await ocUpdate.update(
         { estado: "recibida con faltante" },
         { transaction: t },
@@ -1025,6 +1223,12 @@ exports.recepcionarOrdenCompraSucursalVendedor = async (req, res) => {
       );
       //console.log("Orden Compra actualizada 1017:", updatedOcUpdate);
     }
+    const info = await enviarCorreo({
+      para: "cristian.onate1901@alumnos.ubiobio.cl",
+      asunto: `Recepción de orden de compra ${verificarOC.nombreOrden}`,
+      html: `La orden de compra ${verificarOC.nombreOrden} ha sido recepcionada con estado: ${estadoRecepcion}. Por favor revise el sistema para más detalles.`,
+    });
+    console.log("INFO Correo", info);
     await t.commit();
     return res.status(200).json({
       message:
@@ -1032,10 +1236,10 @@ exports.recepcionarOrdenCompraSucursalVendedor = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
-    //console.log(
-    //  "Error al crear orden de compra a proveedor desde vendedor:",
-    // error,
-    //);
+    console.log(
+      "Error al crear orden de compra a proveedor desde vendedor:",
+      error,
+    );
     res.status(500).json({
       error: "Error al crear orden de compra a proveedor desde vendedor",
     });
@@ -1308,6 +1512,7 @@ exports.verificarStockProductosOrdenCompra = async (req, res) => {
     if (!comprobarProveedor) {
       return res.status(404).json({ error: "Proveedor no encontrado" });
     }
+    console.log("Datos a verificar stok:\n", req.params);
     //Buscar Bodegas de la sucursal
     const bodegas = await Bodega.findAll({
       where: { idSucursal: idSucursal, estado: "En Funcionamiento" },
@@ -1333,9 +1538,10 @@ exports.verificarStockProductosOrdenCompra = async (req, res) => {
       where: {
         idBodega: { [Op.in]: idBodegas },
         idProducto: { [Op.in]: idProductos },
-        stock: { [Op.lte]: 10 },
+        stock: { [Op.lte]: 5 },
       },
     });
+    console.log("Productos en inv:", inventario);
     if (!inventario || inventario.length === 0) {
       return res.status(404).json({
         error:

@@ -14,7 +14,10 @@ async function crearDetalleDespacho(
   try {
     const detalleDespacho = await DetalleDespacho.create(
       {
-        codigoDetalleDespacho: await generarCodigo("detalleDespacho"),
+        codigoDetalleDespacho: await generarCodigo(
+          "detalleDespacho",
+          transaction,
+        ),
         cantidad: cantidadDD,
         cantidadRecibida: cantidadRecibidaDD,
         cantidadRechazada: cantidadRechazadaDD,
