@@ -1,62 +1,21 @@
-const Bitacora = require("../models/usuarios/Bitacora");
+const Bitacora = require("../models/Usuarios/Bitacora");
+const Funcionario = require("../models/Usuarios/Funcionario");
 const {
   crearBitacora,
   obtenerTodasBitacora,
-  editarBitacora,
-  eliminarBitacora,
 } = require("../services/bitacora.service");
+const { Op } = require("sequelize");
 
-// Crear una nueva entrada en la bitácora
-async function crearBitacora(req, res) {
-  try {
-    const { nombre, descripcion, nivelAlerta, funcionOcupo, usuariosCreador } =
-      req.body;
-    if (
-      !nombre ||
-      !descripcion ||
-      !nivelAlerta ||
-      !funcionOcupo ||
-      !usuariosCreador
-    ) {
-      return res.status(422).json({ error: "Faltan datos obligatorios" });
-    }
-    if (!["Bajo", "Medio", "Alto"].includes(nivelAlerta)) {
-      throw new Error(
-        "Nivel de alerta inválido. Debe ser 'Bajo', 'Medio' o 'Alto'"
-      );
-    }
-    const fechaCreacion = new Date();
-    const nuevaBitacora = await crearBitacora({
-      nombre,
-      descripcion,
-      nivelAlerta,
-      funcionOcupo,
-      fechaCreacion,
-      usuariosCreador,
-    });
-    if (!nuevaBitacora) {
-      return res.status(500).json({ error: "Error al crear la bitacora" });
-    }
-    res.status(201).json(nuevaBitacora);
-  } catch (error) {
-    if (error.message.includes("Ya existe una Bitacora con ese nombre")) {
-      return res.status(409).json({ error: error.message });
-    }
-    if (error.message.includes("Nivel de alerta inválido")) {
-      return res.status(422).json({ error: error.message });
-    } else {
-      res
-        .status(500)
-        .json({ error: "Error al crear la bitacora", details: error.message });
-    }
-  }
-}
+const joi = require("joi");
+
+const validarRutChileno = require("../function/verificarRut");
 
 // Obtener todas las entradas de la bitácora
-async function obtenerTodasBitacora(req, res) {
+
+async function obtenerTodasBitacoraFuncionario(req, res) {
   try {
     const bitacoras = await obtenerTodasBitacora();
-    res.status(200).json(bitacoras);
+    res.status(200).json(bitacoras.data);
   } catch (error) {
     if (error.message === "No se encontraron Bitacora") {
       return res.status(404).json({ error: error.message });
@@ -69,77 +28,53 @@ async function obtenerTodasBitacora(req, res) {
   }
 }
 
-// Editar una entrada de la bitácora
-async function editarBitacora(req, res) {
+async function obtenerbitacoraPorFuncionario(req, res) {
   try {
-    const {
-      idBitacora,
-      nombre,
-      descripcion,
-      nivelAlerta,
-      funcionOcupo,
-      usuariosCreador,
-    } = req.body;
-    if (
-      !idBitacora ||
-      !nombre ||
-      !nivelAlerta ||
-      !funcionOcupo ||
-      !usuariosCreador
-    ) {
-      return res.status(422).json({ error: "Faltan datos obligatorios" });
-    }
-    const bitacoraEditada = await editarBitacora({
-      idBitacora,
-      nombre,
-      descripcion,
-      nivelAlerta,
-      funcionOcupo,
-      usuariosCreador,
-    });
-    res.status(200).json(bitacoraEditada);
-  } catch (error) {
-    if (
-      error.message === "No se encontró la bitacora con el ID proporcionado"
-    ) {
-      return res.status(404).json({ error: error.message });
-    } else {
-      res
-        .status(500)
-        .json({ error: "Error al editar la bitácora", details: error.message });
-    }
-  }
-}
+    const { rutFuncionario } = req.params;
 
-// Eliminar una entrada de la bitácora
-async function eliminarBitacora(req, res) {
-  try {
-    const { idBitacora } = req.params;
-    if (!idBitacora) {
-      return res.status(422).json({ error: "Falta el ID de la bitácora" });
+    const { error, value } = await joi
+      .string()
+      .pattern(/^\d{7,8}-[0-9kK]$/)
+      .required()
+      .validate(rutFuncionario);
+
+    if (error) {
+      return res
+        .status(400)
+        .json({ error: "RUT inválido: " + error.details[0].message });
     }
-    const resultado = await eliminarBitacora(idBitacora);
-    if (!resultado) {
-      return res.status(404).json({ error: "No se encontró la bitácora" });
+    //validar que el rut sea correcto
+    if (!validarRutChileno(rutFuncionario)) {
+      return res.status(400).json({ error: "RUT inválido" });
     }
-    res.status(204).send();
-  } catch (error) {
-    if (
-      error.message === "No se encontró la bitacora con el ID proporcionado"
-    ) {
-      return res.status(404).json({ error: error.message });
-    } else {
-      res.status(500).json({
-        error: "Error al eliminar la bitácora",
-        details: error.message,
+
+    const bitacoras = await Bitacora.findAll({
+      include: [
+        {
+          model: Funcionario,
+          where: { rut: rutFuncionario, idFuncionario: { [Op.not]: 1 } },
+          attributes: ["nombre", "apellido", "rut"],
+        },
+      ],
+    });
+    if (bitacoras.length === 0) {
+      return res.status(404).json({
+        error:
+          "No se encontraron Bitacora para el funcionario con RUT: " +
+          rutFuncionario,
       });
     }
+    res.status(200).json(bitacoras);
+  } catch (error) {
+    console.error("Error al obtener las bitácoras por funcionario:", error);
+    res.status(500).json({
+      error: "Error al obtener las bitácoras por funcionario",
+      details: error.message,
+    });
   }
 }
 
 module.exports = {
-  crearBitacora,
-  obtenerTodasBitacora,
-  editarBitacora,
-  eliminarBitacora,
+  obtenerTodasBitacoraFuncionario,
+  obtenerbitacoraPorFuncionario,
 };

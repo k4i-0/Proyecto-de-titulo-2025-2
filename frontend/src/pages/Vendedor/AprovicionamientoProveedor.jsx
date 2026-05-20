@@ -548,27 +548,27 @@ const AprovicionamientoProveedor = () => {
       key: "detalleEstado",
       render: (detalleEstado) => detalleEstado || "—",
     },
-    {
-      title: "Acciones",
-      key: "acciones",
-      render: (_, record) => (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {/* <Button type="link" onClick={() => handleAbrirModalDetalles(record)}>
-            Ver Detalles
-          </Button> */}
-          <Button
-            disabled={record.estado !== "pendiente recibir"}
-            onClick={() =>
-              navigation(
-                `/vendedor/despachos/${record.creaOrdenCompra.proveedor.rut}`,
-              )
-            }
-          >
-            Recepcionar
-          </Button>
-        </div>
-      ),
-    },
+    // {
+    //   title: "Acciones",
+    //   key: "acciones",
+    //   render: (_, record) => (
+    //     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+    //       {/* <Button type="link" onClick={() => handleAbrirModalDetalles(record)}>
+    //         Ver Detalles
+    //       </Button> */}
+    //       <Button
+    //         disabled={record.estado !== "pendiente recibir"}
+    //         onClick={() =>
+    //           navigation(
+    //             `/vendedor/despachos/${record.creaOrdenCompra.proveedor.rut}`,
+    //           )
+    //         }
+    //       >
+    //         Recepcionar
+    //       </Button>
+    //     </div>
+    //   ),
+    // },
   ];
 
   const handleAbrirModalDetalles = (compraProveedor) => {
@@ -632,7 +632,10 @@ const AprovicionamientoProveedor = () => {
                 </Button>
               </div>
             }
-            onRowClick={handleAbrirModalDetalles}
+            //onRowClick={handleAbrirModalDetalles}
+            onRowClick={(record) =>
+              navigation(`/vendedor/detalle/orden/${record.nombreOrden}`)
+            }
           />
         </Col>
       </Row>

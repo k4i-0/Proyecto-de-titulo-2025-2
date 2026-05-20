@@ -22,6 +22,8 @@ const { Text } = Typography;
  * @param {Array} searchableFields - Campos donde buscar con el input de texto (ej: ["nombre", "rut"]).
  * @param {Array} filterConfig - Configuración de filtros dropdown.
  * Ejemplo: [{ key: 'estado', placeholder: 'Estado', options: [{value: 'Activo', label: 'Activo'}] }]
+ * @param {Array} customFilters - Elementos personalizados para renderizar al lado de los filtros.
+ * Ejemplo: [{ key: 'custom1', element: <DatePicker /> }, { key: 'custom2', element: <Button /> }]
  * @param {Function} onRowClick - Función al hacer click en una fila (opcional).
  * @param {ReactNode} headerButtons - Botones extra para la cabecera (Actualizar, Agregar, etc).
  * @param {Boolean} pagination - Habilitar paginación (default: true).
@@ -40,6 +42,7 @@ export default function DataTable({
   rowKey = "id",
   searchableFields = [],
   filterConfig = [],
+  customFilters = [],
   onRowClick,
   headerButtons,
   pagination = true,
@@ -70,7 +73,9 @@ export default function DataTable({
       const matchesSearch =
         !searchText ||
         searchableFields.some((field) => {
-          const fieldValue = getNestedValue(item, field)?.toString().toLowerCase();
+          const fieldValue = getNestedValue(item, field)
+            ?.toString()
+            .toLowerCase();
           return fieldValue?.includes(searchText.toLowerCase());
         });
 
@@ -201,6 +206,13 @@ export default function DataTable({
                     allowClear
                     options={filter.options}
                   />
+                </Col>
+              ))}
+
+            {customFilters &&
+              customFilters.map((custom) => (
+                <Col xs={12} sm={6} key={custom.key}>
+                  {custom.element}
                 </Col>
               ))}
 

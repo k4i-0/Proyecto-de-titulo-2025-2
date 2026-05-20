@@ -214,7 +214,8 @@ const Login = () => {
       style={{
         minHeight: "100vh",
 
-        background: "linear-gradient(135deg, #1c2e4a 0%, #324a6e 100%)",
+        background:
+          "radial-gradient(circle at top left, rgba(167, 199, 231, 0.26), transparent 28%), radial-gradient(circle at bottom right, rgba(168, 213, 186, 0.22), transparent 24%), linear-gradient(135deg, #f8fbff 0%, #eef4fb 100%)",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -228,21 +229,23 @@ const Login = () => {
           type="text"
           icon={<ScanOutlined />}
           onClick={() => navigate("/cajas/login")}
-          style={{ color: "rgba(255,255,255,0.8)", fontSize: "14px" }}
+          style={{ color: token.colorPrimary, fontSize: "14px" }}
         >
           Ir a Caja / Vendedor
         </Button>
       </div>
 
       <Card
+        className="contrast-card"
         style={{
           width: "100%",
           maxWidth: 420,
           borderRadius: 16,
 
-          boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+          boxShadow: "0 20px 50px rgba(61, 82, 118, 0.12)",
           padding: "10px",
-          backgroundColor: "#ffffff",
+          backgroundColor: "rgba(255,255,255,0.92)",
+          border: "1px solid rgba(167, 199, 231, 0.18)",
         }}
       >
         <div style={{ textAlign: "center", marginBottom: "30px" }}>
@@ -251,7 +254,7 @@ const Login = () => {
             style={{
               width: "60px",
               height: "60px",
-              background: token.colorPrimaryBg,
+              background: "rgba(167, 199, 231, 0.18)",
               borderRadius: "16px",
               display: "flex",
               alignItems: "center",
@@ -265,7 +268,11 @@ const Login = () => {
 
           <Title
             level={3}
-            style={{ margin: 0, fontWeight: 700, color: "#1c2e4a" }}
+            style={{
+              margin: 0,
+              fontWeight: 700,
+              color: token.colorTextHeading,
+            }}
           >
             Administración
           </Title>
@@ -288,9 +295,11 @@ const Login = () => {
             ]}
           >
             <Input
-              prefix={<UserOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+              prefix={
+                <UserOutlined style={{ color: token.colorTextQuaternary }} />
+              }
               placeholder="Correo electrónico"
-              style={{ borderRadius: "8px" }}
+              style={{ borderRadius: "12px" }}
             />
           </Form.Item>
 
@@ -299,9 +308,11 @@ const Login = () => {
             rules={[{ required: true, message: "Ingresa tu contraseña" }]}
           >
             <Input.Password
-              prefix={<LockOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+              prefix={
+                <LockOutlined style={{ color: token.colorTextQuaternary }} />
+              }
               placeholder="Contraseña"
-              style={{ borderRadius: "8px" }}
+              style={{ borderRadius: "12px" }}
             />
           </Form.Item>
 
@@ -316,9 +327,9 @@ const Login = () => {
                 height: "48px", // Botón un poco más alto
                 fontSize: "16px",
                 fontWeight: 600,
-                borderRadius: "8px",
-                backgroundColor: "#1c2e4a", // Azul oscuro a juego con el fondo
-                borderColor: "#1c2e4a",
+                borderRadius: "999px",
+                backgroundColor: token.colorPrimary,
+                borderColor: token.colorPrimary,
               }}
             >
               {loading ? "Validando..." : "Ingresar al Panel"}

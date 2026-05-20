@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Layout, Menu } from "antd";
+import { Layout, Menu, theme } from "antd";
 import { useNavigate } from "react-router-dom";
 const { Sider } = Layout;
 import {
@@ -19,10 +19,21 @@ import {
   OrderedListOutlined,
 } from "@ant-design/icons";
 
-export default function Navegacion({ nombreRol, onLogout }) {
-  const [collapsed, setCollapsed] = useState(true);
+export default function Navegacion({ nombreRol, onLogout, collapsed: collapsedProp, setCollapsed: setCollapsedProp }) {
+  const [collapsedLocal, setCollapsedLocal] = useState(true);
   const navigate = useNavigate();
   const siderRef = useRef(null);
+  const {
+    token: { colorBgContainer, colorBorderSecondary },
+  } = theme.useToken();
+  const isControlled = typeof collapsedProp === "boolean" && typeof setCollapsedProp === "function";
+  const collapsed = isControlled ? collapsedProp : collapsedLocal;
+  const setCollapsed = isControlled ? setCollapsedProp : setCollapsedLocal;
+
+  const handleNavigate = (path) => {
+    if (path) navigate(path);
+    setCollapsed(true);
+  };
   useEffect(() => {
     const handleClickOutside = (event) => {
       // Solo colapsar si el menú está expandido
@@ -42,20 +53,22 @@ export default function Navegacion({ nombreRol, onLogout }) {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [collapsed]);
+  }, [collapsed, setCollapsed]);
   return (
     <>
       <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
-        width={280}
-        ref={siderRef}
+        className="contrast-surface"
+          collapsible
+          collapsed={collapsed}
+          onCollapse={(value) => setCollapsed(value)}
+          collapsedWidth={80}
+          width={350}
+        // ref={siderRef}
         style={{
-          background: "#000000",
-          border: "1px solid #f0f0f0",
-          boxShadow: "2px 0 8px rgba(0,0,0,0.06)",
-          borderRight: "1px solid #f0f0f0",
+          background: colorBgContainer,
+          border: `1px solid ${colorBorderSecondary}`,
+          boxShadow: "2px 0 18px rgba(61, 82, 118, 0.06)",
+          borderRight: `1px solid ${colorBorderSecondary}`,
         }}
       >
         <Menu
@@ -67,15 +80,16 @@ export default function Navegacion({ nombreRol, onLogout }) {
             height: "100%",
             borderInlineEnd: 0,
             padding: "8px 0",
-            border: "1px solid #f0f0f0",
-            background: "#ffffff",
+            border: `1px solid ${colorBorderSecondary}`,
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(247,249,255,0.96) 100%)",
           }}
           items={[
             {
               key: "Inicio",
               icon: <HomeOutlined />,
               label: "Inicio",
-              onClick: () => navigate("/admin"),
+              onClick: () => handleNavigate("/admin"),
             },
             {
               key: "Ventas",
@@ -86,38 +100,49 @@ export default function Navegacion({ nombreRol, onLogout }) {
                 {
                   key: "gestionar_ventas",
                   label: "Gestionar Ventas",
-                  onClick: () => navigate("gestionar_ventas"),
+                  onClick: () => handleNavigate("gestionar_ventas"),
                 },
                 {
                   key: "clientes",
                   label: "Clientes",
-                  onClick: () => navigate("clientes"),
+                  onClick: () => handleNavigate("clientes"),
                 },
               ],
             },
             {
-              key: "aprovicionamiento",
+              key: "Inventario",
               icon: <AreaChartOutlined />,
-              label: "Aprovicionamiento",
+              label: "Inventario",
 
               children: [
                 {
-                  key: "Compra_Proveedores",
+                  key: "inventario_general",
+                  label: "Inventario General",
+                  icon: <InboxOutlined />,
+                  onClick: () => handleNavigate("/admin/inventario"),
+                },
+                {
+                  key: "Ordendes_Compra",
                   label: "Ordenes de Compra",
                   icon: <OrderedListOutlined />,
                   children: [
                     {
+                      key: "compra_sucursal",
+                      label: "Solicitud de Compra Sucursal",
+                      icon: <InboxOutlined />,
+                      onClick: () => handleNavigate("/admin/gestion/solicitudes_compra"),
+                    },
+                    {
                       key: "compra_directa",
                       label: "Compra Directa",
                       icon: <InboxOutlined />,
-                      onClick: () => navigate("/admin/gestion/compra_directa"),
+                      onClick: () => handleNavigate("/admin/gestion/compra_directa"),
                     },
                     {
-                      key: "compra_sucursal",
-                      label: "Compra por Sucursal",
+                      key: "ingreso_manual",
+                      label: "Ingreso Manual",
                       icon: <InboxOutlined />,
-                      onClick: () =>
-                        navigate("/admin/gestion/solicitudes_compra"),
+                      onClick: () => handleNavigate("/admin/gestion/ingreso_manual_inventario"),
                     },
                   ],
                 },
@@ -127,11 +152,10 @@ export default function Navegacion({ nombreRol, onLogout }) {
                   icon: <ReconciliationOutlined />,
                   children: [
                     {
-                      key: "recepcionar_compra_directa",
-                      label: "Recepcionar Compra Directa",
+                      key: "recepcionar_ordenes_compra",
+                      label: "Recepcionar Ordenes De Compra",
                       icon: <InboxOutlined />,
-                      onClick: () =>
-                        navigate("/admin/gestion/recepcionar_compra_directa"),
+                      onClick: () => handleNavigate("/admin/gestion/recepcionar_orden_compra"),
                     },
                     {
                       key: "devolucion_ordenes_compra",
@@ -147,12 +171,6 @@ export default function Navegacion({ nombreRol, onLogout }) {
                     },
                   ],
                 },
-                {
-                  key: "inventario",
-                  label: "Inventario",
-                  icon: <InboxOutlined />,
-                  onClick: () => navigate("/admin/inventario"),
-                },
               ],
             },
             {
@@ -164,31 +182,45 @@ export default function Navegacion({ nombreRol, onLogout }) {
                   key: "sucursales",
                   label: "Sucursales",
                   icon: <BankOutlined />,
-                  onClick: () => navigate("/admin/sucursales"),
+                  onClick: () => handleNavigate("/admin/sucursales"),
                 },
                 {
                   key: "productos",
                   label: "Productos",
                   icon: <ProductOutlined />,
-                  onClick: () => navigate("/admin/productos"),
+                  onClick: () => handleNavigate("/admin/productos"),
                 },
                 {
                   key: "categorias",
                   label: "Categorías",
                   icon: <TagsOutlined />,
-                  onClick: () => navigate("/admin/categorias"),
+                  onClick: () => handleNavigate("/admin/categorias"),
                 },
                 {
                   key: "proveedores",
                   label: "Proveedores",
                   icon: <InboxOutlined />,
-                  onClick: () => navigate("/admin/proveedores"),
+                  onClick: () => handleNavigate("/admin/proveedores"),
                 },
                 {
                   key: "colaboradores",
                   label: "Colaboradores",
                   icon: <UserSwitchOutlined />,
-                  onClick: () => navigate("/admin/gestion/colaboradores"),
+
+                  children: [
+                    {
+                      key: "Gestion_Colaboradores",
+                      label: "Gestionar Colaboradores",
+                      icon: <UsergroupAddOutlined />,
+                      onClick: () => navigate("/admin/gestion/colaboradores"),
+                    },
+                    {
+                      key: "Registro_Actividades",
+                      label: "Registro Actividades Funcionarios",
+                      icon: <UserAddOutlined />,
+                      onClick: () => navigate("/admin/bitacoras"),
+                    },
+                  ],
                 },
               ],
             },

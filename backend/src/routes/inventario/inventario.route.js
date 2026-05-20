@@ -1,6 +1,10 @@
 const router = require("express").Router();
 const inventarioController = require("../../controllers/inventario/Inventario.controller");
-const { verifyToken, isVendedor } = require("../../middleware/auth.middleware");
+const {
+  verifyToken,
+  isVendedor,
+  isAdminOrVendedor,
+} = require("../../middleware/auth.middleware");
 // const authMiddleware = require('../../middleware/authMiddleware');
 // const roleMiddleware = require('../../middleware/roleMiddleware');
 
@@ -36,7 +40,7 @@ router.delete(
 router.post(
   "/vendedor/ingreso-manual",
   verifyToken,
-  isVendedor,
+  isAdminOrVendedor,
   inventarioController.ingresoManualProductos,
 );
 

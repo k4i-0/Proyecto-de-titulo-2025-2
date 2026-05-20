@@ -182,15 +182,6 @@ export default function Categoria() {
       render: () => (
         <Space size="middle">
           <Button
-            type="primary"
-            size="medium"
-            icon={<PlusOutlined />}
-            onClick={handleCrear}
-            disabled={loading}
-          >
-            Nueva Categoría
-          </Button>
-          <Button
             size="medium"
             icon={<EditOutlined />}
             onClick={handleAbrirModalEditar}
@@ -310,6 +301,17 @@ export default function Categoria() {
             ],
           },
         ]}
+        headerButtons={
+          <Button
+            type="primary"
+            size="medium"
+            icon={<PlusOutlined />}
+            onClick={handleCrear}
+            disabled={loading}
+          >
+            Nueva Categoría
+          </Button>
+        }
         onRowClick={handleSeleccionarFila}
         selectedRow={categoriaSelect}
       />

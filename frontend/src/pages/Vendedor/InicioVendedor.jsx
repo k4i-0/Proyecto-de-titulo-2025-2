@@ -57,13 +57,6 @@ export default function InicioVendedor() {
       description: "Administra el inventario de productos",
     },
     {
-      title: "Recepción de Despachos",
-      icon: <TruckOutlined />,
-      path: "/vendedor/despachos",
-      tone: "blue",
-      description: "Recibe despachos de proveedores",
-    },
-    {
       title: "Gestión de Despachos",
       icon: <FileTextOutlined />,
       path: "/vendedor/gestion/despachos",
@@ -158,7 +151,13 @@ export default function InicioVendedor() {
                   <Text type="secondary" style={{ fontSize: "14px" }}>
                     {acceso.description}
                   </Text>
-                  <div style={{ marginTop: "auto", display: "flex", justifyContent: "flex-end" }}>
+                  <div
+                    style={{
+                      marginTop: "auto",
+                      display: "flex",
+                      justifyContent: "flex-end",
+                    }}
+                  >
                     <ArrowRightOutlined
                       style={{ fontSize: "16px", color: colors.icon }}
                     />

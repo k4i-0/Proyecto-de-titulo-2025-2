@@ -10,8 +10,11 @@ import Categoria from "../pages/Admin/Inventario/Categoria.jsx";
 import Proveedores from "../pages/Admin/Inventario/Proveedores.jsx";
 import GestionColaborador from "../pages/Admin/GestionColaboradores/GestionColaborador.jsx";
 import CompraDirecta from "../pages/Admin/OrdenesCompra/CompraDirecta.jsx";
-import RecepcionOrdenCompraDirecta from "../pages/Admin/RecepcionProveedores/RecepcionOrdenCompraDirecta.jsx";
+import RecepcionOrdenCompra from "../pages/Admin/RecepcionProveedores/RecepcionOrdenCompra.jsx";
 import OrdenesCompra from "../pages/Admin/OrdenesCompra/OrdenesCompra.jsx";
+import Bitacoras from "../pages/Admin/Bitacoras.jsx";
+import IngresoManual from "../pages/Admin/OrdenesCompra/IngresoManual.jsx";
+import DetalleCompraDirecta from "../pages/Admin/OrdenesCompra/DetalleCompraDirecta.jsx";
 import Pruebas from "../pages/Pruebas.jsx";
 
 import NoEncontrado from "../pages/Compartidas/NoEncontrado.jsx";
@@ -31,11 +34,19 @@ const AdminRouter = () => {
         <Route path="gestion/colaboradores" element={<GestionColaborador />} />
         <Route path="gestion/colaboradores/sucursal" element={<Pruebas />} />
         <Route path="gestion/compra_directa" element={<CompraDirecta />} />
-        <Route path="gestion/solicitudes_compra" element={<OrdenesCompra />} />
-
         <Route
-          path="gestion/recepcionar_compra_directa"
-          element={<RecepcionOrdenCompraDirecta />}
+          path="gestion/compra_directa/detalle"
+          element={<DetalleCompraDirecta />}
+        />
+        <Route
+          path="gestion/ingreso_manual_inventario"
+          element={<IngresoManual />}
+        />
+        <Route path="gestion/solicitudes_compra" element={<OrdenesCompra />} />
+        <Route path="bitacoras" element={<Bitacoras />} />
+        <Route
+          path="gestion/recepcionar_orden_compra"
+          element={<RecepcionOrdenCompra />}
         />
         <Route path="pruebas" element={<Pruebas />} />
         <Route path="*" element={<NoEncontrado />} />

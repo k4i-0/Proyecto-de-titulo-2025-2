@@ -19,6 +19,7 @@ import {
   LogoutOutlined,
 } from "@ant-design/icons";
 import { HomeOutlined } from "@ant-design/icons";
+import { useState } from "react";
 
 const { Title, Text } = Typography;
 
@@ -28,8 +29,10 @@ function Dashboard() {
   const navigate = useNavigate();
   const { Content, Header } = Layout;
   const {
-    token: { colorBgContainer, borderRadiusLG },
+    token: { colorBgContainer, borderRadiusLG, colorPrimary, colorTextHeading },
   } = theme.useToken();
+
+  const [navCollapsed, setNavCollapsed] = useState(false);
 
   const cerrarSesion = async () => {
     try {
@@ -76,23 +79,28 @@ function Dashboard() {
         }}
       >
         <Header
+          className="contrast-surface-header"
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             padding: "0 32px",
-            background: "linear-gradient(135deg, #bbb8d2 0%, #c2c7cf 100%)",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+            background:
+              "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(244,248,255,0.92) 100%)",
+            boxShadow: "0 8px 28px rgba(61, 82, 118, 0.08)",
             zIndex: 10,
             height: "100px",
-            borderBottom: "1px solid #f0f0f0",
+            borderBottom: "1px solid rgba(167, 199, 231, 0.18)",
+            backdropFilter: "blur(12px)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
             <Button
               type="text"
               icon={
-                <HomeOutlined style={{ fontSize: "22px", color: "#1890ff" }} />
+                <HomeOutlined
+                  style={{ fontSize: "22px", color: colorPrimary }}
+                />
               }
               onClick={() => navigate("/admin")}
               style={{
@@ -101,6 +109,7 @@ function Dashboard() {
                 height: "48px",
                 width: "48px",
                 borderRadius: "12px",
+                background: "rgba(167, 199, 231, 0.12)",
               }}
               className="hover-lift"
             />
@@ -109,7 +118,7 @@ function Dashboard() {
                 level={3}
                 style={{
                   margin: 0,
-                  color: "#1890ff",
+                  color: colorTextHeading,
                   fontWeight: 700,
                   letterSpacing: "-0.5px",
                 }}
@@ -139,8 +148,8 @@ function Dashboard() {
                     padding: "8px 16px",
                     borderRadius: "12px",
                     transition: "all 0.3s",
-                    border: "1px solid #f0f0f0",
-                    background: "#ffffff",
+                    border: "1px solid rgba(167, 199, 231, 0.18)",
+                    background: "rgba(255,255,255,0.85)",
                   }}
                   className="user-menu-trigger"
                   align="center"
@@ -148,8 +157,8 @@ function Dashboard() {
                   <Avatar
                     icon={<UserOutlined />}
                     style={{
-                      backgroundColor: "#1890ff",
-                      boxShadow: "0 2px 8px rgba(24,144,255,0.3)",
+                      backgroundColor: colorPrimary,
+                      boxShadow: "0 8px 20px rgba(167,199,231,0.35)",
                     }}
                     size={40}
                   />
@@ -186,15 +195,21 @@ function Dashboard() {
             nombreRol={user.nombreRol}
             onLogout={cerrarSesion}
             colorBgContainer={colorBgContainer}
+            collapsed={navCollapsed}
+            setCollapsed={setNavCollapsed}
           />
           <Content
+            className="contrast-surface"
+            onClick={() => setNavCollapsed(true)}
             style={{
               marginLeft: "15px",
               marginRight: "15px",
               padding: 10,
               marginTop: "15px",
               minHeight: 280,
-              background: "#d2dae3",
+              background: "rgba(255,255,255,0.72)",
+              border: "1px solid rgba(167, 199, 231, 0.18)",
+              boxShadow: "0 12px 32px rgba(61, 82, 118, 0.08)",
               borderRadius: borderRadiusLG,
               overflow: "auto",
             }}

@@ -29,6 +29,7 @@ import {
 } from "@ant-design/icons";
 
 import DataTable from "../../components/Tabla";
+import ModalIngresoManualProductos from "../../components/ModalIngresoManualProductos";
 import { obtenerInventarioPorSucursal } from "../../services/inventario/Inventario.service";
 
 import { buscarTodasSucursales } from "../../services/functions/Sucursales";
@@ -36,6 +37,7 @@ import { buscarTodosProductos } from "../../services/functions/Productos";
 import { buscarBodegasPorSucursal } from "../../services//functions/Bodegas";
 
 import { ingresoManualProductos } from "../../services/inventario/Inventario.service";
+
 const estadoColores = {
   Bueno: "green",
   Malo: "orange",
@@ -371,55 +373,6 @@ export default function GestionInventario() {
     setDetalleIngreso((prev) => prev.filter((row) => row.key !== key));
   };
 
-  const columnsDetalle = [
-    {
-      title: "Producto",
-      dataIndex: "productoNombre",
-      key: "producto",
-    },
-    {
-      title: "Sucursal",
-      dataIndex: "sucursalNombre",
-      key: "sucursal",
-    },
-    {
-      title: "Bodega",
-      dataIndex: "bodegaNombre",
-      key: "bodega",
-    },
-    {
-      title: "Cantidad",
-      dataIndex: "cantidad",
-      key: "cantidad",
-      width: 150,
-      render: (value, record) => (
-        <Input
-          type="number"
-          value={value}
-          min={1}
-          style={{ width: "100%" }}
-          onChange={(e) =>
-            handleEditarCantidad(record.key, Number(e.target.value))
-          }
-        />
-      ),
-    },
-    {
-      title: "Acciones",
-      key: "acciones",
-      width: 100,
-      align: "center",
-      render: (_, record) => (
-        <Button
-          danger
-          icon={<DeleteOutlined />}
-          size="small"
-          onClick={() => handleEliminarFila(record.key)}
-        />
-      ),
-    },
-  ];
-
   //envio de productos manuales a backend
   const enviarIngresoManual = async () => {
     console.log("Productos", detalleIngreso);
@@ -433,6 +386,7 @@ export default function GestionInventario() {
           description: "Los productos han sido ingresados correctamente.",
           duration: 4,
         });
+        setDetalleIngreso([]);
         handleCerrarModalIngreso();
         cargarInventario(sucursalSeleccionada);
         return;
@@ -606,96 +560,20 @@ export default function GestionInventario() {
           </Descriptions>
         )}
       </Drawer>
-      {/**Modal Ingreso manual */}
-      <Modal
-        title="Ingreso manual de productos"
+      <ModalIngresoManualProductos
         open={modalIngreso}
         onCancel={handleCerrarModalIngreso}
-        okText="Confirmar Ingreso"
-        onOk={() => {
-          enviarIngresoManual();
-        }}
-        width={700}
-      >
-        <Form form={formIngreso} layout="vertical">
-          <Row gutter={[16, 16]}>
-            <Col span={12}>
-              <Form.Item label="Producto" name="producto">
-                <Select placeholder="Selecciona un producto" allowClear>
-                  {productos.map((producto) => (
-                    <Select.Option
-                      key={producto.idProducto}
-                      value={producto.idProducto}
-                    >
-                      {`${producto.codigo} - ${producto.nombre} (${producto.marca})`}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Cantidad" name="cantidad">
-                <Input
-                  type="number"
-                  placeholder="Ingresa la cantidad a ingresar"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={[16, 16]}>
-            <Col span={12}>
-              <Form.Item label="Sucursal" name="sucursal">
-                <Select
-                  placeholder="Selecciona una sucursal"
-                  allowClear
-                  onChange={handleOnChangeSucursalIngreso}
-                >
-                  {sucursalesDisponibles.map((sucursal) => (
-                    <Select.Option
-                      key={sucursal.idSucursal}
-                      value={sucursal.idSucursal}
-                    >
-                      {`${sucursal.idSucursal} - ${sucursal.nombre}`}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Bodega" name="bodega">
-                <Select
-                  placeholder="Selecciona una bodega"
-                  disabled={bodegas.length === 0}
-                >
-                  {bodegas.map((bodega) => (
-                    <Select.Option
-                      key={bodega.idBodega}
-                      value={bodega.idBodega}
-                    >
-                      {`${bodega.idBodega} - ${bodega.nombre}`}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item>
-            <Button type="primary" onClick={handleAgregarDetalle}>
-              Agregar
-            </Button>
-          </Form.Item>
-        </Form>
-        {detalleIngreso.length > 0 && (
-          <DataTable
-            data={detalleIngreso}
-            columns={columnsDetalle}
-            rowKey="key"
-            showSearch={false}
-            showFilters={false}
-            pagination={false}
-          />
-        )}
-      </Modal>
+        onConfirm={enviarIngresoManual}
+        form={formIngreso}
+        productos={productos}
+        sucursalesDisponibles={sucursalesDisponibles}
+        bodegas={bodegas}
+        detalleIngreso={detalleIngreso}
+        onAgregarDetalle={handleAgregarDetalle}
+        onChangeSucursalIngreso={handleOnChangeSucursalIngreso}
+        onEditarCantidad={handleEditarCantidad}
+        onEliminarFila={handleEliminarFila}
+      />
     </div>
   );
 }

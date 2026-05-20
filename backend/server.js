@@ -9,40 +9,7 @@ const morgan = require("morgan");
 const routes = require("./src/routes/index.route");
 const { poblarBD } = require("./src/config/initSetup");
 const cookieParser = require("cookie-parser");
-const {
-  Bodega,
-  Inventario,
-  Sucursal,
-  Lote,
-  Proveedor,
-  Vendedor,
-  Caja,
-  Funcionario,
-  Roles,
-  Bitacora,
-  Actividad,
-  Descuento,
-  Categoria,
-  Productos,
-  Cliente,
-  Estante,
-  RealizaVenta,
-  Despacho,
-  CompraProveedor,
-  ContratoFuncionario,
-  CajaFuncionario,
-  VentaCliente,
-  BitacoraActividad,
-  DescuentoSobre,
-  CompraProveedorDetalle,
-  Provee,
-  LoteProducto,
-  DetalleVenta,
-  OrdenCompra,
-  EntregaProveedor,
-  DetalleDespacho,
-  CreaOrdenCompra,
-} = require("./src/models");
+require("./src/models/index");
 const { allowedNodeEnvironmentFlags } = require("process");
 
 const app = express();

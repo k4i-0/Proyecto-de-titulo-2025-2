@@ -68,3 +68,36 @@ export async function miEstado() {
     return error.response;
   }
 }
+
+export async function todasBitacoras() {
+  try {
+    const response = await axios.get(`${API_URL}/bitacoras`, {
+      withCredentials: true,
+    });
+    if (!response) {
+      return "No se recibió respuesta del servidor";
+    }
+    //console.log("Respuesta obtenerBitacoras:", response);
+    return response;
+  } catch (error) {
+    console.log("Error en todasBitacoras:", error);
+    return error.response;
+  }
+}
+
+export async function traerBitacorasPorFuncionario(rutFuncionario) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/bitacoras/funcionario/${rutFuncionario}`,
+      { withCredentials: true },
+    );
+    if (!response) {
+      return "No se recibió respuesta del servidor";
+    }
+    //console.log("Respuesta traerBitacorasPorFuncionario:", response);
+    return response;
+  } catch (error) {
+    console.log("Error en traerBitacorasPorFuncionario:", error);
+    return error.response;
+  }
+}

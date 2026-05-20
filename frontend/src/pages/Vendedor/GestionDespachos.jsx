@@ -12,6 +12,7 @@ import {
   Form,
   Input,
   Tabs,
+  Card,
 } from "antd";
 
 import DataTable from "../../components/Tabla";
@@ -24,17 +25,104 @@ import {
   obtenerDespachosPorRutProveedor,
 } from "../../services/inventario/Despacho.service";
 
+import obtenerSucursales from "../../services/inventario/Sucursal.service";
+import { obtenerBodegasPorSucursal } from "../../services/inventario/Bodega.service";
+import {
+  buscarOrdenesCompraSucursalVendedor,
+  crearOrdenCompraSucursalVendedor,
+} from "../../services/inventario/CompraProveedor.service";
+
+import ModalRecepcionDespachos from "../../components/ModalRecepcionDespachos";
+import DrawerDetalleDespachos from "../../components/drawerdetalleDespachos";
+
 export default function GestionDespachos() {
-  const { nombreOrden } = useParams();
+  const { nombreOrden, rutProveedor } = useParams();
   const [form] = Form.useForm();
   const [formRutProveedor] = Form.useForm();
+  const [formRecepcion] = Form.useForm();
   const [despachosOc, setDespachosOc] = useState([]);
   const [todosDespachos, setTodoDespachos] = useState([]);
   const [todoDespachosRutProveedor, setTodoDespachosRutProveedor] = useState(
     [],
   );
+  const [ordenes, setOrdenes] = useState([]);
+  const [sucursales, setSucursales] = useState([]);
+  const [bodegas, setBodegas] = useState([]);
+  const [modalDetalleAbiertoDespacho, setModalDetalleAbiertoDespacho] =
+    useState(false);
+  const [modalRecepcionAbierto, setModalRecepcionAbierto] = useState(false);
+  const [drawerDespachos, setDrawerDespachos] = useState(false);
+  const [ordenDrawer, setOrdenDrawer] = useState(null);
+  const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
+  const [ordenSeleccionadaRecepcion, setOrdenSeleccionadaRecepcion] =
+    useState(null);
+
   const [despachoSeleccionado, setDespachoSeleccionado] = useState(null);
   const [modalDetalleAbierto, setModalDetalleAbierto] = useState(false);
+
+  const [modalLoading, setModalLoading] = useState(false);
+  const idSucursalSeleccionada = Form.useWatch("idSucursal", formRecepcion);
+
+  const buscarSucursales = async () => {
+    try {
+      const respuesta = await obtenerSucursales();
+      if (respuesta.status === 200) {
+        const sucursales = Array.isArray(respuesta.data)
+          ? respuesta.data
+          : respuesta.data?.sucursales || [];
+        setSucursales(sucursales);
+        notification.success({
+          message: "Éxito",
+          description: "Sucursales encontradas",
+        });
+        return;
+      }
+      if (respuesta.status === 204) {
+        setSucursales([]);
+        notification.info({
+          message: "Información",
+          description: "No se encontraron sucursales",
+        });
+        return;
+      }
+      notification.error({
+        message: "Error",
+        description: respuesta.error || "Error al buscar las sucursales",
+      });
+    } catch (error) {
+      console.log("Error", error);
+      notification.error({
+        message: "Error",
+        description: "Error al buscar las sucursales",
+      });
+    }
+  };
+
+  const buscarBodegas = async (idSucursal) => {
+    try {
+      const respuesta = await obtenerBodegasPorSucursal(idSucursal);
+      console.log("Respuesta de bodegas", respuesta);
+      if (respuesta.status === 200) {
+        setBodegas(respuesta.data);
+        notification.success({
+          message: "Éxito",
+          description: "Bodegas encontradas",
+        });
+        return;
+      }
+      notification.error({
+        message: "Error",
+        description: respuesta.error || "Error al buscar las bodegas",
+      });
+      setBodegas([]);
+    } catch (error) {
+      console.log("Error", error);
+      notification.error({
+        message: "Error",
+        description: "Error al buscar las bodegas",
+      });
+    }
+  };
 
   const formatearFecha = (fecha) => {
     if (!fecha) return "-";
@@ -68,21 +156,105 @@ export default function GestionDespachos() {
     ];
   }, [todosDespachos]);
 
-  // const normalizarNumeroOrdenCompra = (numeroOrden) => {
-  //   if (!numeroOrden) return "";
+  const detallesProductos =
+    ordenSeleccionada?.ordencompra?.compraproveedordetalles || [];
 
-  //   const valor = numeroOrden.toString().trim().toUpperCase();
+  const cantidadItems = detallesProductos.length;
 
-  //   if (/^OC\d{9}$/.test(valor)) {
-  //     return valor;
-  //   }
+  const cantidadTotalProductos = detallesProductos.reduce(
+    (acumulador, detalle) => acumulador + (Number(detalle.cantidad) || 0),
+    0,
+  );
 
-  //   const correlativo = valor.replace(/\D/g, "");
-  //   if (!correlativo) return "";
+  const columnasProductos = [
+    {
+      title: "Producto",
+      dataIndex: ["producto", "nombre"],
+      key: "productoNombre",
+      render: (nombre) => nombre || "-",
+    },
+    {
+      title: "Código",
+      dataIndex: ["producto", "codigo"],
+      key: "productoCodigo",
+      render: (codigo) => codigo || "-",
+    },
+    {
+      title: "Cantidad",
+      dataIndex: "cantidad",
+      key: "cantidad",
+      render: (cantidad) => Number(cantidad) || 0,
+    },
+  ];
 
-  //   const anioActual = new Date().getFullYear();
-  //   return `OC${anioActual}${correlativo.padStart(5, "0")}`;
-  // };
+  const columns = [
+    {
+      title: "Orden",
+      dataIndex: ["ordencompra", "nombreOrden"],
+      key: "nombreOrden",
+    },
+    {
+      title: "Fecha",
+      dataIndex: ["ordencompra", "fechaOrden"],
+      key: "fechaOrden",
+      render: (fecha) => new Date(fecha).toLocaleDateString("es-CL"),
+    },
+    {
+      title: "Estado",
+      dataIndex: ["ordencompra", "estado"],
+      key: "estado",
+      render: (estado) => <Tag color="orange">{estado}</Tag>,
+    },
+    {
+      title: "Tipo",
+      dataIndex: ["ordencompra", "tipo"],
+      key: "tipo",
+    },
+    {
+      title: "Total",
+      dataIndex: ["ordencompra", "total"],
+      key: "total",
+      render: (total) => `$${total.toLocaleString("es-CL")}`,
+    },
+    {
+      title: "Sucursal",
+      dataIndex: ["sucursal", "nombre"],
+      key: "sucursal",
+    },
+    {
+      title: "Solicitante",
+      dataIndex: ["vendedor", "nombre"],
+      key: "vendedor",
+    },
+    {
+      title: "Acciones",
+      key: "acciones",
+      render: (_, record) => (
+        <div style={{ display: "flex", gap: "8px" }}>
+          <Button
+            disabled={record.ordencompra.estado === "recepcionada"}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRecepcionar(record);
+            }}
+          >
+            Recepcionar
+          </Button>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              handelAbrirDrawerDespachos(record.ordencompra);
+              // navigate(
+              //   `/vendedor/gestion/despachos/${record.ordencompra.nombreOrden}`,
+              // );
+            }}
+          >
+            Despachos
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   const columnasDespachos = [
     {
@@ -282,13 +454,13 @@ export default function GestionDespachos() {
     },
   ];
 
-  const handleAbrirDetalle = (despacho) => {
+  const handleAbrirDetalleDespacho = (despacho) => {
     setDespachoSeleccionado(despacho);
-    setModalDetalleAbierto(true);
+    setModalDetalleAbiertoDespacho(true);
   };
 
-  const handleCerrarDetalle = () => {
-    setModalDetalleAbierto(false);
+  const handleCerrarDetalleDespacho = () => {
+    setModalDetalleAbiertoDespacho(false);
     setDespachoSeleccionado(null);
   };
 
@@ -392,12 +564,218 @@ export default function GestionDespachos() {
     }
   };
 
+  //Funciones del drawer
+  const handelAbrirDrawerDespachos = (ordenCompra) => {
+    console.log("Orden Compra", ordenCompra.despachos);
+    setOrdenDrawer(ordenCompra);
+    setDrawerDespachos(true);
+  };
+
+  const handleCerrarDrawerDespachos = () => {
+    setDrawerDespachos(false);
+  };
+
+  const handleBuscar = async (values) => {
+    try {
+      const respuesta = await buscarOrdenesCompraSucursalVendedor(
+        values.rutProveedor,
+      );
+      console.log("Respuesta de la búsqueda:", respuesta);
+      if (respuesta.status === 200) {
+        const ordenesCompra = Array.isArray(respuesta.data)
+          ? respuesta.data
+          : respuesta.data?.ordenesCompra || [];
+
+        setOrdenes(ordenesCompra);
+        //console.log("Órdenes de compra encontradas:", ordenesCompra);
+        notification.success({
+          message: "Éxito",
+          description: "Órdenes de compra encontradas",
+        });
+        return;
+      }
+      if (respuesta.status === 204) {
+        setOrdenes([]);
+        notification.info({
+          message: "Información",
+          description:
+            "No se encontraron órdenes de compra pendientes para el proveedor",
+        });
+        return;
+      }
+      notification.error({
+        message: "Error",
+        description: respuesta.error || "Error al buscar las órdenes de compra",
+      });
+    } catch (error) {
+      console.error("Error al buscar las órdenes de compra:", error);
+      notification.error({
+        message: "Error",
+        description: "Error al buscar las órdenes de compra",
+      });
+    }
+  };
+
+  const handleVerDetalle2 = (record) => {
+    setOrdenSeleccionada(record);
+    setModalDetalleAbierto(true);
+  };
+
+  const handleCerrarDetalle2 = () => {
+    setModalDetalleAbierto(false);
+    setOrdenSeleccionada(null);
+  };
+
+  const ordenesConNombreOrden = ordenes.map((orden) => ({
+    ...orden,
+    nombreOrden: orden.ordencompra?.nombreOrden || "",
+  }));
+
+  const handleRecepcionar = async (record) => {
+    console.log("orden seleccionada", record);
+
+    buscarSucursales();
+    setOrdenSeleccionadaRecepcion(record);
+    formRecepcion.resetFields();
+
+    const despachos = record?.ordencompra?.despachos || [];
+
+    const detallesIniciales =
+      record?.ordencompra?.compraproveedordetalles?.map((detalle, index) => {
+        const detalleDespachoPorProducto = despachos.reduce(
+          (acumulador, despacho) => {
+            const detalleDespacho = despacho?.detalledespachos?.[index];
+
+            if (!detalleDespacho) {
+              return acumulador;
+            }
+            console.log(
+              "Cantidade recibida:",
+              detalleDespacho.cantidadRecibida,
+            );
+            return {
+              cantidadRecibida:
+                acumulador.cantidadRecibida +
+                (Number(
+                  detalleDespacho.cantidadRecibida ?? detalleDespacho.cantidad,
+                ) || 0),
+              cantidadRechazada:
+                acumulador.cantidadRechazada +
+                (Number(detalleDespacho.cantidadRechazada) || 0),
+            };
+          },
+          {
+            cantidadRecibida: 0,
+            cantidadRechazada: 0,
+          },
+        );
+
+        return {
+          idProducto: detalle.producto?.idProducto,
+          productoNombre: detalle.producto?.nombre || "",
+          productoCodigo: detalle.producto?.codigo || "",
+          cantidadSolicitada: Number(detalle.cantidad) || 0,
+          cantidadRecibida: detalleDespachoPorProducto.cantidadRecibida,
+          cantidadRechazada: detalleDespachoPorProducto.cantidadRechazada,
+        };
+      }) || [];
+
+    formRecepcion.setFieldsValue({
+      tipoDocumento: undefined,
+      tipoDespacho: undefined,
+      numeroDocumento: "",
+      repartidor: "",
+      idSucursal: record?.sucursal?.idSucursal,
+      observacionesRecepcion: "",
+      detalles: detallesIniciales,
+    });
+
+    console.log("orden recuperada", formRecepcion.getFieldValue());
+    setModalRecepcionAbierto(true);
+  };
+
+  const handleCerrarRecepcion = () => {
+    setModalRecepcionAbierto(false);
+    formRecepcion.resetFields();
+  };
+
+  const handleConfirmarRecepcion = async (values) => {
+    setModalLoading(true);
+    const payloadRecepcion = {
+      idOrdenCompra: ordenSeleccionadaRecepcion?.ordencompra?.idOrdenCompra,
+      idProveedor: ordenSeleccionadaRecepcion?.idProveedor,
+      tipoDocumento: values.tipoDocumento,
+      tipoDespacho: values.tipoDespacho,
+      numeroDocumento: values.numeroDocumento,
+      repartidor: values.repartidor,
+      observaciones: values.observacionesRecepcion,
+      idSucursal: values.idSucursal,
+      idBodega: values.idBodega,
+      productos: (values.detalles || []).map((detalle) => ({
+        idProducto: detalle.idProducto,
+        productoCodigo: detalle.productoCodigo,
+        cantidadSolicitada: Number(detalle.cantidadSolicitada) || 0,
+        cantidadRecibida: Number(detalle.cantidadRecibida) || 0,
+        cantidadRechazada: Number(detalle.cantidadRechazada) || 0,
+      })),
+    };
+
+    console.log("Payload recepción:", payloadRecepcion);
+    try {
+      const respuesta =
+        await crearOrdenCompraSucursalVendedor(payloadRecepcion);
+      if (respuesta.status === 200) {
+        notification.success({
+          message: "Recepción registrada",
+          description: "La recepción del despacho fue preparada correctamente.",
+        });
+        handleCerrarRecepcion();
+        handleBuscar({
+          rutProveedor: ordenSeleccionadaRecepcion?.proveedor?.rut,
+        });
+        setModalLoading(false);
+        return;
+      }
+      notification.error({
+        message: "Error",
+        description:
+          respuesta.error || "Error al registrar la recepción del despacho",
+      });
+      setModalLoading(false);
+      return;
+    } catch (error) {
+      console.error("Error al crear la recepción del despacho:", error);
+      notification.error({
+        message: "Error",
+        description: "Error al registrar la recepción del despacho",
+      });
+      setModalLoading(false);
+      return;
+    }
+  };
+
   useEffect(() => {
     if (nombreOrden) {
       form.setFieldValue("numeroOrden", nombreOrden.slice(6));
       form.submit();
     }
-  }, [nombreOrden, form]);
+    if (rutProveedor) {
+      console.log("Despachos:", rutProveedor);
+      form.setFieldsValue({ rutProveedor: rutProveedor });
+      handleBuscar({ rutProveedor: rutProveedor });
+    }
+  }, [nombreOrden, form, rutProveedor]);
+
+  useEffect(() => {
+    if (!modalRecepcionAbierto) return;
+
+    if (!idSucursalSeleccionada) {
+      setBodegas([]);
+      return;
+    }
+
+    buscarBodegas(idSucursalSeleccionada);
+  }, [idSucursalSeleccionada, modalRecepcionAbierto]);
 
   return (
     <div>
@@ -412,6 +790,57 @@ export default function GestionDespachos() {
           }
         }}
         items={[
+          {
+            key: "recepcion_despachos",
+            label: "Recepción de Despachos",
+            children: (
+              <>
+                <div>
+                  <Typography.Title level={3}>
+                    Recepción de Despachos
+                  </Typography.Title>
+
+                  <Card style={{ marginTop: 20 }}>
+                    <Form
+                      layout="inline"
+                      style={{ marginBottom: 20 }}
+                      form={form}
+                      onFinish={handleBuscar}
+                    >
+                      <Form.Item
+                        label="Rut del Proveedor"
+                        name="rutProveedor"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Por favor ingrese el RUT del proveedor",
+                          },
+                        ]}
+                      >
+                        <Input placeholder="Ingrese el RUT del proveedor" />
+                      </Form.Item>
+                      <Button type="primary" htmlType="submit">
+                        Buscar
+                      </Button>
+                    </Form>
+                  </Card>
+                  {ordenes.length > 0 && (
+                    <DataTable
+                      data={ordenesConNombreOrden}
+                      columns={columns}
+                      rowKey="idOrdenCompra"
+                      searchableFields={["nombreOrden"]}
+                      showFilters={false}
+                      searchPlaceholder="Buscar por nombre de orden"
+                      onRowClick={handleVerDetalle2}
+                      sortField="nombreOrden"
+                      sortOrder="desc"
+                    />
+                  )}
+                </div>
+              </>
+            ),
+          },
           {
             key: "buscar",
             label: "Buscar Despachos por OC",
@@ -470,7 +899,7 @@ export default function GestionDespachos() {
                     filterConfig={filtrosTodos}
                     showFilters={true}
                     searchPlaceholder="Buscar por codigo"
-                    onRowClick={handleAbrirDetalle}
+                    onRowClick={handleAbrirDetalleDespacho}
                   />
                 )}
               </>
@@ -541,7 +970,7 @@ export default function GestionDespachos() {
                     searchableFields={["codigoDespacho", "nombreOrden"]}
                     showFilters={false}
                     searchPlaceholder="Buscar Codigo Despacho"
-                    onRowClick={handleAbrirDetalle}
+                    onRowClick={handleAbrirDetalleDespacho}
                   />
                 )}
               </>
@@ -568,7 +997,7 @@ export default function GestionDespachos() {
                   filterConfig={filtrosTodos}
                   showFilters={true}
                   searchPlaceholder="Buscar por codigo"
-                  onRowClick={handleAbrirDetalle}
+                  onRowClick={handleAbrirDetalleDespacho}
                 />
               </>
             ),
@@ -579,11 +1008,11 @@ export default function GestionDespachos() {
       {/**Modal Detalles */}
       <Modal
         title="Detalle del despacho"
-        open={modalDetalleAbierto}
+        open={modalDetalleAbiertoDespacho}
         width={900}
-        onCancel={handleCerrarDetalle}
+        onCancel={handleCerrarDetalleDespacho}
         footer={[
-          <Button key="cerrar" onClick={handleCerrarDetalle}>
+          <Button key="cerrar" onClick={handleCerrarDetalleDespacho}>
             Cerrar
           </Button>,
         ]}
@@ -662,6 +1091,102 @@ export default function GestionDespachos() {
           </>
         )}
       </Modal>
+      {/**Modal Detalle */}
+      <Modal
+        title="Detalle de orden de compra"
+        open={modalDetalleAbierto}
+        width={700}
+        onCancel={handleCerrarDetalle2}
+        footer={[
+          <Button key="cerrar" onClick={handleCerrarDetalle2}>
+            Cerrar
+          </Button>,
+        ]}
+      >
+        {ordenSeleccionada && (
+          <>
+            <Descriptions column={2} size="small" bordered>
+              <Descriptions.Item label="Rut Proveedor">
+                {ordenSeleccionada.proveedor?.rut || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="ID orden compra">
+                {ordenSeleccionada.ordencompra?.idOrdenCompra || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Nombre orden">
+                {ordenSeleccionada.ordencompra?.nombreOrden || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Fecha">
+                {ordenSeleccionada.ordencompra?.fechaOrden
+                  ? new Date(
+                      ordenSeleccionada.ordencompra.fechaOrden,
+                    ).toLocaleDateString("es-CL")
+                  : "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Estado">
+                <Tag color="purple">
+                  {ordenSeleccionada.ordencompra?.estado?.toUpperCase() || "-"}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Sucursal">
+                {ordenSeleccionada.sucursal?.nombre || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="RUT solicitante">
+                {ordenSeleccionada.vendedor?.rut || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Total" span={2}>
+                $
+                {Number(
+                  ordenSeleccionada.ordencompra?.total || 0,
+                ).toLocaleString("es-CL")}
+              </Descriptions.Item>
+              <Descriptions.Item label="Observaciones" span={2}>
+                <div style={{ whiteSpace: "pre-line" }}>
+                  {ordenSeleccionada.ordencompra?.observaciones || "-"}
+                </div>
+              </Descriptions.Item>
+              <Descriptions.Item label="Detalle estado" span={2}>
+                {ordenSeleccionada.ordencompra?.detalleEstado || "-"}
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Divider style={{ margin: "16px 0" }} />
+
+            <Typography.Text strong>
+              Productos ({cantidadItems} ítems, {cantidadTotalProductos}{" "}
+              unidades)
+            </Typography.Text>
+
+            <Table
+              size="small"
+              style={{ marginTop: 10 }}
+              dataSource={detallesProductos}
+              columns={columnasProductos}
+              rowKey={(detalle, index) =>
+                `${detalle.producto?.codigo || "sin-codigo"}-${index}`
+              }
+              pagination={false}
+              locale={{ emptyText: "No hay productos en el detalle" }}
+            />
+          </>
+        )}
+      </Modal>
+      {/**Modal Recepción de despachos */}
+      <ModalRecepcionDespachos
+        open={modalRecepcionAbierto}
+        onCancel={handleCerrarRecepcion}
+        ordenSeleccionada={ordenSeleccionadaRecepcion}
+        sucursales={sucursales}
+        bodegas={bodegas}
+        form={formRecepcion}
+        onFinish={handleConfirmarRecepcion}
+        loading={modalLoading}
+      />
+
+      <DrawerDetalleDespachos
+        open={drawerDespachos}
+        onClose={handleCerrarDrawerDespachos}
+        ordenDrawer={ordenDrawer}
+      />
     </div>
   );
 }

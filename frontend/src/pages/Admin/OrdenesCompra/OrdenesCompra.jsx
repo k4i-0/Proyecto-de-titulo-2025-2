@@ -14,6 +14,8 @@ import {
   Card,
   Form,
   Timeline,
+  Tabs,
+  Space,
 } from "antd";
 
 import DataTable from "../../../components/Tabla.jsx";
@@ -732,136 +734,167 @@ export default function OrdenesCompra() {
   return (
     <div>
       {/* <Typography.Title level={2}>Órdenes de Compra</Typography.Title> */}
-      <DataTable
-        title="Órdenes de compra"
-        description={`Total: ${ordenesTabla.length} órdenes`}
-        data={ordenesTabla}
-        columns={[
+      <Tabs
+        defaultActiveKey="1"
+        items={[
           {
-            title: "N° Orden",
-            dataIndex: "nombreOrden",
-            key: "nombreOrden",
-          },
+            key: "1",
+            label: "Ordenes Compra",
+            children: (
+              <>
+                <DataTable
+                  title="Órdenes de compra"
+                  description={`Total: ${ordenesTabla.length} órdenes`}
+                  data={ordenesTabla}
+                  columns={[
+                    {
+                      title: "N° Orden",
+                      dataIndex: "nombreOrden",
+                      key: "nombreOrden",
+                      onCell: () => ({
+                        onClick: (e) => e.stopPropagation(),
+                      }),
+                    },
 
-          {
-            title: "Fecha",
-            dataIndex: "fechaOrden",
-            key: "fechaOrden",
-            render: (fecha) =>
-              fecha ? new Date(fecha).toLocaleDateString("es-CL") : "—",
-          },
-          {
-            title: "Proveedor",
-            dataIndex: "proveedorNombre",
-            key: "proveedorNombre",
-          },
-          {
-            title: "RUT Proveedor",
-            dataIndex: "proveedorRut",
-            key: "proveedorRut",
-          },
-          {
-            title: "Sucursal",
-            dataIndex: "sucursalNombre",
-            key: "sucursalNombre",
-          },
-          {
-            title: "Solicitante",
-            dataIndex: "solicitanteNombre",
-            key: "solicitanteNombre",
-          },
-          {
-            title: "Estado",
-            dataIndex: "estado",
-            key: "estado",
-            render: (estado) => {
-              let color = "default";
-              if (estado === "pendiente de aprobacion") color = "gold";
-              else if (estado === "creada") color = "blue";
-              else if (estado === "aprobada") color = "green";
-              else if (estado === "aceptada con modificaciones")
-                color = "orange";
-              else if (estado === "rechazada" || estado === "cancelada") {
-                color = "red";
-              } else if (estado === "pendiente recibir") {
-                color = "purple";
-              }
-              return <Tag color={color}>{estado?.toUpperCase() || "—"}</Tag>;
-            },
-          },
+                    {
+                      title: "Fecha",
+                      dataIndex: "fechaOrden",
+                      key: "fechaOrden",
+                      render: (fecha) =>
+                        fecha
+                          ? new Date(fecha).toLocaleDateString("es-CL")
+                          : "—",
+                    },
+                    {
+                      title: "Proveedor",
+                      dataIndex: "proveedorNombre",
+                      key: "proveedorNombre",
+                    },
+                    {
+                      title: "RUT Proveedor",
+                      dataIndex: "proveedorRut",
+                      key: "proveedorRut",
+                    },
+                    {
+                      title: "Sucursal",
+                      dataIndex: "sucursalNombre",
+                      key: "sucursalNombre",
+                    },
+                    {
+                      title: "Solicitante",
+                      dataIndex: "solicitanteNombre",
+                      key: "solicitanteNombre",
+                    },
+                    {
+                      title: "Estado",
+                      dataIndex: "estado",
+                      key: "estado",
+                      render: (estado) => {
+                        let color = "default";
+                        if (estado === "pendiente de aprobacion")
+                          color = "gold";
+                        else if (estado === "creada") color = "blue";
+                        else if (estado === "aprobada") color = "green";
+                        else if (estado === "aceptada con modificaciones")
+                          color = "orange";
+                        else if (
+                          estado === "rechazada" ||
+                          estado === "cancelada"
+                        ) {
+                          color = "red";
+                        } else if (estado === "pendiente recibir") {
+                          color = "purple";
+                        }
+                        return (
+                          <Tag color={color}>
+                            {estado?.toUpperCase() || "—"}
+                          </Tag>
+                        );
+                      },
+                    },
 
-          {
-            title: "Total",
-            dataIndex: "total",
-            key: "total",
-            render: (total) => `$${Number(total || 0).toLocaleString("es-CL")}`,
-          },
-          {
-            title: "Acciones",
-            key: "acciones",
-            render: (_, record) => (
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {/* <Button type="link" onClick={() => abrirModalDetalle(record)}>
-                  Ver detalles
-                </Button> */}
-                <Button
-                  type="primary"
-                  danger
-                  disabled={
-                    record.estado === "aceptada con modificaciones" ||
-                    record.estado === "aprobada" ||
-                    record.estado === "rechazada" ||
-                    record.estado === "recepcionada"
+                    {
+                      title: "Total",
+                      dataIndex: "total",
+                      key: "total",
+                      render: (total) =>
+                        `$${Number(total || 0).toLocaleString("es-CL")}`,
+                    },
+                    // {
+                    //   title: "Acciones",
+                    //   key: "acciones",
+                    //   width: 200,
+
+                    //   onCell: () => ({
+                    //     onClick: (e) => e.stopPropagation(),
+                    //   }),
+                    //   render: (_, record) => {
+                    //     const noEliminable = record.estado != "anulado";
+
+                    //     return (
+                    //       <Space size={4} wrap>
+                    //         <Button
+                    //           size="small"
+                    //           type="primary"
+                    //           danger
+                    //           disabled={noEliminable}
+                    //           onClick={() =>
+                    //             eliminarOrdenCompra(record.nombreOrden)
+                    //           }
+                    //         >
+                    //           Eliminar
+                    //         </Button>
+                    //       </Space>
+                    //     );
+                    //   },
+                    // },
+                  ]}
+                  rowKey="idOrdenCompra"
+                  searchableFields={[
+                    "idOrdenCompra",
+                    "nombreOrden",
+                    "estado",
+                    "tipo",
+                    "proveedorNombre",
+                    "proveedorRut",
+                    "sucursalNombre",
+                    "solicitanteNombre",
+                    "detalleEstado",
+                    "observaciones",
+                  ]}
+                  filterConfig={[
+                    {
+                      key: "estado",
+                      placeholder: "Estado",
+                      options: [
+                        { value: "creada", label: "Creada" },
+                        {
+                          value: "pendiente de aprobacion",
+                          label: "Pendiente de aprobación",
+                        },
+                        { value: "aprobada", label: "Aprobada" },
+                        { value: "rechazada", label: "Rechazada" },
+                        { value: "cancelada", label: "Cancelada" },
+                      ],
+                    },
+                  ]}
+                  headerButtons={
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <Button onClick={handleAbrirCompraNueva}>
+                        {" "}
+                        + Nueva Orden
+                      </Button>
+                      <Button type="primary" onClick={buscarOrdenesCompra}>
+                        Refrescar
+                      </Button>
+                    </div>
                   }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    eliminarOrdenCompra(record.nombreOrden);
-                  }}
-                >
-                  Eliminar
-                </Button>
-              </div>
+                  onRowClick={abrirModalDetalle}
+                />
+              </>
             ),
           },
         ]}
-        rowKey="idOrdenCompra"
-        searchableFields={[
-          "idOrdenCompra",
-          "nombreOrden",
-          "estado",
-          "tipo",
-          "proveedorNombre",
-          "proveedorRut",
-          "sucursalNombre",
-          "solicitanteNombre",
-          "detalleEstado",
-          "observaciones",
-        ]}
-        filterConfig={[
-          {
-            key: "estado",
-            placeholder: "Estado",
-            options: [
-              { value: "creada", label: "Creada" },
-              {
-                value: "pendiente de aprobacion",
-                label: "Pendiente de aprobación",
-              },
-              { value: "aprobada", label: "Aprobada" },
-              { value: "rechazada", label: "Rechazada" },
-              { value: "cancelada", label: "Cancelada" },
-            ],
-          },
-        ]}
-        headerButtons={
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <Button onClick={handleAbrirCompraNueva}> + Nueva Orden</Button>
-            <Button type="primary" onClick={buscarOrdenesCompra}>
-              Refrescar
-            </Button>
-          </div>
-        }
-        onRowClick={abrirModalDetalle}
       />
       {/**Modal Detalle */}
       <Modal
@@ -896,8 +929,19 @@ export default function OrdenesCompra() {
           >
             Modificar
           </Button>,
+          modalDetalle.orden?.estado === "pendiente recibir" && (
+            <Button
+              key="recepcionar"
+              color="blue"
+              variant="solid"
+              disabled={modalDetalle.orden?.estado !== "pendiente recibir"}
+              onClick={() => handleModificarOrden(modalDetalle.orden)}
+            >
+              Recepcionar
+            </Button>
+          ),
         ]}
-        width={900}
+        width={750}
       >
         {modalDetalle.orden && (
           <>

@@ -723,24 +723,24 @@ exports.obtenerOrdenCompraVendedorPorNombreOrden = async (req, res) => {
       include: [
         {
           model: Proveedor,
-          attributes: ["idProveedor", "rut", "nombre"],
+          attributes: ["idProveedor", "rut", "nombre", "email", "telefono"],
         },
         {
           model: OrdenCompra,
           where: {
-            estado: [
-              "pendiente recibir",
-              "recepcionada",
-              "recibida con faltante",
-              "despachada",
-            ],
+            // estado: [
+            //   "pendiente recibir",
+            //   "recepcionada",
+            //   "recibida con faltante",
+            //   "despachada",
+            // ],
             tipo: "compra sucursal",
             nombreOrden: nombreOrden,
           },
           include: [
             {
               model: CompraProveedorDetalle,
-              attributes: ["cantidad"],
+              attributes: ["cantidad", "precioUnitario", "subtotal"],
               include: [
                 {
                   model: Producto,
@@ -750,7 +750,13 @@ exports.obtenerOrdenCompraVendedorPorNombreOrden = async (req, res) => {
             },
             {
               model: Despacho,
-              attributes: ["idDespacho", "codigoDespacho", "estado"],
+              attributes: [
+                "idDespacho",
+                "codigoDespacho",
+                "fechaDespacho",
+                "tipoDocumento",
+                "estado",
+              ],
               include: [
                 {
                   model: DetalleDespacho,
@@ -759,6 +765,18 @@ exports.obtenerOrdenCompraVendedorPorNombreOrden = async (req, res) => {
                     "cantidadRecibida",
                     "cantidadRechazada",
                   ],
+                  include: [
+                    {
+                      model: Lote,
+                      attributes: ["idLote", "codigoLote", "fechaVencimiento"],
+                      include: [
+                        {
+                          model: Producto,
+                          attributes: ["nombre"],
+                        },
+                      ],
+                    },
+                  ],
                 },
               ],
             },
@@ -766,20 +784,29 @@ exports.obtenerOrdenCompraVendedorPorNombreOrden = async (req, res) => {
         },
         {
           model: Sucursal,
-          attributes: ["idSucursal", "nombre"],
+          attributes: ["idSucursal", "nombre", "direccion"],
         },
         {
           model: Funcionario,
           as: "vendedor",
           attributes: ["rut", "nombre"],
         },
+        {
+          model: Funcionario,
+          as: "administrador",
+          attributes: ["rut", "nombre"],
+        },
       ],
+      transaction: t,
     });
     if (!orden) {
+      await t.rollback();
       return res.status(404).json({ error: "Orden de compra no encontrada" });
     }
+    await t.commit();
     return res.status(200).json(orden);
   } catch (error) {
+    await t.rollback();
     console.warn("Error al recepcionar orden de compra con faltantes:", error);
     res.status(500).json({
       error: "Error al recepcionar orden de compra con faltantes",
@@ -1254,7 +1281,16 @@ exports.obtenerOrdenesCompraAdmin = async (req, res) => {
     const respuesta = await obtenerOrdenCompra(
       {
         tipo: "compra sucursal",
-        estado: { [Op.notIn]: ["cancelada"] },
+        estado: {
+          [Op.notIn]: [
+            "cancelada",
+            "creada",
+            "aprobada",
+            "rechazada",
+            "anulada",
+            "recepcionada",
+          ],
+        },
       },
       null,
       [

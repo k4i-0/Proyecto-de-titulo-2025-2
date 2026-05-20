@@ -57,12 +57,7 @@ async function buscarOCIdProveedor(idProveedor) {
         {
           model: OrdenCompra,
           where: {
-            estado: [
-              "pendiente recibir",
-              "recepcionada",
-              "recibida con faltante",
-              "despachada",
-            ],
+            estado: ["pendiente recibir", "recibida con faltante"],
             tipo: "compra sucursal",
           },
           include: [

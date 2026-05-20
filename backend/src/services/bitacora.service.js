@@ -1,4 +1,6 @@
 const Bitacora = require("../models/Usuarios/Bitacora");
+const Funcionario = require("../models/Usuarios/Funcionario");
+const { Op } = require("sequelize");
 
 async function crearBitacora(operacion, descripcion, idFuncionario) {
   try {
@@ -18,7 +20,15 @@ async function crearBitacora(operacion, descripcion, idFuncionario) {
 
 async function obtenerTodasBitacora() {
   try {
-    const consultaBitacora = await Bitacora.findAll();
+    const consultaBitacora = await Bitacora.findAll({
+      include: [
+        {
+          model: Funcionario,
+          where: { idFuncionario: { [Op.not]: 1 } },
+          attributes: ["nombre", "apellido", "rut"],
+        },
+      ],
+    });
     if (!consultaBitacora) {
       throw new Error("No se encontraron Bitacora");
     }
@@ -28,6 +38,7 @@ async function obtenerTodasBitacora() {
       data: consultaBitacora,
     };
   } catch (error) {
+    console.log("ERROR AL BUSCAR TODOS FUNCIONARIOS", error);
     throw new Error("Error al obtener las Bitacora: " + error.message);
   }
 }

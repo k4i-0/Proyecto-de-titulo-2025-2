@@ -243,24 +243,24 @@ exports.ingresoManualProductos = async (req, res) => {
       const producto = await Productos.findByPk(idProducto, { transaction: t });
       if (!producto) {
         console.log(`Producto con ID ${idProducto} no encontrado`);
+        await t.rollback();
         return res.status(422).json({
-          code: 1114,
           error: `Producto con ID ${idProducto} no encontrado`,
         });
       }
       const sucursal = await Sucursal.findByPk(idSucursal, { transaction: t });
       if (!sucursal) {
         console.log(`Sucursal con ID ${idSucursal} no encontrada`);
+        await t.rollback();
         return res.status(422).json({
-          code: 1115,
           error: `Sucursal con ID ${idSucursal} no encontrada`,
         });
       }
       const bodega = await Bodega.findByPk(idBodega, { transaction: t });
       if (!bodega) {
         console.log(`Bodega con ID ${idBodega} no encontrada`);
+        await t.rollback();
         return res.status(422).json({
-          code: 1116,
           error: `Bodega con ID ${idBodega} no encontrada`,
         });
       }
@@ -269,7 +269,6 @@ exports.ingresoManualProductos = async (req, res) => {
           `La bodega con ID ${idBodega} no pertenece a la sucursal con ID ${idSucursal}`,
         );
         return res.status(422).json({
-          code: 1117,
           error: `La bodega con ID ${idBodega} no pertenece a la sucursal con ID ${idSucursal}`,
         });
       }
@@ -315,12 +314,12 @@ exports.ingresoManualProductos = async (req, res) => {
         );
       }
     }
-    t.commit();
+    await t.commit();
     return res
       .status(200)
       .json({ message: "Ingreso manual de productos recibido" });
   } catch (error) {
-    t.rollback();
+    await t.rollback();
     console.error("Error al ingresar productos manualmente:", error);
     res.status(500).json({ error: "Error al ingresar productos manualmente" });
   }

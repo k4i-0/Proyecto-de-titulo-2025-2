@@ -22,6 +22,7 @@ import {
 import DataTable from "../../../components/Tabla";
 import Agregar from "../modales/modalProductos/Agregar";
 import Editar from "../modales/modalProductos/Editar";
+import Detalle from "../modales/modalProductos/Detalle";
 import KPIStats from "../../../components/Kpis";
 
 import obtenerProductos, {
@@ -35,6 +36,7 @@ export default function Productos({ onCambiarVista }) {
   const [categorias, setCategorias] = useState([]);
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
+  const [modalDetalle, setModalDetalle] = useState(false);
   const [productosSelect, setProductoSelect] = useState(null);
   const [loading, setLoading] = useState(false);
   const buscarProducto = async () => {
@@ -388,7 +390,10 @@ export default function Productos({ onCambiarVista }) {
             ],
           },
         ]}
-        onRowClick={(record) => setProductoSelect(record)}
+        onRowClick={(record) => {
+          setProductoSelect(record);
+          setModalDetalle(true);
+        }}
         selectedRow={productosSelect}
         headerButtons={
           <Space size="middle">
@@ -430,6 +435,14 @@ export default function Productos({ onCambiarVista }) {
         modalEditar={modalEditar}
         handleCerrarModal={handleCerrarModal}
         funcionBuscarProductos={buscarProducto}
+      />
+      <Detalle
+        Producto={productosSelect}
+        modalDetalle={modalDetalle}
+        handleCerrarDetalle={() => {
+          setModalDetalle(false);
+          setProductoSelect(null);
+        }}
       />
     </div>
   );

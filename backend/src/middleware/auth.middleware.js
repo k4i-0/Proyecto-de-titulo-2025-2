@@ -89,7 +89,6 @@ const isVendedor = verifyRole(["Vendedor"]);
 const isAdminOrVendedor = verifyRole(["Administrador", "Vendedor"]);
 module.exports = {
   verifyToken,
-  verifyRole,
   isAdmin,
   isVendedor,
   isAdminOrVendedor,

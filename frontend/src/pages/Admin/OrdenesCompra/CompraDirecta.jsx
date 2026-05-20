@@ -31,6 +31,8 @@ import {
   RedoOutlined,
 } from "@ant-design/icons";
 
+import { useNavigate } from "react-router-dom";
+
 // import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
@@ -42,7 +44,7 @@ import { useAuth } from "../../../context/AuthContext";
 //services
 import { getAllProveedores } from "../../../services/inventario/Proveedor.service";
 import obtenerSucursales from "../../../services/inventario/Sucursal.service";
-import { anularOrdenCompraDirecta } from "../../../services/inventario/CompraProveedor.service";
+// anulación movida a DetalleCompraDirecta
 import obtenerProductos from "../../../services/inventario/Productos.service";
 import {
   crearOrdenCompraDirecta,
@@ -53,10 +55,10 @@ import {
 
 //componentes
 import DateTable from "../../../components/Tabla";
-import { data } from "react-router-dom";
 
 export default function CompraDirecta() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [ordenesDirectasFlag, setOrdenesDirectasFlag] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
@@ -66,7 +68,7 @@ export default function CompraDirecta() {
   const [drawerRecepcionarOCVisible, setDrawerRecepcionarOCVisible] =
     useState(false);
 
-  const [ModalAnularVisible, setModalAnularVisible] = useState(false);
+  
   const [productosRecepcionar, setProductosRecepcionar] = useState([]);
 
   const [loading, setLoading] = useState(false);
@@ -87,7 +89,6 @@ export default function CompraDirecta() {
   const [form] = Form.useForm();
   const [formProducto] = Form.useForm();
   const [formEditar] = Form.useForm();
-  const [formAnular] = Form.useForm();
   const [formRecepcionar] = Form.useForm();
 
   //use effect para obtener ordenes directas
@@ -139,47 +140,6 @@ export default function CompraDirecta() {
     }
   };
 
-  const cargarSucursales = async () => {
-    try {
-      setLoading(true);
-      const response = await obtenerSucursales();
-      if (response.status === 200) {
-        setSucursales(response.data);
-        notification.success({
-          message: "Éxito",
-          description: "Sucursales obtenidas correctamente.",
-          placement: "topLeft",
-        });
-        setLoading(false);
-        return;
-      }
-      if (response.status === 204) {
-        setSucursales([]);
-        notification.info({
-          message: "Información",
-          description: "No hay sucursales registradas.",
-          placement: "topLeft",
-        });
-        setLoading(false);
-        return;
-      }
-      notification.error({
-        message: "Error",
-        description:
-          response.error?.message || "No se pudieron obtener las sucursales.",
-        placement: "topLeft",
-      });
-    } catch (error) {
-      notification.error({
-        message: "Error",
-        description: error.message || "No se pudieron obtener las sucursales.",
-        placement: "topLeft",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const cargarProductos = async () => {
     try {
       setLoading(true);
@@ -223,14 +183,61 @@ export default function CompraDirecta() {
     }
   };
 
+  const cargarSucursales = async () => {
+    try {
+      setLoading(true);
+      const response = await obtenerSucursales();
+      if (response.status === 200) {
+        setSucursales(response.data);
+        notification.success({
+          message: "Éxito",
+          description: "Sucursales obtenidas correctamente.",
+          placement: "topLeft",
+        });
+        setLoading(false);
+        return;
+      }
+      notification.error({
+        message: "Error",
+        description: "No se pudieron obtener las sucursales.",
+        placement: "topLeft",
+      });
+    } catch (error) {
+      notification.error({
+        message: "Error",
+        description: error.message || "No se pudieron obtener las sucursales.",
+        placement: "topLeft",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const accionDrawerAgregarProducto = () => {
+    setDrawerVisible(true);
+    cargarProductos();
+    //form.getFieldValue("rutProveedor")
+  };
+
   const handelCrearOrdenDirecta = () => {
     setOrdenesDirectasFlag(true);
     obtenerProveedores();
     cargarSucursales();
   };
 
+  const cerrarDrawerAgregarProducto = () => {
+    setDrawerVisible(false);
+    formProducto.resetFields();
+  };
+
+  const handleEliminarProducto = (key) => {
+    setProductosOrdenDirecta(
+      productosOrdenDirecta.filter((item) => item.key !== key),
+    );
+    notification.success("Producto eliminado");
+  };
+
   const handleAgregarProducto = () => {
-    //console.log("Agregar Producto:", formProducto.getFieldsValue());
     const productoAgregar = formProducto.getFieldsValue();
 
     if (
@@ -266,7 +273,6 @@ export default function CompraDirecta() {
       subtotal: productoAgregar.cantidad * productoAgregar.precioUnitario,
     };
 
-    //console.log("Nuevo Producto a agregar:", nuevoProducto);
     setProductosOrdenDirecta([...productosOrdenDirecta, nuevoProducto]);
     formProducto.resetFields();
     notification.success({
@@ -275,24 +281,6 @@ export default function CompraDirecta() {
       placement: "topLeft",
     });
     setDrawerVisible(false);
-  };
-
-  const accionDrawerAgregarProducto = () => {
-    setDrawerVisible(true);
-    cargarProductos();
-    //form.getFieldValue("rutProveedor")
-  };
-
-  const cerrarDrawerAgregarProducto = () => {
-    setDrawerVisible(false);
-    formProducto.resetFields();
-  };
-
-  const handleEliminarProducto = (key) => {
-    setProductosOrdenDirecta(
-      productosOrdenDirecta.filter((item) => item.key !== key),
-    );
-    notification.success("Producto eliminado");
   };
 
   const calcularTotal = () => {
@@ -410,34 +398,6 @@ export default function CompraDirecta() {
     }
   };
 
-  const anularOC = async (nombreOrden, datos) => {
-    try {
-      setLoading(true);
-      const response = await anularOrdenCompraDirecta(nombreOrden, datos);
-      if (response.status === 200) {
-        notification.success({
-          message: "Éxito",
-          description: "Orden de compra anulada correctamente.",
-          placement: "topLeft",
-        });
-        buscarOrdenesDirectas();
-        return;
-      }
-      notification.error({
-        message: "Error",
-        description: response?.error || "No se pudo anular la orden de compra.",
-        placement: "topLeft",
-      });
-    } catch (error) {
-      notification.error({
-        message: "Error",
-        description: error.message || "Error al anular la orden de compra.",
-        placement: "topLeft",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const edtitarDetalleOrdenCompra = async (idCompraProveedor, datos) => {
     try {
@@ -484,9 +444,10 @@ export default function CompraDirecta() {
   };
 
   const handleDetalleOC = (OC) => {
-    // console.log("Ver detalles de la orden:", OC);
-    setDetalleOrdenSeleccionada(OC);
-    setDrawerVerOCVisible(true);
+    // Navegar a la página de detalle pasando el objeto de compra en state
+    navigate("/admin/gestion/compra_directa/detalle", {
+      state: { compra: OC },
+    });
   };
 
   const getEstadoColor = (estado) => {
@@ -499,28 +460,6 @@ export default function CompraDirecta() {
     return colores[estado] || "default";
   };
 
-  const openModalAnular = (nombreOrden) => {
-    // console.log("Abrir modal cambiar estado OC:", idCompraProveedor);
-    formAnular.setFieldsValue({ nombreOrden: nombreOrden });
-    setModalAnularVisible(true);
-  };
-
-  const cerrarModalAnular = () => {
-    setModalAnularVisible(false);
-    setDetalleOrdenSeleccionada(null);
-    formAnular.resetFields();
-  };
-
-  const handleAnularOCD = () => {
-    const datos = formAnular.getFieldsValue();
-    //console.log("Cambiar estado OC:", datos);
-    if (datos.observaciones === undefined) {
-      datos.observaciones = "";
-    }
-    anularOC(datos.nombreOrden, datos);
-    buscarOrdenesDirectas();
-    cerrarModalAnular();
-  };
 
   const openDrawerEditarOC = (datos) => {
     console.log("Abrir drawer editar OC:", datos);
@@ -792,6 +731,9 @@ export default function CompraDirecta() {
             key: "detalles",
             align: "center",
             width: 150,
+            onClick: (e) => {
+              e.stopPropagation();
+            },
             render: (_, record) => (
               <Space size="small">
                 <Button
@@ -811,22 +753,13 @@ export default function CompraDirecta() {
                     record.estado === "anulada" || record.estado === "rechazada"
                   }
                 />
-                <Button
+                {/* <Button
                   type="text"
                   onClick={() => handleDetalleOC(record)}
                   icon={<EyeOutlined />}
                   title="Ver detalles"
-                />
-                <Button
-                  type="text"
-                  danger
-                  icon={<CloseCircleOutlined />}
-                  disabled={
-                    record.estado === "anulada" || record.estado === "rechazada"
-                  }
-                  onClick={() => openModalAnular(record.nombreOrden)}
-                  title="Anular orden"
-                />
+                /> */}
+                {/* Anulación movida a la vista de detalle */}
               </Space>
             ),
           },
@@ -836,6 +769,7 @@ export default function CompraDirecta() {
           showSizeChanger: true,
           showTotal: (total) => `Total ${total} órdenes`,
         }}
+        onRowClick={(record) => handleDetalleOC(record)}
       />
 
       {/*Modal para crear orden de compra directa */}
@@ -1370,58 +1304,7 @@ export default function CompraDirecta() {
         )}
       </Drawer>
       {/* Modal para anular de la orden de compra */}
-      <Modal
-        title={
-          <div
-            style={{
-              fontSize: "18px",
-              fontWeight: 600,
-              color: "#ff4d4f",
-            }}
-          >
-            Anulación de Orden de Compra
-          </div>
-        }
-        open={ModalAnularVisible}
-        onCancel={cerrarModalAnular}
-        footer={[
-          <Button key="cancelar" onClick={cerrarModalAnular} size="large">
-            Cancelar
-          </Button>,
-          <Button
-            key="cambiar"
-            type="primary"
-            danger
-            size="large"
-            onClick={() => formAnular.submit()}
-            style={{ borderRadius: "8px" }}
-          >
-            Confirmar Anulación
-          </Button>,
-        ]}
-      >
-        <Form form={formAnular} onFinish={handleAnularOCD} layout="vertical">
-          <Form.Item name="nombreOrden" hidden>
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Motivo de Anulación"
-            name="observaciones"
-            rules={[
-              {
-                required: true,
-                message: "Agregue motivo sobre la anulación",
-              },
-            ]}
-          >
-            <Input.TextArea
-              rows={4}
-              placeholder="Agregue motivo sobre la anulación"
-              style={{ borderRadius: "8px" }}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
+      {/* Anulación movida a DetalleCompraDirecta */}
       {/*Drawer editar */}
       <Drawer
         title="Editar Orden de Compra Directa"
@@ -1743,17 +1626,7 @@ export default function CompraDirecta() {
                           icon={<EyeOutlined />}
                           title="Ver detalles"
                         />
-                        <Button
-                          type="text"
-                          danger
-                          icon={<CloseCircleOutlined />}
-                          disabled={
-                            record.estado === "anulada" ||
-                            record.estado === "rechazada"
-                          }
-                          onClick={() => openModalAnular(record.nombreOrden)}
-                          title="Anular orden"
-                        />
+                        {/* Anulación movida a la vista de detalle 
                       </Space>
                     ),
                   },

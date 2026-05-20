@@ -208,6 +208,27 @@ export async function obtenerOrdenesCompraVendedor() {
   }
 }
 
+export async function obtenerOrdenCompraVendedorPorNombreOrden(nombreOrden) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/vendedor/orden/${nombreOrden}/ver-orden`,
+      {
+        withCredentials: true,
+      },
+    );
+    return response;
+  } catch (error) {
+    console.log(
+      "Error al obtener la orden de compra del vendedor por nombre de orden:",
+      error,
+    );
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response.data;
+  }
+}
+
 export async function crearOrdenCompraVendedor(ordenData) {
   try {
     const response = await axios.post(`${API_URL}/vendedor/orden`, ordenData, {
