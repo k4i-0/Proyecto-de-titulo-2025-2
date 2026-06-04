@@ -68,7 +68,6 @@ export default function CompraDirecta() {
   const [drawerRecepcionarOCVisible, setDrawerRecepcionarOCVisible] =
     useState(false);
 
-  
   const [productosRecepcionar, setProductosRecepcionar] = useState([]);
 
   const [loading, setLoading] = useState(false);
@@ -398,7 +397,6 @@ export default function CompraDirecta() {
     }
   };
 
-
   const edtitarDetalleOrdenCompra = async (idCompraProveedor, datos) => {
     try {
       setLoading(true);
@@ -460,13 +458,12 @@ export default function CompraDirecta() {
     return colores[estado] || "default";
   };
 
-
-  const openDrawerEditarOC = (datos) => {
-    console.log("Abrir drawer editar OC:", datos);
-    setDetalleOrdenSeleccionada(datos);
-    setProductosEditables(datos.compraproveedordetalles);
-    setDrawerEditarOCVisible(true);
-  };
+  // const openDrawerEditarOC = (datos) => {
+  //   console.log("Abrir drawer editar OC:", datos);
+  //   setDetalleOrdenSeleccionada(datos);
+  //   setProductosEditables(datos.compraproveedordetalles);
+  //   setDrawerEditarOCVisible(true);
+  // };
 
   const handleGuardarEdicion = (values) => {
     const datosActualizar = {
@@ -500,21 +497,21 @@ export default function CompraDirecta() {
     setProductosEditables(nuevosProductos);
   };
 
-  const handleRecepcionarOCDirecta = (record) => {
-    // Inicializar tabla con los productos de la OC
-    const prods = (record.compraproveedordetalles || []).map((d) => ({
-      idProducto: d.producto?.idProducto,
-      nombreProducto: d.producto?.nombre,
-      cantidad: d.cantidad,
-      cantidadRecibida: d.cantidad,
-      cantidadRechazada: 0,
-      fechaVencimiento: null,
-      observaciones: "",
-    }));
-    setProductosRecepcionar(prods);
-    setDetalleOrdenSeleccionadaRecepcionar(record);
-    setDrawerRecepcionarOCVisible(true);
-  };
+  // const handleRecepcionarOCDirecta = (record) => {
+  //   // Inicializar tabla con los productos de la OC
+  //   const prods = (record.compraproveedordetalles || []).map((d) => ({
+  //     idProducto: d.producto?.idProducto,
+  //     nombreProducto: d.producto?.nombre,
+  //     cantidad: d.cantidad,
+  //     cantidadRecibida: d.cantidad,
+  //     cantidadRechazada: 0,
+  //     fechaVencimiento: null,
+  //     observaciones: "",
+  //   }));
+  //   setProductosRecepcionar(prods);
+  //   setDetalleOrdenSeleccionadaRecepcionar(record);
+  //   setDrawerRecepcionarOCVisible(true);
+  // };
 
   const handleCantidadRecibidaChange = (index, value) => {
     const nuevos = [...productosRecepcionar];
@@ -726,43 +723,43 @@ export default function CompraDirecta() {
             dataIndex: ["creaOrdenCompra", "vendedor", "nombre"],
             key: "funcionario",
           },
-          {
-            title: "Acciones",
-            key: "detalles",
-            align: "center",
-            width: 150,
-            onClick: (e) => {
-              e.stopPropagation();
-            },
-            render: (_, record) => (
-              <Space size="small">
-                <Button
-                  type="text"
-                  icon={<InboxOutlined />}
-                  onClick={() => handleRecepcionarOCDirecta(record)}
-                  title="Recepcionar orden"
-                  disabled={record.estado !== "pendiente recibir"}
-                />
+          // {
+          //   title: "Acciones",
+          //   key: "detalles",
+          //   align: "center",
+          //   width: 150,
+          //   onClick: (e) => {
+          //     e.stopPropagation();
+          //   },
+          //   render: (_, record) => (
+          //     <Space size="small">
+          //       <Button
+          //         type="text"
+          //         icon={<InboxOutlined />}
+          //         onClick={() => handleRecepcionarOCDirecta(record)}
+          //         title="Recepcionar orden"
+          //         disabled={record.estado !== "pendiente recibir"}
+          //       />
 
-                <Button
-                  type="text"
-                  icon={<EditOutlined />}
-                  onClick={() => openDrawerEditarOC(record)}
-                  title="Editar orden"
-                  disabled={
-                    record.estado === "anulada" || record.estado === "rechazada"
-                  }
-                />
-                {/* <Button
-                  type="text"
-                  onClick={() => handleDetalleOC(record)}
-                  icon={<EyeOutlined />}
-                  title="Ver detalles"
-                /> */}
-                {/* Anulación movida a la vista de detalle */}
-              </Space>
-            ),
-          },
+          //       <Button
+          //         type="text"
+          //         icon={<EditOutlined />}
+          //         onClick={() => openDrawerEditarOC(record)}
+          //         title="Editar orden"
+          //         disabled={
+          //           record.estado === "anulada" || record.estado === "rechazada"
+          //         }
+          //       />
+          //       {/* <Button
+          //         type="text"
+          //         onClick={() => handleDetalleOC(record)}
+          //         icon={<EyeOutlined />}
+          //         title="Ver detalles"
+          //       /> */}
+          //       {/* Anulación movida a la vista de detalle */}
+          //     </Space>
+          //   ),
+          // },
         ]}
         pagination={{
           pageSize: 10,

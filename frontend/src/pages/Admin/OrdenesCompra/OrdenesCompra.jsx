@@ -20,6 +20,7 @@ import {
 
 import DataTable from "../../../components/Tabla.jsx";
 import ModalNuevaOrdenCompra from "../../../components/ModalNuevaOrdenCompra.jsx";
+import ModalRecepcionDespachos from "../../../components/ModalRecepcionDespachos.jsx";
 import {
   obtenerOrdenesCompraAdmin,
   anularOrdenCompraAdmin,
@@ -27,6 +28,7 @@ import {
   modificarOrdenCompraAdmin,
   eliminarOrdenCompraAdmin,
   crearOrdenCompraVendedor,
+  crearOrdenCompraSucursalVendedor,
 } from "../../../services/inventario/CompraProveedor.service.js";
 import {
   getAllProveedores,
@@ -34,6 +36,7 @@ import {
 } from "../../../services/inventario/Proveedor.service.js";
 import obtenerProductos from "../../../services/inventario/Productos.service.js";
 import { obtenerQuienSoy } from "../../../services/usuario/funcionario.service.js";
+import { obtenerBodegasPorSucursal } from "../../../services/inventario/Bodega.service.js";
 
 import obtenerSucursales from "../../../services/inventario/Sucursal.service.js";
 
@@ -56,8 +59,13 @@ export default function OrdenesCompra() {
   const [proveedores, setProveedores] = useState([]);
   const [productos, setProductos] = useState([]);
   const [sucursales, setSucursales] = useState([]);
+  const [bodegas, setBodegas] = useState([]);
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState(null);
   const [vendedorSeleccionado, setVendedorSeleccionado] = useState(null);
+  const [ordenRecepcionSeleccionada, setOrdenRecepcionSeleccionada] =
+    useState(null);
+  const [modalRecepcionAbierto, setModalRecepcionAbierto] = useState(false);
+  const [modalRecepcionLoading, setModalRecepcionLoading] = useState(false);
   const [
     productosSeleccionadosOrdenCompra,
     setProductosSeleccionadosOrdenCompra,
@@ -68,6 +76,8 @@ export default function OrdenesCompra() {
   // Formularios
   const [formOrdenCompra] = Form.useForm();
   const [formSeleccionarProducto] = Form.useForm();
+  const [formRecepcion] = Form.useForm();
+  const idSucursalSeleccionada = Form.useWatch("idSucursal", formRecepcion);
 
   const ordenesTabla = ordenes.map((orden) => ({
     ...orden,
@@ -383,6 +393,172 @@ export default function OrdenesCompra() {
     //console.log("Modificar orden:", orden);
     abrirDrawerEdicion(orden);
   };
+
+  const buscarBodegasParaRecepcion = async (idSucursal) => {
+    try {
+      const respuesta = await obtenerBodegasPorSucursal(idSucursal);
+      if (respuesta.status === 200) {
+        setBodegas(Array.isArray(respuesta.data) ? respuesta.data : []);
+        return;
+      }
+
+      setBodegas([]);
+      notification.error({
+        message: respuesta.error || "Error al obtener las bodegas",
+      });
+    } catch (error) {
+      console.log("Error al obtener las bodegas para recepción:", error);
+      setBodegas([]);
+      notification.error({
+        message: "Error al obtener las bodegas",
+      });
+    }
+  };
+
+  const adaptarOrdenParaRecepcion = (orden) => ({
+    idProveedor:
+      orden?.creaOrdenCompra?.idProveedor ||
+      orden?.creaOrdenCompra?.proveedor?.idProveedor ||
+      orden?.idProveedor,
+    proveedor: orden?.creaOrdenCompra?.proveedor || null,
+    vendedor: orden?.creaOrdenCompra?.vendedor || null,
+    sucursal: orden?.creaOrdenCompra?.sucursal || null,
+    ordencompra: {
+      ...orden,
+      despachos: Array.isArray(orden?.despachos) ? orden.despachos : [],
+    },
+  });
+
+  const handleCerrarRecepcion = () => {
+    setModalRecepcionAbierto(false);
+    setOrdenRecepcionSeleccionada(null);
+    setBodegas([]);
+    formRecepcion.resetFields();
+  };
+
+  const handleConfirmarRecepcion = async (values) => {
+    setModalRecepcionLoading(true);
+
+    const payloadRecepcion = {
+      idOrdenCompra: ordenRecepcionSeleccionada?.ordencompra?.idOrdenCompra,
+      idProveedor: ordenRecepcionSeleccionada?.idProveedor,
+      tipoDocumento: values.tipoDocumento,
+      tipoDespacho: values.tipoDespacho,
+      numeroDocumento: values.numeroDocumento,
+      repartidor: values.repartidor,
+      observaciones: values.observacionesRecepcion,
+      idSucursal: values.idSucursal,
+      idBodega: values.idBodega,
+      productos: (values.detalles || []).map((detalle) => ({
+        idProducto: detalle.idProducto,
+        productoCodigo: detalle.productoCodigo,
+        cantidadSolicitada: Number(detalle.cantidadSolicitada) || 0,
+        cantidadRecibida: Number(detalle.cantidadRecibida) || 0,
+        cantidadRechazada: Number(detalle.cantidadRechazada) || 0,
+      })),
+    };
+
+    try {
+      const respuesta = await crearOrdenCompraSucursalVendedor(payloadRecepcion);
+      if (respuesta.status === 200) {
+        notification.success({
+          message: "Recepción registrada",
+          description: "La recepción del despacho fue preparada correctamente.",
+        });
+
+        handleCerrarRecepcion();
+        cerrarModalDetalle();
+        buscarOrdenesCompra();
+        return;
+      }
+
+      notification.error({
+        message: "Error",
+        description:
+          respuesta.error || "Error al registrar la recepción del despacho",
+      });
+    } catch (error) {
+      console.error("Error al registrar la recepción del despacho:", error);
+      notification.error({
+        message: "Error",
+        description: "Error al registrar la recepción del despacho",
+      });
+    } finally {
+      setModalRecepcionLoading(false);
+    }
+  };
+
+  const handleAbrirModalRecepcion = async (orden) => {
+    if (!orden) return;
+
+    if (!sucursales.length) {
+      await buscarSucursales();
+    }
+
+    const ordenAdaptada = adaptarOrdenParaRecepcion(orden);
+    const despachos = ordenAdaptada?.ordencompra?.despachos || [];
+
+    const detallesIniciales =
+      ordenAdaptada?.ordencompra?.compraproveedordetalles?.map(
+        (detalle, index) => {
+          const detalleDespachoPorProducto = despachos.reduce(
+            (acumulador, despacho) => {
+              const detalleDespacho = despacho?.detalledespachos?.[index];
+
+              if (!detalleDespacho) return acumulador;
+
+              return {
+                cantidadRecibida:
+                  acumulador.cantidadRecibida +
+                  (Number(
+                    detalleDespacho.cantidadRecibida ?? detalleDespacho.cantidad,
+                  ) || 0),
+                cantidadRechazada:
+                  acumulador.cantidadRechazada +
+                  (Number(detalleDespacho.cantidadRechazada) || 0),
+              };
+            },
+            { cantidadRecibida: 0, cantidadRechazada: 0 },
+          );
+
+          return {
+            idProducto: detalle?.producto?.idProducto,
+            productoNombre: detalle?.producto?.nombre || "",
+            productoCodigo:
+              detalle?.producto?.codigo || detalle?.producto?.codigoProducto || "",
+            cantidadSolicitada: Number(detalle?.cantidad) || 0,
+            cantidadRecibida: detalleDespachoPorProducto.cantidadRecibida,
+            cantidadRechazada: detalleDespachoPorProducto.cantidadRechazada,
+          };
+        },
+      ) || [];
+
+    setOrdenRecepcionSeleccionada(ordenAdaptada);
+    formRecepcion.resetFields();
+    formRecepcion.setFieldsValue({
+      tipoDocumento: undefined,
+      tipoDespacho: undefined,
+      numeroDocumento: "",
+      repartidor: "",
+      idSucursal: ordenAdaptada?.sucursal?.idSucursal,
+      idBodega: undefined,
+      observacionesRecepcion: "",
+      detalles: detallesIniciales,
+    });
+
+    setModalRecepcionAbierto(true);
+  };
+
+  useEffect(() => {
+    if (!modalRecepcionAbierto) return;
+
+    if (!idSucursalSeleccionada) {
+      setBodegas([]);
+      return;
+    }
+
+    buscarBodegasParaRecepcion(idSucursalSeleccionada);
+  }, [idSucursalSeleccionada, modalRecepcionAbierto]);
 
   const eliminarOrdenCompra = async (nombreOrden) => {
     try {
@@ -935,7 +1111,7 @@ export default function OrdenesCompra() {
               color="blue"
               variant="solid"
               disabled={modalDetalle.orden?.estado !== "pendiente recibir"}
-              onClick={() => handleModificarOrden(modalDetalle.orden)}
+              onClick={() => handleAbrirModalRecepcion(modalDetalle.orden)}
             >
               Recepcionar
             </Button>
@@ -1243,6 +1419,17 @@ export default function OrdenesCompra() {
       </Drawer>
 
       {/* modificar orden compra */}
+
+      <ModalRecepcionDespachos
+        open={modalRecepcionAbierto}
+        onCancel={handleCerrarRecepcion}
+        ordenSeleccionada={ordenRecepcionSeleccionada}
+        sucursales={sucursales}
+        bodegas={bodegas}
+        form={formRecepcion}
+        onFinish={handleConfirmarRecepcion}
+        loading={modalRecepcionLoading}
+      />
 
       {/* Modal Nueva Orden de Compra */}
       <ModalNuevaOrdenCompra

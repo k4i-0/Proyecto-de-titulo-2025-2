@@ -8,16 +8,13 @@ const descuento = sequelize.define(
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
+      autoIncrement: true,
     },
-    nombre: {
-      type: DataTypes.STRING(100),
+    montoDescuento: {
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    monto: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    fechaCreacion: {
+    fechaInicio: {
       type: DataTypes.DATE,
       allowNull: false,
     },
@@ -29,15 +26,20 @@ const descuento = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true,
     },
-    porcentaje: {
-      type: DataTypes.INTEGER,
+    porcentajeDescuento: {
+      type: DataTypes.DECIMAL(5, 2),
       allowNull: true,
+    },
+    estadoDescuento: {
+      type: DataTypes.ENUM("Activo", "Inactivo"),
+      allowNull: false,
+      defaultValue: "Activo",
     },
   },
   {
     tableName: "descuentos",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = descuento;

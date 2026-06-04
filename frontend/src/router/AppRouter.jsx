@@ -6,6 +6,7 @@ import NoEncontrado from "../pages/Compartidas/NoEncontrado.jsx";
 import AdminRouter from "./AdminRouter.jsx";
 import VendedorRouter from "./VendedorRouter.jsx";
 import CajeroRouter from "./CajeroRouter.jsx";
+import CajaRouter from "./CajaRouter.jsx";
 import ProtectedRoute from "../context/ProteccionRutas.jsx";
 
 import Cookies from "js-cookie";
@@ -41,6 +42,15 @@ const AppRouter = () => {
         element={
           <ProtectedRoute allowedRoles={["Cajero"]}>
             <CajeroRouter />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/cajas*"
+        element={
+          <ProtectedRoute allowedRoles={["Cajero", "Administrador"]}>
+            <CajaRouter />
           </ProtectedRoute>
         }
       />

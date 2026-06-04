@@ -182,3 +182,38 @@ export async function cambiarTipoContratoFuncionario(datos) {
     return error.response?.data;
   }
 }
+
+export async function reasignarSucursalFuncionario(datos) {
+  try {
+    const response = await axios.post(`${API_URL}/reasignar-sucursal`, datos, {
+      withCredentials: true,
+    });
+    return response;
+  } catch (error) {
+    console.error(
+      "Error al reasignar la sucursal del funcionario:",
+      error.response?.data?.error,
+    );
+    return error.response?.data;
+  }
+}
+
+export const obtenerHistorialContratosDelFuncionario = async (
+  idFuncionario,
+) => {
+  try {
+    const response = await axios.get(`${API_URL}/historial/${idFuncionario}`, {
+      withCredentials: true,
+    });
+    console.log("Historial de contratos del funcionario obtenido:", response);
+    return response;
+  } catch (error) {
+    console.error(
+      "Error al obtener historial de contratos del funcionario:",
+      error.response?.data?.error,
+    );
+    return error.response?.data;
+  }
+};
+
+//busqueda de todos los funcionarios por sucursal, sin importar si tienen contrato o no

@@ -27,7 +27,7 @@ async function crearDetalleOC(productos, idOrdenCompra, transaction) {
 
       const nuevaCompraProveedorDetalle = await CompraProveedorDetalle.create(
         {
-          idOrdenCompra: idOrdenCompra,
+          idOrdenCompra: Number(idOrdenCompra),
           nombreProducto: comprobarProducto.nombre,
           idProducto: idProducto,
           cantidad: cantidad,
@@ -63,11 +63,13 @@ async function modificarDetalleOCAdminSucursal(
   nombreOrden,
   productos,
   observaciones,
+  transaction,
 ) {
   try {
     //encontrar la orden de compra por nombre
     const ordenCompra = await OrdenCompra.findOne({
       where: { nombreOrden: nombreOrden },
+      transaction,
     });
 
     if (!ordenCompra) {
@@ -76,6 +78,7 @@ async function modificarDetalleOCAdminSucursal(
     //encontrar los detalles de la orden de compra
     const detalles = await CompraProveedorDetalle.findAll({
       where: { idOrdenCompra: ordenCompra.idOrdenCompra },
+      transaction,
     });
     if (!detalles || detalles.length === 0) {
       return {
@@ -88,6 +91,7 @@ async function modificarDetalleOCAdminSucursal(
     //Buscar todos las filas asociadas a idOrdenCompra
     const detallesOrdenCompra = await CompraProveedorDetalle.findAll({
       where: { idOrdenCompra: ordenCompra.idOrdenCompra },
+      transaction,
     });
     for (const i in detallesOrdenCompra) {
       const detalle = detallesOrdenCompra[i];
@@ -97,21 +101,25 @@ async function modificarDetalleOCAdminSucursal(
       if (productoModificado) {
         const { cantidad, precioUnitario, eliminado } = productoModificado;
         if (eliminado) {
-          await detalle.destroy();
+          await detalle.destroy({ transaction });
           continue;
         }
         const totalProducto = cantidad * precioUnitario;
-        await detalle.update({
-          cantidad: cantidad,
-          precioUnitario: precioUnitario,
-          subtotal: totalProducto,
-        });
+        await detalle.update(
+          {
+            cantidad: cantidad,
+            precioUnitario: precioUnitario,
+            subtotal: totalProducto,
+          },
+          { transaction },
+        );
       }
     }
 
     //Calcular el total de la orden de compra sumando los totales de cada detalle
     const detallesActualizados = await CompraProveedorDetalle.findAll({
       where: { idOrdenCompra: ordenCompra.idOrdenCompra },
+      transaction,
     });
     let totalOrdenCompra = 0;
 
@@ -121,11 +129,14 @@ async function modificarDetalleOCAdminSucursal(
       totalOrdenCompra += valorASumar;
     }
 
-    await ordenCompra.update({
-      total: totalOrdenCompra,
-      estado: "aceptada con modificaciones",
-      detalleEstado: observaciones,
-    });
+    await ordenCompra.update(
+      {
+        total: totalOrdenCompra,
+        estado: "aceptada con modificaciones",
+        detalleEstado: observaciones,
+      },
+      { transaction },
+    );
 
     return {
       code: 200,

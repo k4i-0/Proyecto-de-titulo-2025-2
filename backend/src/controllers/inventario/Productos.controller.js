@@ -1,17 +1,21 @@
-const { where, Op, json } = require("sequelize");
+const { Op } = require("sequelize");
 const Producto = require("../../models/inventario/Productos");
 const Categoria = require("../../models/inventario/Categoria");
 const Lote = require("../../models/inventario/Lote");
 const Inventario = require("../../models/inventario/Inventario");
 const Provee = require("../../models/inventario/Provee");
 const Proveedor = require("../../models/inventario/Proveedor");
+const Sucursal = require("../../models/inventario/Sucursal");
+const DescuentoSobre = require("../../models/ventas/DescuentoSobre");
 
 //bitacora
 const { crearBitacora } = require("../../services/bitacora.service");
 const jwt = require("jsonwebtoken");
+const { default: Bodega } = require("../../models/inventario/Bodega");
 
 // Crear un nuevo producto
 exports.createProducto = async (req, res) => {
+  const t = await Producto.sequelize.transaction();
   try {
     const {
       codigo,
@@ -31,39 +35,49 @@ exports.createProducto = async (req, res) => {
       !peso ||
       !nameCategoria
     ) {
+      await t.rollback();
       return res.status(422).json({ error: "Faltan datos obligatorios" });
     }
     if (!req.cookies.token) {
+      await t.rollback();
       res.status(401).json({ error: "No autenticado" });
     }
     //Validacion de datos con Joi
-    const categoriaExistente = await Categoria.findAll({
-      where: { nombreCategoria: nameCategoria },
-    });
+    const categoriaExistente = await Categoria.findAll(
+      {
+        where: { nombreCategoria: nameCategoria },
+      },
+      { transaction: t },
+    );
     //console.log(categoriaExistente[0].dataValues.idCategoria);
     if (!categoriaExistente) {
+      await t.rollback();
       res.status(301).send(categoriaExistente);
     }
 
-    const nuevoProducto = await Producto.create({
-      codigo,
-      nombre,
-      marca,
-      estado: "Activo",
-      peso,
-      fechaCreacion: new Date(),
-      descripcion,
-      idCategoria: categoriaExistente[0].dataValues.idCategoria,
-      precioVenta,
-    });
+    const nuevoProducto = await Producto.create(
+      {
+        codigo,
+        nombre,
+        marca,
+        estado: "Activo",
+        peso,
+        fechaCreacion: new Date(),
+        descripcion,
+        idCategoria: categoriaExistente[0].dataValues.idCategoria,
+        precioVenta,
+      },
+      { transaction: t },
+    );
     if (!nuevoProducto) {
+      await t.rollback();
       res.status(500).json({ error: "Error al crear el producto" });
     }
-
+    await t.commit();
     res.status(201).json(nuevoProducto);
   } catch (error) {
+    await t.rollback();
     console.error("Error al crear el producto:", error);
-
     res.status(500).json({ error: "Error al crear el producto" });
   }
 };
@@ -73,11 +87,6 @@ exports.createProducto = async (req, res) => {
 exports.getAllProductos = async (req, res) => {
   try {
     const productos = await Producto.findAll({
-      // where: {
-      //   estado: {
-      //     [Op.ne]: "eliminado",
-      //   },
-      // },
       include: [{ model: Categoria }],
     });
     // console.log(productos);

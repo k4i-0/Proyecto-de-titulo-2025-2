@@ -264,7 +264,13 @@ exports.ingresoManualProductos = async (req, res) => {
           error: `Bodega con ID ${idBodega} no encontrada`,
         });
       }
-      if (bodega.idSucursal !== idSucursal) {
+      console.log(
+        "Datos bodega:",
+        typeof bodega.idSucursal,
+        "Datos sucursal:",
+        typeof idSucursal,
+      );
+      if (Number(bodega.idSucursal) !== Number(idSucursal)) {
         console.log(
           `La bodega con ID ${idBodega} no pertenece a la sucursal con ID ${idSucursal}`,
         );
@@ -324,3 +330,5 @@ exports.ingresoManualProductos = async (req, res) => {
     res.status(500).json({ error: "Error al ingresar productos manualmente" });
   }
 };
+
+//stock reservado

@@ -10,17 +10,20 @@ const caja = sequelize.define(
       unique: true,
       autoIncrement: true,
     },
-    fechaApertura: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    fechaCierre: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    fondoInicial: {
+    //CODIGO INTERNO EJ CAJA 56 PARA IDENTIFICARLA EN EL SISTEMA, NO ES EL ID DE LA BASE DE DATOS
+    numeroCaja: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      unique: true,
+    },
+    //codigo asocidado al navegador que identifica la caja numero X, codigo UUID
+    computadorID: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      unique: true,
+      validate: {
+        isUUID: 4,
+      },
     },
     montoCajaEfectivo: {
       type: DataTypes.INTEGER,
@@ -35,7 +38,7 @@ const caja = sequelize.define(
       allowNull: true,
     },
     idPC: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false,
       unique: true,
     },
@@ -49,8 +52,13 @@ const caja = sequelize.define(
       defaultValue: "Operativo",
     },
     idPOS: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
+    },
+    idMercadoPagoPOS: {
+      type: DataTypes.STRING,
+      allowNull: true,
       unique: true,
     },
     tipoMaquinaPOS: {
@@ -76,10 +84,6 @@ const caja = sequelize.define(
       allowNull: false,
       defaultValue: "Abierta",
     },
-    montoArqueo: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    },
     // idProveedor: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,
@@ -104,7 +108,7 @@ const caja = sequelize.define(
   {
     tableName: "caja",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = caja;

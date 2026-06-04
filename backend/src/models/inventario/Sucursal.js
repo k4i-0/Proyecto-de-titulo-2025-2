@@ -9,6 +9,11 @@ const sucursal = sequelize.define(
       primaryKey: true,
       unique: true,
     },
+    idMercadoPago: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
     nombre: {
       type: DataTypes.STRING(100),
       allowNull: false,

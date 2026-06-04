@@ -74,11 +74,20 @@ export default function ModalIngresoManualProductos({
         <Row gutter={[16, 16]}>
           <Col span={12}>
             <Form.Item label="Producto" name="producto">
-              <Select placeholder="Selecciona un producto" allowClear>
+              <Select
+                placeholder="Selecciona un producto"
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                filterOption={(input, option) =>
+                  (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                }
+              >
                 {productos.map((producto) => (
                   <Select.Option
                     key={producto.idProducto}
                     value={producto.idProducto}
+                    label={`${producto.codigo} - ${producto.nombre} (${producto.marca})`}
                   >
                     {`${producto.codigo} - ${producto.nombre} (${producto.marca})`}
                   </Select.Option>

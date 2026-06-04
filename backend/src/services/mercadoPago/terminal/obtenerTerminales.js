@@ -1,32 +1,32 @@
-
 /**
- * 
+ *
  * @param {string} store_id - ID de la tienda de mercado pago
  * @param {string} pos_id - ID del punto de venta de mercado pago
- * @returns 
+ * @returns
  */
-async function obtenerTerminales(store_id,pos_id) {
-    let url = "https://api.mercadopago.com/terminals/v1/list/list?limit=50&offset=1"
-    try {
-        if(store_id && pos_id){
-            url = `${url}&store_id=${store_id}&pos_id=${pos_id}`;
-        }else if(store_id){
-            url = `${url}&store_id=${store_id}`;
-        }else if(pos_id){
-            url = `${url}?pos_id=${pos_id}`;
-        }
-        const consulta = await fetch(url, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${process.env.ACCESS_TOKEN_MP}`,
-                "Content-Type": "application/json"
-            }
-        });
-        const data = await consulta.json();
-        return data;
-    } catch (error) {
-        console.log(error);
+async function obtenerTerminales(store_id, pos_id) {
+  let url =
+    "https://api.mercadopago.com/terminals/v1/list/list?limit=50&offset=1";
+  try {
+    if (store_id && pos_id) {
+      url = `${url}&store_id=${store_id}&pos_id=${pos_id}`;
+    } else if (store_id) {
+      url = `${url}&store_id=${store_id}`;
+    } else if (pos_id) {
+      url = `${url}?pos_id=${pos_id}`;
     }
+    const consulta = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await consulta.json();
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 /**
@@ -39,5 +39,5 @@ async function obtenerTerminales(store_id,pos_id) {
  */
 
 module.exports = {
-    obtenerTerminales
-}
+  obtenerTerminales,
+};

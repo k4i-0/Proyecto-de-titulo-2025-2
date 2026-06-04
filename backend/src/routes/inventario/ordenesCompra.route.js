@@ -14,6 +14,11 @@ router.get(
 );
 
 router.put(
+  "/ocdirecta/:nombreOrden/editar",
+  compraProveedorController.editarOrdenCompraDirecta,
+);
+
+router.put(
   "/ocdirecta/:nombreOrden/anular",
   compraProveedorController.anularOrdenCompraDirecta,
 );

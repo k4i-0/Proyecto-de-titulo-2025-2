@@ -5,7 +5,7 @@ import {
   Button,
   Form,
   Modal,
-  Alert,
+  notification,
   Input,
   Select,
   InputNumber,
@@ -22,55 +22,56 @@ export default function Agregar({
   funcionBuscarProductos,
 }) {
   const [form] = Form.useForm();
-  const [mensaje, setMensaje] = useState("");
-  const [error, setError] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [sinCategorias, setSinCategorias] = useState(false);
 
   useEffect(() => {
     if (categorias.length === 0) {
-      setMensaje(
-        "No existe Categoría, debe crear una antes de agregar productos",
-      );
+      notification.error({
+        message: "No existe Categoría",
+        description: "Debe crear una antes de agregar productos",
+        key: "sinCategorias",
+      });
       setSinCategorias(true);
-      setError(true);
     } else {
-      setMensaje("");
+      notification.destroy("sinCategorias");
       setSinCategorias(false);
-      setError(false);
     }
   }, [categorias]);
 
   const handleSubmit = async (values) => {
     setLoading(true);
-    setError(false);
-    setMensaje("");
 
     try {
       const resultado = await crearProducto(values);
 
       if (resultado.status === 201) {
-        setMensaje("Producto creado exitosamente");
-        setError(false);
+        notification.success({
+          message: "Producto creado exitosamente",
+        });
         setTimeout(() => {
           funcionBuscarProductos();
           form.resetFields();
           handleCerrarModal();
-          setMensaje("");
         }, 1200);
       } else {
-        setError(true);
-        setMensaje(
+        const msg =
           resultado.data?.message ||
-            resultado.error ||
-            "Error al crear el producto",
-        );
+          resultado.error ||
+          "Error al crear el producto";
+        notification.error({
+          message: "Error al crear el producto",
+          description: msg,
+        });
       }
     } catch (err) {
-      setError(true);
-      setMensaje(
-        err.response?.data?.message || "Error de conexión al crear el producto",
-      );
+      const errMsg =
+        err.response?.data?.message || "Error de conexión al crear el producto";
+      notification.error({
+        message: "Error al crear el producto",
+        description: errMsg,
+      });
       console.error(err);
     } finally {
       setLoading(false);
@@ -78,8 +79,6 @@ export default function Agregar({
   };
 
   const handleCerrar = () => {
-    setMensaje("");
-    setError(false);
     form.resetFields();
     handleCerrarModal();
   };
@@ -105,27 +104,7 @@ export default function Agregar({
       ]}
       width={800}
     >
-      {sinCategorias && (
-        <Alert
-          message="No hay categorías disponibles"
-          description={mensaje}
-          type="error"
-          showIcon
-          icon={<WarningOutlined />}
-          style={{ marginBottom: 16 }}
-        />
-      )}
-
-      {mensaje && !sinCategorias && (
-        <Alert
-          message={mensaje}
-          type={error ? "error" : "success"}
-          showIcon
-          closable
-          onClose={() => setMensaje("")}
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      {/* sinCategorias se muestra via notification */}
 
       <Form
         form={form}
@@ -141,14 +120,18 @@ export default function Agregar({
               name="codigo"
               rules={[
                 { required: true, message: "Por favor ingrese el código" },
+                {
+                  pattern: /^(?:\d{8}|\d{12}|\d{13})$/,
+                  message:
+                    "Ingrese un código EAN/UPC válido (8, 12 o 13 dígitos)",
+                },
               ]}
             >
-              <InputNumber
-                placeholder="Ingrese código del producto"
-                style={{ width: "100%" }}
-                precision={0}
-                min={0}
-                controls={false}
+              <Input
+                placeholder="Ingrese código EAN/UPC (8, 12 o 13 dígitos)"
+                maxLength={13}
+                inputMode="numeric"
+                pattern="\\d*"
               />
             </Form.Item>
           </Col>
@@ -214,9 +197,12 @@ export default function Agregar({
                 placeholder="2000"
                 style={{ width: "100%" }}
                 min={0}
-                step={0.1}
+                step={0}
                 precision={1}
-                suffix="$"
+                formatter={(value) =>
+                  `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+                }
+                parser={(value) => value.replace(/\$\s?|\./g, "")}
               />
             </Form.Item>
           </Col>

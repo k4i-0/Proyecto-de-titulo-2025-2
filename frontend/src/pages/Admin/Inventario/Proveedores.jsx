@@ -374,21 +374,14 @@ export default function Proveedor() {
     formEditar.resetFields();
   };
 
-  const handleAbrirVendedores = () => {
-    buscarVendedoresSucursal(proveedorSeleccionado.rut);
-    setVerDrawerVendedores(true);
-  };
-
   const handleCrearProveedor = () => {
     setVerModalCrear(true);
   };
 
-  const handleSeleccionarProveedor = (proveedor) => {
-    if (proveedorSeleccionado?.idProveedor === proveedor.idProveedor) {
-      setProveedorSeleccionado(null);
-    } else {
-      setProveedorSeleccionado(proveedor);
-    }
+  const handleAbrirVendedores = (proveedor) => {
+    setProveedorSeleccionado(proveedor);
+    buscarVendedoresSucursal(proveedor.rut);
+    setVerDrawerVendedores(true);
   };
 
   const showChildrenDrawer = () => {
@@ -489,10 +482,6 @@ export default function Proveedor() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDrawerEnlazar = () => {
-    setOpenDrawerEnlazar(true);
   };
 
   const handleDrawerEnlazarTabla = () => {
@@ -633,10 +622,12 @@ export default function Proveedor() {
       setLoading(false);
     }
   };
+
   const openDrawerProveedor = (idProveedor) => {
     buscarDetalleProductoProveedor(idProveedor);
     setDrawerDetalleProveedorVisible(true);
   };
+
   const cerrarDrawerProveedor = () => {
     setDrawerDetalleProveedorVisible(false);
     setProveedorDetalle(null);
@@ -754,11 +745,11 @@ export default function Proveedor() {
     {
       title: "Acciones",
       key: "acciones",
-      width: "10%",
+      width: "12%",
       align: "center",
       render: (_, record) => (
         <Space size="small">
-          <Button
+          {/* <Button
             type="text"
             size="small"
             icon={<EyeOutlined />}
@@ -766,7 +757,7 @@ export default function Proveedor() {
               e.stopPropagation();
               openDrawerProveedor(record.idProveedor);
             }}
-          />
+          /> */}
           <Button
             type="text"
             size="small"
@@ -774,6 +765,15 @@ export default function Proveedor() {
             onClick={(e) => {
               e.stopPropagation();
               handleEditarProveedor(record);
+            }}
+          />
+          <Button
+            type="text"
+            size="small"
+            icon={<TeamOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAbrirVendedores(record);
             }}
           />
           <Popconfirm
@@ -879,8 +879,7 @@ export default function Proveedor() {
             ].map((rubro) => ({ value: rubro, label: rubro })),
           },
         ]}
-        onRowClick={handleSeleccionarProveedor}
-        selectedRow={proveedorSeleccionado}
+        onRowClick={(record) => openDrawerProveedor(record.idProveedor)}
         headerButtons={
           <Space size="middle">
             <Button
@@ -892,15 +891,6 @@ export default function Proveedor() {
               style={{ borderRadius: "8px" }}
             >
               Nuevo Proveedor
-            </Button>
-            <Button
-              size="large"
-              icon={<TeamOutlined />}
-              onClick={handleAbrirVendedores}
-              disabled={!proveedorSeleccionado}
-              style={{ borderRadius: "8px" }}
-            >
-              Gestionar Vendedores
             </Button>
             <Button
               size="large"
@@ -945,10 +935,18 @@ export default function Proveedor() {
             rules={[
               { required: true, message: "Por favor ingrese el RUT" },
               {
-                pattern: /^[0-9]+-[0-9kK]{1}$/,
-                message: " 12345678-9",
+                pattern: /^[0-9]{7,8}-[0-9kK]{1}$/,
+                message: "Formato inválido: 12345678-9",
               },
             ]}
+            normalize={(value) => {
+              if (!value) return value;
+              const cleaned = value.replace(/[^0-9kK]/g, "");
+              if (cleaned.length <= 1) return cleaned;
+              const cuerpo = cleaned.slice(0, -1);
+              const dv = cleaned.slice(-1).toUpperCase();
+              return `${cuerpo}-${dv}`;
+            }}
           >
             <Input placeholder="12345678-9" />
           </Form.Item>
@@ -1259,11 +1257,25 @@ export default function Proveedor() {
               <Input placeholder="Nombre del vendedor" />
             </Form.Item>
             <Form.Item
-              label="Rut"
+              label="RUT"
               name="rut"
-              rules={[{ required: true, message: "Ingrese el rut" }]}
+              rules={[
+                { required: true, message: "Por favor ingrese el RUT" },
+                {
+                  pattern: /^[0-9]{7,8}-[0-9kK]{1}$/,
+                  message: "Formato inválido: 12345678-9",
+                },
+              ]}
+              normalize={(value) => {
+                if (!value) return value;
+                const cleaned = value.replace(/[^0-9kK]/g, "");
+                if (cleaned.length <= 1) return cleaned;
+                const cuerpo = cleaned.slice(0, -1);
+                const dv = cleaned.slice(-1).toUpperCase();
+                return `${cuerpo}-${dv}`;
+              }}
             >
-              <Input placeholder="12345678-9" />
+              <Input placeholder="12345678-9" maxLength={10} />
             </Form.Item>
 
             <Form.Item

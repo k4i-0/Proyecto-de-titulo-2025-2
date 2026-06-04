@@ -14,18 +14,37 @@ const ventacliente = sequelize.define(
       type: DataTypes.DATE,
       allowNull: false,
     },
-    horaVenta: {
-      type: DataTypes.TIME,
-      allowNull: false,
-    },
     metodoPago: {
-      type: DataTypes.ENUM("Efectivo", "Tarjeta Debito", "Tarjeta Credito"),
+      type: DataTypes.ENUM(
+        "Efectivo",
+        "Transferencia",
+        "Tarjeta Debito",
+        "Tarjeta Credito",
+        "Funcionario",
+        "Pago Mixto",
+      ),
       allowNull: false,
       defaultValue: "Efectivo",
     },
+
     totalVenta: {
       type: DataTypes.INTEGER,
       allowNull: false,
+    },
+    idVentaMP: {
+      // valor idepotencyKey de MP
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    idOrdenMP: {
+      // orden id que entrega MP al crear la orden
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    estadoVenta: {
+      type: DataTypes.ENUM("Pendiente", "Completada", "Cancelada"),
+      allowNull: true,
+      defaultValue: "Pendiente",
     },
     // rutCliente: {
     //   type: DataTypes.INTEGER,
@@ -81,7 +100,7 @@ const ventacliente = sequelize.define(
   {
     tableName: "ventacliente",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = ventacliente;

@@ -8,13 +8,18 @@ const detalleventa = sequelize.define(
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
+      autoIncrement: true,
     },
     descripcion: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
     cantidad: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
+    precio: {
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
     tipoDeEntrega: {
@@ -25,17 +30,17 @@ const detalleventa = sequelize.define(
       type: DataTypes.DATE,
       allowNull: false,
     },
-    total: {
-      type: DataTypes.INTEGER,
+    subtotal: {
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
     iva: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
     },
     numeroBoleta: {
       type: DataTypes.STRING(100),
-      allowNull: false,
+      allowNull: true,
     },
     // idDescuento: {
     //   type: DataTypes.INTEGER,
@@ -61,7 +66,7 @@ const detalleventa = sequelize.define(
   {
     tableName: "detalleventa",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = detalleventa;

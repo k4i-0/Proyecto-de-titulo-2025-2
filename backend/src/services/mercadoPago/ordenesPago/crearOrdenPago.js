@@ -1,6 +1,6 @@
-
+const axios = require("axios");
 /**
- * 
+ *
  * @param {String} idempotencyKey - Clave unica para identificar la orden desde frontend UUID v4
  * @param {String} external_reference - Referencia externa de la orden backend para no repetir la orden
  * @param {String} expiration_time - Tiempo de expiracion de la orden debe ser PT10M donde M es minutos y H es horas y S segundos
@@ -10,60 +10,69 @@
  * @param {String} metodo_pago - Metodo de pago; debit_card (Tarjeta de debito) o credit_card (Tarjeta de credito) o voucher_card (Tarjeta de alimentacion) o cash (Efectivo) o QR
  * @param {String} descripcion - Descripcion de la orden debe ser texto plano
  * @param {String} condicion_iva - Condicion de IVA; payment_taxable_iva (IVA incluido) o payment_exempt_iva (IVA exento)
- * @returns 
+ * @returns
  */
 
-async function crearOrdenPago(idempotencyKey, external_reference, expiration_time, monto, terminal_id, metodo_impresion, metodo_pago, descripcion, condicion_iva){
-    let url = "https://api.mercadopago.com/pos/v1/orders"
-    try {
-        const consulta = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${process.env.ACCESS_TOKEN_MP}`,
-                "Content-Type": "application/json",
-                "X-Idempotency-Key": idempotencyKey 
-            },
-            body: JSON.stringify({
-                type: "point",
-                external_reference:external_reference,
-                expiration_time: expiration_time,
-               transactions: [
-                {
-                    payments: [
-                    {
-                        amount: monto
-                    }
-                    ]
-                }
-               ],
-               config:[
-                {
-                    point: {
-                            terminal_id: terminal_id,
-                            print_on_terminal: metodo_impresion
-                    },
-                    payment_method: {
-                        default_type: metodo_pago,
-                    },
-                }
-            ],
-            description: descripcion,
-            integration_data:{
-                platform_id: process.env.NAME_APP
-            },
-            taxes: [
-                {
-                   payer_condition: condicion_iva 
-                }
-            ]
-                
-            })
-        });
-        
-        return consulta;
-    } catch (error) {
-        console.log(error);
-    }
+async function crearOrdenPago(
+  idempotencyKey,
+  external_reference,
+  expiration_time,
+  monto,
+  terminal_id,
+  metodo_impresion,
+  metodo_pago,
+  descripcion,
+  condicion_iva,
+) {
+  const url = "https://api.mercadopago.com/v1/orders";
+  try {
+    const body = {
+      type: "point",
+      external_reference: external_reference,
+      expiration_time: expiration_time,
+      transactions: {
+        payments: [
+          {
+            amount: monto,
+          },
+        ],
+      },
+      config: {
+        point: {
+          terminal_id: terminal_id,
+          print_on_terminal: metodo_impresion,
+        },
+        payment_method: {
+          default_type: metodo_pago,
+        },
+      },
+      description: descripcion,
+
+      taxes: [
+        {
+          payer_condition: condicion_iva,
+        },
+      ],
+    };
+
+    const headers = {
+      Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+      "Content-Type": "application/json",
+      "X-Idempotency-Key": idempotencyKey,
+    };
+
+    // validateStatus devuelve true para que axios no lance por status >= 300
+    const consulta = await axios.post(url, body, {
+      headers,
+      validateStatus: () => true,
+    });
+    console.log("Respuesta de creación de orden de pago:", consulta.data);
+    return consulta;
+  } catch (error) {
+    console.log(error);
+    if (error.response) return error.response;
+    throw error;
+  }
 }
 
 /**
@@ -77,7 +86,7 @@ async function crearOrdenPago(idempotencyKey, external_reference, expiration_tim
  *  - maximum_items : Se envió una cantidad mayor de ítems que la permitida para alguna propiedad. Chequea el mensaje devuelto en los detalles del error para saber cuál fue el problema y vuelve a intentarlo.
  *  - property_value: Se envió un valor inválido para alguna propiedad. Chequea el mensaje devuelto en los detalles del error para saber cuál fue el problema y vuelve a intentarlo.
  *  - json_syntax_error: Se envió un JSON inválido. Chequea el mensaje devuelto en los detalles del error para saber cuál fue el problema y vuelve a intentarlo.
- * } 
+ * }
  * error 401: unauthorized : {
  * - unauthorized: El valor enviado como Access Token es incorrecto. Por favor, verifícalo y vuelve a intentar realizar la petición enviando el valor correcto.
  * }
@@ -94,5 +103,5 @@ async function crearOrdenPago(idempotencyKey, external_reference, expiration_tim
  */
 
 module.exports = {
-    crearOrdenPago
-}
+  crearOrdenPago,
+};

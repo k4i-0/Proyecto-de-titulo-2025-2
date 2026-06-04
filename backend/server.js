@@ -11,6 +11,7 @@ const { poblarBD } = require("./src/config/initSetup");
 const cookieParser = require("cookie-parser");
 require("./src/models/index");
 const { allowedNodeEnvironmentFlags } = require("process");
+const iniciarJobs = require("./src/jobs/index");
 
 const app = express();
 
@@ -56,7 +57,8 @@ async function syncDataBase() {
   const isDevelopment = process.env.NODE_ENV === "desarrollo";
   const syncOptions = isDevelopment ? { force: true } : { alter: true };
   try {
-    await sequelize.sync(syncOptions);
+    //await sequelize.sync(syncOptions);
+    await sequelize.sync();
 
     // // NIVEL 1: Tablas sin dependencias
     // await Categoria.sync(syncOptions);
@@ -178,6 +180,9 @@ const startServer = async () => {
 
     //Poblar Base de datos
     await poblarBD();
+
+    //trabajos programados
+    iniciarJobs();
 
     app.listen(process.env.PORT, () => {
       console.log(

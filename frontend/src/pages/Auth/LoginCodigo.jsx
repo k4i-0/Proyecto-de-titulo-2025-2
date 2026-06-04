@@ -53,7 +53,7 @@ export default function LoginCodigo() {
   useEffect(() => {
     mantenerFoco();
     if (isAuthenticated) {
-      navigate("/");
+      navigate("/cajas");
     }
     const handleClickAnywhere = () => mantenerFoco();
     document.addEventListener("click", handleClickAnywhere);

@@ -2,10 +2,15 @@ const Funcionario = require("../../models/Usuarios/Funcionario");
 const Roles = require("../../models/Usuarios/Rol");
 const ContratoFuncionario = require("../../models/Usuarios/ContratoFuncionario");
 const Sucursal = require("../../models/inventario/Sucursal");
-const { Op } = require("sequelize");
+const sequelize = require("../../config/bd");
+const { Op, col } = require("sequelize");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const validarRutChileno = require("../../function/verificarRut");
+const { encriptar } = require("../../config/AES");
+const {
+  asignarFuncionarioSucursalSchema,
+} = require("../../schema/funcionario.schema");
 
 //Crud Funcionario
 exports.getAllFuncionarios = async (req, res) => {
@@ -24,7 +29,7 @@ exports.getAllFuncionarios = async (req, res) => {
         // },
       },
       attributes: {
-        exclude: ["password", "passwordCaja", "createdAt", "updatedAt"],
+        exclude: ["password", "createdAt", "updatedAt"],
       },
       include: [
         {
@@ -65,6 +70,8 @@ exports.getAllFuncionarios = async (req, res) => {
         func.contratos?.find((c) => c.estado === "Activo") ||
         func.contratos?.[0] ||
         null;
+      const codigoAcceso = func.rut ? encriptar(func.rut) : null;
+
       return {
         id: func.idFuncionario,
         nombre: func.nombre,
@@ -73,6 +80,7 @@ exports.getAllFuncionarios = async (req, res) => {
         email: func.email,
         telefono: func.telefono.slice(3),
         cargo: func.role?.nombreRol || null,
+        codigoAcceso,
 
         sucursal: contratoActivo?.sucursal?.nombre || null,
         fechaIngreso: contratoActivo?.fechaIngreso || null,
@@ -164,12 +172,12 @@ exports.crearFuncionario = async (req, res) => {
     telefono,
     direccion,
     nombreRol,
-    // cargo,
-    // sucursal,
-    // turno,
-    // contrato,
-    // estadoContrato,
+    idSucursal,
+    turno,
+    contrato,
+    estadoContrato,
   } = req.body;
+  const t = await sequelize.transaction();
   try {
     console.log("Datos Crear funcionario:", req.body);
     if (
@@ -180,12 +188,11 @@ exports.crearFuncionario = async (req, res) => {
       !email ||
       !telefono ||
       !direccion ||
-      !nombreRol
-      // !cargo ||
-      // !sucursal ||
-      // !turno ||
-      // !contrato ||
-      // !estadoContrato
+      !nombreRol ||
+      !idSucursal ||
+      !turno ||
+      !contrato ||
+      !estadoContrato
     ) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
     }
@@ -194,81 +201,90 @@ exports.crearFuncionario = async (req, res) => {
       rut.split("-")[0].slice(-4),
       10,
     );
-    const rolEncontrado = await Roles.findOne({
-      where: { nombreRol: nombreRol },
-    });
+    const rolEncontrado = await Roles.findOne(
+      {
+        where: { nombreRol: nombreRol },
+      },
+      { transaction: t },
+    );
     if (!rolEncontrado) {
+      await t.rollback();
       return res.status(404).json({ error: "Rol no encontrado" });
     }
     //verifica rut
     const rutValido = validarRutChileno(rut);
     if (!rutValido) {
+      await t.rollback();
       return res.status(422).json({ error: "RUT inválido" });
     }
     //verifica si el rut ya existe
-    const rutExistente = await Funcionario.findOne({ where: { rut: rut } });
+    const rutExistente = await Funcionario.findOne(
+      { where: { rut: rut } },
+      { transaction: t },
+    );
     if (rutExistente) {
       if (rutExistente.estado === "Eliminado") {
+        await t.rollback();
         return res.status(409).json({
           error:
             "El RUT pertenece a un funcionario eliminado, solicite activacion",
         });
       }
+      await t.rollback();
       return res.status(409).json({ error: "El RUT ya está registrado" });
     }
-    const emailExistente = await Funcionario.findOne({
-      where: { email: email },
-    });
+    const emailExistente = await Funcionario.findOne(
+      {
+        where: { email: email },
+      },
+      { transaction: t },
+    );
     if (emailExistente) {
       if (emailExistente.estado === "Eliminado") {
+        await t.rollback();
         return res.status(409).json({
           error:
             "El email pertenece a un funcionario eliminado, solicite activacion",
         });
       }
+      await t.rollback();
       return res.status(409).json({ error: "El email ya está registrado" });
     }
-    const nuevoFuncionario = await Funcionario.create({
-      rut,
-      nombre,
-      apellido,
-      email,
-      password: passwordInicial,
-      passwordCaja: passwordCajaInicial,
-      telefono: `+56${telefono}`,
-      direccion,
-      idRol: rolEncontrado.idRol,
-      estado: "Activo",
-    });
+    const nuevoFuncionario = await Funcionario.create(
+      {
+        rut,
+        nombre,
+        apellido,
+        email,
+        password: passwordInicial,
+        passwordCaja: passwordCajaInicial,
+        telefono: `+56${telefono}`,
+        direccion,
+        idRol: rolEncontrado.idRol,
+        estado: "Activo",
+      },
+      { transaction: t },
+    );
     if (!nuevoFuncionario) {
+      await t.rollback();
       return res.status(500).json({ error: "No se pudo crear el funcionario" });
     }
-    // const sucursalEncontrada = await Sucursal.findOne({
-    //   where: { nombre: sucursal },
-    // });
-    // if (!sucursalEncontrada) {
-    //   return res.status(404).json({ error: "Sucursal no encontrada" });
-    // }
-    // let fechaTermino = null;
-    // if (contrato === "Plazo Fijo") {
-    //   const hoy = new Date();
-    //   fechaTermino = new Date(hoy);
-    //   fechaTermino.setMonth(fechaTermino.getMonth() + 1);
-    // } else {
-    //   fechaTermino = null;
-    // }
-    // const contratoCreado = await ContratoFuncionario.create({
-    //   idSucursal: sucursalEncontrada.idSucursal,
-    //   idFuncionario: nuevoFuncionario.idFuncionario,
-    //   fechaIngreso: fechaIngreso,
-    //   tipoContrato: contrato,
-    //   turno: turno,
-    //   estado: estadoContrato,
-    //   fechaTermino: fechaTermino || null,
-    // });
-    // if (!contratoCreado) {
-    //   return res.status(500).json({ error: "No se pudo crear el contrato" });
-    // }
+
+    //asignar contrato al funcionario
+    const nuevoContrato = await ContratoFuncionario.create(
+      {
+        idFuncionario: nuevoFuncionario.idFuncionario,
+        idSucursal,
+        fechaIngreso,
+        tipoContrato: contrato,
+        turno: turno,
+        estado: estadoContrato,
+      },
+      { transaction: t },
+    );
+
+    await t.commit();
+
     res.status(201).json({
       message: "Funcionario creado exitosamente",
       nuevoFuncionario,
@@ -276,6 +292,7 @@ exports.crearFuncionario = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al crear el funcionario:", error);
+    await t.rollback();
     res.status(500).json({ error: "Error al crear el funcionario" });
   }
 };
@@ -421,6 +438,85 @@ exports.eliminarFuncionario = async (req, res) => {
   }
 };
 
+//FUNCIONES PARA ASIGNAR Y QUITAR FUNCIONARIO DE UNA SUCURSAL (SEGUN INFORME)
+
+exports.asignarFuncionarioSucursal = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    console.log("datos de body", req.body);
+
+    if (
+      !req.body.idFuncionario ||
+      !req.body.idSucursal ||
+      isNaN(req.body.idFuncionario) ||
+      isNaN(req.body.idSucursal)
+    ) {
+      await t.rollback();
+      return res.status(422).json({ error: "Faltan datos obligatorios" });
+    }
+    //valdiacion con joi
+    const { error, value } = asignarFuncionarioSucursalSchema.validate(
+      {
+        idFuncionario: req.body.idFuncionario,
+        idSucursal: req.body.idSucursal,
+      },
+      { abortEarly: false },
+    );
+    if (error) {
+      await t.rollback();
+      return res
+        .status(422)
+        .json({ error: error.details.map((d) => d.message).join(", ") });
+    }
+    const { idFuncionario, idSucursal } = value;
+
+    //validaciones
+    const encontrarFuncionario = await Funcionario.findByPk(idFuncionario, {
+      transaction: t,
+    });
+    const encontrarSucursal = await Sucursal.findByPk(idSucursal, {
+      transaction: t,
+    });
+    if (!encontrarFuncionario) {
+      await t.rollback();
+      return res.status(404).json({ error: "Funcionario no encontrado" });
+    }
+    if (!encontrarSucursal) {
+      await t.rollback();
+      return res.status(404).json({ error: "Sucursal no encontrada" });
+    }
+
+    //crear contrato
+    const nuevoContrato = await ContratoFuncionario.create(
+      {
+        idFuncionario,
+        idSucursal,
+        fechaIngreso: new Date(),
+        tipoContrato: "Indefinido",
+        turno: "Rotativo",
+        fechaTermino: null,
+        estado: "Activo",
+      },
+      { transaction: t },
+    );
+    if (!nuevoContrato) {
+      await t.rollback();
+      return res
+        .status(500)
+        .json({ error: "No se pudo asignar el funcionario" });
+    }
+    await t.commit();
+
+    return res.status(200).json({
+      message: `Funcionario  ${idFuncionario} asignado a sucursal exitosamente`,
+    });
+  } catch (error) {
+    await t.rollback();
+    console.error("Error al asignar funcionario a sucursal:", error);
+    res.status(500).json({ error: "Error al asignar funcionario a sucursal" });
+  }
+};
+
 //funciones gestion funcionarios
 
 exports.obtenerContratosFuncionarios = async (req, res) => {
@@ -429,6 +525,7 @@ exports.obtenerContratosFuncionarios = async (req, res) => {
       where: {
         estado: "Activo",
       },
+      order: [["fechaIngreso", "DESC"]],
       include: [
         {
           model: Funcionario,
@@ -449,7 +546,7 @@ exports.obtenerContratosFuncionarios = async (req, res) => {
         },
         {
           model: Sucursal,
-          attributes: ["nombre", "direccion", "estado"],
+          attributes: ["idSucursal", "nombre", "direccion", "estado"],
         },
       ],
     });
@@ -459,6 +556,154 @@ exports.obtenerContratosFuncionarios = async (req, res) => {
     res
       .status(500)
       .json({ error: "Error al obtener los contratos de funcionarios" });
+  }
+};
+
+exports.obtenerHistorialContratosFuncionario = async (req, res) => {
+  try {
+    const { idFuncionario } = req.params;
+
+    const historial = await ContratoFuncionario.findAll({
+      where: { idFuncionario },
+      order: [["fechaIngreso", "DESC"]],
+      include: [
+        {
+          model: Sucursal,
+          attributes: ["idSucursal", "nombre", "direccion", "estado"],
+        },
+      ],
+    });
+
+    if (!historial.length) return res.status(204).json([]);
+
+    res.status(200).json(historial);
+  } catch (error) {
+    console.error("Error al obtener historial de contratos:", error);
+    res.status(500).json({ error: "Error al obtener historial de contratos" });
+  }
+};
+
+exports.reasignarSucursalFuncionario = async (req, res) => {
+  const t = await sequelize.transaction();
+  const { idFuncionario, idSucursal, motivo } = req.body;
+  console.log("Datos recibidos para reasignar sucursal:", req.body);
+  try {
+    if (!idFuncionario || !idSucursal || !motivo) {
+      await t.rollback();
+      return res.status(422).json({ error: "Faltan datos obligatorios" });
+    }
+
+    const funcionario = await Funcionario.findByPk(idFuncionario, {
+      transaction: t,
+    });
+    if (!funcionario) {
+      await t.rollback();
+      return res.status(404).json({ error: "Funcionario no encontrado" });
+    }
+    if (funcionario.estado !== "Activo") {
+      await t.rollback();
+      return res.status(403).json({ error: "Funcionario no activo" });
+    }
+
+    const contratoActivo = await ContratoFuncionario.findOne({
+      where: {
+        idFuncionario,
+        estado: "Activo",
+      },
+      include: [
+        {
+          model: Sucursal,
+          attributes: ["idSucursal", "nombre", "direccion", "estado"],
+        },
+      ],
+      transaction: t,
+    });
+
+    if (!contratoActivo) {
+      await t.rollback();
+      return res
+        .status(404)
+        .json({ error: "El funcionario no tiene un contrato activo" });
+    }
+
+    if (Number(contratoActivo.idSucursal) === Number(idSucursal)) {
+      await t.rollback();
+      return res
+        .status(409)
+        .json({ error: "El funcionario ya trabaja en esa sucursal" });
+    }
+
+    const sucursalDestino = await Sucursal.findByPk(idSucursal, {
+      transaction: t,
+    });
+    if (!sucursalDestino) {
+      await t.rollback();
+      return res.status(404).json({ error: "Sucursal no encontrada" });
+    }
+    if (sucursalDestino.estado !== "Abierta") {
+      await t.rollback();
+      return res.status(403).json({ error: "Sucursal no activa" });
+    }
+
+    //buscar si antes tuvo un contrato en la sucursal destino
+    const contratoAnteriorDestino = await ContratoFuncionario.findOne({
+      where: {
+        idFuncionario,
+        idSucursal,
+        estado: {
+          [Op.in]: ["Eliminado", "Inactivo"],
+        },
+      },
+      transaction: t,
+    });
+
+    if (contratoAnteriorDestino) {
+      contratoActivo.estado = "Inactivo";
+      contratoActivo.motivoCambioContrato = `${new Date().toLocaleDateString("es-CL")} Cambio contrato a inactivo en Sucursal ${idSucursal} con motivo: ${motivo}`;
+      await contratoActivo.save({ transaction: t });
+
+      contratoAnteriorDestino.estado = "Activo";
+      contratoAnteriorDestino.motivoCambioContrato = `${new Date().toLocaleDateString("es-CL")}: ${contratoAnteriorDestino.motivoCambioContrato || ""} \n Reasignación desde sucursal ${contratoActivo.sucursal.nombre} con motivo: ${motivo}`;
+      await contratoAnteriorDestino.save({ transaction: t });
+      await t.commit();
+      return res.status(201).json({
+        message: "Sucursal reasignada correctamente",
+        contratoAnterior: contratoAnteriorDestino,
+      });
+    } else {
+      contratoActivo.estado = "Inactivo";
+      contratoActivo.motivoCambioContrato = `${new Date().toLocaleDateString("es-CL")} Cambio contrato a inactivo en Sucursal ${idSucursal} con motivo: ${motivo} \n`;
+      await contratoActivo.save({ transaction: t });
+
+      const nuevoContrato = await ContratoFuncionario.create(
+        {
+          idSucursal,
+          idFuncionario,
+          fechaIngreso: new Date(),
+          tipoContrato: contratoActivo.tipoContrato,
+          turno: contratoActivo.turno,
+          estado: "Activo",
+          fechaTermino: contratoActivo.fechaTermino || null,
+          motivoCambioContrato: motivo,
+        },
+        { transaction: t },
+      );
+      await t.commit();
+
+      return res.status(201).json({
+        message: "Sucursal reasignada correctamente",
+        contratoAnterior: contratoActivo,
+        nuevoContrato,
+      });
+    }
+  } catch (error) {
+    console.error("Error al reasignar la sucursal del funcionario:", error);
+    if (t.finished !== "commit") {
+      await t.rollback();
+    }
+    return res
+      .status(500)
+      .json({ error: "Error al reasignar la sucursal del funcionario" });
   }
 };
 

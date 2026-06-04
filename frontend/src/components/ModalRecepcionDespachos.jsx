@@ -25,8 +25,35 @@ export default function ModalRecepcionDespachos({
   onFinish,
   loading = false,
 }) {
+  React.useEffect(() => {
+    if (!open || !ordenSeleccionada) return;
+
+    const detallesActuales = form.getFieldValue("detalles");
+    if (!Array.isArray(detallesActuales) || detallesActuales.length === 0) {
+      return;
+    }
+
+    const detallesConDefaultRecibida = detallesActuales.map((detalle) => {
+      const cantidadSolicitada = Number(detalle?.cantidadSolicitada) || 0;
+      const cantidadRecibida = Number(detalle?.cantidadRecibida) || 0;
+      const cantidadRechazada = Number(detalle?.cantidadRechazada) || 0;
+
+      if (cantidadRecibida === 0 && cantidadRechazada === 0) {
+        return {
+          ...detalle,
+          cantidadRecibida: cantidadSolicitada,
+        };
+      }
+
+      return detalle;
+    });
+
+    form.setFieldsValue({ detalles: detallesConDefaultRecibida });
+  }, [open, ordenSeleccionada, form]);
+
   if (!ordenSeleccionada) return null;
   console.log("Modal recepcionar Orden", ordenSeleccionada);
+
   return (
     <Modal
       title="Recepción de Despacho"

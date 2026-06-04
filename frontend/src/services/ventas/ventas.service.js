@@ -1,0 +1,223 @@
+import axios from "axios";
+import URL from "../Constante";
+
+const API_URL = `${URL}/ventas`;
+
+export async function buscarProductoVenta(codigo) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/buscar/producto/venta`,
+
+      {
+        params: { codigo },
+        withCredentials: true,
+      },
+    );
+    //console.log("Producto encontrado para venta:", response);
+    return response;
+  } catch (error) {
+    //console.error("Error al buscar producto para venta:", error);
+
+    return error;
+  }
+}
+
+export async function aperturaCaja(
+  deviceID,
+  numeroCaja,
+  sucursal,
+  montoInicial,
+  cantidadMontoInicial,
+) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/apertura/caja/${deviceID}`,
+      {
+        numeroCaja: numeroCaja,
+        sucursal: sucursal,
+        montoInicial: montoInicial,
+        cantidadMontoInicial: cantidadMontoInicial,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+    console.log("Respuesta de apertura de caja:", response);
+    return response;
+  } catch (error) {
+    console.error("Error al abrir caja:", error);
+    return error;
+  }
+}
+
+export async function registroCajaEnSucursal({
+  numeroCaja,
+  idPC,
+  descripcionPC,
+  idSucursal,
+  idPOS,
+  tipoMaquinaPOS,
+  descripcionPOS,
+}) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/registro/caja`,
+      {
+        numeroCaja,
+        idPC,
+        descripcionPC,
+        idSucursal,
+        idPOS,
+        tipoMaquinaPOS,
+        descripcionPOS,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+    console.log("Respuesta de registro de caja en sucursal:", response.status);
+    return response;
+  } catch (error) {
+    console.error(
+      "222Error al registrar caja en sucursal:",
+      error.response?.data?.error,
+    );
+    return error.response;
+  }
+}
+
+export async function consultarEstadoCaja(deviceID) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/consultar/datos/caja/${deviceID}`,
+      {
+        withCredentials: true,
+      },
+    );
+    console.log("Respuesta de consulta de estado de caja:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al consultar estado de caja:", error);
+    return error.response;
+  }
+}
+
+export async function cierreCaja(valores) {
+  console.log("Valores recibidos para cierre de caja:", valores.deviceID);
+  try {
+    const response = await axios.post(
+      `${API_URL}/cierre/caja/${valores.deviceID}`,
+      {
+        montoArqueo: valores.totalCierre,
+        cantidadMontoFinal: valores.cantidadMontoFinal,
+        observacionesCierre: valores.observacionesCierre || " ",
+      },
+      {
+        withCredentials: true,
+      },
+    );
+    console.log("Respuesta de cierre de caja:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al cerrar caja:", error);
+    return error.response;
+  }
+}
+
+export async function solicitarPagoTarjeta(deviceID, totalVenta, metodoPago) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/solicitud/pago/tarjeta/${deviceID}`,
+      { totalVenta: totalVenta, metodoPago: metodoPago },
+      {
+        withCredentials: true,
+      },
+    );
+    console.log("Respuesta de solicitud de pago con tarjeta:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al solicitar pago con tarjeta:", error);
+    return error.response;
+  }
+}
+
+export async function registroVenta(deviceID, datosVenta) {
+  try {
+    console.log("Datos recibidos para registro de venta:", datosVenta);
+    const response = await axios.post(
+      `${API_URL}/registro/venta/${deviceID}`,
+      {
+        idVentaCliente: datosVenta.idVentaCliente,
+        idPOS: datosVenta.idPOS,
+        idSucursal: datosVenta.idSucursal,
+
+        tipoPago: datosVenta.tipoPago,
+        detallePagos: datosVenta.detallePagos,
+
+        productosVendidos: datosVenta.productosVendidos ?? datosVenta.items,
+        totalVenta: datosVenta.totalVenta ?? datosVenta.total,
+        metodoPago: datosVenta.metodoPago,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+    console.log("Respuesta de registro de venta:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al registrar venta:", error);
+    return error.response;
+  }
+}
+
+export async function consultarEstadoMP(deviceID) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/consultar/estado/MP/${deviceID}`,
+      {
+        withCredentials: true,
+      },
+    );
+    //console.log("Respuesta de consulta de estado de MP:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al consultar estado de MP:", error);
+    return error.response;
+  }
+}
+
+export async function consultarStatusVentas(idOrdenMP) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/consultar/estado/venta/${idOrdenMP}`,
+      {
+        withCredentials: true,
+      },
+    );
+    //console.log("Respuesta de consulta de estado de venta:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al consultar status de venta:", error);
+    return error.response;
+  }
+}
+
+export async function cancelarVentaTarjeta(idOrdenMP) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/cancelar/venta/tarjeta/${idOrdenMP}`,
+      {},
+      {
+        withCredentials: true,
+      },
+    );
+    console.log(
+      "Respuesta de cancelación de venta con tarjeta:",
+      response.status,
+    );
+    return response;
+  } catch (error) {
+    console.error("Error al cancelar venta con tarjeta:", error);
+    return error.response;
+  }
+}

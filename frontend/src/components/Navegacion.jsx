@@ -19,14 +19,21 @@ import {
   OrderedListOutlined,
 } from "@ant-design/icons";
 
-export default function Navegacion({ nombreRol, onLogout, collapsed: collapsedProp, setCollapsed: setCollapsedProp }) {
+export default function Navegacion({
+  nombreRol,
+  onLogout,
+  collapsed: collapsedProp,
+  setCollapsed: setCollapsedProp,
+}) {
   const [collapsedLocal, setCollapsedLocal] = useState(true);
   const navigate = useNavigate();
   const siderRef = useRef(null);
   const {
     token: { colorBgContainer, colorBorderSecondary },
   } = theme.useToken();
-  const isControlled = typeof collapsedProp === "boolean" && typeof setCollapsedProp === "function";
+  const isControlled =
+    typeof collapsedProp === "boolean" &&
+    typeof setCollapsedProp === "function";
   const collapsed = isControlled ? collapsedProp : collapsedLocal;
   const setCollapsed = isControlled ? setCollapsedProp : setCollapsedLocal;
 
@@ -58,11 +65,11 @@ export default function Navegacion({ nombreRol, onLogout, collapsed: collapsedPr
     <>
       <Sider
         className="contrast-surface"
-          collapsible
-          collapsed={collapsed}
-          onCollapse={(value) => setCollapsed(value)}
-          collapsedWidth={80}
-          width={350}
+        collapsible
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
+        collapsedWidth={80}
+        width={350}
         // ref={siderRef}
         style={{
           background: colorBgContainer,
@@ -95,12 +102,11 @@ export default function Navegacion({ nombreRol, onLogout, collapsed: collapsedPr
               key: "Ventas",
               icon: <AreaChartOutlined />,
               label: "Ventas",
-              disabled: true,
               children: [
                 {
-                  key: "gestionar_ventas",
-                  label: "Gestionar Ventas",
-                  onClick: () => handleNavigate("gestionar_ventas"),
+                  key: "gestion_descuentos",
+                  label: "Gestionar Descuentos",
+                  onClick: () => handleNavigate("descuentos"),
                 },
                 {
                   key: "clientes",
@@ -130,19 +136,24 @@ export default function Navegacion({ nombreRol, onLogout, collapsed: collapsedPr
                       key: "compra_sucursal",
                       label: "Solicitud de Compra Sucursal",
                       icon: <InboxOutlined />,
-                      onClick: () => handleNavigate("/admin/gestion/solicitudes_compra"),
+                      onClick: () =>
+                        handleNavigate("/admin/gestion/solicitudes_compra"),
                     },
                     {
                       key: "compra_directa",
                       label: "Compra Directa",
                       icon: <InboxOutlined />,
-                      onClick: () => handleNavigate("/admin/gestion/compra_directa"),
+                      onClick: () =>
+                        handleNavigate("/admin/gestion/compra_directa"),
                     },
                     {
                       key: "ingreso_manual",
                       label: "Ingreso Manual",
                       icon: <InboxOutlined />,
-                      onClick: () => handleNavigate("/admin/gestion/ingreso_manual_inventario"),
+                      onClick: () =>
+                        handleNavigate(
+                          "/admin/gestion/ingreso_manual_inventario",
+                        ),
                     },
                   ],
                 },
@@ -155,7 +166,10 @@ export default function Navegacion({ nombreRol, onLogout, collapsed: collapsedPr
                       key: "recepcionar_ordenes_compra",
                       label: "Recepcionar Ordenes De Compra",
                       icon: <InboxOutlined />,
-                      onClick: () => handleNavigate("/admin/gestion/recepcionar_orden_compra"),
+                      onClick: () =>
+                        handleNavigate(
+                          "/admin/gestion/recepcionar_orden_compra",
+                        ),
                     },
                     {
                       key: "devolucion_ordenes_compra",

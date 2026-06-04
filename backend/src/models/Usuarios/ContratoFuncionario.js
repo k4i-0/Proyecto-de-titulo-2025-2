@@ -34,7 +34,7 @@ const contratoFuncionario = sequelize.define(
       defaultValue: "Activo",
     },
     motivoCambioContrato: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     // idFuncionario: {

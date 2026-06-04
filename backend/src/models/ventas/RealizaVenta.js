@@ -8,24 +8,17 @@ const realizaVenta = sequelize.define(
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
+      autoIncrement: true,
     },
     fechaRealizaVenta: {
       type: DataTypes.DATE,
-      allowNull: false,
-    },
-    montoTotalVenta: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    metodoPago: {
-      type: DataTypes.STRING(50),
       allowNull: false,
     },
   },
   {
     tableName: "realizaVenta",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = realizaVenta;

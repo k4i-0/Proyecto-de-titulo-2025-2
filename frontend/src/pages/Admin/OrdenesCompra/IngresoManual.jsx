@@ -6,133 +6,196 @@ import {
   Select,
   InputNumber,
   Button,
-  List,
+  Table,
   Typography,
   Alert,
   Card,
   Space,
   notification,
 } from "antd";
+import { ingresoManualProductos } from "../../../services/inventario/Inventario.service.js";
 
 import { buscarTodasSucursales } from "../../../services/functions/Sucursales.js";
 import { buscarTodosProductos } from "../../../services/functions/Productos.js";
 import { buscarBodegasPorSucursal } from "../../../services/functions/Bodegas.js";
 
-const MAX_ITEMS = 30;
-
-function generarCodigoRegistro() {
-  const t = Date.now().toString(36).toUpperCase();
-  const r = Math.floor(100 + Math.random() * 900);
-  return `REG-${t}-${r}`;
-}
+const MAX_ITEMS = 5;
 
 export default function IngresoManual() {
   const [sucursal, setSucursal] = useState([]);
   const [producto, setProducto] = useState([]);
   const [bodegas, setBodegas] = useState([]);
   const [sucursalId, setSucursalId] = useState("");
-  const [productoId, setProductoId] = useState("");
-  const [cantidad, setCantidad] = useState(1);
-  const [bodegaId, setBodegaId] = useState("");
-  const [items, setItems] = useState([]);
-  const [registroCodigo, setRegistroCodigo] = useState(null);
   const [error, setError] = useState("");
+  const [detalleIngreso, setDetalleIngreso] = useState([]);
+  const [enviando, setEnviando] = useState(false);
+
+  const [form] = Form.useForm();
 
   const totalProductos = useMemo(
-    () => items.reduce((acc, it) => acc + Number(it.cantidad || 0), 0),
-    [items],
+    () => detalleIngreso.reduce((acc, it) => acc + Number(it.cantidad || 0), 0),
+    [detalleIngreso],
   );
 
-  //busquedas
   useEffect(() => {
     buscarTodasSucursales(setSucursal);
     buscarTodosProductos(setProducto);
   }, []);
 
+  useEffect(() => {
+    if (sucursalId) {
+      buscarBodegasPorSucursal(sucursalId, setBodegas);
+    } else {
+      setBodegas([]);
+    }
+  }, [sucursalId]);
+
   const handleSucursalChange = (value) => {
-    console.log("sucursal 111,", value);
-    setSucursalId(value);
-    setBodegaId("");
-    buscarBodegasPorSucursal(value, setBodegas);
+    setSucursalId(value ? String(value) : "");
+    form.setFieldsValue({ idBodega: undefined });
   };
 
   function resetFormFields() {
-    setProductoId("");
-    setCantidad(1);
-    setBodegaId("");
     setError("");
+    form.resetFields(["idProducto", "cantidad", "idBodega"]);
   }
 
-  function handleAgregar() {
+  async function handleAgregar() {
     setError("");
-    if (!sucursalId) return setError("Seleccione una sucursal primero.");
-    if (!productoId) return setError("Seleccione un producto.");
-    if (!bodegaId) return setError("Seleccione una bodega de envío.");
-    if (!cantidad || Number(cantidad) <= 0)
+    const values = form.getFieldsValue();
+    const idSucursal = values.idSucursal ? String(values.idSucursal) : "";
+    const idProducto = values.idProducto ? String(values.idProducto) : "";
+    const idBodega = values.idBodega ? String(values.idBodega) : "";
+    const cantidad = Number(values.cantidad || 0);
+
+    if (!idSucursal) return setError("Seleccione una sucursal primero.");
+    if (!idProducto) return setError("Seleccione un producto.");
+    if (!idBodega) return setError("Seleccione una bodega de envío.");
+    if (!cantidad || cantidad <= 0)
       return setError("Ingrese una cantidad válida (> 0).");
-    if (items.length >= MAX_ITEMS)
+    if (detalleIngreso.length >= MAX_ITEMS)
       return setError(`Máximo ${MAX_ITEMS} productos permitidos.`);
 
-    const pid = String(productoId);
-    const bid = String(bodegaId);
-
-    // Si existe la misma combinación producto+bodega, sumamos la cantidad
-    const existingIndex = items.findIndex(
-      (it) => String(it.productoId) === pid && String(it.bodegaId) === bid,
+    const productoSeleccionado = producto.find(
+      (p) =>
+        String(p.id) === String(idProducto) ||
+        String(p.idProducto) === String(idProducto),
+    );
+    const bodegaSeleccionada = (bodegas || []).find(
+      (b) =>
+        String(b.id) === String(idBodega) ||
+        String(b.idBodega) === String(idBodega),
+    );
+    const sucursalSeleccionada = (sucursal || []).find(
+      (s) =>
+        String(s.id) === String(idSucursal) ||
+        String(s.idSucursal) === String(idSucursal),
     );
 
-    if (existingIndex >= 0) {
-      const copy = [...items];
-      copy[existingIndex].cantidad =
-        Number(copy[existingIndex].cantidad) + Number(cantidad);
-      setItems(copy);
+    if (!productoSeleccionado || !bodegaSeleccionada || !sucursalSeleccionada) {
+      return setError(
+        "No se pudo resolver producto/sucursal/bodega seleccionada.",
+      );
+    }
+
+    const yaExiste = detalleIngreso.some(
+      (it) =>
+        String(it.idProducto) === String(idProducto) &&
+        String(it.idBodega) === String(idBodega) &&
+        String(it.idSucursal) === String(idSucursal),
+    );
+
+    if (yaExiste) {
+      setDetalleIngreso((prev) =>
+        prev.map((it) =>
+          String(it.idProducto) === String(idProducto) &&
+          String(it.idBodega) === String(idBodega) &&
+          String(it.idSucursal) === String(idSucursal)
+            ? { ...it, cantidad: Number(it.cantidad) + cantidad }
+            : it,
+        ),
+      );
     } else {
-      setItems((prev) => [
+      setDetalleIngreso((prev) => [
         ...prev,
-        { productoId: pid, cantidad: Number(cantidad), bodegaId: bid },
+        {
+          key: crypto.randomUUID(),
+          idProducto,
+          productoNombre: productoSeleccionado.nombre,
+          cantidad,
+          idBodega,
+          bodegaNombre: bodegaSeleccionada.nombre,
+          idSucursal,
+          sucursalNombre: sucursalSeleccionada.nombre,
+        },
       ]);
     }
 
     resetFormFields();
   }
 
-  function handleQuitar(index) {
-    setItems((prev) => prev.filter((_, i) => i !== index));
-  }
-
   function handleCancelar() {
-    setItems([]);
+    setDetalleIngreso([]);
     setSucursalId("");
     setBodegas([]);
-    setRegistroCodigo(null);
+    form.resetFields();
     resetFormFields();
     setError("");
   }
 
-  function handleRegistrar() {
+  async function handleRegistrar() {
     setError("");
     if (!sucursalId)
       return setError("Seleccione una sucursal antes de registrar.");
-    if (items.length === 0) return setError("No hay productos para registrar.");
+    if (detalleIngreso.length === 0)
+      return setError("No hay productos para registrar.");
 
-    const codigo = generarCodigoRegistro();
-    console.log("Registro:", { sucursalId, items, codigo });
-    notification.success({
-      message: "Ingreso registrado",
-      description: `Código de registro: ${codigo}`,
-      duration: 3,
-    });
-
-    setRegistroCodigo(codigo);
-    setItems([]);
-    setSucursalId("");
-    resetFormFields();
+    await enviarIngresoManual();
   }
 
-  function findNombre(arr, id) {
-    const el = arr.find((x) => String(x.id) === String(id));
-    return el ? el.nombre : "-";
-  }
+  const enviarIngresoManual = async () => {
+    try {
+      setEnviando(true);
+      const values = form.getFieldsValue();
+      const idSucursal = values.idSucursal ? String(values.idSucursal) : "";
+      const payload = detalleIngreso.map((item) => ({
+        idProducto: item.idProducto,
+        cantidad: Number(item.cantidad || 0),
+        idSucursal: item.idSucursal || idSucursal,
+        idBodega: item.idBodega,
+      }));
+
+      const response = await ingresoManualProductos(payload);
+      if (response?.status === 200) {
+        notification.success({
+          message: "Ingreso exitoso",
+          description: "Los productos han sido ingresados correctamente.",
+          duration: 4,
+        });
+        setDetalleIngreso([]);
+        setSucursalId("");
+        setBodegas([]);
+        form.resetFields();
+        return;
+      }
+
+      notification.error({
+        message: "Error al ingresar productos",
+        description:
+          response?.error || "No se pudo completar el ingreso de productos.",
+        duration: 4,
+      });
+    } catch (error) {
+      console.log("error enviar datos ingreso manual", error);
+      notification.error({
+        message: "Error de conexión",
+        description: "No se pudo conectar al servidor para ingresar productos.",
+        duration: 4,
+      });
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   return (
     <>
@@ -153,15 +216,14 @@ export default function IngresoManual() {
           Ingreso Manual a Inventario
         </Typography.Title>
 
-        <Form layout="vertical">
-          <Form.Item label="Seleccionar Sucursal">
+        <Form form={form} layout="vertical">
+          <Form.Item label="Seleccionar Sucursal" name="idSucursal">
             <Select
               placeholder="-- Seleccione --"
-              value={sucursalId || undefined}
               onChange={handleSucursalChange}
             >
               {sucursal?.map((s) => (
-                <Select.Option key={s.id} value={s.id}>
+                <Select.Option key={s.idSucursal} value={s.idSucursal}>
                   {s.nombre}
                 </Select.Option>
               ))}
@@ -170,14 +232,10 @@ export default function IngresoManual() {
 
           <Row gutter={12} align="bottom">
             <Col span={10}>
-              <Form.Item label="Producto">
-                <Select
-                  placeholder="-- Seleccione --"
-                  value={productoId || undefined}
-                  onChange={(v) => setProductoId(String(v))}
-                >
+              <Form.Item label="Producto" name="idProducto">
+                <Select placeholder="-- Seleccione --">
                   {producto?.map((p) => (
-                    <Select.Option key={p.id} value={p.id}>
+                    <Select.Option key={p.idProducto} value={p.idProducto}>
                       {p.nombre}
                     </Select.Option>
                   ))}
@@ -186,25 +244,16 @@ export default function IngresoManual() {
             </Col>
 
             <Col span={6}>
-              <Form.Item label="Cantidad">
-                <InputNumber
-                  style={{ width: "100%" }}
-                  min={1}
-                  value={cantidad}
-                  onChange={(v) => setCantidad(v || 1)}
-                />
+              <Form.Item label="Cantidad" name="cantidad">
+                <InputNumber style={{ width: "100%" }} min={1} />
               </Form.Item>
             </Col>
 
             <Col span={8}>
-              <Form.Item label="Bodega de Envío">
-                <Select
-                  placeholder="-- Seleccione --"
-                  value={bodegaId || undefined}
-                  onChange={(v) => setBodegaId(String(v))}
-                >
+              <Form.Item label="Bodega de Envío" name="idBodega">
+                <Select placeholder="-- Seleccione --">
                   {bodegas?.map((b) => (
-                    <Select.Option key={b.id} value={b.id}>
+                    <Select.Option key={b.idBodega} value={b.idBodega}>
                       {b.nombre}
                     </Select.Option>
                   ))}
@@ -227,30 +276,73 @@ export default function IngresoManual() {
 
         <div style={{ marginTop: 8 }}>
           <Typography.Title level={5}>
-            Productos a ingresar ({items.length})
+            Productos a ingresar ({detalleIngreso.length})
           </Typography.Title>
 
-          <List
+          <Table
+            rowKey="key"
             bordered
-            dataSource={items}
+            pagination={false}
             locale={{ emptyText: "No hay productos añadidos." }}
-            renderItem={(it, idx) => (
-              <List.Item
-                actions={[
-                  <Button danger size="small" onClick={() => handleQuitar(idx)}>
+            dataSource={detalleIngreso}
+            columns={[
+              {
+                title: "Producto",
+                dataIndex: "productoNombre",
+                key: "productoNombre",
+              },
+              {
+                title: "Sucursal",
+                dataIndex: "sucursalNombre",
+                key: "sucursalNombre",
+              },
+              {
+                title: "Bodega",
+                dataIndex: "bodegaNombre",
+                key: "bodegaNombre",
+              },
+              {
+                title: "Cantidad",
+                dataIndex: "cantidad",
+                key: "cantidad",
+                width: 150,
+                render: (value, record) => (
+                  <InputNumber
+                    style={{ width: "100%" }}
+                    min={1}
+                    value={value}
+                    onChange={(nextValue) =>
+                      setDetalleIngreso((prev) =>
+                        prev.map((row) =>
+                          row.key === record.key
+                            ? { ...row, cantidad: Number(nextValue || 1) }
+                            : row,
+                        ),
+                      )
+                    }
+                  />
+                ),
+              },
+              {
+                title: "Acciones",
+                key: "acciones",
+                width: 110,
+                align: "center",
+                render: (_, record) => (
+                  <Button
+                    danger
+                    size="small"
+                    onClick={() =>
+                      setDetalleIngreso((prev) =>
+                        prev.filter((row) => row.key !== record.key),
+                      )
+                    }
+                  >
                     Quitar
-                  </Button>,
-                ]}
-              >
-                <List.Item.Meta
-                  title={findNombre(producto, it.productoId)}
-                  description={`Cantidad: ${it.cantidad} — Bodega: ${findNombre(
-                    bodegas,
-                    it.bodegaId,
-                  )}`}
-                />
-              </List.Item>
-            )}
+                  </Button>
+                ),
+              },
+            ]}
             style={{ marginBottom: 12, maxHeight: 300, overflow: "auto" }}
           />
 
@@ -261,18 +353,10 @@ export default function IngresoManual() {
 
         <Space style={{ marginTop: 16 }}>
           <Button onClick={handleCancelar}>Cancelar</Button>
-          <Button type="primary" onClick={handleRegistrar}>
+          <Button type="primary" onClick={handleRegistrar} loading={enviando}>
             Registrar ingreso
           </Button>
         </Space>
-
-        {registroCodigo && (
-          <Alert
-            style={{ marginTop: 16 }}
-            message={`Registro creado: ${registroCodigo}`}
-            type="success"
-          />
-        )}
       </Card>
     </>
   );

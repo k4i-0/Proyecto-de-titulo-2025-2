@@ -101,6 +101,27 @@ exports.updateProveedor = async (req, res) => {
 
 exports.deleteProveedor = async (req, res) => {
   try {
+    //validaciones
+    if (!req.params.id) {
+      return res
+        .status(400)
+        .json({ error: "ID del proveedor no proporcionado" });
+    }
+    //validar que provedor exista
+    const proveedor = await Proveedor.findByPk(req.params.id);
+    if (!proveedor) {
+      return res.status(404).json({ error: "Proveedor no encontrado" });
+    }
+    //validar si provee productos activos, si es así no se puede eliminar
+    const productosProvee = await Provee.findAll({
+      where: { idProveedor: req.params.id, estado: "Activo" },
+    });
+    if (productosProvee.length > 0) {
+      return res.status(409).json({
+        error:
+          "No se puede eliminar el proveedor porque tiene productos activos enlazados",
+      });
+    }
     //eliminar vendedores de ese proveedor primero
     await Vendedor.destroy({
       where: { idProveedor: req.params.id },

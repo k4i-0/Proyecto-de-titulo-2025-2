@@ -6,25 +6,27 @@ const productosController = require("../../controllers/inventario/Productos.cont
 // Rutas para productos
 router.post(
   "/crear",
-  /*authMiddleware, roleMiddleware(['admin']),*/ productosController.createProducto
+  /*authMiddleware, roleMiddleware(['admin']),*/ productosController.createProducto,
 );
 router.get("/buscar", /*authMiddleware,*/ productosController.getAllProductos);
+
 router.get(
   "/buscar/:id",
-  /*authMiddleware,*/ productosController.getProductoById
+  /*authMiddleware,*/ productosController.getProductoById,
 );
+
 router.put(
   "/actualizar/:id",
-  /*authMiddleware, roleMiddleware(['admin']),*/ productosController.updateProducto
+  /*authMiddleware, roleMiddleware(['admin']),*/ productosController.updateProducto,
 );
 router.delete(
   "/eliminar/:id",
-  /*authMiddleware, roleMiddleware(['admin']),*/ productosController.deleteProducto
+  /*authMiddleware, roleMiddleware(['admin']),*/ productosController.deleteProducto,
 );
 
 router.get(
   "/proveedor/obtener-productos/:rutProveedor",
-  /*authMiddleware,*/ productosController.obtenerProductosPorProveedor
+  /*authMiddleware,*/ productosController.obtenerProductosPorProveedor,
 );
 
 module.exports = router;

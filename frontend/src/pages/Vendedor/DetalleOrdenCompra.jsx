@@ -284,11 +284,9 @@ export default function DetalleOrdenCompra() {
           extra={
             <>
               <Button
-                disabled={
-                  !["recepcionada", "recibida con faltante"].includes(
-                    ordenCompra?.ordencompra?.estado,
-                  )
-                }
+                disabled={["recepcionada", "recibida con faltante"].includes(
+                  ordenCompra?.ordencompra?.estado,
+                )}
                 variant="solid"
                 color="green"
                 onClick={() => handleAbrirModalRecepcion()}

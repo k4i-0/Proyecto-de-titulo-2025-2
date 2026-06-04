@@ -15,6 +15,9 @@ import OrdenesCompra from "../pages/Admin/OrdenesCompra/OrdenesCompra.jsx";
 import Bitacoras from "../pages/Admin/Bitacoras.jsx";
 import IngresoManual from "../pages/Admin/OrdenesCompra/IngresoManual.jsx";
 import DetalleCompraDirecta from "../pages/Admin/OrdenesCompra/DetalleCompraDirecta.jsx";
+
+//Ventas
+import GestionDescuentos from "../pages/Admin/ventas/GestionDescuentos.jsx";
 import Pruebas from "../pages/Pruebas.jsx";
 
 import NoEncontrado from "../pages/Compartidas/NoEncontrado.jsx";
@@ -50,6 +53,9 @@ const AdminRouter = () => {
         />
         <Route path="pruebas" element={<Pruebas />} />
         <Route path="*" element={<NoEncontrado />} />
+
+        {/**Modulo de ventas */}
+        <Route path="descuentos" element={<GestionDescuentos />} />
       </Route>
     </Routes>
   );

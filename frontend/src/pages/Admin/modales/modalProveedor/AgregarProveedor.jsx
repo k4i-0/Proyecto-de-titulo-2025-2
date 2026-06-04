@@ -38,7 +38,24 @@ export default function AgregarProveedor({
   // Manejador genérico para inputs de texto
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === "rut") {
+      const formatted = formatRut(value);
+      setDatos({ ...datos, [name]: formatted });
+      return;
+    }
     setDatos({ ...datos, [name]: value });
+  };
+
+  const formatRut = (raw) => {
+    if (!raw && raw !== "") return raw;
+    // Eliminar todo excepto dígitos y K/k
+    const cleaned = String(raw)
+      .replace(/[^0-9kK]/g, "")
+      .toUpperCase();
+    if (cleaned.length <= 1) return cleaned;
+    const body = cleaned.slice(0, -1);
+    const dv = cleaned.slice(-1);
+    return `${body}-${dv}`;
   };
 
   // Manejador para el Select de 'estado'

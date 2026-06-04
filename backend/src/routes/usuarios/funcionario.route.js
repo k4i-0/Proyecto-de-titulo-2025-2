@@ -8,6 +8,11 @@ router.get(
 );
 
 router.get(
+  "/historial/:idFuncionario",
+  funcionarioController.obtenerHistorialContratosFuncionario,
+);
+
+router.get(
   "/colaboradores/:idSucursal",
   /*authMiddleware,*/ funcionarioController.obtenerColaboradoresPorSucursal,
 );
@@ -26,6 +31,10 @@ router.delete(
   "/eliminar/:idFuncionario",
   /*authMiddleware, roleMiddleware(['admin']),*/ funcionarioController.eliminarFuncionario,
 );
+
+//Rutas contratos de funcionarios simples
+
+// Rutas para contratos de funcionarios
 router.get("/quienSoy", funcionarioController.quienSoy);
 
 router.get("/contratos", funcionarioController.obtenerContratosFuncionarios);
@@ -45,6 +54,11 @@ router.post("/cambio-turno", funcionarioController.cambiarTurnoFuncionario);
 router.post(
   "/cambio-contrato",
   funcionarioController.cambiarTipoContratoFuncionario,
+);
+
+router.post(
+  "/reasignar-sucursal",
+  funcionarioController.reasignarSucursalFuncionario,
 );
 
 module.exports = router;

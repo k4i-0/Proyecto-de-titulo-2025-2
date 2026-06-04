@@ -3,9 +3,10 @@ import URL from "../Constante";
 
 const API_URL = `${URL}/productos`;
 
-export default async function obtenerProductos() {
+export default async function obtenerProductos(params = {}) {
   try {
     const response = await axios.get(`${API_URL}/buscar`, {
+      params,
       withCredentials: true,
     });
     //console.log("Productos Status:", response.status);
@@ -25,6 +26,19 @@ export async function obtenerProductosId(id) {
     return response.data;
   } catch (error) {
     console.error("Error al obtener productos:", error.response.data.error);
+    return error.response.data;
+  }
+}
+
+export async function obtenerProductosCategoriaYDescuentos() {
+  try {
+    const response = await axios.get(`${API_URL}/categoria/descuento/buscar`, {
+      withCredentials: true,
+    });
+    //console.log("Productos con descuentos obtenidos:", response);
+    return response;
+  } catch (error) {
+    console.error("Error al obtener los productos con descuentos:", error);
     return error.response.data;
   }
 }
@@ -74,14 +88,14 @@ export async function obtenerProductosPorProveedor(rutProveedor) {
       `${API_URL}/proveedor/obtener-productos/${rutProveedor}`,
       {
         withCredentials: true,
-      }
+      },
     );
     //console.log("Productos por proveedor obtenidos:", response);
     return response;
   } catch (error) {
     console.error(
       "Error al obtener productos por proveedor:",
-      error.response.data.error
+      error.response.data.error,
     );
     return error.response.data;
   }

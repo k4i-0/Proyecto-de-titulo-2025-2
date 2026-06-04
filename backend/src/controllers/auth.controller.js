@@ -143,6 +143,7 @@ async function loginCodigo(req, res) {
   try {
     const { codigo } = req.body;
     //VERIFICA QUE SE RECIBA EL CODIGO
+    console.log("Codigo:", codigo);
     if (!codigo) {
       return res.status(203).json({ message: "Faltan datos" });
     }
@@ -185,6 +186,7 @@ async function loginCodigo(req, res) {
         rut: verificarFuncionario.dataValues.rut,
         email: verificarFuncionario.email,
         role: verificarFuncionario.dataValues.role.dataValues.nombreRol,
+        tipoSession: "Caja",
       },
       process.env.JWT_SECRET,
       { expiresIn: "1d" },

@@ -18,6 +18,16 @@ const cajaasignada = sequelize.define(
       type: DataTypes.TIME,
       allowNull: false,
     },
+    estadoCajaAsignada: {
+      type: DataTypes.ENUM(
+        "Asignada",
+        "Bloqueada",
+        "Sin Asignacion",
+        "Cerrada",
+      ),
+      allowNull: false,
+      defaultValue: "Asignada",
+    },
     // idFuncionario: {
     //   type: DataTypes.INTEGER,
     //   allowNull: false,
@@ -62,7 +72,7 @@ const cajaasignada = sequelize.define(
   {
     tableName: "cajaasignada",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = cajaasignada;

@@ -72,6 +72,7 @@ exports.createOrdenCompraDirecta = async (req, res) => {
       productos.length === 0 ||
       !total
     ) {
+      await t.rollback();
       return res
         .status(422)
         .json({ code: 1300, error: "Faltan datos obligatorios" });
@@ -97,16 +98,19 @@ exports.createOrdenCompraDirecta = async (req, res) => {
     );
 
     if (!comprobarProveedor) {
+      await t.rollback();
       return res
         .status(404)
         .json({ code: 1301, error: "Proveedor no encontrado" });
     }
     if (!comprobarSucursal) {
+      await t.rollback();
       return res
         .status(404)
         .json({ code: 1302, error: "Sucursal no encontrada" });
     }
     if (!comprobarFuncionario) {
+      await t.rollback();
       return res
         .status(404)
         .json({ code: 1303, error: "Funcionario no encontrado" });
@@ -122,16 +126,18 @@ exports.createOrdenCompraDirecta = async (req, res) => {
       comprobarProveedor.idProveedor,
       comprobarSucursal.idSucursal,
       comprobarFuncionario.idFuncionario,
-      comprobarFuncionario.idFuncionario,
+      t,
     );
     if (r.code !== 201) {
+      await t.rollback();
       return res.status(r.code).json({ error: r.error });
     }
 
     // Crear los detalles de la compra (Tabla CompraProveedorDetalle)
     console.log("Producto", productos);
-    const rDetalle = await crearDetalleOC(productos, r.data.idOrdenCompra);
+    const rDetalle = await crearDetalleOC(productos, r.data.idOrdenCompra, t);
     if (rDetalle.code !== 201) {
+      await t.rollback();
       return res.status(rDetalle.code).json({ error: rDetalle.error });
     }
 
@@ -141,11 +147,12 @@ exports.createOrdenCompraDirecta = async (req, res) => {
       comprobarProveedor.idProveedor,
     );
     if (rAsociar.code !== 201) {
+      await t.rollback();
       return res.status(rAsociar.code).json({ error: rAsociar.error });
     }
 
     // Si todo sale bien, actualizar el estado de la orden a pendiente recibir
-    await r.data.update({ estado: "pendiente recibir" });
+    await r.data.update({ estado: "pendiente recibir" }, { transaction: t });
     //Guardar transaccion si sale todo bien
     await t.commit();
     return res
@@ -232,6 +239,60 @@ exports.obtenerOrdenesCompraDirecta = async (req, res) => {
   }
 };
 
+exports.editarOrdenCompraDirecta = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { nombreOrden } = req.params;
+    const datos = req.body?.datos || req.body;
+
+    const productos = datos?.productos;
+    const observaciones = datos?.observaciones ?? "";
+
+    if (!nombreOrden || !productos || productos.length === 0) {
+      await t.rollback();
+      return res.status(422).json({
+        error: "Faltan datos obligatorios: productos es requerido",
+      });
+    }
+
+    //buscar orden de compra por nombreOrden
+    const orden = await OrdenCompra.findOne({
+      where: { nombreOrden: nombreOrden, tipo: "compra directa" },
+      transaction: t,
+    });
+    if (!orden) {
+      await t.rollback();
+      return res
+        .status(404)
+        .json({ error: "Orden de compra directa no encontrada" });
+    }
+
+    const rOCDetalle = await modificarDetalleOCAdminSucursal(
+      nombreOrden,
+      productos,
+      observaciones,
+      t,
+    );
+
+    if (rOCDetalle.code !== 200) {
+      await t.rollback();
+      return res.status(rOCDetalle.code).json({ error: rOCDetalle.error });
+    }
+
+    await t.commit();
+    return res.status(200).json({
+      message: "Orden de compra directa modificada exitosamente",
+      data: rOCDetalle.data,
+    });
+  } catch (error) {
+    await t.rollback();
+    console.log("error editar ocdirecta:", error);
+    res
+      .status(500)
+      .json({ error: "Error al editar la orden de compra directa" });
+  }
+};
+
 //cancelar Orden de compra directa
 exports.anularOrdenCompraDirecta = async (req, res) => {
   try {
@@ -250,12 +311,65 @@ exports.anularOrdenCompraDirecta = async (req, res) => {
       observaciones === null ||
       observaciones === undefined
     ) {
+      await t.rollback();
       return res.status(422).json({
         error: "Observaciones son obligatorias para anular la orden de compra",
       });
     }
-    const r = await cambiarEstadoOC(nombreOrden, "anulada", observaciones);
+    //buscar funcionario por token
+    const { token } = req.cookies;
+    if (!token) {
+      await t.rollback();
+      return res
+        .status(401)
+        .json({ error: "Token de autenticación no proporcionado" });
+    }
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      await t.rollback();
+      return res.status(401).json({ error: "Token de autenticación inválido" });
+    }
+    const funcionario = await Funcionario.findOne({
+      where: { rut: decoded.rut },
+    });
+    if (!funcionario) {
+      await t.rollback();
+      return res.status(404).json({ error: "Funcionario no encontrado" });
+    }
+    //buscar orden de compra por nombreOrden
+    const ordenCompra = await OrdenCompra.findOne(
+      {
+        where: { nombreOrden: nombreOrden },
+      },
+      { transaction: t },
+    );
+    if (!ordenCompra) {
+      await t.rollback();
+      return res
+        .status(404)
+        .json({ error: "Orden de compra directa no encontrada" });
+    }
+    if (
+      ordenCompra.estado === "anulada" ||
+      ordenCompra.estado === "cancelada" ||
+      ordenCompra.estado === "recepcionada"
+    ) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ error: "La orden de compra directa ya se encuentra anulada" });
+    }
+    const r = await cambiarEstadoOC(
+      nombreOrden,
+      "anulada",
+      observaciones,
+      funcionario.idFuncionario,
+      t,
+    );
     if (r.code !== 200) {
+      await t.rollback();
       return res.status(r.code).json({ error: r.error });
     }
     await t.commit();
@@ -333,9 +447,12 @@ exports.recepcionarOrdenCompraDirecta = async (req, res) => {
         .status(404)
         .json({ error: "Orden de compra directa no encontrada" });
     }
-    if (oc.estado !== "pendiente recibir") {
+    if (
+      oc.estado !== "pendiente recibir" &&
+      oc.estado !== "aceptada con modificaciones"
+    ) {
       return res.status(400).json({
-        error: `La OC no está en estado 'pendiente recibir' (estado actual: ${oc.estado})`,
+        error: `La OC no está en estado 'pendiente recibir' o 'aceptada con modificaciones' (estado actual: ${oc.estado})`,
       });
     }
 

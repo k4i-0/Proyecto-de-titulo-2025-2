@@ -11,25 +11,25 @@ const inventario = sequelize.define(
       autoIncrement: true,
     },
     stock: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       defaultValue: 0,
     },
     // stock == sumatoria Lote.StockInicial
     stockMinimo: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       defaultValue: 0,
     },
     // define tope minimo
     stockMaximo: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
-      defaultValue: 100,
+      defaultValue: 10000,
     },
     //Maximo permitido
     stockReservado: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       defaultValue: 0,
     },

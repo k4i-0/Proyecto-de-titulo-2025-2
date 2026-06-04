@@ -16,6 +16,10 @@ const loteRoutes = require("./inventario/lote.route");
 
 const despachoRoutes = require("./inventario/despacho.route");
 
+const ventaRoutes = require("./ventas/ventas.route");
+
+const DescuentoRoutes = require("./ventas/descuento.route");
+
 //Autenticacion
 router.use("/auth", AuthRoutes);
 
@@ -51,5 +55,11 @@ router.use("/despachos", despachoRoutes);
 
 //Rutas Lotes
 router.use("/lotes", loteRoutes);
+
+//Rutas Ventas
+router.use("/ventas", ventaRoutes);
+
+//Rutas Descuentos
+router.use("/descuentos", DescuentoRoutes);
 
 module.exports = router;

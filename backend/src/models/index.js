@@ -42,6 +42,8 @@ db.compraproveedordetalle = require("./inventario/CompraProveedorDetalle");
 db.RealizaVenta = require("./ventas/RealizaVenta");
 db.EntregaProveedor = require("./inventario/EntregaProveedor");
 db.CreaOrdenCompra = require("./inventario/CreaOrdenCompra");
+db.RegistroCaja = require("./ventas/RegistroCaja");
+db.MovimientoCaja = require("./ventas/MovimientoCaja");
 
 //Destructuriacion
 const {
@@ -73,6 +75,8 @@ const {
   DescuentoSobre,
   Provee,
   CreaOrdenCompra,
+  RegistroCaja,
+  MovimientoCaja,
 } = db;
 
 // ========== tablas 1:n Modulo Inventario ==========
@@ -238,12 +242,28 @@ Caja.belongsTo(Proveedor, {
   foreignKey: "idProveedor",
 });
 
-//Decuento VentaCliente 1:N
-VentaCliente.hasMany(Descuento, {
-  foreignKey: "idVentaCliente",
+//Caja -> RegistroCaja (1:N)
+Caja.hasMany(RegistroCaja, {
+  foreignKey: "idCaja",
 });
-Descuento.belongsTo(VentaCliente, {
-  foreignKey: "idVentaCliente",
+RegistroCaja.belongsTo(Caja, {
+  foreignKey: "idCaja",
+});
+
+//Caja -> MovimientoCaja (1:N)
+Caja.hasMany(MovimientoCaja, {
+  foreignKey: "idCaja",
+});
+MovimientoCaja.belongsTo(Caja, {
+  foreignKey: "idCaja",
+});
+
+//Decuento VentaCliente 1:N
+Descuento.hasMany(VentaCliente, {
+  foreignKey: "idDescuento",
+});
+VentaCliente.belongsTo(Descuento, {
+  foreignKey: "idDescuento",
 });
 
 // ========== TABLAS INTERMEDIAS ==========
@@ -332,10 +352,10 @@ RealizaVenta.belongsTo(Caja, { foreignKey: "idCaja" });
 
 //Venta (Cliente -detalle Venta )
 
-DetalleVenta.hasMany(VentaCliente, { foreignKey: "idDetalleVenta" });
-Cliente.hasMany(VentaCliente, { foreignKey: "idCliente" });
+VentaCliente.hasMany(DetalleVenta, { foreignKey: "idVentaCliente" });
+DetalleVenta.belongsTo(VentaCliente, { foreignKey: "idVentaCliente" });
 
-VentaCliente.belongsTo(DetalleVenta, { foreignKey: "idDetalleVenta" });
+Cliente.hasMany(VentaCliente, { foreignKey: "idCliente" });
 VentaCliente.belongsTo(Cliente, { foreignKey: "idCliente" });
 
 // Asocioacion descuento sobre productos y categoria

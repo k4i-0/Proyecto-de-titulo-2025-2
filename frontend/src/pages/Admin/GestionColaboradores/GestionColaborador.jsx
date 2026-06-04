@@ -43,11 +43,437 @@ import {
   FileAddOutlined,
   NotificationFilled,
 } from "@ant-design/icons";
+
 import dayjs from "dayjs";
+
+import JsBarcode from "jsbarcode";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
-const { Option } = Select;
+const { Option, OptGroup } = Select;
+
+const comunasPorRegion = [
+  {
+    label: "Arica y Parinacota",
+    options: ["Arica", "Camarones", "Putre", "General Lagos"],
+  },
+  {
+    label: "Tarapacá",
+    options: [
+      "Iquique",
+      "Alto Hospicio",
+      "Pozo Almonte",
+      "Camiña",
+      "Colchane",
+      "Huara",
+      "Pica",
+    ],
+  },
+  {
+    label: "Antofagasta",
+    options: [
+      "Antofagasta",
+      "Mejillones",
+      "Sierra Gorda",
+      "Taltal",
+      "Calama",
+      "Ollagüe",
+      "San Pedro de Atacama",
+      "Tocopilla",
+      "María Elena",
+    ],
+  },
+  {
+    label: "Atacama",
+    options: [
+      "Copiapó",
+      "Caldera",
+      "Tierra Amarilla",
+      "Chañaral",
+      "Diego de Almagro",
+      "Vallenar",
+      "Alto del Carmen",
+      "Freirina",
+      "Huasco",
+    ],
+  },
+  {
+    label: "Coquimbo",
+    options: [
+      "La Serena",
+      "Coquimbo",
+      "Andacollo",
+      "La Higuera",
+      "Paihuano",
+      "Vicuña",
+      "Illapel",
+      "Canela",
+      "Los Vilos",
+      "Salamanca",
+      "Ovalle",
+      "Combarbalá",
+      "Monte Patria",
+      "Punitaqui",
+      "Río Hurtado",
+    ],
+  },
+  {
+    label: "Valparaíso",
+    options: [
+      "Valparaíso",
+      "Casablanca",
+      "Concón",
+      "Juan Fernández",
+      "Puchuncaví",
+      "Quintero",
+      "Viña del Mar",
+      "Isla de Pascua",
+      "Los Andes",
+      "Calle Larga",
+      "Rinconada",
+      "San Esteban",
+      "La Ligua",
+      "Cabildo",
+      "Papudo",
+      "Petorca",
+      "Zapallar",
+      "Quillota",
+      "Calera",
+      "Hijuelas",
+      "La Cruz",
+      "Nogales",
+      "San Antonio",
+      "Algarrobo",
+      "Cartagena",
+      "El Quisco",
+      "El Tabo",
+      "Santo Domingo",
+      "San Felipe",
+      "Catemu",
+      "Llaillay",
+      "Panquehue",
+      "Putaendo",
+      "Santa María",
+      "Quilpué",
+      "Limache",
+      "Olmué",
+      "Villa Alemana",
+    ],
+  },
+  {
+    label: "Metropolitana de Santiago",
+    options: [
+      "Santiago",
+      "Cerrillos",
+      "Cerro Navia",
+      "Conchalí",
+      "El Bosque",
+      "Estación Central",
+      "Huechuraba",
+      "Independencia",
+      "La Cisterna",
+      "La Florida",
+      "La Granja",
+      "La Pintana",
+      "La Reina",
+      "Las Condes",
+      "Lo Barnechea",
+      "Lo Espejo",
+      "Lo Prado",
+      "Macul",
+      "Maipú",
+      "Ñuñoa",
+      "Pedro Aguirre Cerda",
+      "Peñalolén",
+      "Providencia",
+      "Pudahuel",
+      "Quilicura",
+      "Quinta Normal",
+      "Recoleta",
+      "Renca",
+      "San Joaquín",
+      "San Miguel",
+      "San Ramón",
+      "Vitacura",
+      "Puente Alto",
+      "Pirque",
+      "San José de Maipo",
+      "Colina",
+      "Lampa",
+      "Tiltil",
+      "San Bernardo",
+      "Buin",
+      "Calera de Tango",
+      "Paine",
+      "Melipilla",
+      "Alhué",
+      "Curacaví",
+      "María Pinto",
+      "San Pedro",
+      "Talagante",
+      "El Monte",
+      "Isla de Maipo",
+      "Padre Hurtado",
+      "Peñaflor",
+    ],
+  },
+  {
+    label: "O'Higgins",
+    options: [
+      "Rancagua",
+      "Codegua",
+      "Coinco",
+      "Coltauco",
+      "Doñihue",
+      "Graneros",
+      "Las Cabras",
+      "Machalí",
+      "Malloa",
+      "Mostazal",
+      "Olivar",
+      "Peumo",
+      "Pichidegua",
+      "Quinta de Tilcoco",
+      "Rengo",
+      "Requínoa",
+      "San Vicente",
+      "Pichilemu",
+      "La Estrella",
+      "Litueche",
+      "Marchihue",
+      "Navidad",
+      "Paredones",
+      "San Fernando",
+      "Chépica",
+      "Chimbarongo",
+      "Lolol",
+      "Nancagua",
+      "Palmilla",
+      "Peralillo",
+      "Placilla",
+      "Pumanque",
+      "Santa Cruz",
+    ],
+  },
+  {
+    label: "Maule",
+    options: [
+      "Talca",
+      "Constitución",
+      "Curepto",
+      "Empedrado",
+      "Maule",
+      "Pelarco",
+      "Pencahue",
+      "Río Claro",
+      "San Clemente",
+      "Cauquenes",
+      "Chanco",
+      "Pelluhue",
+      "Curicó",
+      "Hualañé",
+      "Licantén",
+      "Molina",
+      "Rauco",
+      "Romeral",
+      "Sagrada Familia",
+      "Teno",
+      "Vichuquén",
+      "Linares",
+      "Colbún",
+      "Longaví",
+      "Parral",
+      "Retiro",
+      "San Javier",
+      "Villa Alegre",
+      "Yerbas Buenas",
+    ],
+  },
+  {
+    label: "Ñuble",
+    options: [
+      "Chillán",
+      "Chillán Viejo",
+      "Bulnes",
+      "Cobquecura",
+      "Coelemu",
+      "Coihueco",
+      "El Carmen",
+      "Ninhue",
+      "Ñiquén",
+      "Pemuco",
+      "Pinto",
+      "Portezuelo",
+      "Quillón",
+      "Quirihue",
+      "Ránquil",
+      "San Carlos",
+      "San Fabián",
+      "San Ignacio",
+      "San Nicolás",
+      "Treguaco",
+      "Yungay",
+    ],
+  },
+  {
+    label: "Biobío",
+    options: [
+      "Concepción",
+      "Coronel",
+      "Chiguayante",
+      "Florida",
+      "Hualpén",
+      "Hualqui",
+      "Lota",
+      "Penco",
+      "San Pedro de la Paz",
+      "Santa Juana",
+      "Talcahuano",
+      "Tomé",
+      "Lebu",
+      "Arauco",
+      "Cañete",
+      "Contulmo",
+      "Curanilahue",
+      "Los Álamos",
+      "Tirúa",
+      "Los Ángeles",
+      "Antuco",
+      "Cabrero",
+      "Laja",
+      "Mulchén",
+      "Nacimiento",
+      "Negrete",
+      "Quilaco",
+      "Quilleco",
+      "San Rosendo",
+      "Santa Bárbara",
+      "Tucapel",
+      "Yumbel",
+      "Alto Biobío",
+    ],
+  },
+  {
+    label: "La Araucanía",
+    options: [
+      "Temuco",
+      "Carahue",
+      "Cunco",
+      "Curarrehue",
+      "Freire",
+      "Galvarino",
+      "Gorbea",
+      "Lautaro",
+      "Loncoche",
+      "Melipeuco",
+      "Nueva Imperial",
+      "Padre Las Casas",
+      "Perquenco",
+      "Pitrufquén",
+      "Pucón",
+      "Saavedra",
+      "Teodoro Schmidt",
+      "Toltén",
+      "Vilcún",
+      "Villarrica",
+      "Cholchol",
+      "Angol",
+      "Collipulli",
+      "Curacautín",
+      "Ercilla",
+      "Lonquimay",
+      "Los Sauces",
+      "Lumaco",
+      "Purén",
+      "Renaico",
+      "Traiguén",
+      "Victoria",
+    ],
+  },
+  {
+    label: "Los Ríos",
+    options: [
+      "Valdivia",
+      "Corral",
+      "Lanco",
+      "Los Lagos",
+      "Máfil",
+      "Mariquina",
+      "Paillaco",
+      "Panguipulli",
+      "La Unión",
+      "Futrono",
+      "Lago Ranco",
+      "Río Bueno",
+    ],
+  },
+  {
+    label: "Los Lagos",
+    options: [
+      "Puerto Montt",
+      "Calbuco",
+      "Cochamó",
+      "Fresia",
+      "Frutillar",
+      "Llanquihue",
+      "Los Muermos",
+      "Maullín",
+      "Puerto Varas",
+      "Castro",
+      "Ancud",
+      "Chonchi",
+      "Curaco de Vélez",
+      "Dalcahue",
+      "Puqueldón",
+      "Queilén",
+      "Quellón",
+      "Quemchi",
+      "Quinchao",
+      "Osorno",
+      "Puerto Octay",
+      "Purranque",
+      "Puyehue",
+      "Río Negro",
+      "San Juan de la Costa",
+      "San Pablo",
+      "Chaitén",
+      "Futaleufú",
+      "Hualaihué",
+      "Palena",
+    ],
+  },
+  {
+    label: "Aysén",
+    options: [
+      "Coyhaique",
+      "Lago Verde",
+      "Aysén",
+      "Cisnes",
+      "Guaitecas",
+      "Cochrane",
+      "O'Higgins",
+      "Tortel",
+      "Chile Chico",
+      "Río Ibáñez",
+    ],
+  },
+  {
+    label: "Magallanes y de la Antártica Chilena",
+    options: [
+      "Punta Arenas",
+      "Laguna Blanca",
+      "Río Verde",
+      "San Gregorio",
+      "Cabo de Hornos",
+      "Antártica",
+      "Porvenir",
+      "Primavera",
+      "Timaukel",
+      "Natales",
+      "Torres del Paine.",
+    ],
+  },
+];
 
 import DataTable from "../../../components/Tabla";
 
@@ -60,16 +486,21 @@ import obtenerTodosFuncionarios, {
   asignarContratoAFuncionarioSinContrato,
   cambiarTurnoFuncionario,
   cambiarTipoContratoFuncionario,
+  reasignarSucursalFuncionario,
+  obtenerHistorialContratosDelFuncionario,
 } from "../../../services/usuario/funcionario.service";
 import obtenerSucursales from "../../../services/inventario/Sucursal.service";
 
 const GestionColaborador = () => {
   const [form] = Form.useForm();
+
   const [formContrato] = Form.useForm();
   const [formEditarTurno] = Form.useForm();
   const [formEditarContrato] = Form.useForm();
+  const [formReasignacion] = Form.useForm();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
+  const [detalleTabKey, setDetalleTabKey] = useState("resumen");
   const [editMode, setEditMode] = useState(false);
   const [selectedColaborador, setSelectedColaborador] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -77,6 +508,11 @@ const GestionColaborador = () => {
 
   const [contratos, setContratos] = useState([]);
   const [sucursales, setSucursales] = useState([]);
+  const [sucursalPermisosSeleccionada, setSucursalPermisosSeleccionada] =
+    useState(undefined);
+  const [modalPermisosVisible, setModalPermisosVisible] = useState(false);
+  const [funcionarioPermisosSeleccionado, setFuncionarioPermisosSeleccionado] =
+    useState(null);
 
   const [modalContratoVisible, setModalContratoVisible] = useState(false);
   const [contratoSeleccionado, setContratoSeleccionado] = useState(null);
@@ -87,8 +523,225 @@ const GestionColaborador = () => {
   const [contratoTurnoEditando, setContratoTurnoEditando] = useState(null);
   const [modalEditarContratoVisible, setModalEditarContratoVisible] =
     useState(false);
-  const [contratoEditando, setContratoEditando] = useState(null);
   const [funcionarioBuscado, setFuncionarioBuscado] = useState(null);
+  const [historialContratos, setHistorialContratos] = useState([]);
+
+  const contratosDelColaborador = useMemo(() => {
+    if (!selectedColaborador) {
+      return [];
+    }
+
+    return contratos.filter((contrato) => {
+      const funcionarioContrato = contrato?.funcionario;
+      return (
+        funcionarioContrato?.rut === selectedColaborador?.rut ||
+        funcionarioContrato?.idFuncionario === selectedColaborador?.id ||
+        (funcionarioContrato?.nombre === selectedColaborador?.nombre &&
+          funcionarioContrato?.apellido === selectedColaborador?.apellido)
+      );
+    });
+  }, [contratos, selectedColaborador]);
+
+  const contratoActivoColaborador = useMemo(() => {
+    return (
+      contratosDelColaborador.find(
+        (contrato) => contrato.estado === "Activo",
+      ) ||
+      contratosDelColaborador[0] ||
+      null
+    );
+  }, [contratosDelColaborador]);
+
+  const sucursalSeleccionadaPermisosNombre = useMemo(() => {
+    if (!sucursalPermisosSeleccionada) {
+      return "";
+    }
+
+    return (
+      sucursales.find(
+        (sucursal) =>
+          String(sucursal.idSucursal) === String(sucursalPermisosSeleccionada),
+      )?.nombre || ""
+    );
+  }, [sucursales, sucursalPermisosSeleccionada]);
+
+  const funcionariosPorSucursalPermisos = useMemo(() => {
+    if (!sucursalPermisosSeleccionada) {
+      return [];
+    }
+
+    const normalizar = (valor) =>
+      String(valor || "")
+        .trim()
+        .toLowerCase();
+
+    const sucursalSeleccionadaNormalizada = normalizar(
+      sucursalSeleccionadaPermisosNombre,
+    );
+
+    return colaboradores
+      .filter((colaborador) => {
+        const sucursalFuncionarioId = normalizar(colaborador?.idSucursal);
+        const sucursalFuncionarioNombre = normalizar(
+          colaborador?.sucursal?.nombre ||
+            colaborador?.sucursalNombre ||
+            colaborador?.sucursal,
+        );
+
+        return (
+          sucursalFuncionarioId === normalizar(sucursalPermisosSeleccionada) ||
+          sucursalFuncionarioNombre === sucursalSeleccionadaNormalizada
+        );
+      })
+      .map((colaborador) => ({
+        ...colaborador,
+        sucursalNombre:
+          colaborador?.sucursal?.nombre ||
+          colaborador?.sucursalNombre ||
+          colaborador?.sucursal ||
+          sucursalSeleccionadaPermisosNombre ||
+          "Casa Matriz",
+      }));
+  }, [
+    colaboradores,
+    sucursalPermisosSeleccionada,
+    sucursalSeleccionadaPermisosNombre,
+  ]);
+
+  const formatearCodigoAcceso = (rut = "") => {
+    const cuerpoRut = String(rut).split("-")[0];
+    if (!cuerpoRut) {
+      return "-";
+    }
+
+    return cuerpoRut.slice(-4).padStart(4, "0");
+  };
+
+  const obtenerPermisosActivos = (privilegios = {}) => {
+    if (!privilegios || typeof privilegios !== "object") {
+      return [];
+    }
+
+    return Object.entries(privilegios)
+      .filter(([, habilitado]) => Boolean(habilitado))
+      .map(([clave]) => clave);
+  };
+
+  const abrirModalPermisos = (funcionario) => {
+    setFuncionarioPermisosSeleccionado(funcionario);
+    setModalPermisosVisible(true);
+  };
+
+  const cerrarModalPermisos = () => {
+    setModalPermisosVisible(false);
+    setFuncionarioPermisosSeleccionado(null);
+  };
+
+  const generarSVGBarcode = (codigo = "") => {
+    try {
+      const canvas = document.createElement("canvas");
+      JsBarcode(canvas, String(codigo), {
+        format: "CODE128",
+        width: 1,
+        height: 50,
+        displayValue: false,
+        margin: 10,
+      });
+      return canvas.toDataURL("image/png");
+    } catch (error) {
+      console.error("Error generando barcode:", error);
+      return null;
+    }
+  };
+
+  const imprimirCodigoAcceso = () => {
+    if (!funcionarioPermisosSeleccionado) return;
+
+    const codigoAcceso = funcionarioPermisosSeleccionado.codigoAcceso;
+
+    // EAN13 necesita 12 dígitos + 1 verificador, padStart para rellenar
+    const codigoCode128 = String(codigoAcceso).trim();
+    const imagenBarcode = generarSVGBarcode(codigoCode128);
+    if (!imagenBarcode) {
+      notification.error({ message: "Error al generar código de barras" });
+      return;
+    }
+
+    const ventana = window.open("", "_blank", "width=520,height=360");
+    if (!ventana) {
+      notification.error({
+        message: "No se pudo abrir la ventana de impresión",
+      });
+      return;
+    }
+
+    ventana.document.write(`
+  <html>
+    <head>
+      <title>Código de acceso</title>
+      <style>
+        @page {
+          size: 10cm 10cm;
+          margin: 0;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          width: 10cm;
+          height: 10cm;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: white;
+          font-family: Arial, sans-serif;
+        }
+        .card {
+          width: 10cm;
+          height: 10cm;
+          box-sizing: border-box;
+          padding: 2mm;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+        }
+        .nombre {
+          font-size: 6px;
+          font-weight: bold;
+          text-align: center;
+          margin: 0;
+        }
+        .rut {
+          font-size: 5px;
+          color: #555;
+          text-align: center;
+          margin: 0;
+        }
+        .cargo {
+          font-size: 5px;
+          color: #888;
+          text-align: center;
+          margin: 0;
+        }
+        img { max-width: 100%; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <p class="nombre">${funcionarioPermisosSeleccionado.nombre} ${funcionarioPermisosSeleccionado.apellido}</p>
+        <p class="rut">${funcionarioPermisosSeleccionado.rut}</p>
+        <p class="cargo">${funcionarioPermisosSeleccionado.cargo || ""}</p>
+        <img src="${imagenBarcode}" />
+      </div>
+    </body>
+  </html>
+`);
+    ventana.document.close();
+    ventana.focus();
+    ventana.print();
+    ventana.close();
+  };
 
   //obtener sucursales
   useEffect(() => {
@@ -178,6 +831,7 @@ const GestionColaborador = () => {
   };
   useEffect(() => {
     obtenerColaboradores();
+    obtenerContratos();
   }, []);
 
   //obtener contratos
@@ -200,6 +854,21 @@ const GestionColaborador = () => {
         description: "No se pudo conectar al servidor.",
         duration: 5,
       });
+    }
+  };
+
+  //historial de contratos
+  const cargarHistorial = async (idFuncionario) => {
+    try {
+      const respuesta =
+        await obtenerHistorialContratosDelFuncionario(idFuncionario);
+      if (respuesta.status === 200) {
+        setHistorialContratos(respuesta.data);
+        return;
+      }
+      setHistorialContratos([]);
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -413,7 +1082,6 @@ const GestionColaborador = () => {
 
   // ABRIR/CERRAR Modal Editar Contrato (frontend-only)
   const abrirModalEditarContrato = (record) => {
-    setContratoEditando(record);
     // intentar precargar funcionario
     setFuncionarioBuscado(record?.funcionario || null);
     formEditarContrato.setFieldsValue({
@@ -425,20 +1093,31 @@ const GestionColaborador = () => {
   };
 
   const cerrarModalEditarContrato = () => {
-    setContratoEditando(null);
     setFuncionarioBuscado(null);
     setModalEditarContratoVisible(false);
     formEditarContrato.resetFields();
   };
 
+  const formatearRutNumerico = (value = "") => {
+    const soloDigitos = String(value).replace(/\D/g, "").slice(0, 9);
+    if (soloDigitos.length <= 1) {
+      return soloDigitos;
+    }
+    const cuerpo = soloDigitos.slice(0, -1);
+    const dv = soloDigitos.slice(-1);
+    return `${cuerpo}-${dv}`;
+  };
+
   const handleBuscarFuncionarioPorRut = (rut) => {
-    if (!rut) {
+    const rutFormateado = formatearRutNumerico(rut);
+
+    if (!rutFormateado) {
       notification.error({ message: "Ingrese RUT para buscar" });
       return;
     }
     const encontrado =
-      colaboradores.find((c) => c.rut === rut) ||
-      funcionariosSinContrato.find((f) => f.rut === rut);
+      colaboradores.find((c) => c.rut === rutFormateado) ||
+      funcionariosSinContrato.find((f) => f.rut === rutFormateado);
     if (!encontrado) {
       setFuncionarioBuscado(null);
       notification.error({ message: "Funcionario no encontrado" });
@@ -595,6 +1274,23 @@ const GestionColaborador = () => {
       ),
     },
     {
+      title: "Turno",
+      dataIndex: "turno",
+      key: "turno",
+      width: 120,
+      render: (turno) => {
+        const colors = {
+          Mañana: "blue",
+          Tarde: "orange",
+          Noche: "purple",
+          Rotativo: "green",
+        };
+        return (
+          <Tag color={colors[turno] || "default"}>{turno || "No asignado"}</Tag>
+        );
+      },
+    },
+    {
       title: "Contacto",
       key: "contacto",
       width: 250,
@@ -623,44 +1319,44 @@ const GestionColaborador = () => {
         />
       ),
     },
-    {
-      title: "Acciones",
-      key: "acciones",
-      fixed: "right",
-      width: 150,
-      render: (_, record) => (
-        <Space key={`acciones-${record?.id || record?.idFuncionario}`}>
-          <Tooltip key="view" title="Ver Detalles">
-            <Button
-              type="link"
-              icon={<EyeOutlined />}
-              onClick={() => handleViewDetails(record)}
-            />
-          </Tooltip>
-          <Tooltip key="edit" title="Editar">
-            <Button
-              type="link"
-              icon={<EditOutlined />}
-              onClick={() => handleEdit(record)}
-            />
-          </Tooltip>
-          <Tooltip key="delete" title="Eliminar">
-            <Popconfirm
-              title="¿Está seguro de eliminar este colaborador?"
-              description="Esta acción no se puede deshacer."
-              // IMPORTANTE: Asegúrate de que el ID que pasas aquí
-              // coincida con el que viene del backend (idFuncionario)
-              onConfirm={() => handleDelete(record.id || record.idFuncionario)}
-              okText="Sí, eliminar"
-              cancelText="Cancelar"
-              okButtonProps={{ danger: true }}
-            >
-              <Button type="link" danger icon={<DeleteOutlined />} />
-            </Popconfirm>
-          </Tooltip>
-        </Space>
-      ),
-    },
+    // {
+    //   title: "Acciones",
+    //   key: "acciones",
+    //   fixed: "right",
+    //   width: 150,
+    //   render: (_, record) => (
+    //     <Space key={`acciones-${record?.id || record?.idFuncionario}`}>
+    //       <Tooltip key="view" title="Ver Detalles">
+    //         <Button
+    //           type="link"
+    //           icon={<EyeOutlined />}
+    //           onClick={() => handleViewDetails(record)}
+    //         />
+    //       </Tooltip>
+    //       <Tooltip key="edit" title="Editar">
+    //         <Button
+    //           type="link"
+    //           icon={<EditOutlined />}
+    //           onClick={() => handleEdit(record)}
+    //         />
+    //       </Tooltip>
+    //       <Tooltip key="delete" title="Eliminar">
+    //         <Popconfirm
+    //           title="¿Está seguro de eliminar este colaborador?"
+    //           description="Esta acción no se puede deshacer."
+    //           // IMPORTANTE: Asegúrate de que el ID que pasas aquí
+    //           // coincida con el que viene del backend (idFuncionario)
+    //           onConfirm={() => handleDelete(record.id || record.idFuncionario)}
+    //           okText="Sí, eliminar"
+    //           cancelText="Cancelar"
+    //           okButtonProps={{ danger: true }}
+    //         >
+    //           <Button type="link" danger icon={<DeleteOutlined />} />
+    //         </Popconfirm>
+    //       </Tooltip>
+    //     </Space>
+    //   ),
+    // },
   ];
 
   const handleAdd = () => {
@@ -674,6 +1370,7 @@ const GestionColaborador = () => {
     console.log("Editar", record);
     setEditMode(true);
     setSelectedColaborador(record);
+
     form.setFieldsValue({
       ...record,
       fechaIngreso: record.fechaIngreso ? dayjs(record.fechaIngreso) : null,
@@ -684,6 +1381,7 @@ const GestionColaborador = () => {
   const handleViewDetails = (record) => {
     console.log("Ver detalles de:", record);
     setSelectedColaborador(record);
+    setDetalleTabKey("resumen");
     setDetailDrawerVisible(true);
   };
 
@@ -716,11 +1414,20 @@ const GestionColaborador = () => {
   //envio editar crear
   const handleSubmit = async (values) => {
     setLoading(true);
+    const { region, comuna, direccion, ...restoValues } = values;
+    const direccionCompleta = [direccion, comuna, region]
+      .filter(Boolean)
+      .join(", ");
+    const valuesAEnviar = {
+      ...restoValues,
+      direccion: direccionCompleta,
+    };
+    console.log("Valores a enviar", valuesAEnviar);
+    //modifica la direccion
     if (editMode) {
-      console.log("Valores del formulario edit:", values);
       setLoading(true);
       try {
-        const response = await editarFuncionario(values);
+        const response = await editarFuncionario(valuesAEnviar);
         if (response.status === 200) {
           notification.success({
             message: response.data.message || "Colaborador actualizado",
@@ -749,7 +1456,8 @@ const GestionColaborador = () => {
       }
     } else {
       try {
-        const response = await crearFuncionario(values);
+        console.log("datos antes de enviar", valuesAEnviar);
+        const response = await crearFuncionario(valuesAEnviar);
         console.log("respuesta", response);
         if (response.status === 201) {
           notification.success({
@@ -783,9 +1491,68 @@ const GestionColaborador = () => {
 
   const handleCerrarModal = () => {
     setDetailDrawerVisible(false);
+    setDetalleTabKey("resumen");
+    setSelectedColaborador(null);
+    formReasignacion.resetFields();
     setDrawerVisible(false);
     obtenerColaboradores();
   };
+
+  const handleSubmitReasignacion = async (values) => {
+    if (!selectedColaborador?.id) {
+      notification.error({
+        message: "No se pudo identificar al colaborador",
+      });
+      return;
+    }
+
+    try {
+      const response = await reasignarSucursalFuncionario({
+        idFuncionario: selectedColaborador.id,
+        idSucursal: values.idSucursal,
+        motivo: values.motivo,
+      });
+
+      if (response.status === 201) {
+        notification.success({
+          message: response.data.message || "Sucursal reasignada",
+          description: "El colaborador fue movido a la nueva sucursal.",
+          duration: 3,
+        });
+        formReasignacion.resetFields();
+        obtenerContratos();
+        obtenerColaboradores();
+        handleCerrarModal();
+        return;
+      }
+
+      notification.error({
+        message: response.error || "Error al reasignar sucursal",
+        description: "No se pudo completar la reasignación.",
+        duration: 5,
+      });
+    } catch (error) {
+      notification.error({
+        message: error.message || "Error de servidor",
+        description: "No se pudo conectar al servidor.",
+        duration: 5,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (detailDrawerVisible && detalleTabKey === "reasignar") {
+      formReasignacion.setFieldsValue({
+        idSucursal: contratoActivoColaborador?.idSucursal || undefined,
+        motivo: "",
+      });
+    }
+  }, [
+    detailDrawerVisible,
+    detalleTabKey,
+    contratoActivoColaborador,
+    formReasignacion,
+  ]);
 
   //contratos
   const abrirModalCrearContrato = () => {
@@ -799,6 +1566,13 @@ const GestionColaborador = () => {
 
   const handleSubmitContrato = async (values) => {
     console.log("Valores del formulario contrato:", values);
+    if (!values.rutFuncionario || !values.idSucursal) {
+      notification.error({
+        message: "Faltan datos obligatorios",
+        description: "Debes seleccionar un funcionario y una sucursal.",
+      });
+      return;
+    }
     try {
       const response = await asignarContratoAFuncionarioSinContrato(values);
       console.log("respuesta asignar contrato", response);
@@ -831,7 +1605,7 @@ const GestionColaborador = () => {
   return (
     <div>
       <Tabs
-        tabPosition="left"
+        tabPosition="top"
         onChange={(key) => {
           console.log("key de tab", key);
           if (key === "contratos") {
@@ -856,7 +1630,41 @@ const GestionColaborador = () => {
                         Administra el personal de tus sucursales
                       </Text>
                     </Col>
-                    <Col>
+                    <Col span={10}>
+                      <Row gutter={16}>
+                        <Col xs={24} sm={8}>
+                          <Card>
+                            <Statistic
+                              title="Total Colaboradores"
+                              value={stats.total}
+                              prefix={<TeamOutlined />}
+                              valueStyle={{ color: "#1890ff" }}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <Card>
+                            <Statistic
+                              title="Colaboradores Activos"
+                              value={stats.activos}
+                              prefix={<CheckCircleOutlined />}
+                              valueStyle={{ color: "#52c41a" }}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} sm={8}>
+                          <Card>
+                            <Statistic
+                              title="Colaboradores Inactivos"
+                              value={stats.inactivos}
+                              prefix={<CloseCircleOutlined />}
+                              valueStyle={{ color: "#ff4d4f" }}
+                            />
+                          </Card>
+                        </Col>
+                      </Row>
+                    </Col>
+                    {/* <Col>
                       <Button
                         type="primary"
                         size="large"
@@ -865,42 +1673,7 @@ const GestionColaborador = () => {
                       >
                         Nuevo Colaborador
                       </Button>
-                    </Col>
-                  </Row>
-
-                  <Divider />
-
-                  <Row gutter={16}>
-                    <Col xs={24} sm={8}>
-                      <Card>
-                        <Statistic
-                          title="Total Colaboradores"
-                          value={stats.total}
-                          prefix={<TeamOutlined />}
-                          valueStyle={{ color: "#1890ff" }}
-                        />
-                      </Card>
-                    </Col>
-                    <Col xs={24} sm={8}>
-                      <Card>
-                        <Statistic
-                          title="Colaboradores Activos"
-                          value={stats.activos}
-                          prefix={<CheckCircleOutlined />}
-                          valueStyle={{ color: "#52c41a" }}
-                        />
-                      </Card>
-                    </Col>
-                    <Col xs={24} sm={8}>
-                      <Card>
-                        <Statistic
-                          title="Colaboradores Inactivos"
-                          value={stats.inactivos}
-                          prefix={<CloseCircleOutlined />}
-                          valueStyle={{ color: "#ff4d4f" }}
-                        />
-                      </Card>
-                    </Col>
+                    </Col> */}
                   </Row>
                 </Card>
 
@@ -914,14 +1687,152 @@ const GestionColaborador = () => {
                     searchPlaceholder="Buscar por nombre, RUT o sucursal..."
                     searchableFields={["nombre", "apellido", "rut", "sucursal"]}
                     filterConfig={dataTableFilters}
+                    headerButtons={
+                      <Space>
+                        <Button
+                          type="primary"
+                          icon={<UserAddOutlined />}
+                          onClick={handleAdd}
+                        >
+                          Nuevo Colaborador
+                        </Button>
+                        <Button
+                          type="primary"
+                          icon={<FileTextOutlined />}
+                          onClick={() => abrirModalEditarContrato()}
+                        >
+                          Editar Contrato
+                        </Button>
+                      </Space>
+                    }
+                    onRowClick={(record) => handleViewDetails(record)}
                   />
                 </Card>
               </>
             ),
           },
           {
+            key: "Accesos y Permisos",
+            label: "Accesos y Permisos",
+            children: (
+              <>
+                <Row gutter={16} align="middle" style={{ marginBottom: 24 }}>
+                  <Col xs={24} md={12}>
+                    <Card>
+                      <Title level={4} style={{ marginTop: 0 }}>
+                        Selección de sucursal
+                      </Title>
+                      <Text type="secondary">
+                        Elige una sucursal para ver los funcionarios asociados.
+                      </Text>
+                      <div style={{ marginTop: 16 }}>
+                        <Select
+                          style={{ width: "100%" }}
+                          placeholder="Selecciona una sucursal"
+                          value={sucursalPermisosSeleccionada}
+                          onChange={(value) =>
+                            setSucursalPermisosSeleccionada(value)
+                          }
+                          options={sucursales.map((sucursal) => ({
+                            value: sucursal.idSucursal,
+                            label: sucursal.nombre,
+                          }))}
+                        />
+                      </div>
+                    </Card>
+                  </Col>
+                  <Col xs={24} md={12}>
+                    <Card
+                      title="Resumen"
+                      bordered={false}
+                      style={{ height: "100%" }}
+                    >
+                      <Text>
+                        {sucursalPermisosSeleccionada
+                          ? `${funcionariosPorSucursalPermisos.length} funcionario(s) encontrados en ${sucursalSeleccionadaPermisosNombre || "la sucursal seleccionada"}`
+                          : "Selecciona una sucursal para ver sus funcionarios."}
+                      </Text>
+                    </Card>
+                  </Col>
+                </Row>
+                <Row gutter={[16, 16]}>
+                  {funcionariosPorSucursalPermisos.length > 0 ? (
+                    funcionariosPorSucursalPermisos.map((funcionario) => (
+                      <Col
+                        xs={24}
+                        sm={12}
+                        lg={8}
+                        key={funcionario.idFuncionario}
+                      >
+                        <Card
+                          onClick={() =>
+                            console.log("presione a :", funcionario?.nombre)
+                          }
+                          extra={
+                            <Button
+                              icon={<EyeOutlined />}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                abrirModalPermisos(funcionario);
+                              }}
+                            >
+                              Codgios Acceso
+                            </Button>
+                          }
+                        >
+                          <Space align="start">
+                            <Avatar
+                              size={44}
+                              icon={<UserOutlined />}
+                              style={{ backgroundColor: "#1890ff" }}
+                            >
+                              {String(funcionario?.nombre || "")
+                                .charAt(0)
+                                .toUpperCase()}
+                              {String(funcionario?.apellido || "")
+                                .charAt(0)
+                                .toUpperCase()}
+                            </Avatar>
+                            <div>
+                              <Title level={5} style={{ margin: 0 }}>
+                                {funcionario.nombre} {funcionario.apellido}
+                              </Title>
+                              <Text type="secondary">{funcionario.rut}</Text>
+                              <div style={{ marginTop: 8 }}>
+                                <Tag color="green">
+                                  {funcionario.sucursalNombre}
+                                </Tag>
+                                {funcionario.cargo ? (
+                                  <Tag color="blue">{funcionario.cargo}</Tag>
+                                ) : null}
+                                {funcionario.turno ? (
+                                  <Tag color="orange">{funcionario.turno}</Tag>
+                                ) : null}
+                              </div>
+                            </div>
+                          </Space>
+                        </Card>
+                      </Col>
+                    ))
+                  ) : (
+                    <Col span={24}>
+                      <Card title="Funcionarios">
+                        <Text type="secondary">
+                          {sucursalPermisosSeleccionada
+                            ? "No hay funcionarios asociados a esta sucursal."
+                            : "Selecciona una sucursal para mostrar los funcionarios aquí."}
+                        </Text>
+                      </Card>
+                    </Col>
+                  )}
+                </Row>
+              </>
+            ),
+          },
+          {
             key: "contratos",
             label: "Contratos",
+            disabled: true,
             children: (
               <>
                 <DataTable
@@ -944,14 +1855,6 @@ const GestionColaborador = () => {
                         onClick={() => abrirModalCrearContrato({})}
                       >
                         Nuevo Contrato
-                      </Button>
-
-                      <Button
-                        type="primary"
-                        icon={<FileTextOutlined />}
-                        onClick={() => abrirModalEditarContrato()}
-                      >
-                        Editar Contrato
                       </Button>
                     </Space>
                   }
@@ -1134,11 +2037,57 @@ const GestionColaborador = () => {
               </Form.Item>
             </Col>
           </Row>
-
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="region" label="Región">
+                <Select placeholder="Seleccione una región">
+                  <Option value="Arica y Parinacota">Arica y Parinacota</Option>
+                  <Option value="Tarapaca">Tarapaca</Option>
+                  <Option value="Antofagasta">Antofagasta</Option>
+                  <Option value="Atacama">Atacama</Option>
+                  <Option value="Coquimbo">Coquimbo</Option>
+                  <Option value="Valparaíso">Valparaíso</Option>
+                  <Option value="Metropolitana">Metropolitana</Option>
+                  <Option value="O'Higgins">O'Higgins</Option>
+                  <Option value="Maule">Maule</Option>
+                  <Option value="Ñuble">Ñuble</Option>
+                  <Option value="Biobío">Biobío</Option>
+                  <Option value="La Araucanía">La Araucanía</Option>
+                  <Option value="los Ríos">los Ríos</Option>
+                  <Option value="Los Lagos">Los Lagos</Option>
+                  <Option value="Aysen">Aysen</Option>
+                  <Option value="Magallanes y Antártica Chilena">
+                    Magallanes y Antártica Chilena
+                  </Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="comuna" label="Comuna">
+                <Select
+                  showSearch
+                  placeholder="Seleccione una comuna"
+                  optionFilterProp="children"
+                >
+                  {comunasPorRegion.map((region) => (
+                    <OptGroup key={region.label} label={region.label}>
+                      {region.options.map((comuna) => (
+                        <Option
+                          key={`${region.label}-${comuna}`}
+                          value={comuna}
+                        >
+                          {comuna}
+                        </Option>
+                      ))}
+                    </OptGroup>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
           <Form.Item name="direccion" label="Dirección">
-            <TextArea
-              rows={2}
-              placeholder="Ingrese la dirección completa"
+            <Input
+              placeholder="Ingrese la dirección"
               prefix={<HomeOutlined />}
             />
           </Form.Item>
@@ -1146,25 +2095,11 @@ const GestionColaborador = () => {
             Información Laboral
           </Title>
           <Divider style={{ marginTop: 8, marginBottom: 16 }} />
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Rol" name="nombreRol">
-                <Select placeholder="Seleccione un rol">
-                  <Option value="Administrador">Administrador</Option>
-                  <Option value="Vendedor">Vendedor</Option>
-                  <Option value="Cajero">Cajero</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* 
-          
 
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="cargo"
+                name="nombreRol"
                 label="Cargo"
                 rules={[
                   { required: true, message: "Por favor seleccione el cargo" },
@@ -1179,7 +2114,7 @@ const GestionColaborador = () => {
             </Col>
             <Col span={12}>
               <Form.Item
-                name="sucursal"
+                name="idSucursal"
                 label="Sucursal"
                 rules={[
                   {
@@ -1190,7 +2125,10 @@ const GestionColaborador = () => {
               >
                 <Select placeholder="Seleccione una sucursal">
                   {sucursales.map((sucursal) => (
-                    <Option key={sucursal.id} value={sucursal.nombre}>
+                    <Option
+                      key={sucursal.idSucursal}
+                      value={sucursal.idSucursal}
+                    >
                       {sucursal.nombre}
                     </Option>
                   ))}
@@ -1247,13 +2185,13 @@ const GestionColaborador = () => {
                 ]}
                 initialValue="Activo"
               >
-                <Select placeholder="Seleccione el estado">
+                <Select placeholder="Seleccione el estado" disabled={!editMode}>
                   <Option value="Activo">Activo</Option>
                   <Option value="Inactivo">Inactivo</Option>
                 </Select>
               </Form.Item>
             </Col>
-          </Row> */}
+          </Row>
         </Form>
       </Drawer>
 
@@ -1305,152 +2243,527 @@ const GestionColaborador = () => {
         }
       >
         {selectedColaborador && (
+          <Tabs
+            activeKey={detalleTabKey}
+            onChange={(key) => {
+              setDetalleTabKey(key);
+              if (key === "sucursales") {
+                cargarHistorial(selectedColaborador?.id);
+              }
+            }}
+            items={[
+              {
+                key: "resumen",
+                label: "Resumen",
+                children: (
+                  <>
+                    <Card style={{ marginBottom: 16 }}>
+                      <div style={{ textAlign: "center" }}>
+                        <Avatar
+                          size={70}
+                          icon={<UserOutlined />}
+                          style={{
+                            backgroundColor: "#1890ff",
+                            marginBottom: 10,
+                          }}
+                        >
+                          {selectedColaborador.nombre[0]}
+                          {selectedColaborador.apellido[0]}
+                        </Avatar>
+                        <Title level={3} style={{ marginBottom: 4 }}>
+                          {selectedColaborador.nombre}{" "}
+                          {selectedColaborador.apellido}
+                        </Title>
+                        <Tag color="blue" style={{ fontSize: "14px" }}>
+                          {selectedColaborador.cargo}
+                        </Tag>
+                        <div style={{ marginTop: 12 }}>
+                          <Badge
+                            status={
+                              selectedColaborador.estado === "Activo"
+                                ? "success"
+                                : "error"
+                            }
+                            text={selectedColaborador.estado}
+                            style={{ fontSize: "14px" }}
+                          />
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card
+                      title="Información Personal"
+                      style={{ marginBottom: 16 }}
+                    >
+                      <Descriptions column={2}>
+                        <Descriptions.Item
+                          label={
+                            <span>
+                              <IdcardOutlined style={{ marginRight: 8 }} />
+                              RUT
+                            </span>
+                          }
+                        >
+                          {selectedColaborador.rut}
+                        </Descriptions.Item>
+                        <Descriptions.Item
+                          label={
+                            <span>
+                              <MailOutlined style={{ marginRight: 8 }} />
+                              Email
+                            </span>
+                          }
+                        >
+                          {selectedColaborador.email}
+                        </Descriptions.Item>
+                        <Descriptions.Item
+                          label={
+                            <span>
+                              <PhoneOutlined style={{ marginRight: 8 }} />
+                              Teléfono
+                            </span>
+                          }
+                        >
+                          {selectedColaborador.telefono}
+                        </Descriptions.Item>
+                        <Descriptions.Item
+                          span={2}
+                          label={
+                            <span>
+                              <HomeOutlined style={{ marginRight: 8 }} />
+                              Dirección
+                            </span>
+                          }
+                        >
+                          {selectedColaborador.direccion}
+                        </Descriptions.Item>
+                      </Descriptions>
+                    </Card>
+
+                    <Card
+                      title="Información Laboral"
+                      style={{ marginBottom: 16 }}
+                    >
+                      <Descriptions column={2}>
+                        <Descriptions.Item label="Sucursal" span={2}>
+                          {contratoActivoColaborador?.sucursal?.nombre ||
+                            selectedColaborador.sucursal ||
+                            "Sin Informacion"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Cargo">
+                          <Tag color="blue">
+                            {selectedColaborador.cargo || "Sin Informacion"}
+                          </Tag>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Turno">
+                          <Tag color="orange">
+                            {contratoActivoColaborador?.turno ||
+                              selectedColaborador.turno ||
+                              "Sin Informacion"}
+                          </Tag>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Tipo de Contrato">
+                          {contratoActivoColaborador?.tipoContrato ||
+                            selectedColaborador.tipoContrato ||
+                            "Sin Informacion"}
+                        </Descriptions.Item>
+                        <Descriptions.Item
+                          label={
+                            <span>
+                              <CalendarOutlined style={{ marginRight: 8 }} />
+                              Fecha de Ingreso
+                            </span>
+                          }
+                        >
+                          {contratoActivoColaborador?.fechaIngreso ||
+                          selectedColaborador?.fechaIngreso
+                            ? dayjs(
+                                contratoActivoColaborador?.fechaIngreso ||
+                                  selectedColaborador?.fechaIngreso,
+                              ).format("DD/MM/YYYY")
+                            : "Sin Informacion"}
+                        </Descriptions.Item>
+                      </Descriptions>
+                    </Card>
+
+                    <Card title="Estadísticas">
+                      <Row gutter={16}>
+                        {/* <Col span={12}>
+                          <Statistic
+                            title="Días Trabajando"
+                            value={
+                              contratoActivoColaborador?.fechaIngreso ||
+                              selectedColaborador.fechaIngreso
+                                ? dayjs().diff(
+                                    dayjs(
+                                      contratoActivoColaborador?.fechaIngreso ||
+                                        selectedColaborador.fechaIngreso,
+                                    ),
+                                    "day",
+                                  )
+                                : "N/A"
+                            }
+                            suffix="días"
+                          />
+                        </Col> */}
+                        <Col span={12}>
+                          <Statistic
+                            title="Antigüedad"
+                            value={
+                              contratoActivoColaborador?.fechaIngreso ||
+                              selectedColaborador.fechaIngreso
+                                ? dayjs().diff(
+                                    dayjs(
+                                      contratoActivoColaborador?.fechaIngreso ||
+                                        selectedColaborador.fechaIngreso,
+                                    ),
+                                    "month",
+                                  )
+                                : "N/A"
+                            }
+                            suffix="meses"
+                          />
+                        </Col>
+                      </Row>
+                    </Card>
+                  </>
+                ),
+              },
+              {
+                key: "sucursales",
+                label: "Sucursales",
+                children: (
+                  <>
+                    <Card style={{ marginBottom: 16 }}>
+                      <Row gutter={16}>
+                        <Col span={12}>
+                          <Statistic
+                            title="Sucursales vinculadas"
+                            value={
+                              new Set(
+                                historialContratos.map((c) => c.idSucursal),
+                              ).size
+                            }
+                          />
+                        </Col>
+                        <Col span={12}>
+                          <Statistic
+                            title="Contratos registrados"
+                            value={historialContratos.length}
+                          />
+                        </Col>
+                      </Row>
+                      {/* <div style={{ marginTop: 12 }}>
+                        <Tag
+                          color={
+                            sucursalesDelColaborador.length > 2
+                              ? "red"
+                              : "green"
+                          }
+                        >
+                          {sucursalesDelColaborador.length > 2
+                            ? "Trabaja en más de 2 sucursales"
+                            : "Trabaja en 2 o menos sucursales"}
+                        </Tag>
+                      </div> */}
+                    </Card>
+
+                    <Card title="Historial de sucursales">
+                      {historialContratos.length === 0 ? (
+                        <Text type="secondary">
+                          No hay contratos registrados para este colaborador.
+                        </Text>
+                      ) : (
+                        <Space
+                          direction="vertical"
+                          style={{ width: "100%" }}
+                          size="middle"
+                        >
+                          {historialContratos.map((contrato) => (
+                            <Card
+                              key={contrato.idContratoFuncionario}
+                              size="small"
+                            >
+                              <Row
+                                justify="space-between"
+                                align="middle"
+                                gutter={16}
+                              >
+                                <Col>
+                                  <Text strong>
+                                    {contrato?.sucursal?.nombre ||
+                                      "Sin sucursal"}
+                                  </Text>
+                                  <div>
+                                    <Text type="secondary">
+                                      {contrato?.sucursal?.direccion ||
+                                        "Sin dirección"}
+                                    </Text>
+                                  </div>
+                                  <div style={{ marginTop: 4 }}>
+                                    <Text type="secondary">
+                                      Ingreso:{" "}
+                                      {contrato?.fechaIngreso
+                                        ? dayjs(contrato.fechaIngreso).format(
+                                            "DD/MM/YYYY",
+                                          )
+                                        : "Sin fecha"}
+                                    </Text>
+                                  </div>
+                                  {contrato?.motivoCambioContrato && (
+                                    <div style={{ marginTop: 8 }}>
+                                      <Text
+                                        type="secondary"
+                                        style={{
+                                          fontSize: 11,
+                                          textTransform: "uppercase",
+                                          letterSpacing: "0.05em",
+                                        }}
+                                      >
+                                        Motivo
+                                      </Text>
+                                      <div
+                                        style={{
+                                          marginTop: 4,
+                                          background: "#f9fafb",
+                                          border: "0.5px solid #e5e7eb",
+                                          borderRadius: 6,
+                                          padding: "8px 10px",
+                                          maxHeight: 80, // altura máxima
+                                          overflowY: "auto", // scroll si supera
+                                          fontSize: 13,
+                                          color: "rgba(0,0,0,0.65)",
+                                          lineHeight: 1.6,
+                                          wordBreak: "break-word", // corta palabras largas
+                                          whiteSpace: "pre-wrap", // respeta saltos de línea
+                                        }}
+                                      >
+                                        {contrato.motivoCambioContrato}
+                                      </div>
+                                    </div>
+                                  )}
+                                </Col>
+                                <Col style={{ marginTop: 10 }}>
+                                  <Space
+                                    direction="horizontal"
+                                    align="end"
+                                    size={4}
+                                  >
+                                    <Tag
+                                      color={
+                                        contrato.estado === "Activo"
+                                          ? "green"
+                                          : "default"
+                                      }
+                                    >
+                                      {contrato.estado || "Sin estado"}
+                                    </Tag>
+                                    <Tag color="blue">
+                                      {contrato.tipoContrato || "Sin contrato"}
+                                    </Tag>
+                                    <Tag color="orange">
+                                      {contrato.turno || "Sin turno"}
+                                    </Tag>
+                                  </Space>
+                                </Col>
+                              </Row>
+                            </Card>
+                          ))}
+                        </Space>
+                      )}
+                    </Card>
+                  </>
+                ),
+              },
+              {
+                key: "reasignar",
+                label: "Reasignar",
+                children: (
+                  <>
+                    <Card style={{ marginBottom: 16 }}>
+                      <Descriptions column={1} size="small">
+                        <Descriptions.Item label="Sucursal actual">
+                          {contratoActivoColaborador?.sucursal?.nombre ||
+                            selectedColaborador.sucursal ||
+                            "Sin Informacion"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Turno actual">
+                          {contratoActivoColaborador?.turno ||
+                            selectedColaborador.turno ||
+                            "Sin Informacion"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Tipo de contrato actual">
+                          {contratoActivoColaborador?.tipoContrato ||
+                            selectedColaborador.tipoContrato ||
+                            "Sin Informacion"}
+                        </Descriptions.Item>
+                      </Descriptions>
+                    </Card>
+
+                    <Form
+                      form={formReasignacion}
+                      layout="vertical"
+                      onFinish={handleSubmitReasignacion}
+                    >
+                      <Form.Item
+                        name="idSucursal"
+                        label="Nueva sucursal"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Seleccione una sucursal",
+                          },
+                        ]}
+                      >
+                        <Select placeholder="Seleccione una sucursal">
+                          {sucursales.map((sucursal) => (
+                            <Option
+                              key={sucursal.idSucursal}
+                              value={sucursal.idSucursal}
+                            >
+                              {sucursal.nombre}
+                            </Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+
+                      <Form.Item
+                        name="motivo"
+                        label="Motivo de reasignación"
+                        rules={[
+                          { required: true, message: "Ingrese el motivo" },
+                        ]}
+                      >
+                        <Input.TextArea
+                          rows={4}
+                          placeholder="Ej: cobertura operacional, rotación interna, cambio de base"
+                        />
+                      </Form.Item>
+
+                      <Button type="primary" htmlType="submit">
+                        Reasignar colaborador
+                      </Button>
+                    </Form>
+                  </>
+                ),
+              },
+            ]}
+          />
+        )}
+      </Drawer>
+
+      <Modal
+        title={
+          <Space>
+            <EyeOutlined />
+            <span>Permisos y código de acceso</span>
+          </Space>
+        }
+        open={modalPermisosVisible}
+        onCancel={cerrarModalPermisos}
+        width={760}
+        footer={
+          <Space>
+            <Button onClick={cerrarModalPermisos}>Cerrar</Button>
+            <Button type="primary" onClick={imprimirCodigoAcceso}>
+              Imprimir código
+            </Button>
+          </Space>
+        }
+      >
+        {funcionarioPermisosSeleccionado ? (
           <>
             <Card style={{ marginBottom: 16 }}>
-              <div style={{ textAlign: "center" }}>
-                <Avatar
-                  size={100}
-                  icon={<UserOutlined />}
-                  style={{ backgroundColor: "#1890ff", marginBottom: 16 }}
-                >
-                  {selectedColaborador.nombre[0]}
-                  {selectedColaborador.apellido[0]}
-                </Avatar>
-                <Title level={3} style={{ marginBottom: 4 }}>
-                  {selectedColaborador.nombre} {selectedColaborador.apellido}
-                </Title>
-                <Tag color="blue" style={{ fontSize: "14px" }}>
-                  {selectedColaborador.cargo}
-                </Tag>
-                <div style={{ marginTop: 12 }}>
-                  <Badge
-                    status={
-                      selectedColaborador.estado === "Activo"
-                        ? "success"
-                        : "error"
-                    }
-                    text={selectedColaborador.estado}
-                    style={{ fontSize: "14px" }}
-                  />
-                </div>
-              </div>
-            </Card>
-
-            <Card title="Información Personal" style={{ marginBottom: 16 }}>
-              <Descriptions column={1}>
-                <Descriptions.Item
-                  label={
-                    <span>
-                      <IdcardOutlined style={{ marginRight: 8 }} />
-                      RUT
-                    </span>
-                  }
-                >
-                  {selectedColaborador.rut}
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={
-                    <span>
-                      <MailOutlined style={{ marginRight: 8 }} />
-                      Email
-                    </span>
-                  }
-                >
-                  {selectedColaborador.email}
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={
-                    <span>
-                      <PhoneOutlined style={{ marginRight: 8 }} />
-                      Teléfono
-                    </span>
-                  }
-                >
-                  {selectedColaborador.telefono}
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={
-                    <span>
-                      <HomeOutlined style={{ marginRight: 8 }} />
-                      Dirección
-                    </span>
-                  }
-                >
-                  {selectedColaborador.direccion}
-                </Descriptions.Item>
-              </Descriptions>
-            </Card>
-
-            <Card title="Información Laboral" style={{ marginBottom: 16 }}>
-              <Descriptions column={1}>
-                <Descriptions.Item label="Sucursal">
-                  {selectedColaborador.sucursal || "Sin Informacion"}
-                </Descriptions.Item>
-                <Descriptions.Item label="Cargo">
-                  <Tag color="blue">
-                    {selectedColaborador.cargo || "Sin Informacion"}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="Turno">
-                  <Tag color="orange">
-                    {selectedColaborador.turno || "Sin Informacion"}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="Tipo de Contrato">
-                  {selectedColaborador.tipoContrato || "Sin Informacion"}
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={
-                    <span>
-                      <CalendarOutlined style={{ marginRight: 8 }} />
-                      Fecha de Ingreso
-                    </span>
-                  }
-                >
-                  {selectedColaborador?.fechaIngreso
-                    ? dayjs(selectedColaborador?.fechaIngreso).format(
-                        "DD/MM/YYYY",
-                      )
-                    : "Sin Informacion"}
-                </Descriptions.Item>
-              </Descriptions>
-            </Card>
-
-            <Card title="Estadísticas">
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Statistic
-                    title="Días Trabajando"
-                    value={
-                      selectedColaborador.fechaIngreso
-                        ? dayjs().diff(
-                            dayjs(selectedColaborador.fechaIngreso),
-                            "day",
-                          )
-                        : "N/A"
-                    }
-                    suffix="días"
-                  />
+              <Row gutter={16} align="middle">
+                <Col xs={24} sm={6} style={{ textAlign: "center" }}>
+                  <Avatar
+                    size={72}
+                    icon={<UserOutlined />}
+                    style={{ backgroundColor: "#1890ff" }}
+                  >
+                    {String(funcionarioPermisosSeleccionado?.nombre || "")
+                      .charAt(0)
+                      .toUpperCase()}
+                    {String(funcionarioPermisosSeleccionado?.apellido || "")
+                      .charAt(0)
+                      .toUpperCase()}
+                  </Avatar>
                 </Col>
-                <Col span={12}>
-                  <Statistic
-                    title="Antigüedad"
-                    value={
-                      selectedColaborador.fechaIngreso
-                        ? dayjs().diff(
-                            dayjs(selectedColaborador.fechaIngreso),
-                            "month",
-                          )
-                        : "N/A"
-                    }
-                    suffix="meses"
-                  />
+                <Col xs={24} sm={18}>
+                  <Title level={4} style={{ margin: 0 }}>
+                    {funcionarioPermisosSeleccionado.nombre}{" "}
+                    {funcionarioPermisosSeleccionado.apellido}
+                  </Title>
+                  <Text type="secondary">
+                    {funcionarioPermisosSeleccionado.rut}
+                  </Text>
+                  <div style={{ marginTop: 8 }}>
+                    <Tag color="green">
+                      {funcionarioPermisosSeleccionado.sucursalNombre ||
+                        funcionarioPermisosSeleccionado.sucursal ||
+                        "Casa Matriz"}
+                    </Tag>
+                    {funcionarioPermisosSeleccionado.cargo ? (
+                      <Tag color="blue">
+                        {funcionarioPermisosSeleccionado.cargo}
+                      </Tag>
+                    ) : null}
+                  </div>
                 </Col>
               </Row>
             </Card>
+
+            <Card title="Código de barras" style={{ marginBottom: 16 }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  minHeight: 110,
+                }}
+              >
+                {funcionarioPermisosSeleccionado && (
+                  <img
+                    src={generarSVGBarcode(
+                      funcionarioPermisosSeleccionado.codigoAcceso,
+                    )}
+                    alt="Código de barras Accesso Caja"
+                  />
+                )}
+              </div>
+              <div style={{ textAlign: "center", marginTop: 8 }}>
+                <Text
+                  type="secondary"
+                  style={{ fontSize: 11, fontFamily: "monospace" }}
+                >
+                  {funcionarioPermisosSeleccionado?.codigoAcceso}
+                </Text>
+              </div>
+              <Text type="secondary">
+                Este código se usa para el acceso de caja.
+              </Text>
+            </Card>
+
+            {/* <Card title="Permisos">
+              {obtenerPermisosActivos(
+                funcionarioPermisosSeleccionado.privilegios,
+              ).length > 0 ? (
+                <Space wrap>
+                  {obtenerPermisosActivos(
+                    funcionarioPermisosSeleccionado.privilegios,
+                  ).map((permiso) => (
+                    <Tag key={permiso} color="geekblue">
+                      {permiso}
+                    </Tag>
+                  ))}
+                </Space>
+              ) : (
+                <Text type="secondary">No hay permisos activos.</Text>
+              )}
+            </Card> */}
           </>
-        )}
-      </Drawer>
+        ) : null}
+      </Modal>
 
       {/**Modal Contrato funcionario */}
       <Modal
@@ -1658,11 +2971,20 @@ const GestionColaborador = () => {
         >
           <Row gutter={16}>
             <Col span={16}>
-              <Form.Item name="rutBuscar" label="Buscar funcionario por RUT">
+              <Form.Item
+                name="rutBuscar"
+                label="Buscar funcionario por RUT"
+                getValueFromEvent={(event) =>
+                  formatearRutNumerico(event?.target?.value)
+                }
+              >
                 <Input.Search
                   placeholder="Ej: 12345678-9"
+                  maxLength={10}
                   enterButton="Buscar"
-                  onSearch={handleBuscarFuncionarioPorRut}
+                  onSearch={(value) =>
+                    handleBuscarFuncionarioPorRut(formatearRutNumerico(value))
+                  }
                 />
               </Form.Item>
 
@@ -1778,8 +3100,17 @@ const GestionColaborador = () => {
                 name="rutFuncionario"
                 label="Funcionario"
                 initialValue={contratoSeleccionado?.funcionario?.rut}
+                rules={[
+                  {
+                    required: true,
+                    message: "Seleccione un funcionario",
+                  },
+                ]}
               >
-                <Select placeholder="Seleccione un funcionario">
+                <Select
+                  placeholder="Seleccione un funcionario"
+                  notFoundContent="No hay funcionarios sin contrato"
+                >
                   {funcionariosSinContrato.map((funcionario) => (
                     <Option
                       key={funcionario.idFuncionario}

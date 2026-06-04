@@ -1,20 +1,44 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/bd");
 
-const descuentosobre = sequelize.define("descuentosobre", {
-  idDescuentoSobre: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    unique: true,
+const descuentosobre = sequelize.define(
+  "descuentosobre",
+  {
+    idDescuentoSobre: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      unique: true,
+      autoIncrement: true,
+    },
+    idProducto: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "productos",
+        key: "idProducto",
+      },
+    },
+    idCategoria: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "categorias",
+        key: "idCategoria",
+      },
+    },
+    idDescuento: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "descuentos",
+        key: "idDescuento",
+      },
+    },
   },
-  fechaHora: {
-    type: DataTypes.DATE,
-    allowNull: false,
+  {
+    tableName: "descuentosobre",
+    timestamps: false,
   },
-  porcentaje: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
-  },
-});
+);
 
 module.exports = descuentosobre;
