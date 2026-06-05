@@ -26,6 +26,7 @@ async function poblarBD() {
   try {
     const adminPassword = await bcrypt.hash("admin123", 10);
     const userPassword = await bcrypt.hash("user123", 10);
+    const claveAlternativo = await bcrypt.hash("1234", 10);
     const clave = "11111111-1";
     const codigoDefault = encriptar(clave);
 
@@ -111,6 +112,7 @@ async function poblarBD() {
         email: "sistema@sistema.dev",
         password: adminPassword,
         passwordCaja: codigoDefault,
+        passwordAlternativo: claveAlternativo,
         telefono: "+56900000000",
         direccion: "collao 1202, concepcion",
         session: false,
@@ -128,10 +130,11 @@ async function poblarBD() {
         email: "admin@sistema.dev",
         password: adminPassword,
         passwordCaja: codigoDefault,
+        passwordAlternativo: claveAlternativo,
         telefono: "+56912345678",
         direccion: "collao 1202, concepcion",
         session: false,
-        tipoSession: "Administracion",
+        tipoSession: "Sin Session",
         estado: "Activo",
         idRol: adminRole.idRol,
       },
@@ -146,10 +149,11 @@ async function poblarBD() {
         email: "cajero@sistema.dev",
         password: userPassword,
         passwordCaja: codigoDefault,
+        passwordAlternativo: claveAlternativo,
         telefono: "+56987654321",
         direccion: "collao 1202, concepcion",
         session: false,
-        tipoSession: "Caja",
+        tipoSession: "Sin Session",
         estado: "Activo",
         idRol: cajeroRole.idRol,
       },
@@ -164,10 +168,11 @@ async function poblarBD() {
         email: "vendedor@sistema.dev",
         password: userPassword,
         passwordCaja: codigoDefault,
+        passwordAlternativo: claveAlternativo,
         telefono: "+56987654321",
         direccion: "collao 1202, concepcion",
         session: false,
-        tipoSession: "Vendedor",
+        tipoSession: "Sin Session",
         estado: "Activo",
         idRol: vendedorRole.idRol,
       },

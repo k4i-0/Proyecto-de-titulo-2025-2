@@ -101,3 +101,24 @@ export async function traerBitacorasPorFuncionario(rutFuncionario) {
     return error.response;
   }
 }
+
+export async function inicioSesionCajaAlternativo(
+  rut,
+  passwordCajaAlternativo,
+) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/login/caja/alternativo`,
+      { rut, passwordCajaAlternativo },
+      { withCredentials: true },
+    );
+    console.log(
+      "Respuesta del servidor en inicioSesionCajaAlternativo:",
+      response,
+    );
+    return response;
+  } catch (error) {
+    console.log(error);
+    return error.response;
+  }
+}

@@ -11,6 +11,7 @@ const { verifyToken, isAdmin } = require("../middleware/auth.middleware");
 
 router.post("/login", authController.login);
 router.post("/login-codigo", authController.loginCodigo);
+router.post("/login/caja/alternativo", authController.loginCajaAlternativo);
 router.post("/logout", authController.logout);
 router.get("/yo", verifyToken, authController.miEstado);
 

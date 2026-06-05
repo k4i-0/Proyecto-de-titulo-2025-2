@@ -13,6 +13,11 @@ router.get(
   "/consultar/estado/venta/:idOrdenMP",
   ventasController.consultaVentaTarjeta,
 );
+router.get("/ver/ventas/dia/:deviceID", ventasController.verVentasDelDia);
+router.get(
+  "/generar/arqueo/caja/:deviceID",
+  ventasController.generarArqueoCaja,
+);
 
 router.post("/apertura/caja/:deviceID", ventasController.aperturaCaja);
 router.post("/registro/caja", ventasController.registroCajaSucursal);

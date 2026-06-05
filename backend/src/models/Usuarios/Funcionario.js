@@ -36,6 +36,10 @@ const funcionario = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: false,
     },
+    passwordAlternativo: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
     telefono: {
       type: DataTypes.STRING(15),
       allowNull: true,

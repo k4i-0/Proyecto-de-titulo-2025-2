@@ -221,3 +221,32 @@ export async function cancelarVentaTarjeta(idOrdenMP) {
     return error.response;
   }
 }
+
+export async function verVentasDelDia(deviceID) {
+  try {
+    const response = await axios.get(`${API_URL}/ver/ventas/dia/${deviceID}`, {
+      withCredentials: true,
+    });
+    console.log("Respuesta de consulta de ventas del día:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al consultar ventas del día:", error);
+    return error.response;
+  }
+}
+
+export async function generarArqueoCaja(deviceID) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/generar/arqueo/caja/${deviceID}`,
+      {
+        withCredentials: true,
+      },
+    );
+    console.log("Respuesta de generación de arqueo de caja:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al generar arqueo de caja:", error);
+    return error.response;
+  }
+}

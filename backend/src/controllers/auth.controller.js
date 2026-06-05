@@ -66,6 +66,7 @@ async function login(req, res) {
         rut: funcionarioEncontrado.dataValues.rut,
         email,
         role: funcionarioEncontrado.dataValues.role.dataValues.nombreRol,
+        session: "Administracion",
       },
       process.env.JWT_SECRET,
       { expiresIn: "1d" },
@@ -78,11 +79,11 @@ async function login(req, res) {
     }
 
     //REGISTRAR BITACORA ACTIVIDAD LOGIN
-    await crearBitacora(
-      "login controller",
-      `Inicio de sesión del usuario: ${email}`,
-      funcionarioEncontrado.dataValues.idFuncionario,
-    );
+    // await crearBitacora(
+    //   "login controller",
+    //   `Inicio de sesión del usuario: ${email}`,
+    //   funcionarioEncontrado.dataValues.idFuncionario,
+    // );
     //ACTUALIZAR ESTADO DE SESSION A ACTIVADA
     let sesionTipo = "";
     if (
@@ -229,6 +230,105 @@ async function loginCodigo(req, res) {
   }
 }
 
+async function loginCajaAlternativo(req, res) {
+  try {
+    const { rut, passwordCajaAlternativo } = req.body;
+    console.log("Datos recibidos en loginCajaAlternativo:", req.body);
+    if (!rut || !passwordCajaAlternativo) {
+      return res.status(203).json({ message: "Faltan datos" });
+    }
+    const funcionarioEncontrado = await Funcionario.findOne({
+      where: { rut: rut },
+
+      include: [
+        {
+          model: roles,
+        },
+      ],
+    });
+    //SI NO EXISTE RETURN 404
+    if (!funcionarioEncontrado) {
+      return res
+        .status(404)
+        .send({ code: 1010, message: "Usuario No encontrado, verifique" });
+    }
+    if (funcionarioEncontrado.estado !== "Activo") {
+      return res.status(401).json({
+        code: 1012,
+        message: "Usuario inactivo, verifique con el administrador",
+      });
+    }
+    const passwordMatch = await bcrypt.compare(
+      passwordCajaAlternativo,
+      funcionarioEncontrado.passwordAlternativo,
+    );
+    //SI CONTRASEÑA INCORRECTA RETURN 401
+    if (!passwordMatch) {
+      await funcionarioEncontrado.increment("intentosFallidos");
+      if (funcionarioEncontrado.intentosFallidos >= 3) {
+        await funcionarioEncontrado.update({
+          estado: "Bloqueado",
+        });
+      }
+      return res
+        .status(401)
+        .json({ code: 1011, message: "Contraseña incorrecta" });
+    }
+    //CREAR TOKEN
+    const token = jwt.sign(
+      {
+        rut: funcionarioEncontrado.dataValues.rut,
+        email: funcionarioEncontrado.dataValues.email,
+        role: funcionarioEncontrado.dataValues.role.dataValues.nombreRol,
+        session: "Caja",
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" },
+    );
+    //SI NO SE CREA TOKEN RETURN 404
+    if (!token) {
+      return res
+        .status(404)
+        .json({ code: 1013, message: "Error al crear Token" });
+    }
+    // //REGISTRAR BITACORA ACTIVIDAD LOGIN
+    // await crearBitacora(
+    //   "login controller",
+    //   `Inicio de sesión del usuario: ${rut} con contraseña alternativa`,
+    //   funcionarioEncontrado.dataValues.idFuncionario,
+    // );
+    //ACTUALIZAR ESTADO DE SESSION A ACTIVADA
+    let sesionTipo = "Caja";
+
+    await funcionarioEncontrado.update({
+      session: true,
+      tipoSession: sesionTipo,
+      ultimaSession: new Date(),
+    });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false, //process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 1 * 60 * 60 * 1000,
+    });
+    //console.log(funcionarioEncontrado.dataValues);
+    return res.status(200).json({
+      datos: {
+        email: funcionarioEncontrado.email,
+        nombreRol: funcionarioEncontrado.dataValues.role.dataValues.nombreRol,
+        nombre: funcionarioEncontrado.dataValues.nombre,
+        tipoSession: funcionarioEncontrado.dataValues.tipoSession,
+      },
+      token: {
+        token,
+      },
+    });
+  } catch (error) {
+    console.log("Error en loginCajaAlternativo:", error);
+    return res.status(500).json({ message: "Error interno" });
+  }
+}
+
 async function logout(req, res) {
   const { token } = req.cookies;
 
@@ -264,11 +364,11 @@ async function logout(req, res) {
     );
   }
   try {
-    await crearBitacora(
-      "logout controller",
-      `Cierre de sesión del usuario: ${emailDelToken}`,
-      1,
-    );
+    // // await crearBitacora(
+    //   "logout controller",
+    //   `Cierre de sesión del usuario: ${emailDelToken}`,
+    //   1,
+    // );
 
     res.clearCookie("token", {
       httpOnly: true,
@@ -345,6 +445,7 @@ async function miEstado(req, res) {
         email: verificarFuncionario.email,
         nombreRol: verificarFuncionario.dataValues.role.dataValues.nombreRol,
         nombre: verificarFuncionario.dataValues.nombre,
+        tipoSession: verificarFuncionario.dataValues.tipoSession,
       },
     });
   } catch (error) {
@@ -370,4 +471,4 @@ async function miEstado(req, res) {
   }
 }
 
-module.exports = { login, logout, miEstado, loginCodigo };
+module.exports = { login, logout, miEstado, loginCodigo, loginCajaAlternativo };

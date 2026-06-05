@@ -20,6 +20,7 @@ import {
   List,
   Badge,
   Spin,
+  Empty,
 } from "antd";
 import React, { useEffect, useMemo, useState, useRef } from "react";
 
@@ -45,6 +46,8 @@ import {
   AuditOutlined,
   SearchOutlined,
   InfoCircleOutlined,
+  AccountBookOutlined,
+  SaveOutlined,
 } from "@ant-design/icons";
 
 import {
@@ -58,6 +61,8 @@ import {
   consultarStatusVentas,
   solicitarPagoTarjeta,
   cancelarVentaTarjeta,
+  verVentasDelDia,
+  generarArqueoCaja,
 } from "../../services/ventas/ventas.service";
 
 import { buscarTodasSucursales } from "../../services/functions/Sucursales";
@@ -118,11 +123,18 @@ export default function MenuPrincipal() {
   const [infoPagosDiferidos, setInfoPagosDiferidos] = useState([]);
   const [esperandoPago, setEsperandoPago] = useState(false);
 
+  const [modalVentasDia, setModalVentasDia] = useState(false);
+  const [ventasDelDia, setVentasDelDia] = useState([]);
+
+  const [resumenCaja, setResumenCaja] = useState(datosResumen);
+  const [modalArqueoCaja, setModalArqueoCaja] = useState(false);
+
   const [formVentaProducto] = Form.useForm();
   const [formAperturaCaja] = Form.useForm();
   const [formRegistroCaja] = Form.useForm();
   const [formCierreCaja] = Form.useForm();
   const [formMetodoPago] = Form.useForm();
+  const [formArqueoCaja] = Form.useForm();
 
   const inputRef = useRef(null);
 
@@ -228,25 +240,6 @@ export default function MenuPrincipal() {
     return () => clearInterval(timer);
   }, []);
 
-  const total = useMemo(
-    () =>
-      productos.reduce(
-        (acumulado, producto) =>
-          acumulado + producto.subtotal - (producto.descuento || 0),
-        0,
-      ),
-    [productos],
-  );
-
-  const descuentosVenta = useMemo(
-    () =>
-      productos.reduce(
-        (acumulado, producto) => acumulado + (producto.descuento || 0),
-        0,
-      ),
-    [productos],
-  );
-
   const eliminarProducto = (idProducto) => {
     setProductos((listaActual) =>
       listaActual.filter((producto) => producto.idProducto !== idProducto),
@@ -280,6 +273,12 @@ export default function MenuPrincipal() {
           Number(formVentaProducto.getFieldValue("cantidad")) || 1;
         const descuentoTotalLinea =
           (producto.montoDescuento || 0) * nuevaCantidad;
+        const detalleDescuentosMultiplicados = (
+          producto.descuentosAplicados || []
+        ).map((desc) => ({
+          ...desc,
+          montoDescontado: desc.montoDescontado * nuevaCantidad,
+        }));
         const nuevoProducto = {
           idProducto: producto.id,
           codigo: producto.codigo,
@@ -287,6 +286,7 @@ export default function MenuPrincipal() {
           precio: producto.precioVenta,
           cantidad: nuevaCantidad,
           descuento: descuentoTotalLinea,
+          descuentosAplicados: detalleDescuentosMultiplicados,
           subtotal: producto.precioVenta * nuevaCantidad - descuentoTotalLinea,
         };
         setProductos((listaActual) => [...listaActual, nuevoProducto]);
@@ -316,8 +316,56 @@ export default function MenuPrincipal() {
     }
   };
 
-  const impuesto = Math.round(total / 1.19);
-  const totalNeto = total - impuesto;
+  // Transformamos el estado "productos" en filas visuales para Ant Design
+  const filasParaTabla = productos.reduce((acumulador, prod) => {
+    // 1. Fila principal del producto (mostrando el subtotal original sin rebaja)
+    acumulador.push({
+      ...prod,
+      key: `prod-${prod.idProducto}`, // Clave única obligatoria para Ant Design
+      esFilaDescuento: false,
+      subtotalVisual: prod.precio * prod.cantidad, // Subtotal original $2000
+    });
+
+    // 2. Filas secundarias para los descuentos (si es que tiene)
+    if (prod.descuentosAplicados && prod.descuentosAplicados.length > 0) {
+      prod.descuentosAplicados.forEach((desc, index) => {
+        acumulador.push({
+          ...prod, // Heredamos el idProducto para que el botón eliminar funcione si hiciera falta
+          key: `desc-${prod.idProducto}-${index}`,
+          esFilaDescuento: true,
+          // Sobrescribimos lo visual para la fila de descuento:
+          codigo: "",
+          nombre: `↳ Descuento ${desc.origen} (${desc.detalle})`,
+          cantidad: "",
+          precio: "",
+          subtotalVisual: -desc.montoDescontado, // Lo volvemos negativo para restar visualmente
+        });
+      });
+    }
+
+    return acumulador;
+  }, []);
+
+  const total = useMemo(
+    () =>
+      productos.reduce(
+        (acumulado, producto) => acumulado + producto.subtotal,
+        0,
+      ),
+    [productos],
+  );
+
+  const totalDescuentos = useMemo(
+    () =>
+      productos.reduce(
+        (acumulado, producto) => acumulado + (producto.descuento || 0),
+        0,
+      ),
+    [productos],
+  );
+
+  const totalNeto = Math.round(total / 1.19);
+  const impuesto = total - totalNeto;
 
   //funcioens modal apertura caja
   const totalApertura = denominaciones.reduce(
@@ -450,26 +498,62 @@ export default function MenuPrincipal() {
       })
     : [];
 
-  const handleSeleccionarProducto = (producto) => {
-    const nuevaCantidad = 1;
-    const precioProducto = Number(producto.precioVenta ?? producto.precio ?? 0);
-    const nuevoProducto = {
-      idProducto: producto.idProducto || producto.id,
-      codigo: producto.codigo || producto.codigoProducto,
-      nombre: producto.nombre,
-      precio: precioProducto,
-      cantidad: nuevaCantidad,
-      subtotal: precioProducto * nuevaCantidad,
-    };
+  const handleSeleccionarProducto = async (productoSeleccionado) => {
+    const codigo =
+      productoSeleccionado.codigo || productoSeleccionado.codigoProducto;
 
-    setProductos((listaActual) => [...listaActual, nuevoProducto]);
-    setTerminoBusqueda("");
-    setModalBusquedaProducto(false);
+    try {
+      const respuesta = await buscarProductoVenta(codigo);
 
-    notification.success({
-      message: "Producto agregado",
-      description: `Se agregó ${producto.nombre} al detalle de venta`,
-    });
+      if (respuesta.status === 200) {
+        const producto = respuesta.data;
+
+        const nuevaCantidad = formVentaProducto.getFieldValue("cantidad") || 1;
+
+        const descuentoTotalLinea =
+          (producto.montoDescuento || 0) * nuevaCantidad;
+
+        const detalleDescuentosMultiplicados = (
+          producto.descuentosAplicados || []
+        ).map((desc) => ({
+          ...desc,
+          montoDescontado: desc.montoDescontado * nuevaCantidad,
+        }));
+
+        const nuevoProducto = {
+          idProducto: producto.id,
+          codigo: producto.codigo,
+          nombre: producto.nombre,
+          precio: producto.precioVenta,
+          cantidad: nuevaCantidad,
+          descuento: descuentoTotalLinea,
+          subtotal: producto.precioVenta * nuevaCantidad - descuentoTotalLinea,
+          descuentosAplicados: detalleDescuentosMultiplicados,
+        };
+
+        setProductos((listaActual) => [...listaActual, nuevoProducto]);
+
+        setTerminoBusqueda("");
+        setModalBusquedaProducto(false);
+
+        notification.success({
+          message: "Producto agregado",
+          description: `Se agregó ${producto.nombre} al detalle de venta`,
+        });
+      } else {
+        notification.error({
+          message: "Error al agregar",
+          description:
+            "No se encontró la información del producto en la base de datos.",
+        });
+      }
+    } catch (error) {
+      console.error("Error al seleccionar producto desde el modal:", error);
+      notification.error({
+        message: "Error de conexión",
+        description: "No se pudieron obtener los descuentos del producto.",
+      });
+    }
   };
 
   //funciones metodo de pago
@@ -498,6 +582,7 @@ export default function MenuPrincipal() {
           });
           limpiarVenta();
           setModalMetodoPago(false);
+          formVentaProducto.resetFields();
           return;
         }
         notification.error({
@@ -526,7 +611,7 @@ export default function MenuPrincipal() {
           idOrdendePago = response.data.idOrdenMP;
           idVentaCliente = response.data.idVentaCliente;
           let intentos = 0;
-          let maximos_intentos = 40;
+          let maximos_intentos = 20;
           let pagoAprobado = false;
 
           while (intentos < maximos_intentos && !pagoAprobado) {
@@ -667,6 +752,173 @@ export default function MenuPrincipal() {
     }
   };
 
+  //funciones para ver ventas del dia
+  const obtenerVentasDelDia = async () => {
+    try {
+      const res = await verVentasDelDia(localStorage.getItem("deviceID"));
+      console.log("Respuesta de consulta de ventas del día:", res.data);
+      if (res.status === 200) {
+        setVentasDelDia(res.data);
+      } else {
+        notification.error({
+          message: "Error al obtener ventas del día",
+          description: res.data.message || "Intente nuevamente",
+        });
+      }
+    } catch (error) {
+      console.error("Error al obtener ventas del día:", error);
+      notification.error({
+        message: "Error al obtener ventas del día",
+        description: error.response?.data?.message || "Intente nuevamente",
+      });
+    }
+  };
+  const abrirModalVentasDelDia = async () => {
+    obtenerVentasDelDia();
+    setModalVentasDia(true);
+  };
+  const cerrarModalVentasDelDia = () => {
+    setModalVentasDia(false);
+    setVentasDelDia([]);
+  };
+
+  const columnasVentasDia = [
+    {
+      title: "N° Venta",
+      dataIndex: "idVentaCliente",
+      key: "idVentaCliente",
+      width: 90,
+      render: (id) => <Typography.Text strong>#{id}</Typography.Text>,
+    },
+    {
+      title: "Hora",
+      dataIndex: "fechaVenta",
+      key: "fechaVenta",
+      render: (fecha) => {
+        // Extraemos solo la hora para que la tabla no se sature de fechas repetidas (ya sabemos que son de hoy)
+        return new Date(fecha).toLocaleTimeString("es-CL", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      },
+    },
+    {
+      title: "Método de Pago",
+      dataIndex: "metodoPago",
+      key: "metodoPago",
+      render: (metodo) => (
+        <Tag color={metodo === "Efectivo" ? "green" : "blue"}>
+          {metodo || "N/A"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Total",
+      dataIndex: "totalVenta",
+      key: "totalVenta",
+      align: "right",
+      render: (total) => (
+        <Typography.Text strong>
+          ${Number(total).toLocaleString("es-CL")}
+        </Typography.Text>
+      ),
+    },
+  ];
+
+  // Columnas para el detalle que se despliega
+  const columnasDetalle = [
+    {
+      title: "Producto",
+
+      dataIndex: ["producto", "nombre"],
+      key: "nombreProducto",
+    },
+    {
+      title: "Cant.",
+      dataIndex: "cantidad",
+      key: "cantidad",
+      align: "center",
+      width: 80,
+    },
+    {
+      title: "Precio Unit.",
+
+      dataIndex: "precio",
+      key: "precio",
+      align: "right",
+      render: (precio) => `$${Number(precio || 0).toLocaleString("es-CL")}`,
+    },
+    {
+      title: "Subtotal",
+      dataIndex: "subtotal",
+      key: "subtotal",
+      align: "right",
+      render: (sub) => (
+        <Typography.Text strong>
+          ${Number(sub || 0).toLocaleString("es-CL")}
+        </Typography.Text>
+      ),
+    },
+  ];
+  const hayVentas = Array.isArray(ventasDelDia) && ventasDelDia.length > 0;
+
+  const sumaTotalDia = hayVentas
+    ? ventasDelDia.reduce(
+        (total, venta) => total + Number(venta.totalVenta || 0),
+        0,
+      )
+    : 0;
+
+  //funciones arqueo de caja
+
+  const obtenerDatosArqueoCaja = async () => {
+    try {
+      const res = await generarArqueoCaja(localStorage.getItem("deviceID"));
+      console.log("Respuesta de consulta de arqueo de caja:", res.data);
+      if (res.status === 200) {
+        setResumenCaja(res.data);
+        return;
+      } else {
+        notification.error({
+          message: "Error al obtener datos de arqueo de caja",
+          description: res.data.message || "Intente nuevamente",
+        });
+      }
+    } catch (error) {
+      console.error("Error al obtener datos de arqueo de caja:", error);
+      notification.error({
+        message: "Error al obtener datos de arqueo de caja",
+        description: error.response?.data?.message || "Intente nuevamente",
+      });
+    }
+  };
+  const abrirModalArqueoCaja = () => {
+    const exito = obtenerDatosArqueoCaja();
+    if (exito) {
+      setModalArqueoCaja(true);
+    }
+  };
+
+  const cerrarModalArqueoCaja = () => {
+    setModalArqueoCaja(false);
+
+    setTimeout(() => {
+      formArqueoCaja.resetFields();
+      setCantidades({});
+    }, 200);
+  };
+
+  const resumen = resumenCaja?.resumenVentas || {
+    totalEfectivo: 0,
+    totalDebito: 0,
+    totalCredito: 0,
+    totalGeneral: 0,
+  };
+
+  const registroActual = resumenCaja?.registrosCaja?.[0];
+  const totalTarjetas = resumen.totalDebito + resumen.totalCredito;
+  const diferenciaEfectivo = totalApertura - resumen.totalEfectivo;
+
   return (
     <div
       style={{
@@ -750,6 +1002,13 @@ export default function MenuPrincipal() {
                   onClick: () => setModalAperturaCaja(true),
                 },
                 {
+                  key: "4",
+                  icon: <AccountBookOutlined />,
+                  label: "Arqueo de caja",
+                  disabled: !cajaNoRegistrada || !cajaAperturada,
+                  onClick: () => abrirModalArqueoCaja(),
+                },
+                {
                   key: "2",
                   icon: <AuditOutlined />,
                   disabled: !cajaNoRegistrada || !cajaAperturada,
@@ -760,8 +1019,8 @@ export default function MenuPrincipal() {
                   key: "3",
                   icon: <HistoryOutlined />,
                   disabled: !cajaNoRegistrada || !cajaAperturada,
-
-                  label: "Historial",
+                  onClick: abrirModalVentasDelDia,
+                  label: "Historial Ventas Hoy",
                 },
               ]}
             />
@@ -933,7 +1192,7 @@ export default function MenuPrincipal() {
                   <Table
                     size="middle"
                     pagination={false}
-                    dataSource={productos}
+                    dataSource={filasParaTabla}
                     rowKey={(record) =>
                       `${record.idProducto}-${record.codigo}-${record.cantidad}`
                     }
@@ -945,7 +1204,21 @@ export default function MenuPrincipal() {
                         key: "codigo",
                         width: 120,
                       },
-                      { title: "Producto", dataIndex: "nombre", key: "nombre" },
+                      {
+                        title: "Producto",
+                        dataIndex: "nombre",
+                        key: "nombre",
+                        render: (nombre, record) => (
+                          <Typography.Text
+                            // Si es descuento, se pone rojo y cursiva. Si es producto, negrita.
+                            strong={!record.esFilaDescuento}
+                            type={record.esFilaDescuento ? "danger" : undefined}
+                            italic={record.esFilaDescuento}
+                          >
+                            {nombre}
+                          </Typography.Text>
+                        ),
+                      },
                       {
                         title: "Cant.",
                         dataIndex: "cantidad",
@@ -959,33 +1232,49 @@ export default function MenuPrincipal() {
                         key: "precio",
                         width: 110,
                         align: "right",
-                        render: (valor) =>
-                          `$${Number(valor).toLocaleString("es-CL")}`,
+                        render: (valor, record) =>
+                          // Ocultamos el precio unitario en la fila del descuento
+                          record.esFilaDescuento || !valor
+                            ? ""
+                            : `$${Number(valor).toLocaleString("es-CL")}`,
                       },
                       {
                         title: "Subtotal",
-                        dataIndex: "subtotal",
                         key: "subtotal",
                         width: 120,
                         align: "right",
-                        render: (valor) =>
-                          `$${Number(valor).toLocaleString("es-CL")}`,
+                        render: (_, record) => {
+                          const valor = record.subtotalVisual;
+                          const esNegativo = valor < 0;
+                          return (
+                            <Typography.Text
+                              type={esNegativo ? "danger" : undefined}
+                            >
+                              {esNegativo ? "-" : ""}$
+                              {Math.abs(valor).toLocaleString("es-CL")}
+                            </Typography.Text>
+                          );
+                        },
                       },
                       {
                         title: "",
                         key: "acciones",
                         width: 56,
                         align: "center",
-                        render: (_, registro) => (
-                          <Button
-                            danger
-                            size="small"
-                            icon={<DeleteOutlined />}
-                            onClick={() =>
-                              eliminarProducto(registro.idProducto)
-                            }
-                          />
-                        ),
+                        render: (_, registro) => {
+                          if (registro.esFilaDescuento) return null;
+
+                          return (
+                            <Button
+                              danger
+                              size="small"
+                              icon={<DeleteOutlined />}
+                              onClick={() =>
+                                eliminarProducto(registro.idProducto)
+                              }
+                            />
+                          );
+                        },
                       },
                     ]}
                   />
@@ -1010,6 +1299,23 @@ export default function MenuPrincipal() {
                     {productos.length}
                   </Col>
                 </Row>
+
+                {totalDescuentos > 0 && (
+                  <Row justify="space-between" style={{ marginBottom: 6 }}>
+                    <Col style={{ fontSize: 13, color: "#64748b" }}>
+                      Descuentos aplicados
+                    </Col>
+                    <Col
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#52c41a",
+                      }}
+                    >
+                      -${Number(totalDescuentos).toLocaleString("es-CL")}
+                    </Col>
+                  </Row>
+                )}
                 <Row justify="space-between" style={{ marginBottom: 6 }}>
                   <Col style={{ fontSize: 13, color: "#64748b" }}>
                     Total neto
@@ -1024,19 +1330,6 @@ export default function MenuPrincipal() {
                   </Col>
                   <Col style={{ fontSize: 13, fontWeight: 600 }}>
                     ${Number(impuesto).toLocaleString("es-CL")}
-                  </Col>
-                </Row>
-                <Divider style={{ margin: "10px 0" }} />
-                <Row justify="space-between" style={{ marginBottom: 16 }}>
-                  <Col
-                    style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}
-                  >
-                    Descuentos
-                  </Col>
-                  <Col
-                    style={{ fontSize: 15, fontWeight: 700, color: "#1890ff" }}
-                  >
-                    ${Number(descuentosVenta).toLocaleString("es-CL")}
                   </Col>
                 </Row>
                 <Divider style={{ margin: "10px 0" }} />
@@ -1082,7 +1375,7 @@ export default function MenuPrincipal() {
             </Col>
 
             <Col span={8} style={{ display: "flex", minHeight: 0 }}>
-              {/**Tarjeta lateral derecha con acciones y productos sugeridos */}
+              {/**Tarjeta lateral derecha con acciones y informacion productos */}
               <Card
                 title={
                   <Space>
@@ -1938,63 +2231,549 @@ export default function MenuPrincipal() {
         </Form>
       </Modal>
       {/** Modal de búsqueda de productos */}
+
       <Modal
-        title="Búsqueda de Productos"
-        visible={modalBusquedaProducto}
+        title={
+          <span style={{ fontSize: "18px", fontWeight: 600 }}>
+            Búsqueda de Productos
+          </span>
+        }
+        open={modalBusquedaProducto} // 👈 'visible' está deprecado en las nuevas versiones de Antd
         onCancel={() => setModalBusquedaProducto(false)}
         footer={null}
         centered
-        width={600}
+        width={650} // Un poco más ancho para que respiren los elementos
+        styles={{ body: { padding: "20px 0px" } }} // Quitamos padding lateral para que la lista use todo el ancho
       >
-        <Input
-          prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
-          placeholder="Ingrese el nombre del producto..."
-          value={terminoBusqueda}
-          onChange={(e) => setTerminoBusqueda(e.target.value)}
-          allowClear // Agrega la 'X' para borrar rápido
-          autoFocus // Pone el cursor automáticamente al abrir el modal (Genial para POS)
-          size="large"
-          style={{ marginBottom: 16 }}
-        />
+        <div style={{ padding: "0 24px" }}>
+          <Input
+            prefix={
+              <SearchOutlined style={{ color: "#bfbfbf", fontSize: 16 }} />
+            }
+            placeholder="Buscar por nombre, código o marca..."
+            value={terminoBusqueda}
+            onChange={(e) => setTerminoBusqueda(e.target.value)}
+            allowClear
+            autoFocus
+            size="large"
+            style={{ marginBottom: 20, borderRadius: 8 }}
+          />
+        </div>
+
         <List
           itemLayout="horizontal"
           dataSource={productosFiltrados}
-          locale={{ emptyText: "No se encontraron productos" }}
-          style={{ maxHeight: "400px", overflowY: "auto" }}
-          renderItem={(producto) => (
-            <List.Item
-              actions={[
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => handleSeleccionarProducto(producto)}
-                >
-                  Agregar
-                </Button>,
-              ]}
-            >
-              <List.Item.Meta
-                title={
-                  <span style={{ fontWeight: 600 }}>
-                    {producto.nombre} {producto.marca}
-                  </span>
-                }
-                description={`codigo: ${producto.codigo}`}
+          locale={{ emptyText: "No se encontraron productos con ese término" }}
+          style={{ maxHeight: "450px", overflowY: "auto", padding: "0 24px" }}
+          renderItem={(producto) => {
+            // Evaluamos de forma segura si el objeto de búsqueda trae algún indicio de descuento
+            const tieneDescuento =
+              producto.descuentosobres?.length > 0 ||
+              producto.categoria?.descuentosobres?.length > 0;
+
+            return (
+              <List.Item
+                style={{
+                  padding: "16px",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "8px",
+                  marginBottom: "8px",
+                  border: "1px solid #f0f0f0",
+                  transition: "all 0.2s", // Animación suave al pasar el mouse
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "#1890ff";
+                  e.currentTarget.style.boxShadow =
+                    "0 2px 8px rgba(0,0,0,0.06)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "#f0f0f0";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+                actions={[
+                  <Button
+                    type="primary"
+                    shape="round" // Botón redondeado se ve más moderno
+                    icon={<PlusOutlined />}
+                    onClick={() => handleSeleccionarProducto(producto)}
+                  >
+                    Agregar
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta
+                  title={
+                    <Space size="small" wrap>
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          fontSize: "15px",
+                          color: "#1f2937",
+                        }}
+                      >
+                        {producto.nombre}
+                      </span>
+                      {producto.marca && producto.marca !== "N/A" && (
+                        <Tag color="default" bordered={false}>
+                          {producto.marca}
+                        </Tag>
+                      )}
+                      {/* 🚀 Etiqueta visual si hay un descuento detectado */}
+                      {tieneDescuento && (
+                        <Tag color="red" style={{ fontWeight: 600 }}>
+                          🔥 Oferta
+                        </Tag>
+                      )}
+                    </Space>
+                  }
+                  description={
+                    <span style={{ color: "#6b7280", fontSize: "13px" }}>
+                      Cód: {producto.codigo}
+                    </span>
+                  }
+                />
+
+                <div style={{ textAlign: "right", marginRight: 16 }}>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      color: "#111827",
+                      fontSize: "16px",
+                    }}
+                  >
+                    $
+                    {Number(
+                      producto.precioVenta ?? producto.precio ?? 0,
+                    ).toLocaleString("es-CL")}
+                  </div>
+                  {tieneDescuento && (
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "#ef4444",
+                        fontWeight: 500,
+                      }}
+                    >
+                      Se calculará al agregar
+                    </div>
+                  )}
+                </div>
+              </List.Item>
+            );
+          }}
+        />
+      </Modal>
+      {/** Modal ventas del día */}
+      <Modal
+        title={
+          <span style={{ fontSize: "18px", fontWeight: 600 }}>
+            Ventas del día
+          </span>
+        }
+        open={modalVentasDia}
+        onCancel={cerrarModalVentasDelDia}
+        footer={null}
+        centered
+        width={700}
+        styles={{ body: { padding: "24px 0 0 0" } }} // Limpiamos padding para que la tabla ocupe todo
+      >
+        <div style={{ padding: "0 24px 24px 24px" }}>
+          {hayVentas ? (
+            <>
+              <Table
+                dataSource={ventasDelDia}
+                columns={columnasVentasDia}
+                rowKey="idVentaCliente"
+                pagination={{ pageSize: 6 }} // Pagina para que el modal no crezca infinitamente
+                size="middle"
+                expandable={{
+                  expandedRowRender: (record) => {
+                    if (
+                      !record.detalleventa ||
+                      record.detalleventa.length === 0
+                    ) {
+                      return (
+                        <Typography.Text type="secondary" italic>
+                          No hay detalles de productos para esta venta.
+                        </Typography.Text>
+                      );
+                    }
+
+                    return (
+                      <Table
+                        columns={columnasDetalle}
+                        dataSource={record.detalleventa}
+                        rowKey="idDetalleVenta"
+                        pagination={false}
+                        size="small"
+                        style={{ margin: "10px 20px" }}
+                      />
+                    );
+                  },
+                }}
               />
 
-              <div
+              <Divider style={{ margin: "16px 0" }} />
+
+              <Row justify="space-between" align="middle">
+                <Col>
+                  <Typography.Text type="secondary">
+                    Total transacciones: {ventasDelDia.length}
+                  </Typography.Text>
+                </Col>
+                <Col>
+                  <Typography.Text style={{ fontSize: 16, fontWeight: 600 }}>
+                    Recaudación Total:{" "}
+                    <span style={{ color: "#1890ff" }}>
+                      ${sumaTotalDia.toLocaleString("es-CL")}
+                    </span>
+                  </Typography.Text>
+                </Col>
+              </Row>
+            </>
+          ) : (
+            <div style={{ padding: "40px 0" }}>
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <Typography.Text type="secondary" style={{ fontSize: 16 }}>
+                    {/* Leemos el mensaje del backend o ponemos uno por defecto */}
+                    {ventasDelDia?.message ||
+                      "No hay ventas registradas para hoy en esta caja"}
+                  </Typography.Text>
+                }
+              />
+            </div>
+          )}
+        </div>
+      </Modal>
+      {/** Modal arqueo de caja */}
+      <Modal
+        title={
+          <span style={{ fontSize: "18px", fontWeight: 600 }}>
+            Arqueo y Cierre de Caja
+          </span>
+        }
+        open={modalArqueoCaja}
+        onCancel={cerrarModalArqueoCaja}
+        footer={null} // Ocultamos el footer por defecto para usar el botón del Form
+        centered
+        width={750}
+        styles={{ body: { padding: "0" } }} // Body sin padding para dividir visualmente
+      >
+        {/* ==========================================
+          SECCIÓN 1: LO QUE DICE EL SISTEMA (BACKEND)
+          ========================================== */}
+        <div
+          style={{
+            padding: "24px 24px 16px 24px",
+            backgroundColor: "#f8fafc",
+            borderBottom: "1px solid #f0f0f0",
+          }}
+        >
+          <Row
+            justify="space-between"
+            align="middle"
+            style={{ marginBottom: 16 }}
+          >
+            <Col>
+              <Typography.Text
+                type="secondary"
                 style={{
-                  fontWeight: "bold",
-                  color: "#1890ff",
-                  fontSize: 16,
-                  marginRight: 16,
+                  fontSize: 13,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
                 }}
               >
-                ${producto.precioVenta?.toLocaleString("es-CL") || 0}
+                {resumenCaja?.nombreSucursal || "Sucursal"} • Caja{" "}
+                {resumenCaja?.numeroCaja || "-"}
+              </Typography.Text>
+              <div style={{ marginTop: 4 }}>
+                <Typography.Text strong>
+                  Apertura:{" "}
+                  {registroActual?.fechaApertura
+                    ? new Date(registroActual.fechaApertura).toLocaleTimeString(
+                        "es-CL",
+                        { hour: "2-digit", minute: "2-digit" },
+                      )
+                    : "N/A"}
+                </Typography.Text>
+                <Tag color="green" style={{ marginLeft: 8, border: 0 }}>
+                  {registroActual?.estadoRegistroCaja || "Abierta"}
+                </Tag>
               </div>
-            </List.Item>
-          )}
-        />
+            </Col>
+          </Row>
+
+          <Row gutter={12}>
+            <Col span={8}>
+              <Card
+                size="small"
+                style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
+              >
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  <DollarOutlined style={{ marginRight: 4 }} />
+                  Efectivo Esperado
+                </Typography.Text>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: "#0f172a",
+                    marginTop: 4,
+                  }}
+                >
+                  ${resumen.totalEfectivo.toLocaleString("es-CL")}
+                </div>
+              </Card>
+            </Col>
+            <Col span={8}>
+              <Card
+                size="small"
+                style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
+              >
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  <CreditCardOutlined style={{ marginRight: 4 }} />
+                  Transbank / Tarjetas
+                </Typography.Text>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: "#0f172a",
+                    marginTop: 4,
+                  }}
+                >
+                  ${totalTarjetas.toLocaleString("es-CL")}
+                </div>
+              </Card>
+            </Col>
+            <Col span={8}>
+              <Card
+                size="small"
+                style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
+              >
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  Total Sistema
+                </Typography.Text>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: "#1890ff",
+                    marginTop: 4,
+                  }}
+                >
+                  ${resumen.totalGeneral.toLocaleString("es-CL")}
+                </div>
+              </Card>
+            </Col>
+          </Row>
+
+          <div style={{ marginTop: 12 }}>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              <InfoCircleOutlined style={{ marginRight: 4 }} />
+              Ingresa el detalle del efectivo físico encontrado en la gaveta
+              para cuadrar la caja.
+            </Typography.Text>
+          </div>
+        </div>
+
+        {/* ==========================================
+          SECCIÓN 2: FORMULARIO DE CONTEO FÍSICO
+          ========================================== */}
+        <div style={{ padding: "20px 24px" }}>
+          <Form
+            form={formAperturaCaja}
+            layout="horizontal"
+            labelCol={{ span: 8 }}
+            wrapperCol={{ span: 16 }}
+            onFinish={confirmarAperturaCaja}
+          >
+            {/* --- Billetes --- */}
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                color: "rgba(0,0,0,0.4)",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                marginBottom: 12,
+              }}
+            >
+              Billetes en Gaveta
+            </div>
+            {denominaciones
+              .filter((d) => d.valor >= 1000)
+              .map((d) => (
+                <Form.Item
+                  key={d.name}
+                  label={d.label}
+                  name={d.name}
+                  initialValue={0}
+                  style={{ marginBottom: 8 }}
+                >
+                  <InputNumber
+                    min={0}
+                    style={{ width: "100%" }}
+                    addonAfter={
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "#64748b",
+                          minWidth: 80,
+                          display: "inline-block",
+                          textAlign: "right",
+                        }}
+                      >
+                        = $
+                        {((cantidades[d.name] || 0) * d.valor).toLocaleString(
+                          "es-CL",
+                        )}
+                      </span>
+                    }
+                    onChange={(val) =>
+                      setCantidades((prev) => ({ ...prev, [d.name]: val || 0 }))
+                    }
+                  />
+                </Form.Item>
+              ))}
+
+            <Divider style={{ margin: "16px 0" }} />
+
+            {/* --- Monedas --- */}
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                color: "rgba(0,0,0,0.4)",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                marginBottom: 12,
+              }}
+            >
+              Monedas en Gaveta
+            </div>
+            {denominaciones
+              .filter((d) => d.valor < 1000)
+              .map((d) => (
+                <Form.Item
+                  key={d.name}
+                  label={d.label}
+                  name={d.name}
+                  initialValue={0}
+                  style={{ marginBottom: 8 }}
+                >
+                  <InputNumber
+                    min={0}
+                    style={{ width: "100%" }}
+                    addonAfter={
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "#64748b",
+                          minWidth: 80,
+                          display: "inline-block",
+                          textAlign: "right",
+                        }}
+                      >
+                        = $
+                        {((cantidades[d.name] || 0) * d.valor).toLocaleString(
+                          "es-CL",
+                        )}
+                      </span>
+                    }
+                    onChange={(val) =>
+                      setCantidades((prev) => ({ ...prev, [d.name]: val || 0 }))
+                    }
+                  />
+                </Form.Item>
+              ))}
+
+            <Divider style={{ margin: "16px 0" }} />
+
+            {/* --- Resultado Dinámico y Botón --- */}
+            <div
+              style={{
+                background:
+                  diferenciaEfectivo === 0
+                    ? "#f6ffed"
+                    : diferenciaEfectivo < 0
+                      ? "#fff2f0"
+                      : "#e6f7ff",
+                border: `1px solid ${
+                  diferenciaEfectivo === 0
+                    ? "#b7eb8f"
+                    : diferenciaEfectivo < 0
+                      ? "#ffccc7"
+                      : "#91caff"
+                }`,
+                borderRadius: 8,
+                padding: "16px",
+                marginBottom: "16px",
+              }}
+            >
+              <Row
+                justify="space-between"
+                align="middle"
+                style={{ marginBottom: 8 }}
+              >
+                <Col>
+                  <span style={{ fontWeight: 500, fontSize: 14 }}>
+                    Efectivo Físico Declarado
+                  </span>
+                </Col>
+                <Col>
+                  <span style={{ fontWeight: 700, fontSize: 20 }}>
+                    ${totalApertura.toLocaleString("es-CL")}
+                  </span>
+                </Col>
+              </Row>
+
+              <Row justify="space-between" align="middle">
+                <Col>
+                  <span style={{ fontSize: 13, color: "#64748b" }}>
+                    Descuadre:
+                  </span>
+                </Col>
+                <Col>
+                  {diferenciaEfectivo === 0 ? (
+                    <Tag color="success" style={{ margin: 0 }}>
+                      ✓ Caja Cuadrada ($0)
+                    </Tag>
+                  ) : diferenciaEfectivo < 0 ? (
+                    <Tag color="error" style={{ margin: 0 }}>
+                      Faltante: -$
+                      {Math.abs(diferenciaEfectivo).toLocaleString("es-CL")}
+                    </Tag>
+                  ) : (
+                    <Tag color="processing" style={{ margin: 0 }}>
+                      Sobrante: +${diferenciaEfectivo.toLocaleString("es-CL")}
+                    </Tag>
+                  )}
+                </Col>
+              </Row>
+            </div>
+
+            <Row justify="end">
+              <Col>
+                <Button
+                  onClick={cerrarModalArqueoCaja}
+                  style={{ marginRight: 8 }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  icon={<SaveOutlined />}
+                >
+                  Guardar Arqueo
+                </Button>
+              </Col>
+            </Row>
+          </Form>
+        </div>
       </Modal>
     </div>
   );

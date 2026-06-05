@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(() => {
     finSesion();
     sessionStorage.removeItem("userData");
+    sessionStorage.removeItem("tipoSession");
     setUser(null);
     setIsAuthenticated(false);
   }, []);
@@ -38,9 +39,14 @@ export const AuthProvider = ({ children }) => {
 
       if (response.status === 200) {
         const userData = response.data.payload;
+        console.log("Usuario autenticado:", userData);
         setUser(userData);
         setIsAuthenticated(true);
         sessionStorage.setItem("userData", JSON.stringify(userData));
+        sessionStorage.setItem(
+          "tipoSession",
+          JSON.stringify(userData.tipoSession),
+        );
       }
       if (response.status === 401) {
         logout();
@@ -59,6 +65,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback((usuario) => {
     sessionStorage.setItem("userData", JSON.stringify(usuario));
+    sessionStorage.setItem("tipoSession", JSON.stringify(usuario.tipoSession));
     setUser(usuario);
     setIsAuthenticated(true);
   }, []);
