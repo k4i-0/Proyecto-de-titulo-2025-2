@@ -109,13 +109,14 @@ async function login(req, res) {
       sameSite: "lax",
       maxAge: 1 * 60 * 60 * 1000,
     });
-    //console.log(funcionarioEncontrado.dataValues);
+    console.log(funcionarioEncontrado);
     return res.status(200).json({
       datos: {
         email: funcionarioEncontrado.email,
         nombreRol: funcionarioEncontrado.dataValues.role.dataValues.nombreRol,
         nombre: funcionarioEncontrado.dataValues.nombre,
         tipoSession: funcionarioEncontrado.dataValues.tipoSession,
+        privilegios: funcionarioEncontrado.role.dataValues.privilegios,
       },
       token: {
         token,
@@ -161,6 +162,8 @@ async function loginCodigo(req, res) {
         },
       ],
     });
+
+    console.log("Funcionario encontrado:", verificarFuncionario);
 
     //SI NO EXISTE RETURN 404
     if (!verificarFuncionario) {
@@ -221,6 +224,7 @@ async function loginCodigo(req, res) {
         email: verificarFuncionario.email,
         nombreRol: verificarFuncionario.dataValues.role.dataValues.nombreRol,
         nombre: verificarFuncionario.dataValues.nombre,
+        privilegios: verificarFuncionario.role.dataValues.privilegios,
         tipoSession: "Caja",
       },
     });
@@ -246,6 +250,8 @@ async function loginCajaAlternativo(req, res) {
         },
       ],
     });
+    //console.log("funcionarioEncontrado:", funcionarioEncontrado);
+
     //SI NO EXISTE RETURN 404
     if (!funcionarioEncontrado) {
       return res
@@ -277,9 +283,9 @@ async function loginCajaAlternativo(req, res) {
     //CREAR TOKEN
     const token = jwt.sign(
       {
-        rut: funcionarioEncontrado.dataValues.rut,
-        email: funcionarioEncontrado.dataValues.email,
-        role: funcionarioEncontrado.dataValues.role.dataValues.nombreRol,
+        rut: funcionarioEncontrado.rut,
+        email: funcionarioEncontrado.email,
+        role: funcionarioEncontrado.role.nombreRol,
         session: "Caja",
       },
       process.env.JWT_SECRET,
@@ -311,13 +317,14 @@ async function loginCajaAlternativo(req, res) {
       sameSite: "lax",
       maxAge: 1 * 60 * 60 * 1000,
     });
-    //console.log(funcionarioEncontrado.dataValues);
     return res.status(200).json({
       datos: {
         email: funcionarioEncontrado.email,
         nombreRol: funcionarioEncontrado.dataValues.role.dataValues.nombreRol,
         nombre: funcionarioEncontrado.dataValues.nombre,
         tipoSession: funcionarioEncontrado.dataValues.tipoSession,
+        privilegios:
+          funcionarioEncontrado.dataValues.role.dataValues.privilegios,
       },
       token: {
         token,

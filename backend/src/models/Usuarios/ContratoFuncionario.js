@@ -16,12 +16,12 @@ const contratoFuncionario = sequelize.define(
     },
     tipoContrato: {
       type: DataTypes.ENUM("Indefinido", "Plazo Fijo", "Honorarios"),
-      allowNull: false,
+      allowNull: true,
       defaultValue: "Plazo Fijo",
     },
     turno: {
       type: DataTypes.ENUM("Mañana", "Tarde", "Noche", "Rotativo"),
-      allowNull: false,
+      allowNull: true,
       defaultValue: "Mañana",
     },
     fechaTermino: {
@@ -29,10 +29,11 @@ const contratoFuncionario = sequelize.define(
       allowNull: true,
     },
     estado: {
-      type: DataTypes.ENUM("Activo", "Inactivo", "Eliminado"),
+      type: DataTypes.ENUM("Activo", "Inactivo"),
       allowNull: false,
       defaultValue: "Activo",
     },
+
     motivoCambioContrato: {
       type: DataTypes.TEXT,
       allowNull: true,

@@ -37,48 +37,160 @@ async function poblarBD() {
       where: { nombreRol: "Sistema" },
       defaults: {
         nombreRol: "Sistema",
-        privilegios: {
+        privilegiosRol: {
           gestionarTodo: true,
         },
         estado: "Activo",
         descripcion: "Sistema",
       },
     });
+
+    if (!sistemaCreated) {
+      await sistemaRole.update({
+        nombreRol: "Sistema",
+        privilegiosRol: {
+          gestionarTodo: true,
+        },
+        estado: "Activo",
+        descripcion: "Sistema",
+      });
+      console.log(" Rol 'Sistema' actualizado exitosamente");
+    }
     const [adminRole, adminCreated] = await Rol.findOrCreate({
       where: { nombreRol: "Administrador" },
       defaults: {
         nombreRol: "Administrador",
-        privilegios: {
-          gestionarTodo: true,
+        privilegiosRol: {
+          administrarUsuarios: true,
+          gestionarSucursales: true,
+          gestionarProductos: true,
+          gestionarCategorias: true,
+          gestionarProveedores: true,
+          gestionColaboradores: true,
+          gestionarInventario: true,
+          gestionarOrdenesCompra: true,
+          gestionarDespachos: true,
+          gestionarBodega: true,
+          gestionarDescuentos: true,
+          accesoCaja: true,
         },
         estado: "Activo",
         descripcion: "Administrador del sistema",
       },
     });
 
+    if (!adminCreated) {
+      await adminRole.update({
+        nombreRol: "Administrador",
+        privilegiosRol: {
+          administrarUsuarios: true,
+          gestionarSucursales: true,
+          gestionarProductos: true,
+          gestionarCategorias: true,
+          gestionarProveedores: true,
+          gestionColaboradores: true,
+          gestionarInventario: true,
+          gestionarOrdenesCompra: true,
+          gestionarDespachos: true,
+          gestionarBodega: true,
+          gestionarDescuentos: true,
+          accesoCaja: true,
+        },
+        estado: "Activo",
+        descripcion: "Administrador del sistema",
+      });
+      console.log(" Rol 'Administrador' actualizado exitosamente");
+    }
+
     const [cajeroRole, cajeroCreated] = await Rol.findOrCreate({
       where: { nombreRol: "Cajero" },
       defaults: {
         nombreRol: "Cajero",
-        privilegios: {
-          gestionarCaja: true,
+        privilegiosRol: {
+          administrarUsuarios: false,
+          gestionarSucursales: false,
+          gestionarProductos: false,
+          gestionarCategorias: false,
+          gestionarProveedores: false,
+          gestionColaboradores: false,
+          gestionarInventario: false,
+          gestionarOrdenesCompra: false,
+          gestionarDespachos: false,
+          gestionarBodega: false,
+          gestionarDescuentos: false,
+          accesoCaja: true,
         },
         estado: "Activo",
         descripcion: "Cajero del sistema",
       },
     });
 
+    if (!cajeroCreated) {
+      await cajeroRole.update({
+        nombreRol: "Cajero",
+        privilegiosRol: {
+          administrarUsuarios: false,
+          gestionarSucursales: false,
+          gestionarProductos: false,
+          gestionarCategorias: false,
+          gestionarProveedores: false,
+          gestionColaboradores: false,
+          gestionarInventario: false,
+          gestionarOrdenesCompra: false,
+          gestionarDespachos: false,
+          gestionarBodega: false,
+          gestionarDescuentos: false,
+          accesoCaja: true,
+        },
+        estado: "Activo",
+        descripcion: "Cajero del sistema",
+      });
+    }
+
     const [vendedorRole, vendedorCreated] = await Rol.findOrCreate({
       where: { nombreRol: "Vendedor" },
       defaults: {
         nombreRol: "Vendedor",
-        privilegios: {
-          gestionarVentas: true,
+        privilegiosRol: {
+          administrarUsuarios: false,
+          gestionarSucursales: false,
+          gestionarProductos: false,
+          gestionarCategorias: false,
+          gestionarProveedores: false,
+          gestionColaboradores: false,
+          gestionarInventario: true,
+          gestionarOrdenesCompra: true,
+          gestionarDespachos: true,
+          gestionarBodega: false,
+          gestionarDescuentos: false,
+          accesoCaja: false,
         },
         estado: "Activo",
         descripcion: "Vendedor del sistema",
       },
     });
+
+    if (!vendedorCreated) {
+      await vendedorRole.update({
+        nombreRol: "Vendedor",
+        privilegiosRol: {
+          administrarUsuarios: false,
+          gestionarSucursales: false,
+          gestionarProductos: false,
+          gestionarCategorias: false,
+          gestionarProveedores: false,
+          gestionColaboradores: false,
+          gestionarInventario: true,
+          gestionarOrdenesCompra: true,
+          gestionarDespachos: true,
+          gestionarBodega: false,
+          gestionarDescuentos: false,
+          accesoCaja: false,
+        },
+        estado: "Activo",
+        descripcion: "Vendedor del sistema",
+      });
+    }
 
     console.log(" Roles verificados/creados:");
     console.log(
@@ -102,6 +214,7 @@ async function poblarBD() {
       }`,
     );
     console.log(" Iniciando creación de usuarios iniciales...");
+
     // Crear usuarios (await agregado y campo corregido)
     const [sistemaUser, sistemaUserCreated] = await Funcionario.findOrCreate({
       where: { rut: "00000000-0" },
@@ -118,9 +231,31 @@ async function poblarBD() {
         session: false,
         tipoSession: "Sin Session",
         estado: "Activo",
+        privilegiosFuncionario: sistemaRole.privilegiosRol,
         idRol: sistemaRole.idRol,
       },
     });
+
+    if (!sistemaUserCreated) {
+      await sistemaUser.update({
+        rut: "00000000-0",
+        nombre: "Sistema",
+        apellido: "1",
+        email: "sistema@sistema.dev",
+        password: adminPassword,
+        passwordCaja: codigoDefault,
+        passwordAlternativo: claveAlternativo,
+        telefono: "+56900000000",
+        direccion: "collao 1202, concepcion",
+        session: false,
+        tipoSession: "Sin Session",
+        estado: "Activo",
+        privilegiosFuncionario: sistemaRole.privilegiosRol,
+        idRol: sistemaRole.idRol,
+      });
+      console.log(" Usuario 'Sistema' actualizado exitosamente");
+    }
+
     const [admin, adminUserCreated] = await Funcionario.findOrCreate({
       where: { rut: "11111111-1" },
       defaults: {
@@ -136,9 +271,30 @@ async function poblarBD() {
         session: false,
         tipoSession: "Sin Session",
         estado: "Activo",
+        privilegiosFuncionario: adminRole.privilegiosRol,
         idRol: adminRole.idRol,
       },
     });
+
+    if (!adminUserCreated) {
+      await admin.update({
+        rut: "11111111-1",
+        nombre: "Admin",
+        apellido: "1",
+        email: "admin@sistema.dev",
+        password: adminPassword,
+        passwordCaja: codigoDefault,
+        passwordAlternativo: claveAlternativo,
+        telefono: "+56912345678",
+        direccion: "collao 1202, concepcion",
+        session: false,
+        tipoSession: "Sin Session",
+        estado: "Activo",
+        privilegiosFuncionario: adminRole.privilegiosRol,
+        idRol: adminRole.idRol,
+      });
+      console.log(" Usuario 'Admin' actualizado exitosamente");
+    }
 
     const [cajero, cajeroUserCreated] = await Funcionario.findOrCreate({
       where: { rut: "22222222-2" },
@@ -155,9 +311,30 @@ async function poblarBD() {
         session: false,
         tipoSession: "Sin Session",
         estado: "Activo",
+        privilegiosFuncionario: cajeroRole.privilegiosRol,
         idRol: cajeroRole.idRol,
       },
     });
+
+    if (!cajeroUserCreated) {
+      await cajero.update({
+        rut: "22222222-2",
+        nombre: "Cajero",
+        apellido: "1",
+        email: "cajero@sistema.dev",
+        password: userPassword,
+        passwordCaja: codigoDefault,
+        passwordAlternativo: claveAlternativo,
+        telefono: "+56987654321",
+        direccion: "collao 1202, concepcion",
+        session: false,
+        tipoSession: "Sin Session",
+        estado: "Activo",
+        privilegiosFuncionario: cajeroRole.privilegiosRol,
+        idRol: cajeroRole.idRol,
+      });
+      console.log(" Usuario 'Cajero' actualizado exitosamente");
+    }
 
     const [vendedor, vendedorUserCreated] = await Funcionario.findOrCreate({
       where: { rut: "33333333-3" },
@@ -174,9 +351,30 @@ async function poblarBD() {
         session: false,
         tipoSession: "Sin Session",
         estado: "Activo",
+        privilegiosFuncionario: vendedorRole.privilegiosRol,
         idRol: vendedorRole.idRol,
       },
     });
+
+    if (!vendedorUserCreated) {
+      await vendedor.update({
+        rut: "33333333-3",
+        nombre: "Vendedor",
+        apellido: "1",
+        email: "vendedor@sistema.dev",
+        password: userPassword,
+        passwordCaja: codigoDefault,
+        passwordAlternativo: claveAlternativo,
+        telefono: "+56987654321",
+        direccion: "collao 1202, concepcion",
+        session: false,
+        tipoSession: "Sin Session",
+        estado: "Activo",
+        privilegiosFuncionario: vendedorRole.privilegiosRol,
+        idRol: vendedorRole.idRol,
+      });
+      console.log(" Usuario 'Vendedor' actualizado exitosamente");
+    }
 
     //cerrar session a todos los usuarios
     // sistemaUser.update({
@@ -322,31 +520,43 @@ async function poblarBD() {
       },
     });
 
-    // const funcionarios = await Funcionario.findAll({
-    //   where: {
-    //     estado: {
-    //       [require("sequelize").Op.not]: "Eliminado",
-    //     },
-    //   },
-    // });
+    if (!sucursal1Created) {
+      await sucursal1.update({
+        idSucursal: 100,
+        nombre: "Casa Matriz",
+        direccion: "Calle Dos 522, Chiguayante",
+        estado: "Abierta",
+        idFuncionario: admin.idFuncionario,
+      });
+      console.log(" Sucursal 'Casa Matriz' actualizada exitosamente");
+    }
 
-    // for (const funcionario of funcionarios) {
-    //   await ContratoFuncionario.findOrCreate({
-    //     where: {
-    //       idFuncionario: funcionario.idFuncionario,
-    //       idSucursal: sucursal1.idSucursal,
-    //     },
-    //     defaults: {
-    //       idFuncionario: funcionario.idFuncionario,
-    //       idSucursal: sucursal1.idSucursal,
-    //       fechaIngreso: new Date(),
-    //       tipoContrato: "Plazo Fijo",
-    //       turno: "Mañana",
-    //       fechaTermino: null,
-    //       estado: "Activo",
-    //     },
-    //   });
-    // }
+    const funcionarios = await Funcionario.findAll({
+      where: {
+        estado: {
+          [require("sequelize").Op.not]: "Eliminado",
+        },
+      },
+    });
+
+    for (const funcionario of funcionarios) {
+      const [contrato, contratoCreated] =
+        await ContratoFuncionario.findOrCreate({
+          where: {
+            idFuncionario: funcionario.idFuncionario,
+            idSucursal: sucursal1.idSucursal,
+          },
+          defaults: {
+            idFuncionario: funcionario.idFuncionario,
+            idSucursal: sucursal1.idSucursal,
+            fechaIngreso: new Date(),
+            tipoContrato: "Plazo Fijo",
+            turno: "Mañana",
+            fechaTermino: null,
+            estado: "Activo",
+          },
+        });
+    }
 
     //Crear bodegas iniciales si no existen
     const [bodega1, bodega1Created] = await Bodega.findOrCreate({
@@ -359,6 +569,18 @@ async function poblarBD() {
         idSucursal: sucursal1.idSucursal,
       },
     });
+
+    if (!bodega1Created) {
+      await bodega1.update({
+        nombre: "Bodega Central",
+        nombre: "Bodega Central",
+        capacidad: 400,
+        capacidadDisponible: 400,
+        estado: "En Funcionamiento",
+        idSucursal: sucursal1.idSucursal,
+      });
+      console.log(" Bodega 'Bodega Central' actualizada exitosamente");
+    }
 
     // //Crear estantes iniciales si no existen
     // for (let i = 1; i <= 5; i++) {
@@ -389,17 +611,43 @@ async function poblarBD() {
       },
     });
 
+    if (!proveedorCreated) {
+      await proveedor.update({
+        nombre: "Proveedor 1",
+        telefono: "+56912345678",
+        email: "proveedor@test.cl",
+        fechaIngreso: new Date(),
+        rubro: "Abarrotes",
+        giro: "960011 - default",
+        estado: "Activo",
+      });
+      console.log(" Proveedor 'Proveedor 1' actualizado exitosamente");
+    }
+
     //Crear vendedor
-    await VendedorProveedor.findOrCreate({
-      where: { rut: "12369852-9" },
-      defaults: {
+    const [vendedorProveedor, vendedorProveedorCreated] =
+      await VendedorProveedor.findOrCreate({
+        where: { rut: "12369852-9" },
+        defaults: {
+          nombre: "Coca Cola Company",
+          rut: "12369852-9",
+          telefono: "+56912345678",
+          email: "pedro@coca.cl",
+          idProveedor: proveedor.idProveedor,
+        },
+      });
+    if (!vendedorProveedorCreated) {
+      await vendedorProveedor.update({
         nombre: "Coca Cola Company",
         rut: "12369852-9",
         telefono: "+56912345678",
         email: "pedro@coca.cl",
         idProveedor: proveedor.idProveedor,
-      },
-    });
+      });
+      console.log(
+        " Vendedor Proveedor 'Coca Cola Company' actualizado exitosamente",
+      );
+    }
 
     // //Orden de compra
     // const OC = await OrdenCompra.findOrCreate({

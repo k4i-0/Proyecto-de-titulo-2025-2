@@ -22,6 +22,7 @@ const ventacliente = sequelize.define(
         "Tarjeta Credito",
         "Funcionario",
         "Pago Mixto",
+        "Pendiente",
       ),
       allowNull: false,
       defaultValue: "Efectivo",

@@ -26,7 +26,7 @@ const RegistroCaja = sequelize.define(
       allowNull: false,
       defaultValue: "Abierta",
     },
-    monotoCierreTeorico: {
+    montoCierreTeorico: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
     },

@@ -44,6 +44,7 @@ db.EntregaProveedor = require("./inventario/EntregaProveedor");
 db.CreaOrdenCompra = require("./inventario/CreaOrdenCompra");
 db.RegistroCaja = require("./ventas/RegistroCaja");
 db.MovimientoCaja = require("./ventas/MovimientoCaja");
+db.DetallePago = require("./ventas/detallePago");
 
 //Destructuriacion
 const {
@@ -77,6 +78,7 @@ const {
   CreaOrdenCompra,
   RegistroCaja,
   MovimientoCaja,
+  DetallePago,
 } = db;
 
 // ========== tablas 1:n Modulo Inventario ==========
@@ -264,6 +266,14 @@ Descuento.hasMany(VentaCliente, {
 });
 VentaCliente.belongsTo(Descuento, {
   foreignKey: "idDescuento",
+});
+
+//VentaCliente -> DetalleVenta (1:N)
+VentaCliente.hasMany(DetallePago, {
+  foreignKey: "idVentaCliente",
+});
+DetallePago.belongsTo(VentaCliente, {
+  foreignKey: "idVentaCliente",
 });
 
 // ========== TABLAS INTERMEDIAS ==========

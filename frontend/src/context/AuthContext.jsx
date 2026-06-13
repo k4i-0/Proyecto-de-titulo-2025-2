@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
     finSesion();
     sessionStorage.removeItem("userData");
     sessionStorage.removeItem("tipoSession");
+    sessionStorage.removeItem("privilegios");
     setUser(null);
     setIsAuthenticated(false);
   }, []);
@@ -64,8 +65,10 @@ export const AuthProvider = ({ children }) => {
   }, [checkAuth]);
 
   const login = useCallback((usuario) => {
+    console.log("Iniciando sesión para usuario:", usuario);
     sessionStorage.setItem("userData", JSON.stringify(usuario));
     sessionStorage.setItem("tipoSession", JSON.stringify(usuario.tipoSession));
+    sessionStorage.setItem("privilegios", JSON.stringify(usuario.privilegios));
     setUser(usuario);
     setIsAuthenticated(true);
   }, []);

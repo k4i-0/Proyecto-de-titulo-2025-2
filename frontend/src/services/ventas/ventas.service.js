@@ -46,7 +46,7 @@ export async function aperturaCaja(
     return response;
   } catch (error) {
     console.error("Error al abrir caja:", error);
-    return error;
+    return error.response;
   }
 }
 
@@ -75,7 +75,7 @@ export async function registroCajaEnSucursal({
         withCredentials: true,
       },
     );
-    console.log("Respuesta de registro de caja en sucursal:", response.status);
+    //console.log("Respuesta de registro de caja en sucursal:", response.status);
     return response;
   } catch (error) {
     console.error(
@@ -124,11 +124,11 @@ export async function cierreCaja(valores) {
   }
 }
 
-export async function solicitarPagoTarjeta(deviceID, totalVenta, metodoPago) {
+export async function solicitarPagoTarjeta(deviceID, datos) {
   try {
     const response = await axios.post(
       `${API_URL}/solicitud/pago/tarjeta/${deviceID}`,
-      { totalVenta: totalVenta, metodoPago: metodoPago },
+      datos,
       {
         withCredentials: true,
       },
@@ -247,6 +247,50 @@ export async function generarArqueoCaja(deviceID) {
     return response;
   } catch (error) {
     console.error("Error al generar arqueo de caja:", error);
+    return error.response;
+  }
+}
+
+export async function consultaCierreCajaPendiente(deviceID) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/consultar/cierre/caja/dia/anterior/${deviceID}`,
+      {
+        withCredentials: true,
+      },
+    );
+    console.log(
+      "Respuesta de consulta de cierre de caja pendiente:",
+      response.status,
+    );
+    return response;
+  } catch (error) {
+    console.error("Error al consultar cierre de caja pendiente:", error);
+    return error.response;
+  }
+}
+
+export async function cierreCajaPendienteAdmin(deviceID, datosCierre) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/registro/cierre/pendiente/admin/${deviceID}`,
+      {
+        idRegistroCaja: datosCierre.idRegistroCaja,
+        cantidadMontoFinal: datosCierre.cantidadMontoFinal,
+        observacionesCierre: datosCierre.observacionesCierre || " ",
+        totalCierre: datosCierre.totalCierre,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+    console.log(
+      "Respuesta de cierre de caja pendiente admin:",
+      response.status,
+    );
+    return response;
+  } catch (error) {
+    console.error("Error al cerrar caja pendiente admin:", error);
     return error.response;
   }
 }

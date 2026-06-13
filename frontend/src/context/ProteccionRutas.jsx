@@ -71,10 +71,11 @@ import React, { useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { Spin } from "antd";
-import Cookies from "js-cookie";
+// import Cookies from "js-cookie"; // Si no lo usas, puedes quitarlo
 
 const ProtectedRoute = ({
   allowedRoles,
+  requiredPrivilege, // <-- NUEVO PROP OPCIONAL
   children,
   fallbackPath = "/login",
 }) => {
@@ -102,16 +103,14 @@ const ProtectedRoute = ({
     );
   }
 
-  // 1. Redirección si no hay sesión activa
-  // 3. Usuario no logueado
   if (!isAuthenticated) {
     const modoCaja = localStorage.getItem("modoCaja");
-
     if (modoCaja === "true") {
       return <Navigate to="/cajas/login" replace />;
     }
     return <Navigate to="/login" replace />;
   }
+
   const userRole = user?.nombreRol;
   const rawSession = sessionStorage.getItem("tipoSession") || "";
   const userTipoSession = rawSession.replace(/"/g, "").trim();
@@ -120,14 +119,10 @@ const ProtectedRoute = ({
   // ==========================================
   // REGLA 1: MUNDO CAJA (Aislamiento Total)
   // ==========================================
-
   if (userTipoSession === "Caja") {
-    // Si intenta ir a cualquier ruta que NO sea /cajas, lo regresamos a la fuerza
     if (!isRutaCaja) {
       return <Navigate to="/cajas" replace />;
     }
-
-    // Si ya está en /cajas, lo dejamos pasar directamente
     return children ? children : <Outlet />;
   }
 
@@ -135,7 +130,6 @@ const ProtectedRoute = ({
   // REGLA 2: MUNDO ADMINISTRACIÓN
   // ==========================================
   if (userTipoSession === "Administracion" || userTipoSession !== "Caja") {
-    // Función de ayuda para enviar a cada rol a su respectivo inicio
     const redirigirPorRol = () => {
       if (userRole === "Administrador") return <Navigate to="/admin" replace />;
       if (userRole === "Vendedor") return <Navigate to="/vendedor" replace />;
@@ -143,21 +137,30 @@ const ProtectedRoute = ({
       return <Navigate to={fallbackPath} replace />;
     };
 
-    // A) Bloqueo de intrusos: Si intenta entrar a /cajas desde la administración, lo expulsamos
+    // A) Bloqueo de intrusos
     if (isRutaCaja) {
       return redirigirPorRol();
     }
 
-    // B) Validación de Permisos Normales: Si intenta entrar a una ruta de admin pero no tiene el rol
+    // B) Validación de Roles Normales
     if (!userRole || (allowedRoles && !allowedRoles.includes(userRole))) {
       return redirigirPorRol();
     }
 
-    // Si pasó todas las validaciones de administración, lo dejamos pasar
+    // C) NUEVA: Validación de Privilegios Finos
+    // Revisamos si la ruta pide un privilegio y si el usuario lo tiene en true
+    if (requiredPrivilege && user?.privilegios) {
+      const tienePrivilegio = user.privilegios[requiredPrivilege] === true;
+
+      if (!tienePrivilegio) {
+        // Si no tiene el privilegio, lo regresamos a la raíz de su rol (o a una página de "No autorizado")
+        return redirigirPorRol();
+      }
+    }
+
     return children ? children : <Outlet />;
   }
 
-  // Fallback de seguridad (por si falla todo lo anterior)
   return <Navigate to={fallbackPath} replace />;
 };
 

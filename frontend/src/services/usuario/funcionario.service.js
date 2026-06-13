@@ -216,4 +216,108 @@ export const obtenerHistorialContratosDelFuncionario = async (
   }
 };
 
-//busqueda de todos los funcionarios por sucursal, sin importar si tienen contrato o no
+export async function actualizarClavesFuncionario(idFuncionario, nuevasClaves) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/cambio/clave/funcionario/${idFuncionario}`,
+      nuevasClaves,
+      { withCredentials: true },
+    );
+    console.log("Claves actualizadas para funcionario:", response);
+    return response;
+  } catch (error) {
+    console.error(
+      "Error al actualizar claves del funcionario:",
+      error.response?.data?.error,
+    );
+
+    return error.response?.data;
+  }
+}
+
+export async function actualizarPrivilegiosFuncionario(
+  idFuncionario,
+  nuevosPrivilegios,
+) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/actualizar/privilegios/${idFuncionario}`,
+      { privilegios: nuevosPrivilegios },
+      { withCredentials: true },
+    );
+    console.log("Privilegios actualizados para funcionario:", response);
+    return response;
+  } catch (error) {
+    console.error(
+      "Error al actualizar privilegios del funcionario:",
+      error.response?.data?.error,
+    );
+
+    return error.response?.data;
+  }
+}
+
+export async function obtenerTodosRoles() {
+  try {
+    const response = await axios.get(`${API_URL}/obtener/todos/roles`, {
+      withCredentials: true,
+    });
+    console.log("Roles obtenidos:", response);
+    return response;
+  } catch (error) {
+    console.error("Error al obtener roles:", error.response.data.error);
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response?.data;
+  }
+}
+
+///crud roles
+export async function crearRol(datos) {
+  try {
+    const response = await axios.post(`${API_URL}/crear/rol`, datos, {
+      withCredentials: true,
+    });
+    console.log("Rol creado:", response);
+    return response;
+  } catch (error) {
+    console.error("Error al crear rol:", error.response.data.error);
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response?.data;
+  }
+}
+
+export async function editarRol(idRol, datos) {
+  try {
+    const response = await axios.put(`${API_URL}/editar/rol/${idRol}`, datos, {
+      withCredentials: true,
+    });
+    console.log("Rol editado:", response);
+    return response;
+  } catch (error) {
+    console.error("Error al editar rol:", error.response.data.error);
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response?.data;
+  }
+}
+
+export async function eliminarRol(idRol) {
+  try {
+    const response = await axios.delete(`${API_URL}/eliminar/rol/${idRol}`, {
+      withCredentials: true,
+    });
+    console.log("Rol eliminado:", response);
+    return response;
+  } catch (error) {
+    console.error("Error al eliminar rol:", error.response.data.error);
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response?.data;
+  }
+}

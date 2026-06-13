@@ -15,18 +15,18 @@ const {
 //Crud Funcionario
 exports.getAllFuncionarios = async (req, res) => {
   try {
+    // Validación inicial de roles (Opcional, pero está bien mantenerla)
     const roles = await Roles.findAll();
-    if (roles.length === 0 || !roles) {
+    if (!roles || roles.length === 0) {
       return res.status(204).json({ message: "No hay roles registrados" });
     }
+
     const funcionariosData = await Funcionario.findAll({
       where: {
-        idRol: {
-          [Op.notIn]: [1],
+        estado: {
+          [Op.not]: "Eliminado",
         },
-        // estado: {
-        //   [Op.not]: "Eliminado",
-        // },
+        estaEliminado: false,
       },
       attributes: {
         exclude: ["password", "createdAt", "updatedAt"],
@@ -35,54 +35,67 @@ exports.getAllFuncionarios = async (req, res) => {
         {
           model: Roles,
           as: "role",
+          required: true,
+          where: {
+            nombreRol: { [Op.notIn]: ["Sistema"] },
+          },
+          // 1. CORRECCIÓN CLAVE: Agregar "privilegios" a los atributos extraídos del Rol
+          attributes: ["idRol", "nombreRol", "privilegiosRol"],
         },
         {
           model: ContratoFuncionario,
           foreignKey: "idFuncionario",
           as: "contratos",
           required: false,
-          // where: {
-          //   estado: { [Op.not]: "Eliminado" },
-          // },
+          attributes: {
+            exclude: ["createdAt", "updatedAt", "idContratoFuncionario"],
+          },
           include: [
             {
               model: Sucursal,
               as: "sucursal",
-              attributes: {
-                exclude: ["createdAt", "updatedAt"],
-              },
+              attributes: ["idSucursal", "nombre", "direccion"],
             },
           ],
-          attributes: {
-            exclude: ["createdAt", "updatedAt"],
-          },
         },
       ],
     });
 
-    if (funcionariosData.length === 0 || !funcionariosData) {
+    if (!funcionariosData || funcionariosData.length === 0) {
       return res
         .status(204)
         .json({ message: "No hay funcionarios registrados" });
     }
+
     const funcionarios = funcionariosData.map((func) => {
       const contratoActivo =
         func.contratos?.find((c) => c.estado === "Activo") ||
         func.contratos?.[0] ||
         null;
+
       const codigoAcceso = func.rut ? encriptar(func.rut) : null;
 
       return {
-        id: func.idFuncionario,
+        id: func.idFuncionario, // ID genérico para las tablas
+        idFuncionario: func.idFuncionario, // ID explícito por si lo requieres para actualizar
         nombre: func.nombre,
         apellido: func.apellido,
         rut: func.rut,
         email: func.email,
-        telefono: func.telefono.slice(3),
+        // 2. CORRECCIÓN: Prevención de crasheo si el teléfono es null
+        telefono: func.telefono ? String(func.telefono).slice(3) : null,
         cargo: func.role?.nombreRol || null,
-        codigoAcceso,
+        codigoAcceso: codigoAcceso,
 
-        sucursal: contratoActivo?.sucursal?.nombre || null,
+        // 3. CORRECCIÓN CLAVE: Cambiar "permisos" por "privilegios" para que el Modal lo lea directo
+        // Si tienes privilegios específicos por funcionario en BD, usa func.privilegios.
+        // Si vienen del rol, usa func.role.privilegios. Aquí leo ambos por seguridad.
+        privilegios:
+          func.privilegiosFuncionario || func.role?.privilegiosRol || null,
+
+        sucursalNombre: contratoActivo?.sucursal?.nombre || null,
+        sucursal: contratoActivo?.sucursal?.nombre || null, // Se mantiene por retrocompatibilidad
+
         fechaIngreso: contratoActivo?.fechaIngreso || null,
         estado: func.estado || null,
         direccion: func.direccion || null,
@@ -109,25 +122,25 @@ exports.obtenerColaboradoresPorSucursal = async (req, res) => {
     const colaboradores = await ContratoFuncionario.findAll({
       where: {
         idSucursal: idSucursal,
-
         estado: "Activo",
       },
       include: [
         {
           model: Funcionario,
-          where: {
-            idRol: {
-              [Op.notIn]: [1],
-            },
-          },
+          required: true,
           include: [
             {
               model: Roles,
-
+              where: {
+                nombreRol: {
+                  [Op.notIn]: ["Sistema"],
+                },
+              },
+              required: true,
               attributes: {
                 exclude: [
                   "idRol",
-                  "privilegios",
+                  "privilegiosRol",
                   "descripcion",
                   "createdAt",
                   "updatedAt",
@@ -173,13 +186,13 @@ exports.crearFuncionario = async (req, res) => {
     direccion,
     nombreRol,
     idSucursal,
-    turno,
-    contrato,
+    //turno,
+    //contrato,
     estadoContrato,
   } = req.body;
   const t = await sequelize.transaction();
   try {
-    console.log("Datos Crear funcionario:", req.body);
+    //console.log("Datos Crear funcionario:", req.body);
     if (
       !nombre ||
       !apellido ||
@@ -190,17 +203,24 @@ exports.crearFuncionario = async (req, res) => {
       !direccion ||
       !nombreRol ||
       !idSucursal ||
-      !turno ||
-      !contrato ||
+      //!turno ||
+      //!contrato ||
       !estadoContrato
     ) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
     }
+    //contraseñas iniciales basadas en el rut
     const passwordInicial = await bcrypt.hash(rut.split("-")[0], 10);
     const passwordCajaInicial = await bcrypt.hash(
       rut.split("-")[0].slice(-4),
       10,
     );
+    const passwordAlternativo = await bcrypt.hash(
+      rut.split("-")[0].slice(0, 4),
+      10,
+    );
+
+    //buscar rol por nombre
     const rolEncontrado = await Roles.findOne(
       {
         where: { nombreRol: nombreRol },
@@ -211,7 +231,8 @@ exports.crearFuncionario = async (req, res) => {
       await t.rollback();
       return res.status(404).json({ error: "Rol no encontrado" });
     }
-    //verifica rut
+
+    //verifica rut  valido
     const rutValido = validarRutChileno(rut);
     if (!rutValido) {
       await t.rollback();
@@ -222,20 +243,15 @@ exports.crearFuncionario = async (req, res) => {
       { where: { rut: rut } },
       { transaction: t },
     );
-    if (rutExistente) {
-      if (rutExistente.estado === "Eliminado") {
-        await t.rollback();
-        return res.status(409).json({
-          error:
-            "El RUT pertenece a un funcionario eliminado, solicite activacion",
-        });
-      }
-      await t.rollback();
-      return res.status(409).json({ error: "El RUT ya está registrado" });
-    }
+    //console.log("Funcionario con mismo RUT encontrado:", rutExistente);
+    // verificar correo
     const emailExistente = await Funcionario.findOne(
       {
-        where: { email: email },
+        where: {
+          email: email,
+          estaEliminado: false,
+          idFuncionario: { [Op.ne]: rutExistente.idFuncionario },
+        },
       },
       { transaction: t },
     );
@@ -250,6 +266,70 @@ exports.crearFuncionario = async (req, res) => {
       await t.rollback();
       return res.status(409).json({ error: "El email ya está registrado" });
     }
+
+    if (rutExistente) {
+      if (rutExistente.estado === "Eliminado") {
+        const respuesta = await rutExistente.update({
+          nombre: nombre,
+          apellido: apellido,
+          email: email,
+          password: passwordInicial,
+          passwordCaja: passwordCajaInicial,
+          passwordAlternativo: passwordAlternativo,
+          telefono: `+56${telefono}`,
+          direccion: direccion,
+          session: false,
+          tipoSession: "Sin Session",
+          estaEliminado: false,
+          privilegiosFuncionario: rutExistente.privilegiosFuncionario,
+          estado: "Activo",
+          updateAt: new Date(),
+        });
+        if (!respuesta) {
+          await t.rollback();
+          return res
+            .status(500)
+            .json({ error: "No se pudo activar el funcionario" });
+        }
+        //activar contrato del funcionario
+        const contratoViejo = await ContratoFuncionario.findOne({
+          where: { idFuncionario: rutExistente.idFuncionario },
+          transaction: t,
+        });
+        if (contratoViejo) {
+          await contratoViejo.update(
+            {
+              estado: "Activo",
+              fechaTermino: null,
+              motivoCambioContrato: "Reactivación de funcionario eliminado",
+            },
+            { transaction: t },
+          );
+        } else {
+          await ContratoFuncionario.create(
+            {
+              idFuncionario: rutExistente.idFuncionario,
+              idSucursal,
+              fechaIngreso: new Date(),
+              tipoContrato: null,
+              turno: null,
+              fechaTermino: null,
+              motivoCambioContrato: "Reactivación de funcionario eliminado",
+              estado: "Activo",
+            },
+            { transaction: t },
+          );
+        }
+        await t.commit();
+        return res.status(200).json({
+          message: "Funcionario Existenten, fue activado exitosamente",
+          funcionario: respuesta,
+        });
+      }
+      await t.rollback();
+      return res.status(409).json({ error: "El RUT ya está registrado" });
+    }
+
     const nuevoFuncionario = await Funcionario.create(
       {
         rut,
@@ -260,6 +340,7 @@ exports.crearFuncionario = async (req, res) => {
         passwordCaja: passwordCajaInicial,
         telefono: `+56${telefono}`,
         direccion,
+        privilegiosFuncionario: rolEncontrado.privilegiosRol,
         idRol: rolEncontrado.idRol,
         estado: "Activo",
       },
@@ -276,8 +357,8 @@ exports.crearFuncionario = async (req, res) => {
         idFuncionario: nuevoFuncionario.idFuncionario,
         idSucursal,
         fechaIngreso,
-        tipoContrato: contrato,
-        turno: turno,
+        tipoContrato: null,
+        turno: null,
         estado: estadoContrato,
       },
       { transaction: t },
@@ -292,7 +373,10 @@ exports.crearFuncionario = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al crear el funcionario:", error);
-    await t.rollback();
+    if (t.finished !== "commit") {
+      await t.rollback();
+    }
+
     res.status(500).json({ error: "Error al crear el funcionario" });
   }
 };
@@ -393,48 +477,97 @@ exports.editarFuncionario = async (req, res) => {
 };
 
 exports.eliminarFuncionario = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { idFuncionario } = req.params;
     if (!idFuncionario) {
       return res.status(422).json({ error: "Falta el ID del funcionario" });
     }
-    //elimina contrato del funcionario si no tiene contrato activo
-    const funcionarioContrato = await ContratoFuncionario.findOne({
-      where: { idFuncionario: idFuncionario, estado: "Activo" },
+
+    //buscar el funcionario por id
+    const funcionarioAEliminar = await Funcionario.findByPk(idFuncionario, {
+      transaction: t,
     });
-    if (funcionarioContrato) {
-      return res.status(409).json({
-        error: "No se puede eliminar el funcionario con contrato activo",
-      });
+    if (!funcionarioAEliminar) {
+      await t.rollback();
+      return res.status(404).json({ error: "Funcionario no encontrado" });
     }
-    const eliminado = await Funcionario.destroy({
-      where: { idFuncionario: idFuncionario },
+
+    const rolData = await Roles.findOne({
+      where: { idRol: funcionarioAEliminar.idRol },
+      transaction: t,
     });
 
-    if (!eliminado) {
+    //verificar que no sea sistema
+    if (rolData && rolData.nombreRol === "Sistema") {
+      await t.rollback();
       return res
-        .status(500)
-        .json({ error: "No se pudo eliminar el funcionario" });
+        .status(400)
+        .json({ error: "No se puede eliminar el funcionario sistema" });
     }
-    const funcionarioEliminado = await Funcionario.update(
+
+    //verifico que no tenga session activa, si la tiene no se puede eliminar
+    if (funcionarioAEliminar.session === true) {
+      return res.status(400).json({
+        error: "No se puede eliminar un funcionario con sesión activa",
+      });
+    }
+    // Desactivar contrato primero
+    const contratoActualizado = await ContratoFuncionario.update(
       {
-        estado: "Eliminado",
+        estado: "Inactivo",
+        motivoCambioContrato: "Baja del personal",
+        fechaTermino: new Date(),
       },
-      {
-        where: { idFuncionario: idFuncionario },
-      },
+      { where: { idFuncionario: idFuncionario }, transaction: t },
     );
-    if (!funcionarioEliminado) {
+
+    // Marcar funcionario como eliminado
+    const funcionarioActualizado = await Funcionario.update(
+      { estaEliminado: true, estado: "Eliminado" },
+      { where: { idFuncionario: idFuncionario }, transaction: t },
+    );
+
+    if (!funcionarioActualizado[0]) {
+      // update retorna [numero de filas afectadas]
+      await t.rollback();
       return res
         .status(500)
         .json({ error: "No se pudo eliminar el funcionario" });
     }
+
+    await t.commit();
     res.status(200).json({
       message: "Funcionario eliminado exitosamente",
     });
   } catch (error) {
     console.log("Error al eliminar el funcionario:", error);
+    if (t.finished !== "commit") {
+      await t.rollback();
+    }
     res.status(500).json({ error: "Error al eliminar el funcionario" });
+  }
+};
+
+exports.getAllRoles = async (req, res) => {
+  try {
+    const roles = await Roles.findAll({
+      where: {
+        nombreRol: {
+          [Op.notIn]: ["Sistema"],
+        },
+      },
+      attributes: {
+        exclude: ["createdAt", "updatedAt"],
+      },
+    });
+    if (!roles || roles.length === 0) {
+      return res.status(204).json({ message: "No hay roles registrados" });
+    }
+    res.status(200).json(roles);
+  } catch (error) {
+    console.error("Error al obtener los roles:", error);
+    res.status(500).json({ error: "Error al obtener los roles" });
   }
 };
 
@@ -586,25 +719,51 @@ exports.obtenerHistorialContratosFuncionario = async (req, res) => {
 exports.reasignarSucursalFuncionario = async (req, res) => {
   const t = await sequelize.transaction();
   const { idFuncionario, idSucursal, motivo } = req.body;
+
   console.log("Datos recibidos para reasignar sucursal:", req.body);
+
   try {
+    // 1. Validaciones iniciales
     if (!idFuncionario || !idSucursal || !motivo) {
       await t.rollback();
-      return res.status(422).json({ error: "Faltan datos obligatorios" });
+      return res.status(422).json({
+        error: "Faltan datos obligatorios (idFuncionario, idSucursal, motivo)",
+      });
     }
 
     const funcionario = await Funcionario.findByPk(idFuncionario, {
       transaction: t,
     });
+
     if (!funcionario) {
       await t.rollback();
       return res.status(404).json({ error: "Funcionario no encontrado" });
     }
     if (funcionario.estado !== "Activo") {
       await t.rollback();
-      return res.status(403).json({ error: "Funcionario no activo" });
+      return res.status(403).json({
+        error: "No se puede trasladar a un funcionario que no está activo",
+      });
     }
 
+    const sucursalDestino = await Sucursal.findByPk(idSucursal, {
+      transaction: t,
+    });
+
+    if (!sucursalDestino) {
+      await t.rollback();
+      return res
+        .status(404)
+        .json({ error: "Sucursal de destino no encontrada" });
+    }
+    if (sucursalDestino.estado !== "Abierta") {
+      await t.rollback();
+      return res.status(403).json({
+        error: "La sucursal de destino no está operativa (No Abierta)",
+      });
+    }
+
+    // 2. Obtener el contrato actual (El que vamos a desactivar)
     const contratoActivo = await ContratoFuncionario.findOne({
       where: {
         idFuncionario,
@@ -613,7 +772,7 @@ exports.reasignarSucursalFuncionario = async (req, res) => {
       include: [
         {
           model: Sucursal,
-          attributes: ["idSucursal", "nombre", "direccion", "estado"],
+          attributes: ["idSucursal", "nombre"],
         },
       ],
       transaction: t,
@@ -621,89 +780,89 @@ exports.reasignarSucursalFuncionario = async (req, res) => {
 
     if (!contratoActivo) {
       await t.rollback();
-      return res
-        .status(404)
-        .json({ error: "El funcionario no tiene un contrato activo" });
+      return res.status(404).json({
+        error: "El funcionario no tiene un contrato activo para trasladar",
+      });
     }
 
     if (Number(contratoActivo.idSucursal) === Number(idSucursal)) {
       await t.rollback();
-      return res
-        .status(409)
-        .json({ error: "El funcionario ya trabaja en esa sucursal" });
+      return res.status(409).json({
+        error: "El funcionario ya trabaja actualmente en esa sucursal",
+      });
     }
 
-    const sucursalDestino = await Sucursal.findByPk(idSucursal, {
-      transaction: t,
-    });
-    if (!sucursalDestino) {
-      await t.rollback();
-      return res.status(404).json({ error: "Sucursal no encontrada" });
-    }
-    if (sucursalDestino.estado !== "Abierta") {
-      await t.rollback();
-      return res.status(403).json({ error: "Sucursal no activa" });
-    }
+    const fechaActual = new Date();
+    const fechaActualStr = fechaActual.toLocaleDateString("es-CL");
 
-    //buscar si antes tuvo un contrato en la sucursal destino
-    const contratoAnteriorDestino = await ContratoFuncionario.findOne({
+    // 3. INACTIVAR CONTRATO ORIGEN
+    const notaSalida = `[${fechaActualStr}] Traslado hacia ${sucursalDestino.nombre}. Motivo: ${motivo}`;
+
+    contratoActivo.estado = "Inactivo";
+    contratoActivo.fechaTermino = fechaActual; // <--- Se asigna la fecha de término hoy
+    contratoActivo.motivoCambioContrato = contratoActivo.motivoCambioContrato
+      ? `${contratoActivo.motivoCambioContrato} | ${notaSalida}`
+      : notaSalida;
+
+    await contratoActivo.save({ transaction: t });
+
+    // 4. BUSCAR CONTRATO PREVIO EN DESTINO
+    const contratoDestinoPrevio = await ContratoFuncionario.findOne({
       where: {
         idFuncionario,
         idSucursal,
-        estado: {
-          [Op.in]: ["Eliminado", "Inactivo"],
-        },
       },
       transaction: t,
     });
 
-    if (contratoAnteriorDestino) {
-      contratoActivo.estado = "Inactivo";
-      contratoActivo.motivoCambioContrato = `${new Date().toLocaleDateString("es-CL")} Cambio contrato a inactivo en Sucursal ${idSucursal} con motivo: ${motivo}`;
-      await contratoActivo.save({ transaction: t });
+    let contratoResultante;
+    const notaEntrada = `[${fechaActualStr}] Traslado desde ${contratoActivo.sucursal.nombre}. Motivo: ${motivo}`;
 
-      contratoAnteriorDestino.estado = "Activo";
-      contratoAnteriorDestino.motivoCambioContrato = `${new Date().toLocaleDateString("es-CL")}: ${contratoAnteriorDestino.motivoCambioContrato || ""} \n Reasignación desde sucursal ${contratoActivo.sucursal.nombre} con motivo: ${motivo}`;
-      await contratoAnteriorDestino.save({ transaction: t });
-      await t.commit();
-      return res.status(201).json({
-        message: "Sucursal reasignada correctamente",
-        contratoAnterior: contratoAnteriorDestino,
-      });
+    if (contratoDestinoPrevio) {
+      // RAMA A: Ya existía un registro -> Lo REACTIVAMOS
+      contratoDestinoPrevio.estado = "Activo";
+      contratoDestinoPrevio.fechaTermino = null; // <--- Se limpia la fecha de término porque vuelve a estar activo
+      contratoDestinoPrevio.motivoCambioContrato =
+        contratoDestinoPrevio.motivoCambioContrato
+          ? `${contratoDestinoPrevio.motivoCambioContrato} | ${notaEntrada}`
+          : notaEntrada;
+
+      await contratoDestinoPrevio.save({ transaction: t });
+      contratoResultante = contratoDestinoPrevio;
     } else {
-      contratoActivo.estado = "Inactivo";
-      contratoActivo.motivoCambioContrato = `${new Date().toLocaleDateString("es-CL")} Cambio contrato a inactivo en Sucursal ${idSucursal} con motivo: ${motivo} \n`;
-      await contratoActivo.save({ transaction: t });
-
-      const nuevoContrato = await ContratoFuncionario.create(
+      // RAMA B: No existía registro -> Creamos uno NUEVO
+      contratoResultante = await ContratoFuncionario.create(
         {
-          idSucursal,
-          idFuncionario,
-          fechaIngreso: new Date(),
+          idSucursal: idSucursal,
+          idFuncionario: idFuncionario,
+          fechaIngreso: fechaActual, // Su primer día oficial en esta sucursal es hoy
           tipoContrato: contratoActivo.tipoContrato,
           turno: contratoActivo.turno,
           estado: "Activo",
-          fechaTermino: contratoActivo.fechaTermino || null,
-          motivoCambioContrato: motivo,
+          fechaTermino: null,
+          motivoCambioContrato: notaEntrada,
         },
         { transaction: t },
       );
-      await t.commit();
-
-      return res.status(201).json({
-        message: "Sucursal reasignada correctamente",
-        contratoAnterior: contratoActivo,
-        nuevoContrato,
-      });
     }
+
+    await t.commit();
+
+    return res.status(201).json({
+      message: "Funcionario reasignado de sucursal exitosamente",
+      contratoAnterior: contratoActivo,
+      contratoActual: contratoResultante,
+    });
   } catch (error) {
     console.error("Error al reasignar la sucursal del funcionario:", error);
-    if (t.finished !== "commit") {
+
+    if (!t.finished) {
       await t.rollback();
     }
-    return res
-      .status(500)
-      .json({ error: "Error al reasignar la sucursal del funcionario" });
+
+    return res.status(500).json({
+      error: "Error interno al reasignar la sucursal del funcionario",
+    });
   }
 };
 
@@ -987,5 +1146,264 @@ exports.cambiarTipoContratoFuncionario = async (req, res) => {
     return res
       .status(500)
       .json({ error: "Error al cambiar el tipo de contrato del funcionario" });
+  }
+};
+
+//Cambio de clave desde administración
+exports.actualizarClavesFuncionario = async (req, res) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const { idFuncionario } = req.params;
+    const { claveAdministracion, claveCaja } = req.body;
+
+    // 1. Validar que al menos venga una clave para cambiar
+    if (!claveAdministracion && !claveCaja) {
+      await t.rollback();
+      return res.status(400).json({
+        message: "Debe ingresar al menos una clave nueva para actualizar.",
+      });
+    }
+
+    // 2. Buscar al funcionario
+    const funcionario = await Funcionario.findByPk(idFuncionario, {
+      transaction: t,
+    });
+
+    if (!funcionario) {
+      await t.rollback();
+      return res.status(404).json({ message: "Funcionario no encontrado." });
+    }
+
+    // 3. Preparar el objeto con las actualizaciones
+    const camposAActualizar = {};
+
+    // Si envió clave de administración, la encriptamos y la agregamos
+    if (claveAdministracion) {
+      const salt = await bcrypt.genSalt(10);
+      camposAActualizar.password = await bcrypt.hash(claveAdministracion, salt);
+    }
+
+    // Si envió clave de caja (PIN), la encriptamos y la agregamos
+    if (claveCaja) {
+      const saltCaja = await bcrypt.genSalt(10);
+      // OJO: Ajusta "passwordAlternativo" por el nombre real de tu columna en la base de datos
+      camposAActualizar.passwordAlternativo = await bcrypt.hash(
+        claveCaja,
+        saltCaja,
+      );
+    }
+
+    // 4. Actualizar la base de datos
+    await funcionario.update(camposAActualizar, { transaction: t });
+    await t.commit();
+
+    return res.status(200).json({
+      message: "Claves de acceso actualizadas correctamente.",
+    });
+  } catch (error) {
+    if (!t.finished) {
+      await t.rollback();
+    }
+    console.error("Error al actualizar claves:", error);
+    return res.status(500).json({
+      message: "Error interno al actualizar las contraseñas del funcionario.",
+      error: error.message,
+    });
+  }
+};
+
+exports.actualizarPermisosFuncionario = async (req, res) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const { idFuncionario } = req.params;
+    const nuevosPrivilegios = req.body.privilegios; // Recibimos el objeto completo desde el frontend
+    console.log(
+      "Datos recibidos para actualizar permisos:",
+      req.body.privilegios,
+    );
+    // 1. Validar que vengan datos
+    if (!nuevosPrivilegios || Object.keys(nuevosPrivilegios).length === 0) {
+      await t.rollback();
+      return res.status(400).json({
+        message: "Debe enviar el objeto de privilegios para actualizar.",
+      });
+    }
+
+    // 2. Buscar al funcionario
+    const funcionario = await Funcionario.findByPk(idFuncionario, {
+      transaction: t,
+    });
+
+    const rolFuncionario = await Roles.findByPk(funcionario.idRol, {
+      transaction: t,
+    });
+
+    if (!funcionario) {
+      await t.rollback();
+      return res.status(404).json({ message: "Funcionario no encontrado." });
+    }
+
+    // 3. (Opcional pero Recomendado) Mezclar con los privilegios existentes
+    // Esto asegura que si agregas un nuevo privilegio en el futuro a la BD,
+    // no se borre accidentalmente al guardar los antiguos desde el frontend.
+    const privilegiosActuales =
+      funcionario.privilegiosFuncionario || rolFuncionario.privilegiosRol || {};
+    const privilegiosActualizados = {
+      ...privilegiosActuales,
+      ...nuevosPrivilegios,
+    };
+
+    // 4. Actualizar la columna en la base de datos
+    await funcionario.update(
+      { privilegiosFuncionario: privilegiosActualizados },
+      { transaction: t },
+    );
+
+    await t.commit();
+
+    return res.status(200).json({
+      message: "Permisos actualizados correctamente.",
+      privilegios: privilegiosActualizados,
+    });
+  } catch (error) {
+    if (!t.finished) {
+      await t.rollback();
+    }
+    console.error("Error al actualizar permisos:", error);
+    return res.status(500).json({
+      message: "Error interno al actualizar los permisos del funcionario.",
+      error: error.message,
+    });
+  }
+};
+
+//crud roles
+
+exports.crearRol = async (req, res) => {
+  try {
+    const { nombreRol, privilegiosRol } = req.body;
+
+    if (!nombreRol) {
+      return res
+        .status(400)
+        .json({ message: "El nombre del rol es obligatorio" });
+    }
+
+    // Validar que el nombre no exista previamente
+    const rolExistente = await Roles.findOne({ where: { nombreRol } });
+    if (rolExistente) {
+      return res
+        .status(409)
+        .json({ message: "Ya existe un rol con ese nombre" });
+    }
+
+    // Crear el rol
+    const nuevoRol = await Roles.create({
+      nombreRol,
+      privilegiosRol: privilegiosRol || {}, // Si no mandan nada, guardamos un JSON vacío
+    });
+
+    return res.status(201).json({
+      message: "Rol creado exitosamente",
+      rol: nuevoRol,
+    });
+  } catch (error) {
+    console.error("Error al crear rol:", error);
+    return res.status(500).json({ message: "Error interno al crear el rol" });
+  }
+};
+
+exports.actualizarRol = async (req, res) => {
+  try {
+    const { idRol } = req.params;
+    const { nombreRol, privilegiosRol } = req.body;
+
+    const rol = await Roles.findByPk(idRol);
+
+    if (!rol) {
+      return res.status(404).json({ message: "Rol no encontrado" });
+    }
+
+    // Protección: Evitar que le cambien el nombre al Administrador (rompería el sistema)
+    let nombreFinal = nombreRol;
+    if (rol.nombreRol === "Administrador" && nombreRol !== "Administrador") {
+      nombreFinal = "Administrador"; // Forzamos a que mantenga su nombre original
+    }
+
+    // Validar que el nuevo nombre no choque con otro rol existente
+    if (nombreFinal !== rol.nombreRol) {
+      const nombreOcupado = await Roles.findOne({
+        where: { nombreRol: nombreFinal },
+      });
+      if (nombreOcupado) {
+        return res
+          .status(409)
+          .json({ message: "El nombre de rol ya está en uso" });
+      }
+    }
+
+    // Actualizar
+    await rol.update({
+      nombreRol: nombreFinal,
+      privilegiosRol:
+        privilegiosRol !== undefined ? privilegiosRol : rol.privilegiosRol,
+    });
+
+    return res.status(200).json({
+      message: "Rol actualizado exitosamente",
+      rol: rol,
+    });
+  } catch (error) {
+    console.error("Error al actualizar rol:", error);
+    return res
+      .status(500)
+      .json({ message: "Error interno al actualizar el rol" });
+  }
+};
+
+exports.eliminarRol = async (req, res) => {
+  try {
+    const { idRol } = req.params;
+
+    const rol = await Roles.findByPk(idRol);
+
+    if (!rol) {
+      return res.status(404).json({ message: "Rol no encontrado" });
+    }
+
+    // Protección Nivel 1: Evitar borrar roles core
+    if (
+      rol.nombreRol === "Administrador" ||
+      rol.nombreRol === "Sistema" ||
+      rol.nombreRol === "Cajero" ||
+      rol.nombreRol === "Vendedor"
+    ) {
+      return res
+        .status(403)
+        .json({ message: "No está permitido eliminar roles del sistema." });
+    }
+
+    // Protección Nivel 2: Revisar si hay funcionarios usando este rol
+    const usuariosConEsteRol = await Funcionario.count({
+      where: { idRol: idRol },
+    });
+
+    if (usuariosConEsteRol > 0) {
+      return res.status(409).json({
+        message: `No se puede eliminar: Hay ${usuariosConEsteRol} funcionario(s) asignados a este rol. Reasígnelos primero.`,
+      });
+    }
+
+    // Si pasa todas las protecciones, lo eliminamos
+    await rol.destroy();
+
+    return res.status(200).json({ message: "Rol eliminado exitosamente" });
+  } catch (error) {
+    console.error("Error al eliminar rol:", error);
+    return res
+      .status(500)
+      .json({ message: "Error interno al eliminar el rol" });
   }
 };

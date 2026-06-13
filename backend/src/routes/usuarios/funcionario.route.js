@@ -32,6 +32,15 @@ router.delete(
   /*authMiddleware, roleMiddleware(['admin']),*/ funcionarioController.eliminarFuncionario,
 );
 
+router.post(
+  "/cambio/clave/funcionario/:idFuncionario",
+  funcionarioController.actualizarClavesFuncionario,
+);
+
+router.post(
+  "/actualizar/privilegios/:idFuncionario",
+  funcionarioController.actualizarPermisosFuncionario,
+);
 //Rutas contratos de funcionarios simples
 
 // Rutas para contratos de funcionarios
@@ -60,5 +69,14 @@ router.post(
   "/reasignar-sucursal",
   funcionarioController.reasignarSucursalFuncionario,
 );
+
+///crud roles
+router.get("/obtener/todos/roles", funcionarioController.getAllRoles);
+
+router.post("/crear/rol", funcionarioController.crearRol);
+
+router.put("/editar/rol/:idRol", funcionarioController.actualizarRol);
+
+router.delete("/eliminar/rol/:idRol", funcionarioController.eliminarRol);
 
 module.exports = router;

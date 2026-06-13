@@ -15,9 +15,9 @@ const roles = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    privilegios: {
+    privilegiosRol: {
       type: DataTypes.JSON,
-      allowNull: false,
+      allowNull: true,
     },
     estado: {
       type: DataTypes.ENUM("Activo", "Inactivo"),
@@ -32,7 +32,7 @@ const roles = sequelize.define(
   {
     tableName: "rol",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = roles;

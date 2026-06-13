@@ -321,7 +321,6 @@ import {
   LockOutlined,
 } from "@ant-design/icons";
 
-// 💡 Recuerda importar tu servicio manual (ejemplo: inicioSesionManual)
 import {
   inicioSesionCodigo,
   inicioSesionCajaAlternativo,
@@ -344,7 +343,7 @@ export default function LoginCodigo() {
   const [formManual] = Form.useForm();
 
   const [loading, setLoading] = useState(false);
-  // 🚀 Estado para saber en qué pestaña estamos
+
   const [modoIngreso, setModoIngreso] = useState("escaner");
 
   const { login, isAuthenticated } = useAuth();
@@ -354,7 +353,6 @@ export default function LoginCodigo() {
   const { token } = theme.useToken();
 
   const mantenerFoco = () => {
-    // Solo forzamos el foco si estamos en la pestaña del escáner
     if (modoIngreso === "escaner") {
       setTimeout(() => {
         inputRef.current?.focus();
@@ -383,9 +381,8 @@ export default function LoginCodigo() {
         document.removeEventListener("click", handleClickAnywhere);
       };
     }
-  }, [isAuthenticated, navigate, modoIngreso]); // 👈 Reacciona al cambio de modo
+  }, [isAuthenticated, navigate, modoIngreso]);
 
-  // --- LÓGICA DE ESCÁNER ---
   const handleScan = async () => {
     try {
       const codigo = formEscaner.getFieldValue("codigo");
@@ -421,7 +418,6 @@ export default function LoginCodigo() {
     }
   };
 
-  // --- LÓGICA DE INGRESO MANUAL ---
   const handleManualLogin = async (valores) => {
     try {
       setLoading(true);
@@ -430,7 +426,7 @@ export default function LoginCodigo() {
         valores.rut,
         valores.passwordCajaAlternativo,
       );
-      console.log("Respuesta del servidor en login manual:", respuesta);
+      //console.log("Respuesta del servidor en login manual:", respuesta);
       if (respuesta.status === 200) {
         notification.success({
           message: "Inicio de sesión exitoso",

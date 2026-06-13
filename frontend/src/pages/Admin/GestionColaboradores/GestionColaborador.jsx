@@ -23,6 +23,8 @@ import {
   Typography,
   notification,
   Tabs,
+  Switch,
+  Table,
 } from "antd";
 import {
   UserAddOutlined,
@@ -42,6 +44,8 @@ import {
   FileTextOutlined,
   FileAddOutlined,
   NotificationFilled,
+  ReloadOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
@@ -482,22 +486,25 @@ import obtenerTodosFuncionarios, {
   editarFuncionario,
   eliminarFuncionario,
   obtenerContratosFuncionarios,
-  obtenerFuncionariosSinContrato,
-  asignarContratoAFuncionarioSinContrato,
+  //obtenerFuncionariosSinContrato,
+  //asignarContratoAFuncionarioSinContrato,
   cambiarTurnoFuncionario,
   cambiarTipoContratoFuncionario,
   reasignarSucursalFuncionario,
   obtenerHistorialContratosDelFuncionario,
+  actualizarClavesFuncionario,
+  actualizarPrivilegiosFuncionario,
+  obtenerTodosRoles,
+  crearRol,
+  editarRol,
+  eliminarRol,
 } from "../../../services/usuario/funcionario.service";
 import obtenerSucursales from "../../../services/inventario/Sucursal.service";
 
 const GestionColaborador = () => {
   const [form] = Form.useForm();
 
-  const [formContrato] = Form.useForm();
-  const [formEditarTurno] = Form.useForm();
-  const [formEditarContrato] = Form.useForm();
-  const [formReasignacion] = Form.useForm();
+  //const [formContrato] = Form.useForm();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
   const [detalleTabKey, setDetalleTabKey] = useState("resumen");
@@ -507,6 +514,7 @@ const GestionColaborador = () => {
   const [colaboradores, setColaboradores] = useState([]);
 
   const [contratos, setContratos] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [sucursales, setSucursales] = useState([]);
   const [sucursalPermisosSeleccionada, setSucursalPermisosSeleccionada] =
     useState(undefined);
@@ -517,14 +525,47 @@ const GestionColaborador = () => {
   const [modalContratoVisible, setModalContratoVisible] = useState(false);
   const [contratoSeleccionado, setContratoSeleccionado] = useState(null);
 
-  const [modalCrearContrato, setModalCrearContrato] = useState(false);
-  const [funcionariosSinContrato, setFuncionariosSinContrato] = useState([]);
+  //const [modalCrearContrato, setModalCrearContrato] = useState(false);
+  //const [funcionariosSinContrato, setFuncionariosSinContrato] = useState([]);
   const [modalEditarTurnoVisible, setModalEditarTurnoVisible] = useState(false);
   const [contratoTurnoEditando, setContratoTurnoEditando] = useState(null);
   const [modalEditarContratoVisible, setModalEditarContratoVisible] =
     useState(false);
   const [funcionarioBuscado, setFuncionarioBuscado] = useState(null);
   const [historialContratos, setHistorialContratos] = useState([]);
+  const [modalRolVisible, setModalRolVisible] = useState(false);
+  const [rolEditando, setRolEditando] = useState(null);
+
+  // Instancias para manejar los formularios de Ant Design
+  const [formClaves] = Form.useForm();
+  const [formPermisos] = Form.useForm();
+  const [formRol] = Form.useForm();
+  const [formEditarTurno] = Form.useForm();
+  const [formEditarContrato] = Form.useForm();
+  const [formReasignacion] = Form.useForm();
+
+  // Diccionario para mostrar nombres amigables en los Switches
+  const etiquetasPermisos = {
+    administrarUsuarios: "Administrar Usuarios",
+    gestionarSucursales: "Gestionar Sucursales",
+    gestionarProductos: "Gestionar Productos",
+    gestionarCategorias: "Gestionar Categorías",
+    gestionarProveedores: "Gestionar Proveedores",
+    gestionColaboradores: "Gestionar Colaboradores",
+    gestionarInventario: "Gestionar Inventario",
+    gestionarOrdenesCompra: "Gestionar Órdenes de Compra",
+    gestionarDespachos: "Gestionar Despachos",
+    gestionarBodega: "Gestionar Bodega",
+    gestionarDescuentos: "Gestionar Descuentos",
+    accesoCaja: "Acceso a Caja",
+  };
+
+  // Efecto para cargar los permisos en el formulario cuando se abre el modal
+  useEffect(() => {
+    if (funcionarioPermisosSeleccionado?.privilegios) {
+      formPermisos.setFieldsValue(funcionarioPermisosSeleccionado.privilegios);
+    }
+  }, [funcionarioPermisosSeleccionado, formPermisos]);
 
   const contratosDelColaborador = useMemo(() => {
     if (!selectedColaborador) {
@@ -608,24 +649,24 @@ const GestionColaborador = () => {
     sucursalSeleccionadaPermisosNombre,
   ]);
 
-  const formatearCodigoAcceso = (rut = "") => {
-    const cuerpoRut = String(rut).split("-")[0];
-    if (!cuerpoRut) {
-      return "-";
-    }
+  // const formatearCodigoAcceso = (rut = "") => {
+  //   const cuerpoRut = String(rut).split("-")[0];
+  //   if (!cuerpoRut) {
+  //     return "-";
+  //   }
 
-    return cuerpoRut.slice(-4).padStart(4, "0");
-  };
+  //   return cuerpoRut.slice(-4).padStart(4, "0");
+  // };
 
-  const obtenerPermisosActivos = (privilegios = {}) => {
-    if (!privilegios || typeof privilegios !== "object") {
-      return [];
-    }
+  // const obtenerPermisosActivos = (privilegios = {}) => {
+  //   if (!privilegios || typeof privilegios !== "object") {
+  //     return [];
+  //   }
 
-    return Object.entries(privilegios)
-      .filter(([, habilitado]) => Boolean(habilitado))
-      .map(([clave]) => clave);
-  };
+  //   return Object.entries(privilegios)
+  //     .filter(([, habilitado]) => Boolean(habilitado))
+  //     .map(([clave]) => clave);
+  // };
 
   const abrirModalPermisos = (funcionario) => {
     setFuncionarioPermisosSeleccionado(funcionario);
@@ -829,16 +870,39 @@ const GestionColaborador = () => {
       setLoading(false);
     }
   };
+  const cargarRoles = async () => {
+    try {
+      const respuesta = await obtenerTodosRoles();
+      console.log("respuesta roles", respuesta.data);
+      if (respuesta.status === 200) {
+        setRoles(respuesta.data);
+        return;
+      }
+      notification.error({
+        message: respuesta.error || "Error al cargar roles",
+        description: "Hubo un problema al obtener los roles.",
+        duration: 5,
+      });
+    } catch (error) {
+      console.log(error);
+      notification.error({
+        message: error.message || "Error de servidor",
+        description: "No se pudo conectar al servidor.",
+        duration: 5,
+      });
+    }
+  };
   useEffect(() => {
     obtenerColaboradores();
     obtenerContratos();
+    cargarRoles();
   }, []);
 
   //obtener contratos
   const obtenerContratos = async () => {
     try {
       const respuesta = await obtenerContratosFuncionarios();
-      console.log("respuesta de contratos funcionario", respuesta.data);
+      //console.log("respuesta de contratos funcionario", respuesta.data);
       if (respuesta.status === 200) {
         setContratos(respuesta.data);
         return;
@@ -873,172 +937,172 @@ const GestionColaborador = () => {
   };
 
   //columnas de contratos
-  const columnasContratos = [
-    {
-      title: "Colaborador",
-      key: "colaborador",
-      width: 200,
-      render: (_, record) => {
-        const nombre = record?.funcionario?.nombre || "N";
-        const apellido = record?.funcionario?.apellido || "A";
+  // const columnasContratos = [
+  //   {
+  //     title: "Colaborador",
+  //     key: "colaborador",
+  //     width: 200,
+  //     render: (_, record) => {
+  //       const nombre = record?.funcionario?.nombre || "N";
+  //       const apellido = record?.funcionario?.apellido || "A";
 
-        return (
-          <Space key={`colaborador-contrato-${record?.idContratoFuncionario}`}>
-            <Avatar
-              key="avatar"
-              size={40}
-              icon={<UserOutlined />}
-              style={{ backgroundColor: "#1890ff" }}
-            >
-              {nombre.charAt(0).toUpperCase()}
-              {apellido.charAt(0).toUpperCase()}
-            </Avatar>
-            <div key="info">
-              <div style={{ fontWeight: 500 }}>
-                {nombre} {apellido}
-              </div>
-              <div style={{ fontSize: "12px", color: "#999" }}>
-                {record?.funcionario?.rut || "S/R"}
-              </div>
-            </div>
-          </Space>
-        );
-      },
-    },
-    {
-      title: "Sucursal",
-      dataIndex: ["sucursal", "nombre"],
-      key: "sucursal",
-      width: 120,
-      render: (sucursal) => (
-        <Tag color="green">{sucursal || "Casa Matriz"}</Tag>
-      ),
-    },
-    {
-      title: "Tipo de Contrato",
-      dataIndex: "tipoContrato",
-      key: "tipoContrato",
-      width: 120,
-      render: (tipoContrato) => {
-        const colors = {
-          Indefinido: "blue",
-          "Plazo Fijo": "orange",
-          Honorarios: "purple",
-        };
-        return (
-          <Tag color={colors[tipoContrato] || "default"}>
-            {tipoContrato || "No asignado"}
-          </Tag>
-        );
-      },
-    },
-    {
-      title: "Turno",
-      dataIndex: "turno",
-      key: "turno",
-      width: 100,
-      render: (turno) => {
-        const colors = {
-          Mañana: "blue",
-          Tarde: "orange",
-          Noche: "purple",
-          Rotativo: "green",
-        };
-        return (
-          <Tag color={colors[turno] || "default"}>{turno || "No asignado"}</Tag>
-        );
-      },
-    },
-    {
-      title: "Fecha de Ingreso",
-      dataIndex: "fechaIngreso",
-      key: "fechaIngreso",
-      width: 120,
-      render: (fechaIngreso) =>
-        fechaIngreso ? dayjs(fechaIngreso).format("DD/MM/YYYY") : "N/A",
-    },
-    {
-      title: "Estado",
-      dataIndex: "estado",
-      key: "estado",
-      width: 110,
-      render: (estado) => (
-        <Badge
-          status={estado === "Activo" ? "success" : "error"}
-          text={estado || "Desconocido"}
-        />
-      ),
-    },
-    {
-      title: "Acciones",
-      key: "acciones",
-      width: 80,
-      fixed: "right",
-      render: (_, record) => (
-        <Space key={`acciones-contrato-${record.idContratoFuncionario}`}>
-          <Tooltip key="view" title="Ver Detalles">
-            <Button
-              type="link"
-              icon={<EyeOutlined />}
-              onClick={() => abrirModalContrato(record)}
-            />
-          </Tooltip>
-          <Tooltip key="edit-turno" title="Editar turno">
-            <Button
-              type="link"
-              icon={<EditOutlined />}
-              onClick={() => abrirModalEditarTurno(record)}
-            />
-          </Tooltip>
-        </Space>
-      ),
-    },
-  ];
+  //       return (
+  //         <Space key={`colaborador-contrato-${record?.idContratoFuncionario}`}>
+  //           <Avatar
+  //             key="avatar"
+  //             size={40}
+  //             icon={<UserOutlined />}
+  //             style={{ backgroundColor: "#1890ff" }}
+  //           >
+  //             {nombre.charAt(0).toUpperCase()}
+  //             {apellido.charAt(0).toUpperCase()}
+  //           </Avatar>
+  //           <div key="info">
+  //             <div style={{ fontWeight: 500 }}>
+  //               {nombre} {apellido}
+  //             </div>
+  //             <div style={{ fontSize: "12px", color: "#999" }}>
+  //               {record?.funcionario?.rut || "S/R"}
+  //             </div>
+  //           </div>
+  //         </Space>
+  //       );
+  //     },
+  //   },
+  //   {
+  //     title: "Sucursal",
+  //     dataIndex: ["sucursal", "nombre"],
+  //     key: "sucursal",
+  //     width: 120,
+  //     render: (sucursal) => (
+  //       <Tag color="green">{sucursal || "Casa Matriz"}</Tag>
+  //     ),
+  //   },
+  //   {
+  //     title: "Tipo de Contrato",
+  //     dataIndex: "tipoContrato",
+  //     key: "tipoContrato",
+  //     width: 120,
+  //     render: (tipoContrato) => {
+  //       const colors = {
+  //         Indefinido: "blue",
+  //         "Plazo Fijo": "orange",
+  //         Honorarios: "purple",
+  //       };
+  //       return (
+  //         <Tag color={colors[tipoContrato] || "default"}>
+  //           {tipoContrato || "No asignado"}
+  //         </Tag>
+  //       );
+  //     },
+  //   },
+  //   {
+  //     title: "Turno",
+  //     dataIndex: "turno",
+  //     key: "turno",
+  //     width: 100,
+  //     render: (turno) => {
+  //       const colors = {
+  //         Mañana: "blue",
+  //         Tarde: "orange",
+  //         Noche: "purple",
+  //         Rotativo: "green",
+  //       };
+  //       return (
+  //         <Tag color={colors[turno] || "default"}>{turno || "No asignado"}</Tag>
+  //       );
+  //     },
+  //   },
+  //   {
+  //     title: "Fecha de Ingreso",
+  //     dataIndex: "fechaIngreso",
+  //     key: "fechaIngreso",
+  //     width: 120,
+  //     render: (fechaIngreso) =>
+  //       fechaIngreso ? dayjs(fechaIngreso).format("DD/MM/YYYY") : "N/A",
+  //   },
+  //   {
+  //     title: "Estado",
+  //     dataIndex: "estado",
+  //     key: "estado",
+  //     width: 110,
+  //     render: (estado) => (
+  //       <Badge
+  //         status={estado === "Activo" ? "success" : "error"}
+  //         text={estado || "Desconocido"}
+  //       />
+  //     ),
+  //   },
+  //   {
+  //     title: "Acciones",
+  //     key: "acciones",
+  //     width: 80,
+  //     fixed: "right",
+  //     render: (_, record) => (
+  //       <Space key={`acciones-contrato-${record.idContratoFuncionario}`}>
+  //         <Tooltip key="view" title="Ver Detalles">
+  //           <Button
+  //             type="link"
+  //             icon={<EyeOutlined />}
+  //             onClick={() => abrirModalContrato(record)}
+  //           />
+  //         </Tooltip>
+  //         <Tooltip key="edit-turno" title="Editar turno">
+  //           <Button
+  //             type="link"
+  //             icon={<EditOutlined />}
+  //             onClick={() => abrirModalEditarTurno(record)}
+  //           />
+  //         </Tooltip>
+  //       </Space>
+  //     ),
+  //   },
+  // ];
 
   //obtener funcionarios sin contrato para el select del formulario de contrato
-  const obtenerFuncionarioSC = async () => {
-    try {
-      const respuesta = await obtenerFuncionariosSinContrato();
-      console.log("respuesta funcionarios sin contrato", respuesta.data);
-      if (respuesta.status === 200) {
-        setFuncionariosSinContrato(respuesta.data);
-        return;
-      }
-      if (respuesta.status === 204) {
-        setFuncionariosSinContrato([]);
-        notification.info({
-          message: "No hay funcionarios sin contrato",
-          description:
-            "Todos los funcionarios activos tienen contrato asignado.",
-        });
-      }
-      notification.error({
-        message: respuesta.error || "Error al cargar funcionarios sin contrato",
-        description:
-          "Hubo un problema al obtener los funcionarios sin contrato.",
-      });
-    } catch (error) {
-      console.log(error);
-      notification.error({
-        message: error.message || "Error de servidor",
-        description: "No se pudo conectar al servidor.",
-      });
-    }
-  };
+  // const obtenerFuncionarioSC = async () => {
+  //   try {
+  //     const respuesta = await obtenerFuncionariosSinContrato();
+  //     console.log("respuesta funcionarios sin contrato", respuesta.data);
+  //     if (respuesta.status === 200) {
+  //       setFuncionariosSinContrato(respuesta.data);
+  //       return;
+  //     }
+  //     if (respuesta.status === 204) {
+  //       setFuncionariosSinContrato([]);
+  //       notification.info({
+  //         message: "No hay funcionarios sin contrato",
+  //         description:
+  //           "Todos los funcionarios activos tienen contrato asignado.",
+  //       });
+  //     }
+  //     notification.error({
+  //       message: respuesta.error || "Error al cargar funcionarios sin contrato",
+  //       description:
+  //         "Hubo un problema al obtener los funcionarios sin contrato.",
+  //     });
+  //   } catch (error) {
+  //     console.log(error);
+  //     notification.error({
+  //       message: error.message || "Error de servidor",
+  //       description: "No se pudo conectar al servidor.",
+  //     });
+  //   }
+  // };
 
-  const abrirModalContrato = (record) => {
-    setContratoSeleccionado(record);
-    setModalContratoVisible(true);
-  };
+  // const abrirModalContrato = (record) => {
+  //   setContratoSeleccionado(record);
+  //   setModalContratoVisible(true);
+  // };
 
-  const abrirModalEditarTurno = (record) => {
-    setContratoTurnoEditando(record);
-    formEditarTurno.setFieldsValue({
-      idContratoFuncionario: record.idContratoFuncionario,
-      turno: record?.turno,
-    });
-    setModalEditarTurnoVisible(true);
-  };
+  // const abrirModalEditarTurno = (record) => {
+  //   setContratoTurnoEditando(record);
+  //   formEditarTurno.setFieldsValue({
+  //     idContratoFuncionario: record.idContratoFuncionario,
+  //     turno: record?.turno,
+  //   });
+  //   setModalEditarTurnoVisible(true);
+  // };
 
   const cerrarModalContrato = () => {
     setContratoSeleccionado(null);
@@ -1080,18 +1144,6 @@ const GestionColaborador = () => {
     }
   };
 
-  // ABRIR/CERRAR Modal Editar Contrato (frontend-only)
-  const abrirModalEditarContrato = (record) => {
-    // intentar precargar funcionario
-    setFuncionarioBuscado(record?.funcionario || null);
-    formEditarContrato.setFieldsValue({
-      rutBuscar: record?.funcionario?.rut || "",
-      turno: record?.turno || undefined,
-      motivo: "",
-    });
-    setModalEditarContratoVisible(true);
-  };
-
   const cerrarModalEditarContrato = () => {
     setFuncionarioBuscado(null);
     setModalEditarContratoVisible(false);
@@ -1115,9 +1167,8 @@ const GestionColaborador = () => {
       notification.error({ message: "Ingrese RUT para buscar" });
       return;
     }
-    const encontrado =
-      colaboradores.find((c) => c.rut === rutFormateado) ||
-      funcionariosSinContrato.find((f) => f.rut === rutFormateado);
+    const encontrado = colaboradores.find((c) => c.rut === rutFormateado);
+    //|| funcionariosSinContrato.find((f) => f.rut === rutFormateado);
     if (!encontrado) {
       setFuncionarioBuscado(null);
       notification.error({ message: "Funcionario no encontrado" });
@@ -1212,56 +1263,62 @@ const GestionColaborador = () => {
 
   const columns = [
     {
-      title: "Colaborador",
-      key: "colaborador",
+      title: "Funcionario",
+      key: "funcionario",
+      dataIndex: null, // No usamos dataIndex directo porque renderizamos varios campos
+      width: 250,
       render: (_, record) => {
-        // Extraemos con valores por defecto para evitar errores de [0]
         const nombre = record?.nombre || "N";
-        const apellido = record?.apellido || "A";
+        const apellido = record?.apellido || "";
+        const initials = `${nombre.charAt(0).toUpperCase()}${apellido.charAt(0).toUpperCase()}`;
 
         return (
-          <Space key={`colaborador-${record?.id || record?.idFuncionario}`}>
+          <Space key={`func-${record.id}`}>
             <Avatar
-              key="avatar"
               size={40}
               icon={<UserOutlined />}
               style={{ backgroundColor: "#1890ff" }}
             >
-              {/* Usamos el primer caracter de forma segura */}
-              {nombre.charAt(0).toUpperCase()}
-              {apellido.charAt(0).toUpperCase()}
+              {/* Solo si hay inicial, sino mostramos el icono por defecto */}
+              {initials && initials.length > 0 ? initials : undefined}
             </Avatar>
-            <div key="info">
+            <div>
               <div style={{ fontWeight: 500 }}>
                 {nombre} {apellido}
               </div>
+              {/* Opcional: mostrar nombreRol si es diferente al cargo o para más detalle */}
+              {record.nombreRol && record.nombreRol !== record.cargo && (
+                <div style={{ fontSize: "12px", color: "#888" }}>
+                  {record.nombreRol}
+                </div>
+              )}
             </div>
           </Space>
         );
       },
     },
     {
-      title: "Rut",
+      title: "RUT",
       dataIndex: "rut",
       key: "rut",
-      width: 150,
-      render: (rut) => rut || "S/R", // Maneja si el rut viene nulo
+      width: 140,
+      render: (text) => text || "S/R",
     },
     {
       title: "Cargo",
       dataIndex: "cargo",
       key: "cargo",
       width: 150,
-      render: (cargo) => {
+      render: (text, record) => {
+        const valor = text || "No asignado";
         const colors = {
           Administrador: "purple",
           Vendedor: "blue",
           Cajero: "green",
+          Sistema: "geekblue", // Color extra para tu caso "Sistema"
         };
-        // Si no viene cargo en el objeto aplanado, ponemos "No asignado"
-        return (
-          <Tag color={colors[cargo] || "default"}>{cargo || "No asignado"}</Tag>
-        );
+
+        return <Tag color={colors[valor] || "default"}>{valor}</Tag>;
       },
     },
     {
@@ -1269,39 +1326,23 @@ const GestionColaborador = () => {
       dataIndex: "sucursal",
       key: "sucursal",
       width: 150,
-      render: (sucursal) => (
-        <Tag color="green">{sucursal || "Casa Matriz"}</Tag>
-      ),
-    },
-    {
-      title: "Turno",
-      dataIndex: "turno",
-      key: "turno",
-      width: 120,
-      render: (turno) => {
-        const colors = {
-          Mañana: "blue",
-          Tarde: "orange",
-          Noche: "purple",
-          Rotativo: "green",
-        };
-        return (
-          <Tag color={colors[turno] || "default"}>{turno || "No asignado"}</Tag>
-        );
-      },
+      render: (text) => <Tag color="green">{text || "Casa Matriz"}</Tag>,
     },
     {
       title: "Contacto",
       key: "contacto",
       width: 250,
       render: (_, record) => (
-        <div key={`contacto-${record?.id || record?.idFuncionario}`}>
-          <div key="phone" style={{ fontSize: "12px" }}>
-            <PhoneOutlined style={{ marginRight: 4 }} />
+        <div
+          key={`contacto-${record.id}`}
+          style={{ display: "flex", flexDirection: "column", gap: "4px" }}
+        >
+          <div style={{ fontSize: "13px" }}>
+            <PhoneOutlined style={{ marginRight: 4, color: "#8c8c8c" }} />
             {record?.telefono || "N/A"}
           </div>
-          <div key="email" style={{ fontSize: "12px", marginTop: 4 }}>
-            <MailOutlined style={{ marginRight: 4 }} />
+          <div style={{ fontSize: "13px" }}>
+            <MailOutlined style={{ marginRight: 4, color: "#8c8c8c" }} />
             {record?.email || "N/A"}
           </div>
         </div>
@@ -1311,52 +1352,15 @@ const GestionColaborador = () => {
       title: "Estado",
       dataIndex: "estado",
       key: "estado",
-      width: 100,
-      render: (estado) => (
+      width: 120,
+      fixed: "right", // Fija esta columna a la derecha si la tabla tiene scroll
+      render: (text) => (
         <Badge
-          status={estado === "Activo" ? "success" : "error"}
-          text={estado || "Desconocido"}
+          status={text === "Activo" ? "success" : "error"}
+          text={text || "Desconocido"}
         />
       ),
     },
-    // {
-    //   title: "Acciones",
-    //   key: "acciones",
-    //   fixed: "right",
-    //   width: 150,
-    //   render: (_, record) => (
-    //     <Space key={`acciones-${record?.id || record?.idFuncionario}`}>
-    //       <Tooltip key="view" title="Ver Detalles">
-    //         <Button
-    //           type="link"
-    //           icon={<EyeOutlined />}
-    //           onClick={() => handleViewDetails(record)}
-    //         />
-    //       </Tooltip>
-    //       <Tooltip key="edit" title="Editar">
-    //         <Button
-    //           type="link"
-    //           icon={<EditOutlined />}
-    //           onClick={() => handleEdit(record)}
-    //         />
-    //       </Tooltip>
-    //       <Tooltip key="delete" title="Eliminar">
-    //         <Popconfirm
-    //           title="¿Está seguro de eliminar este colaborador?"
-    //           description="Esta acción no se puede deshacer."
-    //           // IMPORTANTE: Asegúrate de que el ID que pasas aquí
-    //           // coincida con el que viene del backend (idFuncionario)
-    //           onConfirm={() => handleDelete(record.id || record.idFuncionario)}
-    //           okText="Sí, eliminar"
-    //           cancelText="Cancelar"
-    //           okButtonProps={{ danger: true }}
-    //         >
-    //           <Button type="link" danger icon={<DeleteOutlined />} />
-    //         </Popconfirm>
-    //       </Tooltip>
-    //     </Space>
-    //   ),
-    // },
   ];
 
   const handleAdd = () => {
@@ -1389,6 +1393,7 @@ const GestionColaborador = () => {
     console.log("Eliminar colaborador con ID:", id);
     try {
       const response = await eliminarFuncionario(id);
+      //console.log("Respuesta al eliminar colaborador:", response);
       if (response.status === 200) {
         notification.success({
           message: response.data.message || "Colaborador eliminado",
@@ -1422,7 +1427,7 @@ const GestionColaborador = () => {
       ...restoValues,
       direccion: direccionCompleta,
     };
-    console.log("Valores a enviar", valuesAEnviar);
+    //console.log("Valores a enviar", valuesAEnviar);
     //modifica la direccion
     if (editMode) {
       setLoading(true);
@@ -1456,10 +1461,10 @@ const GestionColaborador = () => {
       }
     } else {
       try {
-        console.log("datos antes de enviar", valuesAEnviar);
+        //console.log("datos antes de enviar", valuesAEnviar);
         const response = await crearFuncionario(valuesAEnviar);
         console.log("respuesta", response);
-        if (response.status === 201) {
+        if (response.status === 200 || response.status === 201) {
           notification.success({
             message: "Colaborador creado",
             description: "El colaborador se ha creado correctamente.",
@@ -1555,116 +1560,312 @@ const GestionColaborador = () => {
   ]);
 
   //contratos
-  const abrirModalCrearContrato = () => {
-    obtenerFuncionarioSC();
-    setModalCrearContrato(true);
-  };
+  // ABRIR/CERRAR Modal Editar Contrato (frontend-only)
+  // const abrirModalEditarContrato = (record) => {
+  //   // intentar precargar funcionario
+  //   setFuncionarioBuscado(record?.funcionario || null);
+  //   formEditarContrato.setFieldsValue({
+  //     rutBuscar: record?.funcionario?.rut || "",
+  //     turno: record?.turno || undefined,
+  //     motivo: "",
+  //   });
+  //   setModalEditarContratoVisible(true);
+  // };
+  // const abrirModalCrearContrato = () => {
+  //   obtenerFuncionarioSC();
+  //   setModalCrearContrato(true);
+  // };
 
-  const cerrarModalCrearContrato = () => {
-    setModalCrearContrato(false);
-  };
+  // const cerrarModalCrearContrato = () => {
+  //   setModalCrearContrato(false);
+  // };
 
-  const handleSubmitContrato = async (values) => {
-    console.log("Valores del formulario contrato:", values);
-    if (!values.rutFuncionario || !values.idSucursal) {
-      notification.error({
-        message: "Faltan datos obligatorios",
-        description: "Debes seleccionar un funcionario y una sucursal.",
-      });
-      return;
+  // const handleSubmitContrato = async (values) => {
+  //   console.log("Valores del formulario contrato:", values);
+  //   if (!values.rutFuncionario || !values.idSucursal) {
+  //     notification.error({
+  //       message: "Faltan datos obligatorios",
+  //       description: "Debes seleccionar un funcionario y una sucursal.",
+  //     });
+  //     return;
+  //   }
+  //   try {
+  //     const response = await asignarContratoAFuncionarioSinContrato(values);
+  //     console.log("respuesta asignar contrato", response);
+  //     if (response.status === 201) {
+  //       notification.success({
+  //         message: response.data.message || "Contrato asignado",
+  //         description: "El contrato se ha asignado correctamente.",
+  //         duration: 3,
+  //       });
+  //       cerrarModalCrearContrato();
+  //       obtenerContratos();
+  //       obtenerColaboradores();
+  //       return;
+  //     }
+  //     notification.error({
+  //       message: response.error || "Error al asignar contrato",
+  //       description: "Hubo un problema al asignar el contrato.",
+  //       duration: 5,
+  //     });
+  //   } catch (error) {
+  //     console.log(error);
+  //     notification.error({
+  //       message: error.message || "Error de servidor",
+  //       description: "No se pudo conectar al servidor.",
+  //       duration: 5,
+  //     });
+  //   }
+  // };
+
+  //modal permisos
+
+  //modal permisos
+  useEffect(() => {
+    console.log(
+      "funcionarioPermisosSeleccionado ha cambiado:",
+      funcionarioPermisosSeleccionado,
+    );
+    if (
+      funcionarioPermisosSeleccionado &&
+      funcionarioPermisosSeleccionado.privilegios
+    ) {
+      formPermisos.setFieldsValue(funcionarioPermisosSeleccionado.privilegios);
+      console.log(
+        "Permisos cargados en formulario:",
+        formPermisos.getFieldsValue(),
+      );
+    } else {
+      formPermisos.resetFields();
     }
+  }, [funcionarioPermisosSeleccionado, formPermisos]);
+
+  const handleCambiarClavesFuncionario = async (valores) => {
     try {
-      const response = await asignarContratoAFuncionarioSinContrato(values);
-      console.log("respuesta asignar contrato", response);
-      if (response.status === 201) {
-        notification.success({
-          message: response.data.message || "Contrato asignado",
-          description: "El contrato se ha asignado correctamente.",
-          duration: 3,
+      const response = await actualizarClavesFuncionario(
+        funcionarioPermisosSeleccionado.id,
+        valores,
+      );
+      if (response.status === 200) {
+        notification.success({ message: "Claves actualizadas correctamente" });
+        cerrarModalPermisos();
+        handleCerrarModal();
+      } else {
+        notification.error({
+          message: "Error al actualizar claves",
+          description: response.data?.error || "Ocurrió un error desconocido",
         });
-        cerrarModalCrearContrato();
-        obtenerContratos();
-        obtenerColaboradores();
-        return;
       }
-      notification.error({
-        message: response.error || "Error al asignar contrato",
-        description: "Hubo un problema al asignar el contrato.",
-        duration: 5,
-      });
     } catch (error) {
-      console.log(error);
+      console.error(
+        "Error al actualizar claves del funcionario:",
+        error.response?.data?.error,
+      );
       notification.error({
-        message: error.message || "Error de servidor",
-        description: "No se pudo conectar al servidor.",
-        duration: 5,
+        message: "Error al actualizar claves",
+        description:
+          error.response?.data?.error || "Ocurrió un error desconocido",
       });
     }
   };
 
+  const onGuardarPermisos = async (valores) => {
+    try {
+      const response = await actualizarPrivilegiosFuncionario(
+        funcionarioPermisosSeleccionado.id,
+        valores,
+      );
+      if (response.status === 200) {
+        notification.success({
+          message: "Permisos actualizados correctamente",
+        });
+        obtenerColaboradores();
+        cerrarModalPermisos();
+      } else {
+        notification.error({
+          message: "Error al guardar permisos",
+          description: response.data?.error || "Ocurrió un error desconocido",
+        });
+      }
+    } catch (error) {
+      console.error("Error al guardar permisos:", error);
+      notification.error({
+        message: "Error al guardar permisos",
+        description:
+          error.response?.data?.error || "Ocurrió un error desconocido",
+      });
+    }
+  };
+
+  // modal roles crud
+  const abrirModalCrearRol = () => {
+    setRolEditando(null);
+    formRol.resetFields();
+    setModalRolVisible(true);
+  };
+
+  const abrirModalEditarRol = (rol) => {
+    setRolEditando(rol);
+    formRol.setFieldsValue({
+      nombreRol: rol.nombreRol,
+      ...rol.privilegiosRol,
+    });
+    setModalRolVisible(true);
+  };
+
+  const guardarRol = async (valores) => {
+    // 1. Separar el nombreRol de los privilegios
+    const { nombreRol, ...privilegiosRol } = valores;
+    const payload = { nombreRol, privilegiosRol };
+    console.log("Payload a enviar para rol:", payload);
+    try {
+      if (rolEditando) {
+        const response = await editarRol(rolEditando.idRol, payload); // Reemplaza con tu llamada API real
+        if (response.status !== 200) {
+          notification.error({
+            message: response.data?.error || "Error al actualizar el rol",
+          });
+          return;
+        } else {
+          notification.success({ message: "Rol actualizado con éxito" });
+          obtenerColaboradores();
+          cargarRoles();
+        }
+      } else {
+        const response = await crearRol(payload); // Reemplaza con tu llamada API real
+        if (response.status !== 201) {
+          notification.error({
+            message: response.data?.error || "Error al crear el rol",
+          });
+          return;
+        } else {
+          notification.success({ message: "Rol creado con éxito" });
+          obtenerColaboradores();
+          cargarRoles();
+        }
+      }
+      setModalRolVisible(false);
+    } catch (error) {
+      console.error("Error al guardar el rol:", error);
+      notification.error({ message: "Error al guardar el rol" });
+    }
+  };
+
+  const funcionEliminarRol = async (idRol) => {
+    try {
+      const response = await eliminarRol(idRol); // Reemplaza con tu llamada API real
+      if (response.status !== 200) {
+        notification.error({
+          message: response.data?.error || "Error al eliminar el rol",
+        });
+        return;
+      } else {
+        notification.success({ message: "Rol eliminado con éxito" });
+        obtenerColaboradores();
+        cargarRoles();
+      }
+    } catch (error) {
+      console.error("Error al eliminar el rol:", error);
+      notification.error({ message: "Error al eliminar el rol" });
+    }
+  };
+
+  // --- Columnas de la Tabla ---
+  const columnasRoles = [
+    {
+      title: "Nombre del Rol",
+      dataIndex: "nombreRol",
+      key: "nombreRol",
+      render: (text) => <Typography.Text strong>{text}</Typography.Text>,
+    },
+    {
+      title: "Permisos Activos",
+      key: "permisos",
+      render: (_, record) => {
+        const permisosActivos = Object.values(
+          record.privilegiosRol || {},
+        ).filter(Boolean).length;
+        return <Tag color="blue">{permisosActivos} permisos habilitados</Tag>;
+      },
+    },
+    {
+      title: "Acciones",
+      key: "acciones",
+      align: "right",
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="text"
+            icon={<EditOutlined style={{ color: "#1890ff" }} />}
+            onClick={() => abrirModalEditarRol(record)}
+          />
+          {/* Protección para no borrar roles core */}
+          {record.nombreRol !== "Sistema" &&
+            record.nombreRol !== "Administrador" && (
+              <Popconfirm
+                title="¿Eliminar este rol?"
+                description="Los usuarios con este rol perderán sus accesos por defecto."
+                onConfirm={() => funcionEliminarRol(record.idRol)} // Llamamos a la función de eliminar
+                okText="Sí, eliminar"
+                cancelText="Cancelar"
+              >
+                <Button type="text" danger icon={<DeleteOutlined />} />
+              </Popconfirm>
+            )}
+        </Space>
+      ),
+    },
+  ];
   return (
     <div>
-      <Tabs
-        tabPosition="top"
-        onChange={(key) => {
-          console.log("key de tab", key);
-          if (key === "contratos") {
-            obtenerContratos();
-          }
-        }}
-        items={[
-          {
-            key: "gestion_empleados",
-            label: "Gestion Colaboradores",
-            children: (
-              <>
-                {/* Header con estadísticas */}
-                <Card style={{ marginBottom: 24 }}>
-                  <Row gutter={16} align="middle">
-                    <Col flex="auto">
-                      <Title level={2} style={{ margin: 0 }}>
-                        <TeamOutlined style={{ marginRight: 12 }} />
-                        Gestión de Colaboradores
-                      </Title>
-                      <Text type="secondary">
-                        Administra el personal de tus sucursales
-                      </Text>
-                    </Col>
-                    <Col span={10}>
-                      <Row gutter={16}>
-                        <Col xs={24} sm={8}>
-                          <Card>
-                            <Statistic
-                              title="Total Colaboradores"
-                              value={stats.total}
-                              prefix={<TeamOutlined />}
-                              valueStyle={{ color: "#1890ff" }}
-                            />
-                          </Card>
-                        </Col>
-                        <Col xs={24} sm={8}>
-                          <Card>
-                            <Statistic
-                              title="Colaboradores Activos"
-                              value={stats.activos}
-                              prefix={<CheckCircleOutlined />}
-                              valueStyle={{ color: "#52c41a" }}
-                            />
-                          </Card>
-                        </Col>
-                        <Col xs={24} sm={8}>
-                          <Card>
-                            <Statistic
-                              title="Colaboradores Inactivos"
-                              value={stats.inactivos}
-                              prefix={<CloseCircleOutlined />}
-                              valueStyle={{ color: "#ff4d4f" }}
-                            />
-                          </Card>
-                        </Col>
-                      </Row>
-                    </Col>
-                    {/* <Col>
+      <>
+        {/* Header con estadísticas */}
+        <Card style={{ marginBottom: 24 }}>
+          <Row gutter={16} align="middle">
+            <Col flex="auto">
+              <Title level={2} style={{ margin: 0 }}>
+                <TeamOutlined style={{ marginRight: 12 }} />
+                Gestión de Colaboradores
+              </Title>
+              <Text type="secondary">
+                Administra el personal de tus sucursales
+              </Text>
+            </Col>
+            <Col span={10}>
+              <Row gutter={16}>
+                <Col xs={24} sm={8}>
+                  <Card>
+                    <Statistic
+                      title="Total Colaboradores"
+                      value={stats.total}
+                      prefix={<TeamOutlined />}
+                      valueStyle={{ color: "#1890ff" }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={8}>
+                  <Card>
+                    <Statistic
+                      title="Colaboradores Activos"
+                      value={stats.activos}
+                      prefix={<CheckCircleOutlined />}
+                      valueStyle={{ color: "#52c41a" }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={8}>
+                  <Card>
+                    <Statistic
+                      title="Colaboradores Inactivos"
+                      value={stats.inactivos}
+                      prefix={<CloseCircleOutlined />}
+                      valueStyle={{ color: "#ff4d4f" }}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+            </Col>
+            {/* <Col>
                       <Button
                         type="primary"
                         size="large"
@@ -1674,11 +1875,17 @@ const GestionColaborador = () => {
                         Nuevo Colaborador
                       </Button>
                     </Col> */}
-                  </Row>
-                </Card>
+          </Row>
+        </Card>
 
-                {/* Tabla */}
-                <Card>
+        {/* Tabla */}
+        <Card>
+          <Tabs
+            items={[
+              {
+                key: "gestion_empleados",
+                label: "Gestión de Colaboradores",
+                children: (
                   <DataTable
                     columns={columns}
                     data={colaboradores}
@@ -1696,174 +1903,273 @@ const GestionColaborador = () => {
                         >
                           Nuevo Colaborador
                         </Button>
-                        <Button
+                        {/*<Button
                           type="primary"
                           icon={<FileTextOutlined />}
                           onClick={() => abrirModalEditarContrato()}
                         >
                           Editar Contrato
-                        </Button>
+                        </Button>*/}
                       </Space>
                     }
                     onRowClick={(record) => handleViewDetails(record)}
                   />
-                </Card>
-              </>
-            ),
-          },
-          {
-            key: "Accesos y Permisos",
-            label: "Accesos y Permisos",
-            children: (
-              <>
-                <Row gutter={16} align="middle" style={{ marginBottom: 24 }}>
-                  <Col xs={24} md={12}>
-                    <Card>
-                      <Title level={4} style={{ marginTop: 0 }}>
-                        Selección de sucursal
-                      </Title>
-                      <Text type="secondary">
-                        Elige una sucursal para ver los funcionarios asociados.
-                      </Text>
-                      <div style={{ marginTop: 16 }}>
-                        <Select
-                          style={{ width: "100%" }}
-                          placeholder="Selecciona una sucursal"
-                          value={sucursalPermisosSeleccionada}
-                          onChange={(value) =>
-                            setSucursalPermisosSeleccionada(value)
-                          }
-                          options={sucursales.map((sucursal) => ({
-                            value: sucursal.idSucursal,
-                            label: sucursal.nombre,
-                          }))}
-                        />
-                      </div>
-                    </Card>
-                  </Col>
-                  <Col xs={24} md={12}>
-                    <Card
-                      title="Resumen"
-                      bordered={false}
-                      style={{ height: "100%" }}
+                ),
+              },
+              {
+                key: "Accesos y Permisos",
+                label: "Accesos y Permisos",
+                children: (
+                  <>
+                    <Row
+                      gutter={16}
+                      align="middle"
+                      style={{ marginBottom: 24 }}
                     >
-                      <Text>
-                        {sucursalPermisosSeleccionada
-                          ? `${funcionariosPorSucursalPermisos.length} funcionario(s) encontrados en ${sucursalSeleccionadaPermisosNombre || "la sucursal seleccionada"}`
-                          : "Selecciona una sucursal para ver sus funcionarios."}
-                      </Text>
-                    </Card>
-                  </Col>
-                </Row>
-                <Row gutter={[16, 16]}>
-                  {funcionariosPorSucursalPermisos.length > 0 ? (
-                    funcionariosPorSucursalPermisos.map((funcionario) => (
-                      <Col
-                        xs={24}
-                        sm={12}
-                        lg={8}
-                        key={funcionario.idFuncionario}
-                      >
+                      <Col xs={24} md={12}>
+                        <Card>
+                          <Title level={4} style={{ marginTop: 0 }}>
+                            Selección de sucursal
+                          </Title>
+                          <Text type="secondary">
+                            Elige una sucursal para ver los funcionarios
+                            asociados.
+                          </Text>
+                          <div style={{ marginTop: 16 }}>
+                            <Select
+                              style={{ width: "100%" }}
+                              placeholder="Selecciona una sucursal"
+                              value={sucursalPermisosSeleccionada}
+                              onChange={(value) =>
+                                setSucursalPermisosSeleccionada(value)
+                              }
+                              options={sucursales.map((sucursal) => ({
+                                value: sucursal.idSucursal,
+                                label: sucursal.nombre,
+                              }))}
+                            />
+                          </div>
+                        </Card>
+                      </Col>
+                      <Col xs={24} md={12}>
                         <Card
-                          onClick={() =>
-                            console.log("presione a :", funcionario?.nombre)
-                          }
+                          title="Resumen"
+                          bordered={false}
+                          style={{ height: "100%" }}
+                        >
+                          <Text>
+                            {sucursalPermisosSeleccionada
+                              ? `${funcionariosPorSucursalPermisos.length} funcionario(s) encontrados en ${sucursalSeleccionadaPermisosNombre || "la sucursal seleccionada"}`
+                              : "Selecciona una sucursal para ver sus funcionarios."}
+                          </Text>
+                        </Card>
+                      </Col>
+                    </Row>
+                    <Row gutter={[16, 16]}>
+                      {funcionariosPorSucursalPermisos.length > 0 ? (
+                        funcionariosPorSucursalPermisos.map((funcionario) => (
+                          <Col
+                            xs={24}
+                            sm={12}
+                            lg={8}
+                            key={funcionario.idFuncionario}
+                          >
+                            <Card
+                              onClick={() =>
+                                console.log("presione a :", funcionario?.nombre)
+                              }
+                              extra={
+                                <Button
+                                  icon={<EyeOutlined />}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    abrirModalPermisos(funcionario);
+                                  }}
+                                >
+                                  Accesos
+                                </Button>
+                              }
+                            >
+                              <Space align="start">
+                                <Avatar
+                                  size={44}
+                                  icon={<UserOutlined />}
+                                  style={{
+                                    backgroundColor: "#1890ff",
+                                  }}
+                                >
+                                  {String(funcionario?.nombre || "")
+                                    .charAt(0)
+                                    .toUpperCase()}
+                                  {String(funcionario?.apellido || "")
+                                    .charAt(0)
+                                    .toUpperCase()}
+                                </Avatar>
+                                <div>
+                                  <Title level={5} style={{ margin: 0 }}>
+                                    {funcionario.nombre} {funcionario.apellido}
+                                  </Title>
+                                  <Text type="secondary">
+                                    {funcionario.rut}
+                                  </Text>
+                                  <div style={{ marginTop: 8 }}>
+                                    <Tag color="green">
+                                      {funcionario.sucursalNombre}
+                                    </Tag>
+                                    {funcionario.cargo ? (
+                                      <Tag color="blue">
+                                        {funcionario.cargo}
+                                      </Tag>
+                                    ) : null}
+                                    {funcionario.turno ? (
+                                      <Tag color="orange">
+                                        {funcionario.turno}
+                                      </Tag>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </Space>
+                            </Card>
+                          </Col>
+                        ))
+                      ) : (
+                        <Col span={24}>
+                          <Card title="Funcionarios">
+                            <Text type="secondary">
+                              {sucursalPermisosSeleccionada
+                                ? "No hay funcionarios asociados a esta sucursal."
+                                : "Selecciona una sucursal para mostrar los funcionarios aquí."}
+                            </Text>
+                          </Card>
+                        </Col>
+                      )}
+                    </Row>
+                  </>
+                ),
+              },
+              {
+                key: "roles",
+                label: "Roles y Permisos",
+                children: (
+                  <div style={{ padding: "16px 0" }}>
+                    <Row gutter={[16, 16]}>
+                      <Col span={24}>
+                        <Card
+                          title="Gestión de Roles del Sistema"
                           extra={
                             <Button
-                              icon={<EyeOutlined />}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                abrirModalPermisos(funcionario);
-                              }}
+                              type="primary"
+                              icon={<PlusOutlined />}
+                              onClick={abrirModalCrearRol}
                             >
-                              Codgios Acceso
+                              Nuevo Rol
                             </Button>
                           }
                         >
-                          <Space align="start">
-                            <Avatar
-                              size={44}
-                              icon={<UserOutlined />}
-                              style={{ backgroundColor: "#1890ff" }}
-                            >
-                              {String(funcionario?.nombre || "")
-                                .charAt(0)
-                                .toUpperCase()}
-                              {String(funcionario?.apellido || "")
-                                .charAt(0)
-                                .toUpperCase()}
-                            </Avatar>
-                            <div>
-                              <Title level={5} style={{ margin: 0 }}>
-                                {funcionario.nombre} {funcionario.apellido}
-                              </Title>
-                              <Text type="secondary">{funcionario.rut}</Text>
-                              <div style={{ marginTop: 8 }}>
-                                <Tag color="green">
-                                  {funcionario.sucursalNombre}
-                                </Tag>
-                                {funcionario.cargo ? (
-                                  <Tag color="blue">{funcionario.cargo}</Tag>
-                                ) : null}
-                                {funcionario.turno ? (
-                                  <Tag color="orange">{funcionario.turno}</Tag>
-                                ) : null}
-                              </div>
-                            </div>
-                          </Space>
+                          <Table
+                            columns={columnasRoles}
+                            dataSource={roles}
+                            rowKey="idRol"
+                            pagination={{ pageSize: 5 }}
+                            size="middle"
+                          />
                         </Card>
                       </Col>
-                    ))
-                  ) : (
-                    <Col span={24}>
-                      <Card title="Funcionarios">
-                        <Text type="secondary">
-                          {sucursalPermisosSeleccionada
-                            ? "No hay funcionarios asociados a esta sucursal."
-                            : "Selecciona una sucursal para mostrar los funcionarios aquí."}
-                        </Text>
-                      </Card>
-                    </Col>
-                  )}
-                </Row>
-              </>
-            ),
-          },
-          {
-            key: "contratos",
-            label: "Contratos",
-            disabled: true,
-            children: (
-              <>
-                <DataTable
-                  title="Contratos de Colaboradores"
-                  description="Revisa los contratos de tus colaboradores"
-                  columns={columnasContratos}
-                  data={contratos}
-                  rowKey="idContratoFuncionario"
-                  searchPlaceholder="Buscar por nombre, RUT o sucursal..."
-                  searchableFields={[
-                    "funcionario.nombre",
-                    "funcionario.rut",
-                    "sucursal.nombre",
-                  ]}
-                  headerButtons={
-                    <Space>
-                      <Button
-                        type="primary"
-                        icon={<FileAddOutlined />}
-                        onClick={() => abrirModalCrearContrato({})}
+                    </Row>
+
+                    {/* MODAL PARA CREAR/EDITAR ROL */}
+                    <Modal
+                      title={rolEditando ? "Editar Rol" : "Crear Nuevo Rol"}
+                      open={modalRolVisible}
+                      onCancel={() => setModalRolVisible(false)}
+                      width={800}
+                      footer={[
+                        <Button
+                          key="cancelar"
+                          onClick={() => setModalRolVisible(false)}
+                        >
+                          Cancelar
+                        </Button>,
+                        <Button
+                          key="guardar"
+                          type="primary"
+                          onClick={() => formRol.submit()}
+                        >
+                          {rolEditando ? "Guardar Cambios" : "Crear Rol"}
+                        </Button>,
+                      ]}
+                    >
+                      <Form
+                        form={formRol}
+                        layout="vertical"
+                        onFinish={guardarRol}
+                        style={{ marginTop: 16 }}
                       >
-                        Nuevo Contrato
-                      </Button>
-                    </Space>
-                  }
-                />
-              </>
-            ),
-          },
-        ]}
-      />
+                        <Row gutter={16}>
+                          <Col xs={24} md={12}>
+                            <Form.Item
+                              name="nombreRol"
+                              label="Nombre del Rol"
+                              rules={[
+                                {
+                                  required: true,
+                                  message: "El nombre es obligatorio",
+                                },
+                                {
+                                  min: 3,
+                                  message: "Debe tener al menos 3 caracteres",
+                                },
+                              ]}
+                            >
+                              <Input placeholder="Ej. Vendedor Senior, Cajero..." />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+
+                        <Divider orientation="left">
+                          Configuración de Privilegios Base
+                        </Divider>
+
+                        <Typography.Text
+                          type="secondary"
+                          style={{ display: "block", marginBottom: 16 }}
+                        >
+                          Los funcionarios que tengan asignado este rol
+                          heredarán los permisos activados a continuación.
+                        </Typography.Text>
+
+                        {/* Reutilizamos la misma grilla responsiva de permisos */}
+                        <Row gutter={[24, 12]}>
+                          {Object.entries(etiquetasPermisos).map(
+                            ([key, label]) => (
+                              <Col xs={24} sm={12} md={8} key={key}>
+                                <Form.Item
+                                  name={key}
+                                  valuePropName="checked"
+                                  style={{ marginBottom: 0 }}
+                                  initialValue={false} // Por defecto en false al crear nuevo
+                                >
+                                  <Switch
+                                    checkedChildren="Sí"
+                                    unCheckedChildren="No"
+                                  />
+                                </Form.Item>
+                                <Typography.Text style={{ marginLeft: 8 }}>
+                                  {label}
+                                </Typography.Text>
+                              </Col>
+                            ),
+                          )}
+                        </Row>
+                      </Form>
+                    </Modal>
+                  </div>
+                ),
+              },
+            ]}
+          />
+        </Card>
+      </>
 
       {/* Drawer para Crear/Editar */}
       <Drawer
@@ -2106,9 +2412,11 @@ const GestionColaborador = () => {
                 ]}
               >
                 <Select placeholder="Seleccione un cargo">
-                  <Option value="Administrador">Administrador</Option>
-                  <Option value="Vendedor">Vendedor</Option>
-                  <Option value="Cajero">Cajero</Option>
+                  {roles.map((rol) => (
+                    <Option key={rol.id} value={rol.nombre}>
+                      {rol.nombre}
+                    </Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
@@ -2137,7 +2445,7 @@ const GestionColaborador = () => {
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          {/* <Row gutter={16}>
             <Col span={12}>
               <Form.Item
                 name="turno"
@@ -2173,7 +2481,7 @@ const GestionColaborador = () => {
                 </Select>
               </Form.Item>
             </Col>
-          </Row>
+          </Row> */}
 
           <Row gutter={16}>
             <Col span={12}>
@@ -2195,7 +2503,7 @@ const GestionColaborador = () => {
         </Form>
       </Drawer>
 
-      {/* Drawer de Detalles */}
+      {/* Drawer de Detalles - Reasignar Sucursal  */}
       <Drawer
         title={
           <Space>
@@ -2212,7 +2520,7 @@ const GestionColaborador = () => {
             </span>
           </Space>
         }
-        width={640}
+        width={700}
         onClose={handleCerrarModal}
         open={detailDrawerVisible}
         extra={
@@ -2241,6 +2549,7 @@ const GestionColaborador = () => {
             </Popconfirm>
           </Space>
         }
+        centered
       >
         {selectedColaborador && (
           <Tabs
@@ -2257,40 +2566,67 @@ const GestionColaborador = () => {
                 label: "Resumen",
                 children: (
                   <>
+                    {/**Header con avatar, nombre, cargo y estado */}
                     <Card style={{ marginBottom: 16 }}>
-                      <div style={{ textAlign: "center" }}>
-                        <Avatar
-                          size={70}
-                          icon={<UserOutlined />}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "8px 0",
+                        }}
+                      >
+                        {/* Sección Izquierda: Avatar + Nombre + Cargo */}
+                        <div
                           style={{
-                            backgroundColor: "#1890ff",
-                            marginBottom: 10,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 16,
                           }}
                         >
-                          {selectedColaborador.nombre[0]}
-                          {selectedColaborador.apellido[0]}
-                        </Avatar>
-                        <Title level={3} style={{ marginBottom: 4 }}>
-                          {selectedColaborador.nombre}{" "}
-                          {selectedColaborador.apellido}
-                        </Title>
-                        <Tag color="blue" style={{ fontSize: "14px" }}>
-                          {selectedColaborador.cargo}
-                        </Tag>
-                        <div style={{ marginTop: 12 }}>
-                          <Badge
-                            status={
-                              selectedColaborador.estado === "Activo"
-                                ? "success"
-                                : "error"
-                            }
-                            text={selectedColaborador.estado}
-                            style={{ fontSize: "14px" }}
-                          />
+                          <Avatar
+                            size={50}
+                            icon={<UserOutlined />}
+                            style={{
+                              backgroundColor: "#1890ff",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {selectedColaborador.nombre
+                              ?.charAt(0)
+                              ?.toUpperCase() || "N"}
+                            {selectedColaborador.apellido
+                              ?.charAt(0)
+                              ?.toUpperCase() || ""}
+                          </Avatar>
+
+                          <div>
+                            <Title
+                              level={3}
+                              style={{ margin: 0, marginBottom: 4 }}
+                            >
+                              {selectedColaborador.nombre}{" "}
+                              {selectedColaborador.apellido}
+                            </Title>
+                            <Tag color="blue" style={{ fontSize: "14px" }}>
+                              {selectedColaborador.cargo}
+                            </Tag>
+                          </div>
                         </div>
+
+                        {/* Sección Derecha: Estado */}
+                        <Badge
+                          status={
+                            selectedColaborador.estado === "Activo"
+                              ? "success"
+                              : "error"
+                          }
+                          text={selectedColaborador.estado}
+                          style={{ fontSize: "14px", marginRight: 8 }}
+                        />
                       </div>
                     </Card>
-
+                    {/**Informacion Personal */}
                     <Card
                       title="Información Personal"
                       style={{ marginBottom: 16 }}
@@ -2339,7 +2675,7 @@ const GestionColaborador = () => {
                         </Descriptions.Item>
                       </Descriptions>
                     </Card>
-
+                    {/**Informacion Laboral */}
                     <Card
                       title="Información Laboral"
                       style={{ marginBottom: 16 }}
@@ -2355,7 +2691,7 @@ const GestionColaborador = () => {
                             {selectedColaborador.cargo || "Sin Informacion"}
                           </Tag>
                         </Descriptions.Item>
-                        <Descriptions.Item label="Turno">
+                        {/* <Descriptions.Item label="Turno">
                           <Tag color="orange">
                             {contratoActivoColaborador?.turno ||
                               selectedColaborador.turno ||
@@ -2366,7 +2702,7 @@ const GestionColaborador = () => {
                           {contratoActivoColaborador?.tipoContrato ||
                             selectedColaborador.tipoContrato ||
                             "Sin Informacion"}
-                        </Descriptions.Item>
+                        </Descriptions.Item> */}
                         <Descriptions.Item
                           label={
                             <span>
@@ -2383,9 +2719,20 @@ const GestionColaborador = () => {
                               ).format("DD/MM/YYYY")
                             : "Sin Informacion"}
                         </Descriptions.Item>
+                        <Descriptions.Item label="Estado Relación Laboral">
+                          <Tag
+                            color={
+                              selectedColaborador.estado === "Activo"
+                                ? "green"
+                                : "red"
+                            }
+                          >
+                            {selectedColaborador.estado || "Sin Informacion"}
+                          </Tag>
+                        </Descriptions.Item>
                       </Descriptions>
                     </Card>
-
+                    {/**Estadísticas */}
                     <Card title="Estadísticas">
                       <Row gutter={16}>
                         {/* <Col span={12}>
@@ -2446,12 +2793,12 @@ const GestionColaborador = () => {
                             }
                           />
                         </Col>
-                        <Col span={12}>
+                        {/* <Col span={12}>
                           <Statistic
                             title="Contratos registrados"
                             value={historialContratos.length}
                           />
-                        </Col>
+                        </Col> */}
                       </Row>
                       {/* <div style={{ marginTop: 12 }}>
                         <Tag
@@ -2558,12 +2905,12 @@ const GestionColaborador = () => {
                                     >
                                       {contrato.estado || "Sin estado"}
                                     </Tag>
-                                    <Tag color="blue">
+                                    {/* <Tag color="blue">
                                       {contrato.tipoContrato || "Sin contrato"}
                                     </Tag>
                                     <Tag color="orange">
                                       {contrato.turno || "Sin turno"}
-                                    </Tag>
+                                    </Tag> */}
                                   </Space>
                                 </Col>
                               </Row>
@@ -2587,7 +2934,7 @@ const GestionColaborador = () => {
                             selectedColaborador.sucursal ||
                             "Sin Informacion"}
                         </Descriptions.Item>
-                        <Descriptions.Item label="Turno actual">
+                        {/* <Descriptions.Item label="Turno actual">
                           {contratoActivoColaborador?.turno ||
                             selectedColaborador.turno ||
                             "Sin Informacion"}
@@ -2596,7 +2943,7 @@ const GestionColaborador = () => {
                           {contratoActivoColaborador?.tipoContrato ||
                             selectedColaborador.tipoContrato ||
                             "Sin Informacion"}
-                        </Descriptions.Item>
+                        </Descriptions.Item> */}
                       </Descriptions>
                     </Card>
 
@@ -2651,33 +2998,27 @@ const GestionColaborador = () => {
           />
         )}
       </Drawer>
-
+      {/**Modal Permisos y Código de Acceso */}
       <Modal
         title={
           <Space>
             <EyeOutlined />
-            <span>Permisos y código de acceso</span>
+            <span>Gestión de Accesos y Permisos</span>
           </Space>
         }
         open={modalPermisosVisible}
         onCancel={cerrarModalPermisos}
-        width={760}
-        footer={
-          <Space>
-            <Button onClick={cerrarModalPermisos}>Cerrar</Button>
-            <Button type="primary" onClick={imprimirCodigoAcceso}>
-              Imprimir código
-            </Button>
-          </Space>
-        }
+        width={800}
+        footer={<Button onClick={cerrarModalPermisos}>Cerrar</Button>} // Quitamos el botón imprimir del footer general y lo ponemos en su Tab
       >
         {funcionarioPermisosSeleccionado ? (
           <>
-            <Card style={{ marginBottom: 16 }}>
+            {/* CABECERA FIJA (Perfil del usuario) */}
+            <Card style={{ marginBottom: 16 }} size="small">
               <Row gutter={16} align="middle">
-                <Col xs={24} sm={6} style={{ textAlign: "center" }}>
+                <Col xs={24} sm={4} style={{ textAlign: "center" }}>
                   <Avatar
-                    size={72}
+                    size={64}
                     icon={<UserOutlined />}
                     style={{ backgroundColor: "#1890ff" }}
                   >
@@ -2689,7 +3030,7 @@ const GestionColaborador = () => {
                       .toUpperCase()}
                   </Avatar>
                 </Col>
-                <Col xs={24} sm={18}>
+                <Col xs={24} sm={20}>
                   <Title level={4} style={{ margin: 0 }}>
                     {funcionarioPermisosSeleccionado.nombre}{" "}
                     {funcionarioPermisosSeleccionado.apellido}
@@ -2697,70 +3038,160 @@ const GestionColaborador = () => {
                   <Text type="secondary">
                     {funcionarioPermisosSeleccionado.rut}
                   </Text>
-                  <div style={{ marginTop: 8 }}>
+                  <div style={{ marginTop: 4 }}>
                     <Tag color="green">
                       {funcionarioPermisosSeleccionado.sucursalNombre ||
                         funcionarioPermisosSeleccionado.sucursal ||
                         "Casa Matriz"}
                     </Tag>
-                    {funcionarioPermisosSeleccionado.cargo ? (
+                    {funcionarioPermisosSeleccionado.cargo && (
                       <Tag color="blue">
                         {funcionarioPermisosSeleccionado.cargo}
                       </Tag>
-                    ) : null}
+                    )}
                   </div>
                 </Col>
               </Row>
             </Card>
 
-            <Card title="Código de barras" style={{ marginBottom: 16 }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  minHeight: 110,
-                }}
-              >
-                {funcionarioPermisosSeleccionado && (
-                  <img
-                    src={generarSVGBarcode(
-                      funcionarioPermisosSeleccionado.codigoAcceso,
-                    )}
-                    alt="Código de barras Accesso Caja"
-                  />
-                )}
-              </div>
-              <div style={{ textAlign: "center", marginTop: 8 }}>
-                <Text
-                  type="secondary"
-                  style={{ fontSize: 11, fontFamily: "monospace" }}
-                >
-                  {funcionarioPermisosSeleccionado?.codigoAcceso}
-                </Text>
-              </div>
-              <Text type="secondary">
-                Este código se usa para el acceso de caja.
-              </Text>
-            </Card>
-
-            {/* <Card title="Permisos">
-              {obtenerPermisosActivos(
-                funcionarioPermisosSeleccionado.privilegios,
-              ).length > 0 ? (
-                <Space wrap>
-                  {obtenerPermisosActivos(
-                    funcionarioPermisosSeleccionado.privilegios,
-                  ).map((permiso) => (
-                    <Tag key={permiso} color="geekblue">
-                      {permiso}
-                    </Tag>
-                  ))}
-                </Space>
-              ) : (
-                <Text type="secondary">No hay permisos activos.</Text>
-              )}
-            </Card> */}
+            {/* SISTEMA DE PESTAÑAS */}
+            <Tabs
+              defaultActiveKey="1"
+              items={[
+                {
+                  key: "1",
+                  label: "Código de Acceso",
+                  children: (
+                    <Card style={{ textAlign: "center", marginTop: 8 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          minHeight: 110,
+                        }}
+                      >
+                        <img
+                          src={generarSVGBarcode(
+                            funcionarioPermisosSeleccionado.codigoAcceso,
+                          )}
+                          alt="Código de barras Acceso Caja"
+                        />
+                      </div>
+                      <div style={{ marginTop: 8 }}>
+                        <Text
+                          type="secondary"
+                          style={{
+                            fontSize: 14,
+                            fontFamily: "monospace",
+                            letterSpacing: 2,
+                          }}
+                        >
+                          {funcionarioPermisosSeleccionado?.codigoAcceso}
+                        </Text>
+                      </div>
+                      <Divider style={{ margin: "16px 0" }} />
+                      <Text
+                        type="secondary"
+                        style={{ display: "block", marginBottom: 16 }}
+                      >
+                        Este código se usa para la autenticación rápida en el
+                        Punto de Venta.
+                      </Text>
+                      <Button type="primary" onClick={imprimirCodigoAcceso}>
+                        Imprimir Código de Barras
+                      </Button>
+                    </Card>
+                  ),
+                },
+                {
+                  key: "2",
+                  label: "Claves de Sistema",
+                  children: (
+                    <Card style={{ marginTop: 8 }}>
+                      <Form
+                        form={formClaves}
+                        layout="vertical"
+                        onFinish={handleCambiarClavesFuncionario}
+                      >
+                        <Row gutter={16}>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              name="claveAdministracion"
+                              label="Nueva clave de Administración"
+                              // rules={[
+                              //   {
+                              //     required: true,
+                              //     message: "Ingrese una clave",
+                              //   },
+                              // ]}
+                            >
+                              <Input.Password placeholder="Dejar en blanco para no cambiar" />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <Form.Item
+                              name="claveCaja"
+                              label="Nueva clave de Caja (PIN)"
+                              // rules={[
+                              //   { required: true, message: "Ingrese un PIN" },
+                              // ]}
+                            >
+                              <Input.Password placeholder="Dejar en blanco para no cambiar" />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+                        <Row justify="end">
+                          <Button type="primary" htmlType="submit">
+                            Actualizar Claves
+                          </Button>
+                        </Row>
+                      </Form>
+                    </Card>
+                  ),
+                },
+                {
+                  key: "3",
+                  label: "Permisos del Rol",
+                  children: (
+                    <Card style={{ marginTop: 8 }}>
+                      <Form
+                        form={formPermisos}
+                        layout="horizontal"
+                        onFinish={onGuardarPermisos}
+                      >
+                        <Row gutter={[24, 12]}>
+                          {Object.entries(etiquetasPermisos).map(
+                            ([key, label]) => (
+                              <Col xs={24} sm={12} md={8} key={key}>
+                                {/* valuePropName='checked' es vital para que Switch funcione con Form */}
+                                <Form.Item
+                                  name={key}
+                                  valuePropName="checked"
+                                  style={{ marginBottom: 0 }}
+                                >
+                                  <Switch
+                                    checkedChildren="Sí"
+                                    unCheckedChildren="No"
+                                  />
+                                </Form.Item>
+                                <Text style={{ marginLeft: 8 }}>{label}</Text>
+                              </Col>
+                            ),
+                          )}
+                        </Row>
+                        <Divider />
+                        <Row justify="end">
+                          <Button type="primary" htmlType="submit">
+                            Guardar Permisos
+                          </Button>
+                        </Row>
+                      </Form>
+                    </Card>
+                  ),
+                },
+              ]}
+            />
           </>
         ) : null}
       </Modal>
@@ -3044,7 +3475,7 @@ const GestionColaborador = () => {
       </Modal>
 
       {/**Modal Nuevo Contrato */}
-      <Modal
+      {/* <Modal
         title="Nuevo Contrato"
         open={modalCrearContrato}
         okText="Crear Contrato"
@@ -3169,7 +3600,7 @@ const GestionColaborador = () => {
             </Select>
           </Form.Item>
         </Form>
-      </Modal>
+      </Modal> */}
     </div>
   );
 };

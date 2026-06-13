@@ -63,7 +63,7 @@ async function syncDataBase() {
     // // NIVEL 1: Tablas sin dependencias
     // await Categoria.sync(syncOptions);
     // console.log("  ✓ Categoria");
-
+    1;
     // await Sucursal.sync(syncOptions);
     // console.log("  ✓ Sucursal");
 
