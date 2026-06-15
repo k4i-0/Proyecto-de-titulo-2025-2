@@ -622,10 +622,10 @@ exports.consultarDatosCaja = async (req, res) => {
       estadoPOS: caja.estadoPOS,
       nombreSucursal: caja.sucursal?.nombre || "-",
       idSucursal: caja.idSucursal,
-      // 👇 Aquí mandamos los datos de la última tupla que pediste
+
       estadoRegistroCaja: estadoRegistroCajaActual,
       fechaUltimoRegistro: fechaUltimoRegistro,
-      // Opcional: mandamos toda la tupla por si el frontend necesita el id o los montos después
+
       ultimoRegistroCaja: ultimoRegistro || null,
     };
 
@@ -675,6 +675,7 @@ exports.consultarDatosMP = async (req, res) => {
     //obtener lista de terminales de la caja con idMercadoPagoPOS y idMercadoPago (sucursal)
     const configMP = {
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
       },
       validateStatus: () => true, // Para manejar manualmente los errores de status
@@ -714,6 +715,10 @@ exports.consultarDatosMP = async (req, res) => {
     }
 
     //Verificar que este en modo PDV si no esta cambiar
+    console.log(
+      "Estado operativo actual de la terminal:",
+      terminal.operating_mode,
+    );
     if (terminal.operating_mode !== "PDV") {
       const response = await axios.patch(
         "https://api.mercadopago.com/terminals/v1/setup",
@@ -725,18 +730,18 @@ exports.consultarDatosMP = async (req, res) => {
             },
           ],
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
-          },
-        },
+        configMP,
       );
 
-      // console.log(
-      //   "Respuesta de actualización de modo de terminal MP:",
-      //   response.data,
-      // );
+      if (response.data.status >= 400) {
+        await t.rollback();
+        return res.status(response.data.status).json({
+          error:
+            response.data?.message ||
+            "Error al actualizar el modo de la terminal en Mercado Pago",
+          detalle: response.data,
+        });
+      }
 
       terminal.operating_mode = "PDV";
     }
@@ -746,7 +751,7 @@ exports.consultarDatosMP = async (req, res) => {
     await t.commit();
     return res.status(200).json({
       message: "Terminal verificada correctamente",
-      estadoTerminal: verificarTerminalActiva.data.status, // Estado de la terminal (Ej: active)
+      estadoTerminal: verificarTerminalActiva.data.status,
       estadoOperacion: terminal.operating_mode,
     });
   } catch (error) {
@@ -1359,6 +1364,13 @@ exports.registroVenta = async (req, res) => {
       transaction: t,
     });
 
+    if (caja.estadoCaja === "Cerrada" || caja.estadoCaja === "Bloqueada") {
+      await t.rollback();
+      return res.status(400).json({
+        message: `No se pueden registrar ventas en una caja ${caja.estadoCaja}`,
+      });
+    }
+
     if (!funcionarioSolicitante || !caja) {
       await t.rollback();
       return res.status(401).json({ message: "Credenciales inválidas" });
@@ -1443,49 +1455,61 @@ exports.registroVenta = async (req, res) => {
       montoDebito = 0,
       montoCredito = 0;
 
-    if (detallePagos && detallePagos.length > 0) {
-      for (const p of detallePagos) {
-        // Verificamos si este método ya se guardó en solicitarPagoTarjeta
-        const pagoExistente = await DetallePago.findOne({
-          where: { idVentaCliente: venta.idVentaCliente, metodoPago: p.metodo },
-          transaction: t,
-        });
+    const buscarDetallePagoExistente = await DetallePago.findOne({
+      where: { idVentaCliente: venta.idVentaCliente, metodoPago: metodoPago },
+      transaction: t,
+    });
 
-        if (!pagoExistente) {
-          // Solo creamos el registro si no existe (ej. el Efectivo)
-          await DetallePago.create(
-            {
-              metodoPago: p.metodo,
-              montoPagado: Number(p.montoPagado || 0),
+    if (!buscarDetallePagoExistente) {
+      if (detallePagos && detallePagos.length > 0) {
+        for (const p of detallePagos) {
+          // Verificamos si este método ya se guardó en solicitarPagoTarjeta
+          const pagoExistente = await DetallePago.findOne({
+            where: {
               idVentaCliente: venta.idVentaCliente,
+              metodoPago: p.metodo,
             },
-            { transaction: t },
-          );
+            transaction: t,
+          });
+
+          if (!pagoExistente) {
+            // Solo creamos el registro si no existe (ej. el Efectivo)
+            await DetallePago.create(
+              {
+                metodoPago: p.metodo,
+                montoPagado: Number(p.montoPagado || 0),
+                idVentaCliente: venta.idVentaCliente,
+              },
+              { transaction: t },
+            );
+          }
+
+          const metodoLower = p.metodo.toLowerCase();
+          if (metodoLower.includes("efectivo"))
+            montoEfectivo += Number(p.montoPagado || 0);
+          else if (metodoLower.includes("debito"))
+            montoDebito += Number(p.montoPagado || 0);
+          else if (metodoLower.includes("credito"))
+            montoCredito += Number(p.montoPagado || 0);
         }
+      } else {
+        await DetallePago.create(
+          {
+            metodoPago: metodoPago,
+            montoPagado: Number(totalVenta),
+            idVentaCliente: venta.idVentaCliente,
+          },
+          { transaction: t },
+        );
 
-        const metodoLower = p.metodo.toLowerCase();
+        const metodoLower = metodoPago.toLowerCase();
         if (metodoLower.includes("efectivo"))
-          montoEfectivo += Number(p.montoPagado || 0);
+          montoEfectivo = Number(totalVenta);
         else if (metodoLower.includes("debito"))
-          montoDebito += Number(p.montoPagado || 0);
+          montoDebito = Number(totalVenta);
         else if (metodoLower.includes("credito"))
-          montoCredito += Number(p.montoPagado || 0);
+          montoCredito = Number(totalVenta);
       }
-    } else {
-      await DetallePago.create(
-        {
-          metodoPago: metodoPago,
-          montoPagado: Number(totalVenta),
-          idVentaCliente: venta.idVentaCliente,
-        },
-        { transaction: t },
-      );
-
-      const metodoLower = metodoPago.toLowerCase();
-      if (metodoLower.includes("efectivo")) montoEfectivo = Number(totalVenta);
-      else if (metodoLower.includes("debito")) montoDebito = Number(totalVenta);
-      else if (metodoLower.includes("credito"))
-        montoCredito = Number(totalVenta);
     }
 
     await caja.update(
@@ -1669,30 +1693,43 @@ exports.generarArqueoCaja = async (req, res) => {
       return res.status(404).json({ message: "Caja no encontrada" });
     }
 
-    // 💡 TIP: Para evitar el problema del VPS en UTC, pasamos la fecha local de Chile.
-    // Si usas librerías como moment-timezone o dayjs en tu proyecto, es ideal usarlas aquí.
-    // Por ahora, forzaremos la lectura de la fecha actual asumiendo que el servidor está bien configurado.
-    const inicioDeHoy = new Date();
-    inicioDeHoy.setHours(0, 0, 0, 0);
-    const finDeHoy = new Date();
-    finDeHoy.setHours(23, 59, 59, 999);
+    // const inicioDeHoy = new Date();
+    // inicioDeHoy.setHours(0, 0, 0, 0);
+    // const finDeHoy = new Date();
+    // finDeHoy.setHours(23, 59, 59, 999);
 
-    const registrosCaja = await RegistroCaja.findAll({
+    // const registrosCaja = await RegistroCaja.findAll({
+    //   where: {
+    //     idCaja: caja.idCaja,
+    //     fechaApertura: {
+    //       [Op.gte]: inicioDeHoy,
+    //       [Op.lte]: finDeHoy,
+    //     },
+    //   },
+    // });
+    const registrosCaja = await RegistroCaja.findOne({
       where: {
         idCaja: caja.idCaja,
-        fechaApertura: {
-          [Op.gte]: inicioDeHoy,
-          [Op.lte]: finDeHoy,
-        },
+        estadoRegistroCaja: "Abierta",
       },
+      order: [["fechaApertura", "DESC"]],
     });
 
+    if (!registrosCaja) {
+      return res
+        .status(404)
+        .json({ error: "No hay un registro de caja abierto." });
+    }
+
+    //buscamos la ventas de la caja en el periodo del registro abierto
+    const finDeHoy = new Date();
     const ventasCaja = await Venta.findAll({
       where: {
         fechaVenta: {
-          [Op.gte]: inicioDeHoy,
+          [Op.gte]: registrosCaja.fechaApertura,
           [Op.lte]: finDeHoy,
         },
+        estadoVenta: "Completada",
       },
       include: [
         {
@@ -1700,48 +1737,59 @@ exports.generarArqueoCaja = async (req, res) => {
           where: { idCaja: caja.idCaja },
           attributes: [],
         },
+        {
+          model: DetallePago,
+          attributes: ["metodoPago", "montoPagado"],
+        },
       ],
     });
 
-    // 🚀 MEJORA: Desglose por método de pago para que el cajero pueda cuadrar
     let totalEfectivo = 0;
     let totalDebito = 0;
     let totalCredito = 0;
     let totalGeneral = 0;
+    let cantidadVentas = 0;
 
     ventasCaja.forEach((venta) => {
-      const monto = Number(venta.totalVenta || 0);
-      totalGeneral += monto;
+      cantidadVentas++;
+      const pagos =
+        venta.DetallePagos || venta.detallepagos || venta.DetallePago || [];
 
-      // Aseguramos que la comparación sea insensible a mayúsculas
-      const metodo = (venta.metodoPago || "").toLowerCase();
+      pagos.forEach((detalle) => {
+        const montoPagado = Number(detalle.montoPagado || 0);
 
-      if (metodo.includes("efectivo")) {
-        totalEfectivo += monto;
-      } else if (metodo.includes("debito") || metodo.includes("débito")) {
-        totalDebito += monto;
-      } else if (metodo.includes("credito") || metodo.includes("crédito")) {
-        totalCredito += monto;
-      }
+        totalGeneral += montoPagado;
+
+        const metodo = (detalle.metodoPago || "").toLowerCase();
+
+        if (metodo.includes("efectivo")) {
+          totalEfectivo += montoPagado;
+        } else if (metodo.includes("debito") || metodo.includes("débito")) {
+          totalDebito += montoPagado;
+        } else if (metodo.includes("credito") || metodo.includes("crédito")) {
+          totalCredito += montoPagado;
+        }
+      });
     });
 
     const arqueo = {
       numeroCaja: caja.numeroCaja,
       nombreSucursal: caja.sucursal?.nombre || "-",
-      registrosCaja: registrosCaja.map((registro) => ({
-        fechaApertura: registro.fechaApertura,
-        fechaCierre: registro.fechaCierre,
-        montoCierreReal: registro.montoCierreReal,
-        cantidadMontoCierreReal: registro.cantidadMontoCierreReal,
-        estadoRegistroCaja: registro.estadoRegistroCaja,
-        observacionesCierre: registro.observacionesCierre,
-      })),
+
+      fechaApertura: registrosCaja.fechaApertura,
+      fechaCierre: registrosCaja.fechaCierre,
+      montoCierreReal: registrosCaja.montoCierreReal,
+      cantidadMontoCierreReal: registrosCaja.cantidadMontoCierreReal,
+      estadoRegistroCaja: registrosCaja.estadoRegistroCaja,
+      observacionesCierre: registrosCaja.observacionesCierre,
+
       // Enviamos el resumen detallado al frontend
       resumenVentas: {
         totalEfectivo: totalEfectivo,
         totalDebito: totalDebito,
         totalCredito: totalCredito,
-        totalGeneral: totalGeneral,
+        cantidadVentas: cantidadVentas,
+        //totalGeneral: totalGeneral,
       },
     };
 
@@ -1749,6 +1797,199 @@ exports.generarArqueoCaja = async (req, res) => {
   } catch (error) {
     console.error("Error al generar arqueo de caja:", error);
     return res.status(500).json({ message: "Error al generar arqueo de caja" });
+  }
+};
+
+exports.guardarArqueoCaja = async (req, res) => {
+  try {
+    const { token } = req.cookies;
+    const { deviceID } = req.params;
+    const { montoCierreReal, cantidadMontoCierreReal } = req.body;
+    console.log("Datos recibidos para guardar arqueo:", req.body);
+    if (
+      !deviceID ||
+      montoCierreReal === undefined ||
+      cantidadMontoCierreReal === undefined
+    ) {
+      return res.status(400).json({ message: "Faltan datos obligatorios" });
+    }
+    if (!token) {
+      return res.status(401).json({ message: "No autorizado" });
+    }
+    let decodedPayload;
+    try {
+      decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({ message: "No autorizado" });
+    }
+
+    const funcionarioSolicitante = await Funcionario.findOne({
+      where: { rut: decodedPayload.rut },
+    });
+
+    if (!funcionarioSolicitante) {
+      return res
+        .status(401)
+        .json({ message: "Credenciales de funcionario inválidas" });
+    }
+
+    const caja = await Caja.findOne({
+      where: { computadorID: deviceID },
+    });
+
+    if (!caja) {
+      return res.status(404).json({ message: "Caja no encontrada" });
+    }
+    const registroAbierto = await RegistroCaja.findOne({
+      where: {
+        idCaja: caja.idCaja,
+        estadoRegistroCaja: "Abierta",
+      },
+      order: [["fechaApertura", "DESC"]],
+    });
+
+    if (!registroAbierto) {
+      return res
+        .status(404)
+        .json({ error: "No hay un registro de caja abierto para guardar." });
+    }
+
+    const finDeHoy = new Date();
+    const ventasCaja = await Venta.findAll({
+      where: {
+        fechaVenta: {
+          [Op.gte]: registroAbierto.fechaApertura,
+          [Op.lte]: finDeHoy,
+        },
+        estadoVenta: "Completada",
+      },
+      include: [
+        {
+          model: RealizaVenta,
+          where: { idCaja: caja.idCaja },
+          attributes: [],
+        },
+        {
+          model: DetallePago,
+          attributes: ["metodoPago", "montoPagado"],
+        },
+      ],
+    });
+
+    let montoTeorico = 0;
+
+    ventasCaja.forEach((venta) => {
+      //console.log("ventas caja para arqueo:", venta);
+      const pagos =
+        venta.DetallePagos || venta.detallepagos || venta.DetallePago || [];
+
+      pagos.forEach((detalle) => {
+        const montoPagado = Number(detalle.montoPagado || 0);
+        montoTeorico += montoPagado;
+      });
+    });
+
+    const diferencia = montoCierreReal - montoTeorico;
+
+    await registroAbierto.update({
+      montoCierreReal: montoCierreReal,
+      montoCierreTeorico: montoTeorico,
+      cantidadMontoCierreReal: cantidadMontoCierreReal,
+      diferenciaCierre: diferencia,
+      fechaGeneracionArqueo: new Date(),
+      idFuncionarioArquea: funcionarioSolicitante.idFuncionario,
+    });
+
+    return res
+      .status(200)
+      .json({ message: "Arqueo de caja guardado exitosamente" });
+  } catch (error) {
+    console.error("Error al guardar arqueo de caja:", error);
+    return res.status(500).json({ message: "Error al guardar arqueo de caja" });
+  }
+};
+
+exports.bloquearFuncionamientoCaja = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { deviceID } = req.params;
+    if (!deviceID) {
+      return res.status(400).json({ message: "Falta el ID del dispositivo" });
+    }
+
+    const caja = await Caja.findOne({
+      where: { computadorID: deviceID },
+      transaction: t,
+    });
+
+    if (!caja) {
+      await t.rollback();
+      return res.status(404).json({ message: "Caja no encontrada" });
+    }
+
+    await caja.update(
+      { estadoCaja: "Bloqueada", estadoPOS: "Bloqueada" },
+      { transaction: t },
+    );
+    await t.commit();
+    return res
+      .status(200)
+      .json({ message: "Funcionamiento de caja bloqueado exitosamente" });
+  } catch (error) {
+    if (t && !t.finished) {
+      await t.rollback();
+    }
+    console.error("Error al bloquear funcionamiento de caja:", error);
+    return res
+      .status(500)
+      .json({ message: "Error al bloquear funcionamiento de caja" });
+  }
+};
+
+exports.desbloquearFuncionamientoCaja = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { deviceID } = req.params;
+    if (!deviceID) {
+      return res.status(400).json({ message: "Falta el ID del dispositivo" });
+    }
+
+    const caja = await Caja.findOne({
+      where: { computadorID: deviceID },
+      transaction: t,
+    });
+
+    if (!caja) {
+      await t.rollback();
+      return res.status(404).json({ message: "Caja no encontrada" });
+    }
+    if (caja.estadoCaja === "Cerrada" || caja.estadoCaja === "Bloqueada") {
+      await t.rollback();
+      return res.status(400).json({
+        message: "No se puede desbloquear una caja cerrada o bloqueada",
+      });
+    }
+    if (caja.estadoFuncionamiento === "Abierta") {
+      await t.rollback();
+      return res.status(400).json({ message: "La caja ya está operativa" });
+    }
+
+    await caja.update(
+      { estadoCaja: "Abierta", estadoPOS: "Operativo" },
+      { transaction: t },
+    );
+    await t.commit();
+    return res
+      .status(200)
+      .json({ message: "Funcionamiento de caja desbloqueado exitosamente" });
+  } catch (error) {
+    if (t && !t.finished) {
+      await t.rollback();
+    }
+    console.error("Error al desbloquear funcionamiento de caja:", error);
+    return res
+      .status(500)
+      .json({ message: "Error al desbloquear funcionamiento de caja" });
   }
 };
 
@@ -1776,6 +2017,13 @@ exports.verVentasDelDia = async (req, res) => {
       },
       order: [["fechaApertura", "DESC"]],
     });
+
+    if (!ultimoRegistro) {
+      await t.commit();
+      return res
+        .status(404)
+        .json({ message: "No hay registros de caja para esta caja" });
+    }
 
     // const inicioDeHoy = ultimoRegistro.fechaApertura;
     // inicioDeHoy.setHours(0, 0, 0, 0);

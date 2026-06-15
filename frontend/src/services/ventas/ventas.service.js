@@ -251,6 +251,26 @@ export async function generarArqueoCaja(deviceID) {
   }
 }
 
+export async function guardarArqueoCaja(deviceID, datosArqueo) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/guardar/arqueo/caja/${deviceID}`,
+      {
+        montoCierreReal: datosArqueo.montoCierreReal,
+        cantidadMontoCierreReal: datosArqueo.cantidadMontoCierreReal,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+    console.log("Respuesta de guardado de arqueo de caja:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al guardar arqueo de caja:", error);
+    return error.response;
+  }
+}
+
 export async function consultaCierreCajaPendiente(deviceID) {
   try {
     const response = await axios.get(

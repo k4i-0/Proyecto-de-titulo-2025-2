@@ -252,13 +252,21 @@ RegistroCaja.belongsTo(Caja, {
   foreignKey: "idCaja",
 });
 
+//Funcionario -> RegistroCaja (1:N)
+Funcionario.hasMany(RegistroCaja, {
+  foreignKey: "idFuncionarioArquea",
+});
+RegistroCaja.belongsTo(Funcionario, {
+  foreignKey: "idFuncionarioArquea",
+});
+
 //Caja -> MovimientoCaja (1:N)
-Caja.hasMany(MovimientoCaja, {
-  foreignKey: "idCaja",
-});
-MovimientoCaja.belongsTo(Caja, {
-  foreignKey: "idCaja",
-});
+// Caja.hasMany(MovimientoCaja, {
+//   foreignKey: "idCaja",
+// });
+// MovimientoCaja.belongsTo(Caja, {
+//   foreignKey: "idCaja",
+// });
 
 //Decuento VentaCliente 1:N
 Descuento.hasMany(VentaCliente, {

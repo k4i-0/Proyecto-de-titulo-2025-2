@@ -39,5 +39,9 @@ router.post(
   "/registro/cierre/pendiente/admin/:deviceID",
   ventasController.cierreCajaPendienteAdmin,
 );
+router.post(
+  "/guardar/arqueo/caja/:deviceID",
+  ventasController.guardarArqueoCaja,
+);
 
 module.exports = router;

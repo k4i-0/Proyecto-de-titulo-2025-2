@@ -38,6 +38,18 @@ const RegistroCaja = sequelize.define(
       type: DataTypes.JSON,
       allowNull: true,
     },
+    idFuncionarioArquea: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "funcionario",
+        key: "idFuncionario",
+      },
+    },
+    fechaGeneracionArqueo: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     diferenciaCierre: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,

@@ -50,6 +50,8 @@ import {
   AccountBookOutlined,
   SaveOutlined,
   ExclamationCircleOutlined,
+  FileSearchOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 
 import {
@@ -67,7 +69,13 @@ import {
   generarArqueoCaja,
   consultaCierreCajaPendiente,
   cierreCajaPendienteAdmin,
+  guardarArqueoCaja,
 } from "../../services/ventas/ventas.service";
+
+import {
+  bloquearFuncionamientoCaja,
+  desbloquearFuncionamientoCaja,
+} from "../../services/ventas/caja.service.js";
 
 import { buscarTodasSucursales } from "../../services/functions/Sucursales";
 import { buscarTodosProductos } from "../../services/functions/Productos";
@@ -139,6 +147,7 @@ export default function MenuPrincipal() {
   const [modalArqueoCaja, setModalArqueoCaja] = useState(false);
 
   const [mensajeLoading, setMensajeLoading] = useState("Procesando pago...");
+  const [clavesSeleccionadas, setClavesSeleccionadas] = useState([]);
 
   const [formVentaProducto] = Form.useForm();
   const [formAperturaCaja] = Form.useForm();
@@ -155,6 +164,7 @@ export default function MenuPrincipal() {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
+    hour12: false,
   });
 
   const obtenerSucursales = async () => {
@@ -182,21 +192,24 @@ export default function MenuPrincipal() {
           numeroCaja: datos.data.numeroCaja,
           idSucursal: datos.data.idSucursal,
           nombreSucursal: datos.data.nombreSucursal,
-          estadoCaja: datos.data.estadoRegistroCaja,
+          estadoCaja: datos.data.estadoCaja,
           estadoCierreDiaAnterior: datos.data.estadoCierreDiaAnterior,
           idPOS: datos.data.idPOS,
           tipoMaquinaPOS: datos.data.tipoMaquinaPOS,
-          estadoPoint: false,
+          estadoPoint: datos.data.estadoPOS === "Operativo" ? true : false,
         });
         console.log(
           "Estado de caja:",
           datos.data.estadoRegistroCaja === "Sin Apertura",
         );
 
-        if (datos.data.estadoRegistroCaja == "Sin Apertura") {
+        if (
+          datos.data.estadoRegistroCaja == "Sin Apertura" ||
+          datos.data.estadoRegistroCaja == "Cerrada"
+        ) {
           setCajaAperturada(false);
         } else {
-          setCajaAperturada(true); // Siempre es bueno asegurar el estado contrario
+          setCajaAperturada(true);
         }
 
         await obtenerDatosMP(deviceID);
@@ -286,41 +299,75 @@ export default function MenuPrincipal() {
 
   //funciones para ingresar productos
   const agregarProductoCodigo = async () => {
-    //console.log("Valores formulario", formVentaProducto.getFieldsValue());
     const codigo = formVentaProducto.getFieldValue("codigo");
+
     try {
       const respuesta = await buscarProductoVenta(codigo);
-      console.log(
-        "Respuesta de búsqueda de producto para venta:",
-        respuesta.data,
-      );
+
       if (respuesta.status === 200) {
         const producto = respuesta.data;
-        //console.log("AgregarProducto", formVentaProducto.getFieldValue());
         const nuevaCantidad =
           Number(formVentaProducto.getFieldValue("cantidad")) || 1;
-        const descuentoTotalLinea =
-          (producto.montoDescuento || 0) * nuevaCantidad;
-        const detalleDescuentosMultiplicados = (
-          producto.descuentosAplicados || []
-        ).map((desc) => ({
-          ...desc,
-          montoDescontado: desc.montoDescontado * nuevaCantidad,
-        }));
-        const nuevoProducto = {
-          idProducto: producto.id,
-          codigo: producto.codigo,
-          nombre: producto.nombre,
-          precio: producto.precioVenta,
-          cantidad: nuevaCantidad,
-          descuento: descuentoTotalLinea,
-          descuentosAplicados: detalleDescuentosMultiplicados,
-          subtotal: producto.precioVenta * nuevaCantidad - descuentoTotalLinea,
-        };
-        setProductos((listaActual) => [...listaActual, nuevoProducto]);
+
+        setProductos((listaActual) => {
+          const indiceExistente = listaActual.findIndex(
+            (p) => p.idProducto === producto.id,
+          );
+
+          if (indiceExistente >= 0) {
+            const productoExistente = listaActual[indiceExistente];
+            const cantidadTotal = productoExistente.cantidad + nuevaCantidad;
+            const descuentoTotalLinea =
+              (producto.montoDescuento || 0) * cantidadTotal;
+
+            const detalleDescuentosMultiplicados = (
+              producto.descuentosAplicados || []
+            ).map((desc) => ({
+              ...desc,
+              montoDescontado: desc.montoDescontado * cantidadTotal,
+            }));
+
+            const listaActualizada = [...listaActual];
+            listaActualizada[indiceExistente] = {
+              ...productoExistente,
+              cantidad: cantidadTotal,
+              descuento: descuentoTotalLinea,
+              descuentosAplicados: detalleDescuentosMultiplicados,
+              subtotal:
+                producto.precioVenta * cantidadTotal - descuentoTotalLinea,
+            };
+
+            return listaActualizada;
+          } else {
+            const descuentoTotalLinea =
+              (producto.montoDescuento || 0) * nuevaCantidad;
+
+            const detalleDescuentosMultiplicados = (
+              producto.descuentosAplicados || []
+            ).map((desc) => ({
+              ...desc,
+              montoDescontado: desc.montoDescontado * nuevaCantidad,
+            }));
+
+            const nuevoProducto = {
+              idProducto: producto.id,
+              codigo: producto.codigo,
+              nombre: producto.nombre,
+              precio: producto.precioVenta,
+              cantidad: nuevaCantidad,
+              descuento: descuentoTotalLinea,
+              descuentosAplicados: detalleDescuentosMultiplicados,
+              subtotal:
+                producto.precioVenta * nuevaCantidad - descuentoTotalLinea,
+            };
+
+            return [...listaActual, nuevoProducto];
+          }
+        });
+
         notification.success({
-          message: "Producto agregado",
-          description: `Se agregó ${producto.nombre} x${nuevaCantidad}`,
+          message: "Producto registrado",
+          description: `Se procesó ${producto.nombre} (+${nuevaCantidad})`,
         });
       } else {
         notification.error({
@@ -396,20 +443,20 @@ export default function MenuPrincipal() {
   const impuesto = total - totalNeto;
 
   //funcioens modal apertura caja
-  const totalApertura = denominaciones.reduce(
+  const totalDenominaciones = denominaciones.reduce(
     (acc, d) => acc + (cantidades[d.name] || 0) * d.valor,
     0,
   );
 
   const confirmarAperturaCaja = async () => {
-    //console.log("Total apertura calculado:", totalApertura);
+    //console.log("Total apertura calculado:", totalDenominaciones);
     //console.log("Cantidades ingresadas:", cantidades);
     try {
       const response = await aperturaCaja(
         localStorage.getItem("deviceID"),
         informacionCaja.numeroCaja,
         informacionCaja.idSucursal,
-        totalApertura,
+        totalDenominaciones,
         cantidades,
       );
       console.log("Respuesta de apertura de caja:", response.data.message);
@@ -1026,12 +1073,21 @@ export default function MenuPrincipal() {
 
   //funciones arqueo de caja
 
+  const resumen = resumenCaja?.resumenVentas || {
+    totalEfectivo: 0,
+    totalDebito: 0,
+    totalCredito: 0,
+    totalGeneral: 0,
+    cantidadVentas: 0,
+  };
+
   const obtenerDatosArqueoCaja = async () => {
     try {
       const res = await generarArqueoCaja(localStorage.getItem("deviceID"));
-      console.log("Respuesta de consulta de arqueo de caja:", res.data);
+      console.log("Resumen Caja State:", resumenCaja);
       if (res.status === 200) {
         setResumenCaja(res.data);
+
         return;
       } else {
         notification.error({
@@ -1047,6 +1103,44 @@ export default function MenuPrincipal() {
       });
     }
   };
+
+  const enviarArqueoCaja = async () => {
+    const datosEnviar = {
+      cantidadMontoCierreReal: {
+        ...formArqueoCaja.getFieldsValue(),
+      },
+
+      montoCierreReal: totalDenominaciones,
+    };
+    const deviceID = localStorage.getItem("deviceID");
+    console.log("Datos a enviar para arqueo de caja:", datosEnviar);
+    try {
+      const res = await guardarArqueoCaja(deviceID, datosEnviar);
+      console.log("Respuesta al enviar arqueo de caja:", res);
+      if (res.status === 200) {
+        notification.success({
+          message: "Arqueo de caja enviado",
+          description:
+            res.data.message || "El arqueo de caja se ha enviado exitosamente",
+        });
+        cerrarModalArqueoCaja();
+        obtenerDatosCaja(localStorage.getItem("deviceID"));
+        formArqueoCaja.resetFields();
+        return;
+      }
+      notification.error({
+        message: "Error al enviar arqueo de caja",
+        description: res.data.message || "Intente nuevamente",
+      });
+    } catch (error) {
+      console.error("Error al enviar arqueo de caja:", error);
+      notification.error({
+        message: "Error al enviar arqueo de caja",
+        description: error.response?.data?.message || "Intente nuevamente",
+      });
+    }
+  };
+
   const abrirModalArqueoCaja = () => {
     const exito = obtenerDatosArqueoCaja();
     if (exito) {
@@ -1056,23 +1150,14 @@ export default function MenuPrincipal() {
 
   const cerrarModalArqueoCaja = () => {
     setModalArqueoCaja(false);
-
+    setResumenCaja(null);
     setTimeout(() => {
       formArqueoCaja.resetFields();
       setCantidades({});
     }, 200);
   };
 
-  const resumen = resumenCaja?.resumenVentas || {
-    totalEfectivo: 0,
-    totalDebito: 0,
-    totalCredito: 0,
-    totalGeneral: 0,
-  };
-
-  const registroActual = resumenCaja?.registrosCaja?.[0];
-  const totalTarjetas = resumen.totalDebito + resumen.totalCredito;
-  const diferenciaEfectivo = totalApertura - resumen.totalEfectivo;
+  //const diferenciaEfectivo = totalDenominaciones - resumen.totalEfectivo;
 
   //ciere de caja especial solo administradores
   const abrirModalCierreCajaAdmin = async () => {
@@ -1151,6 +1236,71 @@ export default function MenuPrincipal() {
       setCantidades({});
     }
   };
+
+  //bloqueo y desbloqueo de caja
+
+  const bloquearCaja = async () => {
+    const deviceID = localStorage.getItem("deviceID");
+    try {
+      const res = await bloquearFuncionamientoCaja(deviceID);
+      if (res.status === 200) {
+        notification.success({
+          message: res.data.message || "Caja bloqueada",
+        });
+        obtenerDatosCaja(deviceID);
+        return;
+      }
+      notification.error({
+        message: res.data.message || "Error al bloquear la caja",
+        description: "Intente nuevamente",
+      });
+    } catch (error) {
+      console.error("Error al bloquear la caja:", error);
+      notification.error({
+        message: "Error al bloquear la caja",
+        description: error.response?.data?.message || "Intente nuevamente",
+      });
+    }
+  };
+
+  const desbloquearCaja = async () => {
+    const deviceID = localStorage.getItem("deviceID");
+    try {
+      const res = await desbloquearFuncionamientoCaja(deviceID);
+      if (res.status === 200) {
+        notification.success({
+          message: res.data.message || "Caja desbloqueada",
+        });
+        obtenerDatosCaja(deviceID);
+        return;
+      }
+      notification.error({
+        message: res.data.message || "Error al desbloquear la caja",
+        description: "Intente nuevamente",
+      });
+    } catch (error) {
+      console.error("Error al desbloquear la caja:", error);
+      notification.error({
+        message: "Error al desbloquear la caja",
+        description: error.response?.data?.message || "Intente nuevamente",
+      });
+    }
+  };
+
+  const seleccionMultipleConfig =
+    user.nombreRol === "Administrador"
+      ? {
+          selectedRowKeys: clavesSeleccionadas,
+          onChange: (nuevasClaves) => {
+            setClavesSeleccionadas(nuevasClaves);
+            console.log("Filas seleccionadas:", nuevasClaves);
+          },
+          // 💡 Opcional pero recomendado: Deshabilitar el checkbox en filas de descuento
+          getCheckboxProps: (record) => ({
+            disabled: record.esFilaDescuento,
+          }),
+        }
+      : undefined;
 
   return (
     <div
@@ -1235,31 +1385,70 @@ export default function MenuPrincipal() {
                   onClick: () => setModalAperturaCaja(true),
                 },
                 {
-                  key: "4",
+                  key: "2",
                   icon: <AccountBookOutlined />,
                   label: "Arqueo de caja",
                   disabled: cajaNoRegistrada || !cajaAperturada,
                   onClick: () => abrirModalArqueoCaja(),
                 },
+                // {
+                //   key: "3",
+                //   icon: <AuditOutlined />,
+                //   disabled: cajaNoRegistrada || !cajaAperturada,
+                //   onClick: () => setModalCierreCaja(true),
+                //   label: "Cierre de Caja",
+                // },
                 {
-                  key: "2",
-                  icon: <AuditOutlined />,
-                  disabled: cajaNoRegistrada || !cajaAperturada,
-                  onClick: () => setModalCierreCaja(true),
-                  label: "Cierre de Caja",
+                  key: "4",
+                  icon: <LockOutlined />,
+                  label: "Bloquear Caja",
+                  disabled:
+                    cajaNoRegistrada ||
+                    !cajaAperturada ||
+                    informacionCaja.estadoCaja === "Bloqueada",
+                  onClick: bloquearCaja,
                 },
                 {
-                  key: "3",
+                  key: "5",
+                  icon: <UnlockOutlined />,
+                  label: "Desbloquear Caja",
+                  disabled:
+                    cajaNoRegistrada ||
+                    !cajaAperturada ||
+                    informacionCaja.estadoCaja !== "Bloqueada",
+                  onClick: desbloquearCaja,
+                },
+                {
+                  key: "6",
                   icon: <HistoryOutlined />,
                   disabled: cajaNoRegistrada || !cajaAperturada,
                   onClick: abrirModalVentasDelDia,
-                  label: "Historial Ventas Hoy",
+                  label: "Historial Ventas Sesión",
+                },
+                {
+                  key: "7",
+                  icon: <FileSearchOutlined />,
+                  label: "Retiros y Consignaciones",
+                  disabled: cajaNoRegistrada || !cajaAperturada,
+                  onClick: () =>
+                    notification.info({ message: "Función en desarrollo" }),
                 },
                 user?.nombreRol === "Administrador" && {
-                  key: "5",
+                  key: "8",
                   icon: <AuditOutlined />,
                   label: "Cierre Caja dia anterior",
                   onClick: abrirModalCierreCajaAdmin,
+                },
+                user?.nombreRol === "Administrador" && {
+                  key: "9",
+                  icon: <SettingOutlined />,
+                  label: "Descuento Administrador",
+                  disabled:
+                    cajaNoRegistrada ||
+                    !cajaAperturada ||
+                    clavesSeleccionadas.length === 0,
+                  onClick: () =>
+                    notification.info({ message: "Función en desarrollo" }),
                 },
               ]}
             />
@@ -1324,7 +1513,7 @@ export default function MenuPrincipal() {
                 <Row
                   gutter={[16, 0]}
                   align="middle"
-                  justify="space-between"
+                  justify="space-around"
                   style={{ marginBottom: 12 }}
                 >
                   <Col>
@@ -1383,7 +1572,7 @@ export default function MenuPrincipal() {
                   </Col>
                 </Row>
 
-                <Row gutter={[16, 0]} align="middle" justify="space-between">
+                <Row gutter={[16, 0]} align="middle" justify="space-around">
                   <Col>
                     <div style={{ fontSize: 11, color: "#64748b" }}>
                       Sucursal
@@ -1436,6 +1625,33 @@ export default function MenuPrincipal() {
                       `${record.idProducto}-${record.codigo}-${record.cantidad}`
                     }
                     locale={{ emptyText: "Sin productos agregados" }}
+                    rowSelection={seleccionMultipleConfig}
+                    onRow={(record) => {
+                      return {
+                        onClick: () => {
+                          // Solo ejecuta la acción si es administrador y no es una fila de descuento
+                          if (
+                            user.nombreRol === "Administrador" &&
+                            !record.esFilaDescuento
+                          ) {
+                            console.log(
+                              "Fila clickeada por Administrador:",
+                              record,
+                            );
+                            // Aquí llamas a tu función, por ejemplo:
+                            // abrirModalEdicionAdmin(record);
+                          }
+                        },
+                        // Cambiamos el cursor a "pointer" solo para administradores
+                        style: {
+                          cursor:
+                            user.nombreRol === "Administrador" &&
+                            !record.esFilaDescuento
+                              ? "pointer"
+                              : "default",
+                        },
+                      };
+                    }}
                     columns={[
                       {
                         title: "Código",
@@ -1508,9 +1724,10 @@ export default function MenuPrincipal() {
                               danger
                               size="small"
                               icon={<DeleteOutlined />}
-                              onClick={() =>
-                                eliminarProducto(registro.idProducto)
-                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                eliminarProducto(registro.idProducto);
+                              }}
                             />
                           );
                         },
@@ -1954,7 +2171,7 @@ export default function MenuPrincipal() {
             key="confirmar"
             type="primary"
             icon={<UnlockOutlined />}
-            disabled={totalApertura == 0}
+            disabled={totalDenominaciones == 0}
             onClick={() => formAperturaCaja.submit()}
           >
             Confirmar apertura
@@ -2085,7 +2302,7 @@ export default function MenuPrincipal() {
               Total a declarar
             </span>
             <span style={{ fontWeight: 700, fontSize: 22, color: "#1890ff" }}>
-              ${totalApertura.toLocaleString("es-CL")}
+              ${totalDenominaciones.toLocaleString("es-CL")}
             </span>
           </div>
         </Form>
@@ -2868,29 +3085,33 @@ export default function MenuPrincipal() {
               <div style={{ marginTop: 4 }}>
                 <Typography.Text strong>
                   Apertura:{" "}
-                  {registroActual?.fechaApertura
-                    ? new Date(registroActual.fechaApertura).toLocaleTimeString(
+                  {resumenCaja?.fechaApertura
+                    ? new Date(resumenCaja.fechaApertura).toLocaleTimeString(
                         "es-CL",
-                        { hour: "2-digit", minute: "2-digit" },
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
                       )
                     : "N/A"}
                 </Typography.Text>
+
                 <Tag color="green" style={{ marginLeft: 8, border: 0 }}>
-                  {registroActual?.estadoRegistroCaja || "Abierta"}
+                  {resumenCaja?.estadoRegistroCaja || "Abierta"}
                 </Tag>
               </div>
             </Col>
           </Row>
 
           <Row gutter={12}>
-            <Col span={8}>
+            {/* <Col span={6}>
               <Card
                 size="small"
                 style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
               >
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                   <DollarOutlined style={{ marginRight: 4 }} />
-                  Efectivo Esperado
+                  Total Efectivo
                 </Typography.Text>
                 <div
                   style={{
@@ -2903,7 +3124,7 @@ export default function MenuPrincipal() {
                   ${resumen.totalEfectivo.toLocaleString("es-CL")}
                 </div>
               </Card>
-            </Col>
+            </Col> */}
             <Col span={8}>
               <Card
                 size="small"
@@ -2911,7 +3132,7 @@ export default function MenuPrincipal() {
               >
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                   <CreditCardOutlined style={{ marginRight: 4 }} />
-                  Transbank / Tarjetas
+                  Tarjeta Debito
                 </Typography.Text>
                 <div
                   style={{
@@ -2921,7 +3142,7 @@ export default function MenuPrincipal() {
                     marginTop: 4,
                   }}
                 >
-                  ${totalTarjetas.toLocaleString("es-CL")}
+                  ${resumen.totalDebito.toLocaleString("es-CL")}
                 </div>
               </Card>
             </Col>
@@ -2931,7 +3152,28 @@ export default function MenuPrincipal() {
                 style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
               >
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  Total Sistema
+                  <CreditCardOutlined style={{ marginRight: 4 }} />
+                  Tarjetas Credito
+                </Typography.Text>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: "#0f172a",
+                    marginTop: 4,
+                  }}
+                >
+                  ${resumen.totalCredito.toLocaleString("es-CL")}
+                </div>
+              </Card>
+            </Col>
+            {/* <Col span={8}>
+              <Card
+                size="small"
+                style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
+              >
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  Total Ventas
                 </Typography.Text>
                 <div
                   style={{
@@ -2941,7 +3183,27 @@ export default function MenuPrincipal() {
                     marginTop: 4,
                   }}
                 >
-                  ${resumen.totalGeneral.toLocaleString("es-CL")}
+                  ${resumen?.totalGeneral.toLocaleString("es-CL")}
+                </div>
+              </Card>
+            </Col> */}
+            <Col span={8}>
+              <Card
+                size="small"
+                style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
+              >
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  Cantidad Ventas
+                </Typography.Text>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: "#1890ff",
+                    marginTop: 4,
+                  }}
+                >
+                  {resumen?.cantidadVentas.toLocaleString("es-CL")}
                 </div>
               </Card>
             </Col>
@@ -2966,7 +3228,7 @@ export default function MenuPrincipal() {
             labelCol={{ span: 8 }}
             wrapperCol={{ span: 16 }}
             //onFinish={confirmarArqueoCaja}
-            onFinish={() => notification.info({ message: "En desarrollo" })}
+            onFinish={enviarArqueoCaja}
           >
             {/* --- Billetes --- */}
             <div
@@ -3073,19 +3335,20 @@ export default function MenuPrincipal() {
             {/* --- Resultado Dinámico y Botón --- */}
             <div
               style={{
-                background:
-                  diferenciaEfectivo === 0
-                    ? "#f6ffed"
-                    : diferenciaEfectivo < 0
-                      ? "#fff2f0"
-                      : "#e6f7ff",
-                border: `1px solid ${
-                  diferenciaEfectivo === 0
-                    ? "#b7eb8f"
-                    : diferenciaEfectivo < 0
-                      ? "#ffccc7"
-                      : "#91caff"
-                }`,
+                background: "#f0f7ff",
+                // background:
+                //   diferenciaEfectivo === 0
+                //     ? "#f6ffed"
+                //     : diferenciaEfectivo < 0
+                //       ? "#fff2f0"
+                //       : "#e6f7ff",
+                // border: `1px solid ${
+                //   diferenciaEfectivo === 0
+                //     ? "#b7eb8f"
+                //     : diferenciaEfectivo < 0
+                //       ? "#ffccc7"
+                //       : "#91caff"
+                // }`,
                 borderRadius: 8,
                 padding: "16px",
                 marginBottom: "16px",
@@ -3103,12 +3366,12 @@ export default function MenuPrincipal() {
                 </Col>
                 <Col>
                   <span style={{ fontWeight: 700, fontSize: 20 }}>
-                    ${totalApertura.toLocaleString("es-CL")}
+                    ${totalDenominaciones.toLocaleString("es-CL")}
                   </span>
                 </Col>
               </Row>
 
-              <Row justify="space-between" align="middle">
+              {/* <Row justify="space-between" align="middle">
                 <Col>
                   <span style={{ fontSize: 13, color: "#64748b" }}>
                     Descuadre:
@@ -3130,7 +3393,7 @@ export default function MenuPrincipal() {
                     </Tag>
                   )}
                 </Col>
-              </Row>
+              </Row> */}
             </div>
 
             <Row justify="end">

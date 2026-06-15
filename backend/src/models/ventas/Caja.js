@@ -71,7 +71,12 @@ const caja = sequelize.define(
       allowNull: false,
     },
     estadoPOS: {
-      type: DataTypes.ENUM("Operativo", "Mantencion", "Fuera de Servicio"),
+      type: DataTypes.ENUM(
+        "Operativo",
+        "Mantencion",
+        "Fuera de Servicio",
+        "Bloqueada",
+      ),
       allowNull: false,
       defaultValue: "Operativo",
     },
@@ -80,7 +85,7 @@ const caja = sequelize.define(
       allowNull: false,
     },
     estadoCaja: {
-      type: DataTypes.ENUM("Abierta", "Cerrada"),
+      type: DataTypes.ENUM("Abierta", "Cerrada", "Bloqueada"),
       allowNull: false,
       defaultValue: "Abierta",
     },

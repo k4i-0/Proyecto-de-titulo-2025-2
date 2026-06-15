@@ -20,6 +20,8 @@ const ventaRoutes = require("./ventas/ventas.route");
 
 const DescuentoRoutes = require("./ventas/descuento.route");
 
+const cajaRoutes = require("./ventas/cajas.route");
+
 //Autenticacion
 router.use("/auth", AuthRoutes);
 
@@ -61,5 +63,8 @@ router.use("/ventas", ventaRoutes);
 
 //Rutas Descuentos
 router.use("/descuentos", DescuentoRoutes);
+
+//Rutas Cajas
+router.use("/cajas", cajaRoutes);
 
 module.exports = router;

@@ -18,6 +18,7 @@ import DetalleCompraDirecta from "../pages/Admin/OrdenesCompra/DetalleCompraDire
 
 //Ventas
 import GestionDescuentos from "../pages/Admin/ventas/GestionDescuentos.jsx";
+import GestionCajas from "../pages/Admin/ventas/gestionCajas.jsx";
 import Pruebas from "../pages/Pruebas.jsx";
 
 import NoEncontrado from "../pages/Compartidas/NoEncontrado.jsx";
@@ -56,6 +57,7 @@ const AdminRouter = () => {
 
         {/**Modulo de ventas */}
         <Route path="descuentos" element={<GestionDescuentos />} />
+        <Route path="gestion/cajas" element={<GestionCajas />} />
       </Route>
     </Routes>
   );

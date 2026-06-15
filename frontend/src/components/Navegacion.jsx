@@ -106,12 +106,17 @@ export default function Navegacion({
                 {
                   key: "gestion_descuentos",
                   label: "Gestionar Descuentos",
-                  onClick: () => handleNavigate("descuentos"),
+                  onClick: () => handleNavigate("/admin/descuentos"),
+                },
+                {
+                  key: "gestion_cajas",
+                  label: "Gestionar Cajas",
+                  onClick: () => handleNavigate("/admin/gestion/cajas"),
                 },
                 {
                   key: "clientes",
                   label: "Clientes",
-                  onClick: () => handleNavigate("clientes"),
+                  onClick: () => handleNavigate("/admin/clientes"),
                 },
               ],
             },
