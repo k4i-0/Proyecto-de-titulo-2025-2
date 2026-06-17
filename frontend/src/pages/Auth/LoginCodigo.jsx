@@ -391,6 +391,7 @@ export default function LoginCodigo() {
       setLoading(true);
 
       const respuesta = await inicioSesionCodigo(codigo);
+      console.log("Respuesta del servidor en login por código:", respuesta);
       if (respuesta.status === 200) {
         notification.success({
           message: "Inicio de sesión exitoso",

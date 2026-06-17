@@ -157,6 +157,7 @@ export async function registroVenta(deviceID, datosVenta) {
         productosVendidos: datosVenta.productosVendidos ?? datosVenta.items,
         totalVenta: datosVenta.totalVenta ?? datosVenta.total,
         metodoPago: datosVenta.metodoPago,
+        idVentaVendedor: datosVenta.idVentaVendedor,
       },
       {
         withCredentials: true,
@@ -311,6 +312,61 @@ export async function cierreCajaPendienteAdmin(deviceID, datosCierre) {
     return response;
   } catch (error) {
     console.error("Error al cerrar caja pendiente admin:", error);
+    return error.response;
+  }
+}
+
+export async function ventaPendientePago(datosVenta) {
+  try {
+    console.log("Datos recibidos para venta pendiente de pago:", datosVenta);
+    const response = await axios.post(
+      `${API_URL}/crear/venta/pendiente`,
+      {
+        productosVendidos: datosVenta.productosVendidos,
+        totalVenta: datosVenta.totalVenta,
+        metodoPago: datosVenta.metodoPago,
+        totalDescuentos: datosVenta.totalDescuentos,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+    //console.log("Respuesta de creación de venta pendiente:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al crear venta pendiente:", error);
+    return error.response;
+  }
+}
+
+export async function consultarVentaPendiente() {
+  try {
+    const response = await axios.get(`${API_URL}/consultar/venta/pendiente`, {
+      withCredentials: true,
+    });
+    console.log("Respuesta de consulta de venta pendiente:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al consultar venta pendiente:", error);
+    return error.response;
+  }
+}
+
+export async function consultarVentasPendientesCaja(idVentaPendiente) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/consultar/venta/pendiente/caja/${idVentaPendiente}`,
+      {
+        withCredentials: true,
+      },
+    );
+    console.log(
+      "Respuesta de consulta de ventas pendientes de caja:",
+      response.status,
+    );
+    return response;
+  } catch (error) {
+    console.error("Error al consultar ventas pendientes de caja:", error);
     return error.response;
   }
 }

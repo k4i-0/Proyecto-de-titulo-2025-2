@@ -529,7 +529,7 @@ export default function GestionDescuentos() {
       montoDescuento:
         formDescuentoCategoria.getFieldValue("montoDescuento") || 0,
     };
-    console.log("Datos a enviar para crear descuento de categoria:", datos);
+    //console.log("Datos a enviar para crear descuento de categoria:", datos);
     try {
       const res = await crearDescuentoCategoria(datos);
       console.log(
@@ -547,10 +547,8 @@ export default function GestionDescuentos() {
         return;
       }
       notification.error({
-        message: "Error",
-        description:
-          res.data.error ||
-          "No se pudo crear el descuento para la categoría. Por favor, inténtalo de nuevo.",
+        message: res.message || res.error || "Error",
+        duration: 10,
       });
     } catch (error) {
       console.error("Error al crear descuento de categoria:", error);

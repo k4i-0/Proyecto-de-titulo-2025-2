@@ -23,6 +23,16 @@ router.get(
   ventasController.consultaCierreCajaPendiente,
 );
 
+router.get(
+  "/consultar/venta/pendiente",
+  ventasController.consultarVentaPendiente,
+);
+
+router.get(
+  "/consultar/venta/pendiente/caja/:idVentaPendiente",
+  ventasController.consultarVentasPendientesCaja,
+);
+
 router.post("/apertura/caja/:deviceID", ventasController.aperturaCaja);
 router.post("/registro/caja", ventasController.registroCajaSucursal);
 router.post("/cierre/caja/:deviceID", ventasController.cierreCaja);
@@ -43,5 +53,5 @@ router.post(
   "/guardar/arqueo/caja/:deviceID",
   ventasController.guardarArqueoCaja,
 );
-
+router.post("/crear/venta/pendiente", ventasController.ventaPendientePago);
 module.exports = router;

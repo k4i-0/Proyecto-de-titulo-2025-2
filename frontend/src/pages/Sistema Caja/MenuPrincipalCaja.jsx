@@ -25,7 +25,7 @@ import {
 } from "antd";
 import React, { useEffect, useMemo, useState, useRef } from "react";
 
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 import {
   BarcodeOutlined,
@@ -52,6 +52,7 @@ import {
   ExclamationCircleOutlined,
   FileSearchOutlined,
   SettingOutlined,
+  NumberOutlined,
 } from "@ant-design/icons";
 
 import {
@@ -70,15 +71,16 @@ import {
   consultaCierreCajaPendiente,
   cierreCajaPendienteAdmin,
   guardarArqueoCaja,
-} from "../../services/ventas/ventas.service";
+  consultarVentasPendientesCaja,
+} from "../../services/ventas/ventas.service.js";
 
 import {
   bloquearFuncionamientoCaja,
   desbloquearFuncionamientoCaja,
 } from "../../services/ventas/caja.service.js";
 
-import { buscarTodasSucursales } from "../../services/functions/Sucursales";
-import { buscarTodosProductos } from "../../services/functions/Productos";
+import { buscarTodasSucursales } from "../../services/functions/Sucursales.js";
+import { buscarTodosProductos } from "../../services/functions/Productos.js";
 
 const estiloBoton = {
   height: "80px",
@@ -114,7 +116,7 @@ const datosResumen = {
   efectivoEsperado: 0,
 };
 
-export default function MenuPrincipal() {
+export default function MenuPrincipalCaja() {
   const { user, logout } = useAuth();
   const [productos, setProductos] = useState([]);
   const [busquedaProductos, setBusquedaProductos] = useState([]);
@@ -156,6 +158,7 @@ export default function MenuPrincipal() {
   const [formMetodoPago] = Form.useForm();
   const [formArqueoCaja] = Form.useForm();
   const [formCierreCajaAdmin] = Form.useForm();
+  const [formRecuperarVentaCaja] = Form.useForm();
 
   const inputRef = useRef(null);
 
@@ -659,6 +662,7 @@ export default function MenuPrincipal() {
     detallePagos,
   }) => {
     const deviceID = localStorage.getItem("deviceID");
+    const codigo = formRecuperarVentaCaja.getFieldValue("idVentaPendiente");
     const datosVenta = {
       idVentaCliente,
       idPOS: informacionCaja.idPOS,
@@ -668,6 +672,7 @@ export default function MenuPrincipal() {
       productosVendidos: productos,
       totalVenta: total,
       metodoPago,
+      idVentaVendedor: codigo ? Number(codigo) : null,
     };
 
     const response = await registroVenta(deviceID, datosVenta);
@@ -676,7 +681,7 @@ export default function MenuPrincipal() {
     }
   };
 
-  const procesarPagoTarjeta = async (monto, metodoTarjeta) => {
+  const procesarPagoTarjeta = async (monto, metodoTarjeta, idVenta) => {
     let idOrdendePago = null;
     const deviceID = localStorage.getItem("deviceID");
     setEsperandoPago(true);
@@ -687,6 +692,7 @@ export default function MenuPrincipal() {
         totalVenta: total, // El total del carrito
         montoTarjeta: monto, // Solo lo que se cobrará en la tarjeta
         metodoPago: metodoTarjeta,
+        idVentaCliente: idVenta,
       };
 
       const response = await solicitarPagoTarjeta(deviceID, datosPagoMP);
@@ -1160,6 +1166,7 @@ export default function MenuPrincipal() {
   //const diferenciaEfectivo = totalDenominaciones - resumen.totalEfectivo;
 
   //ciere de caja especial solo administradores
+
   const abrirModalCierreCajaAdmin = async () => {
     try {
       const deviceID = localStorage.getItem("deviceID");
@@ -1301,6 +1308,59 @@ export default function MenuPrincipal() {
           }),
         }
       : undefined;
+
+  //funciones recuparar venta para caja
+  const buscarVentaParaCaja = async () => {
+    const codigo = formRecuperarVentaCaja.getFieldValue("idVentaPendiente");
+
+    if (!codigo) {
+      notification.warning({
+        message: "Ingrese un código de venta",
+        description:
+          "Por favor, ingrese el código de la venta pendiente que desea recuperar.",
+      });
+      return;
+    }
+    try {
+      const respuesta = await consultarVentasPendientesCaja(codigo);
+
+      console.log(
+        "Respuesta al buscar venta pendiente para caja:",
+        respuesta.data,
+      );
+      if (respuesta.status === 200) {
+        const productosVenta = respuesta.data.map((prod) => ({
+          key: prod.idDetalleVenta,
+          idProducto: prod.idProducto,
+          codigo: prod.codigo,
+          nombre: prod.nombre,
+          precio: prod.precio,
+          cantidad: prod.cantidad,
+          descuento: prod.descuento,
+          descuentosAplicados: prod.descuentosAplicados,
+          subtotal: prod.precio * prod.cantidad - prod.descuento,
+        }));
+        setProductos(productosVenta);
+
+        notification.success({
+          message: "Venta cargada",
+          description: `Se cargó la venta para continuar con el proceso de pago`,
+        });
+        return;
+      } else {
+        notification.error({
+          message: "Error al cargar la venta",
+          description: respuesta.data.message || "Intente nuevamente",
+        });
+      }
+    } catch (error) {
+      console.error("Error al buscar venta para caja:", error);
+      notification.error({
+        message: "Error al buscar venta",
+        description: error.response?.data?.message || "Intente nuevamente",
+      });
+    }
+  };
 
   return (
     <div
@@ -1570,9 +1630,6 @@ export default function MenuPrincipal() {
                       )}
                     </div>
                   </Col>
-                </Row>
-
-                <Row gutter={[16, 0]} align="middle" justify="space-around">
                   <Col>
                     <div style={{ fontSize: 11, color: "#64748b" }}>
                       Sucursal
@@ -1581,26 +1638,70 @@ export default function MenuPrincipal() {
                       {informacionCaja.nombreSucursal || "-"}
                     </div>
                   </Col>
-                  <Col>
-                    <div style={{ fontSize: 11, color: "#64748b" }}>Caja</div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>
-                      {informacionCaja.numeroCaja || "Caja 01"}
-                    </div>
-                  </Col>
-                  <Col>
-                    <div style={{ fontSize: 11, color: "#64748b" }}>Cajero</div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>
-                      {informacionCaja.nombreCajero || "Cajero"}
-                    </div>
+                </Row>
+              </Card>
+              {/**Tarjeta de Recuparar Venta */}
+              <Card
+                size="small"
+                style={{ background: "#f8fafc", borderRadius: 12 }}
+              >
+                <Row gutter={[16, 16]} align="middle" justify="space-between">
+                  <Col xs={24} md={10}>
+                    <Typography.Title
+                      level={5}
+                      style={{ margin: 0, color: "#1890ff" }}
+                    >
+                      Recuperar Venta
+                    </Typography.Title>
+                    <Typography.Text
+                      type="secondary"
+                      style={{ fontSize: "12px" }}
+                    >
+                      Ingresa N° de solicitud pendiente
+                    </Typography.Text>
                   </Col>
 
-                  <Col>
-                    <div style={{ fontSize: 11, color: "#64748b" }}>Fecha</div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{fecha}</div>
-                  </Col>
-                  <Col>
-                    <div style={{ fontSize: 11, color: "#64748b" }}>Hora</div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{hora}</div>
+                  <Col
+                    xs={24}
+                    md={14}
+                    style={{ display: "flex", justifyContent: "flex-end" }}
+                  >
+                    <Form
+                      layout="inline"
+                      form={formRecuperarVentaCaja}
+                      onFinish={() => {
+                        buscarVentaParaCaja();
+                      }}
+                      style={{
+                        flexWrap: "nowrap",
+                        width: "100%",
+                        justifyContent: "flex-end",
+                      }}
+                    >
+                      <Form.Item
+                        name="idVenta"
+                        style={{ marginEnd: 8, flex: 1, maxWidth: 160 }}
+                        name="idVentaPendiente"
+                        rules={[{ required: true, message: "Ingresa ID" }]}
+                      >
+                        <Input
+                          placeholder="N° de venta"
+                          prefix={
+                            <NumberOutlined style={{ color: "#bfbfbf" }} />
+                          }
+                        />
+                      </Form.Item>
+
+                      <Form.Item style={{ marginEnd: 0 }}>
+                        <Button
+                          type="default"
+                          icon={<SearchOutlined />}
+                          htmlType="submit"
+                        >
+                          Buscar
+                        </Button>
+                      </Form.Item>
+                    </Form>
                   </Col>
                 </Row>
               </Card>
@@ -1621,9 +1722,7 @@ export default function MenuPrincipal() {
                     size="middle"
                     pagination={false}
                     dataSource={filasParaTabla}
-                    rowKey={(record) =>
-                      `${record.idProducto}-${record.codigo}-${record.cantidad}`
-                    }
+                    rowKey="key"
                     locale={{ emptyText: "Sin productos agregados" }}
                     rowSelection={seleccionMultipleConfig}
                     onRow={(record) => {
@@ -1830,8 +1929,68 @@ export default function MenuPrincipal() {
               </Card>
             </Col>
 
-            <Col span={8} style={{ display: "flex", minHeight: 0 }}>
-              {/**Tarjeta lateral derecha con acciones y informacion productos */}
+            <Col
+              span={8}
+              style={{
+                display: "flex",
+                minHeight: 0,
+                flexDirection: "column",
+                gap: 16,
+              }}
+            >
+              {/**Tarjeta Hora*/}
+              <Card
+                style={{
+                  borderRadius: 14,
+                  width: "100%",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                }}
+                bodyStyle={{ padding: "16px 24px" }} // Un padding ligeramente más ajustado
+              >
+                <Row justify="space-between" align="middle">
+                  <Col>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: "#64748b",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Fecha
+                    </div>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 14,
+                        color: "#1e293b",
+                      }}
+                    >
+                      {fecha}
+                    </div>
+                  </Col>
+                  <Col style={{ textAlign: "right" }}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: "#64748b",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Hora
+                    </div>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 14,
+                        color: "#1e293b",
+                      }}
+                    >
+                      {hora}
+                    </div>
+                  </Col>
+                </Row>
+              </Card>
+              {/**Tarjeta para ingresar el código del producto */}
               <Card
                 title={
                   <Space>
@@ -1839,7 +1998,11 @@ export default function MenuPrincipal() {
                     Ingreso de código
                   </Space>
                 }
-                style={{ borderRadius: 14, width: "100%" }}
+                style={{
+                  borderRadius: 14,
+                  width: "100%",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                }}
               >
                 {/**Input para ingresar el código del producto (Agregar Form) */}
                 <Form
@@ -1918,6 +2081,64 @@ export default function MenuPrincipal() {
           </Row>
         </Card>
       </div>
+
+      <Modal>
+        <Row
+          gutter={[16, 16]}
+          align="middle"
+          justify="space-between"
+          style={{ marginBottom: 8 }}
+        >
+          <Col xs={24} md={10}>
+            <Typography.Title level={5} style={{ margin: 0, color: "#1890ff" }}>
+              Recuperar Venta
+            </Typography.Title>
+            <Typography.Text type="secondary" style={{ fontSize: "12px" }}>
+              Ingresa N° de solicitud pendiente
+            </Typography.Text>
+          </Col>
+
+          <Col
+            xs={24}
+            md={14}
+            style={{ display: "flex", justifyContent: "flex-end" }}
+          >
+            <Form
+              layout="inline"
+              onFinish={(values) => {
+                console.log("Buscar venta:", values.idVenta);
+                notification.info({ message: "Función en desarrollo" });
+              }}
+              style={{
+                flexWrap: "nowrap",
+                width: "100%",
+                justifyContent: "flex-end",
+              }}
+            >
+              <Form.Item
+                name="idVenta"
+                style={{ marginEnd: 8, flex: 1, maxWidth: 160 }}
+                rules={[{ required: true, message: "Ingresa ID" }]}
+              >
+                <Input
+                  placeholder="N° de venta"
+                  prefix={<NumberOutlined style={{ color: "#bfbfbf" }} />}
+                />
+              </Form.Item>
+
+              <Form.Item style={{ marginEnd: 0 }}>
+                <Button
+                  type="default"
+                  icon={<SearchOutlined />}
+                  htmlType="submit"
+                >
+                  Buscar
+                </Button>
+              </Form.Item>
+            </Form>
+          </Col>
+        </Row>
+      </Modal>
       {/** Modal para seleccionar método de pago */}
       <Modal
         title="Seleccionar Método de Pago"

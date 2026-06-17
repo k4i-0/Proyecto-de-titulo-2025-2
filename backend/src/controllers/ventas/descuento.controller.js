@@ -19,11 +19,77 @@ exports.registrarDescuentoSobreProducto = async (req, res) => {
       return res.status(400).json({ error: "Faltan Datos" });
     }
 
+    if (montoDescuento < 0 || porcentajeDescuento < 0) {
+      await t.rollback();
+      return res.status(400).json({
+        error: "El monto o porcentaje de descuento no puede ser negativo",
+      });
+    }
     const producto = await Producto.findByPk(idProducto, { transaction: t });
     if (!producto) {
       await t.rollback();
       return res.status(404).json({ error: "Producto no encontrado" });
     }
+    if (producto.precioVenta - montoDescuento < 0) {
+      await t.rollback();
+      return res.status(400).json({
+        error:
+          "El monto de descuento no puede ser mayor al precio del producto",
+      });
+    }
+
+    //encontrar todos los descuento sobre el producto y su categoría para verificar que no exista otro descuento activo
+
+    const descuentosExistentes = await DescuentoSobre.findAll({
+      where: {
+        [Op.or]: [
+          { idProducto: idProducto },
+          { idCategoria: producto.idCategoria },
+        ],
+      },
+      include: [
+        {
+          model: Descuento,
+          where: { estadoDescuento: "Activo" },
+          required: true,
+        },
+      ],
+      transaction: t,
+    });
+
+    const sumaDescuentos = descuentosExistentes.reduce((total, ds) => {
+      const info = ds.Descuento;
+      let valorEnDinero = 0;
+
+      if (info.porcentajeDescuento && Number(info.porcentajeDescuento) > 0) {
+        valorEnDinero = Math.round(
+          (producto.precioVenta * Number(info.porcentajeDescuento)) / 100,
+        );
+      } else {
+        valorEnDinero = Number(info.montoDescuento);
+      }
+
+      return total + valorEnDinero;
+    }, 0);
+
+    let nuevoDescuentoEnDinero = 0;
+
+    if (nuevoPorcentaje && Number(nuevoPorcentaje) > 0) {
+      nuevoDescuentoEnDinero = Math.round(
+        (producto.precioVenta * Number(nuevoPorcentaje)) / 100,
+      );
+    } else {
+      nuevoDescuentoEnDinero = Number(nuevoMonto);
+    }
+
+    if (sumaDescuentos + nuevoDescuentoEnDinero > producto.precioVenta) {
+      await t.rollback();
+      return res.status(400).json({
+        error:
+          "La suma de los descuentos no puede ser mayor al precio del producto",
+      });
+    }
+
     const nuevoDescuento = await Descuento.create(
       {
         montoDescuento: montoDescuento,
@@ -286,6 +352,92 @@ exports.agregarDescuentoCategoria = async (req, res) => {
       await t.rollback();
       return res.status(400).json({ message: "Categoría no activa" });
     }
+
+    const productos = await Producto.findAll({
+      where: { idCategoria: idCategoria },
+      include: [
+        {
+          model: DescuentoSobre,
+          required: false,
+          include: [
+            {
+              model: Descuento,
+              where: { estadoDescuento: "Activo" },
+              required: false,
+            },
+          ],
+        },
+      ],
+      transaction: t,
+    });
+
+    const descuentosCategoriaExistentes = await DescuentoSobre.findAll({
+      where: { idCategoria: idCategoria },
+      include: [
+        {
+          model: Descuento,
+          where: { estadoDescuento: "Activo" },
+          required: true,
+        },
+      ],
+      transaction: t,
+    });
+
+    for (const prod of productos) {
+      const precioVenta = Number(prod.precioVenta);
+      let totalDescuentosAcumulados = 0;
+
+      // A) Sumar los descuentos que la categoría ya tiene actualmente
+      for (const dsCat of descuentosCategoriaExistentes) {
+        const d = dsCat.Descuento || dsCat.descuento;
+        if (d) {
+          if (d.porcentajeDescuento && Number(d.porcentajeDescuento) > 0) {
+            totalDescuentosAcumulados += Math.round(
+              (precioVenta * Number(d.porcentajeDescuento)) / 100,
+            );
+          } else {
+            totalDescuentosAcumulados += Number(d.montoDescuento || 0);
+          }
+        }
+      }
+      const listaDescuentosProd =
+        prod.DescuentoSobres || prod.descuentoSobres || [];
+
+      if (listaDescuentosProd.length > 0) {
+        for (const dsProd of listaDescuentosProd) {
+          const d = dsProd.Descuento || dsProd.descuento;
+
+          if (d) {
+            // 🚀 Protegemos nuevamente contra el undefined
+            if (d.porcentajeDescuento && Number(d.porcentajeDescuento) > 0) {
+              totalDescuentosAcumulados += Math.round(
+                (precioVenta * Number(d.porcentajeDescuento)) / 100,
+              );
+            } else {
+              totalDescuentosAcumulados += Number(d.montoDescuento || 0);
+            }
+          }
+        }
+      }
+
+      // C) Calcular cuánto dinero representa el NUEVO descuento que estamos intentando crear
+      let valorNuevoDescuento = 0;
+      if (porcentajeDescuento && Number(porcentajeDescuento) > 0) {
+        valorNuevoDescuento = Math.round(
+          (precioVenta * Number(porcentajeDescuento)) / 100,
+        );
+      } else {
+        valorNuevoDescuento = Number(montoDescuento || 0);
+      }
+
+      if (totalDescuentosAcumulados + valorNuevoDescuento > precioVenta) {
+        await t.rollback();
+        return res.status(400).json({
+          message: `Error: El producto '${prod.nombre}' (Precio: $${precioVenta}) quedaría con saldo negativo si aplicas este descuento. (Descuentos actuales: $${totalDescuentosAcumulados}).`,
+        });
+      }
+    }
+
     const nuevoDescuento = await Descuento.create(
       {
         montoDescuento: montoDescuento,

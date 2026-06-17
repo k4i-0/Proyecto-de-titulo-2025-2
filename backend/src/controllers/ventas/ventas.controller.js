@@ -13,6 +13,9 @@ const DescuentoSobre = require("../../models/ventas/DescuentoSobre");
 const Descuento = require("../../models/ventas/Descuento");
 const Categoria = require("../../models/inventario/Categoria");
 const DetallePago = require("../../models/ventas/detallePago");
+const ContratoFuncionario = require("../../models/Usuarios/ContratoFuncionario");
+const VentaVendedor = require("../../models/ventas/ventaVendedor");
+const DetalleVentaVendedor = require("../../models/ventas/detalleVentaVendedor");
 const jwt = require("jsonwebtoken");
 const { randomUUID } = require("crypto");
 const { sequelize } = require("../../models/index");
@@ -842,6 +845,7 @@ exports.solicitarPagoTarjeta = async (req, res) => {
       totalVenta, // 15000
       montoTarjeta, // 15000 (en caso de pago mixto)
       metodoPago, // "Efectivo", "Debito", "Credito", "Mixto"
+      idVentaCliente,
     } = req.body;
     console.log("Params", req.params);
     console.log("Datos body", req.body);
@@ -954,6 +958,7 @@ exports.solicitarPagoTarjeta = async (req, res) => {
       condicion_iva: "payment_exempt_iva",
     });
     //crear venta en BD con estado Pendiente para finalizarla en registroventaMP
+
     const venta = await Venta.create(
       {
         fechaVenta: new Date(),
@@ -1043,6 +1048,7 @@ exports.solicitarPagoTarjeta = async (req, res) => {
       // obtener datos de la orden
       const ordenData = consulta.data || consulta;
       ordenVentaSolicitada = ordenData;
+
       await detallePago.update(
         { idOrdenMP: ordenVentaSolicitada.id },
         { transaction: t },
@@ -1073,7 +1079,9 @@ exports.solicitarPagoTarjeta = async (req, res) => {
     return res.status(200).json({
       message: "Venta registrada exitosamente",
       idOrdenMP: ordenVentaSolicitada.id,
-      idVentaCliente: venta.idVentaCliente,
+      idVentaCliente: ventaRealizadaPorVendedor
+        ? ventaRealizadaPorVendedor.idVentaCliente
+        : venta.idVentaCliente,
     });
   } catch (error) {
     //console.error("Error al registrar venta:", error);
@@ -1333,8 +1341,9 @@ exports.registroVenta = async (req, res) => {
       totalVenta,
       metodoPago,
       detallePagos,
+      idVentaVendedor,
     } = req.body;
-
+    console.log("Datos recibidos para registro de venta:", req.body);
     if (!deviceID || !idSucursal || !productosVendidos || !totalVenta) {
       await t.rollback();
       return res.status(400).json({ message: "Faltan datos obligatorios" });
@@ -1520,6 +1529,25 @@ exports.registroVenta = async (req, res) => {
       },
       { transaction: t },
     );
+
+    //si es venta vendedor actualizar su venta cascaron a completada
+    if (idVentaVendedor) {
+      console.log("Actualizando venta vendedor con ID:", idVentaVendedor);
+      const ventaVendedor = await VentaVendedor.findByPk(idVentaVendedor, {
+        transaction: t,
+      });
+      if (ventaVendedor) {
+        await ventaVendedor.update(
+          { estadoVentaVendedor: "Completada" },
+          { transaction: t },
+        );
+      } else {
+        await t.rollback();
+        return res
+          .status(404)
+          .json({ message: "Venta del vendedor no encontrada" });
+      }
+    }
 
     // 4. Finalizar
     await venta.update({ estadoVenta: "Completada" }, { transaction: t });
@@ -2331,5 +2359,296 @@ exports.cierreCajaPendienteAdmin = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Error al realizar cierre pendiente por admin" });
+  }
+};
+
+exports.ventaPendientePago = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { token } = req.cookies;
+
+    const { productosVendidos, totalVenta, totalDescuentos } = req.body;
+    console.log("Datos recibidos para venta pendiente de pago:", req.body);
+    if (
+      !productosVendidos ||
+      !totalVenta ||
+      productosVendidos.length === 0 ||
+      totalDescuentos === undefined
+    ) {
+      return res.status(400).json({ message: "Falta los datos" });
+    }
+
+    let decodedPayload;
+    try {
+      decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({ message: "No autorizado" });
+    }
+
+    const funcionarioSolicitante = await Funcionario.findOne({
+      where: { rut: decodedPayload.rut },
+      transaction: t,
+    });
+    if (!funcionarioSolicitante) {
+      await t.rollback();
+      return res
+        .status(401)
+        .json({ message: "Credenciales de funcionario inválidas" });
+    }
+
+    // //Datos venta
+    // const ventaPendiente = await Venta.create(
+    //   {
+    //     fechaVenta: new Date(),
+    //     metodoPago: "Pendiente",
+    //     totalVenta: totalVenta,
+    //     estadoVenta: "Pendiente",
+    //   },
+    //   { transaction: t },
+    // );
+
+    // if (!ventaPendiente) {
+    //   await t.rollback();
+    //   return res
+    //     .status(500)
+    //     .json({ message: "Error al crear venta pendiente" });
+    // }
+    // //registro de quien vendio
+    // await RealizaVenta.create(
+    //   {
+    //     fechaRealizaVenta: new Date(),
+    //     idFuncionario: funcionarioSolicitante.idFuncionario,
+    //     idVentaCliente: ventaPendiente.idVentaCliente,
+    //   },
+    //   { transaction: t },
+    // );
+
+    //ventaVendedor
+
+    const nuevaVentaVendedor = await VentaVendedor.create(
+      {
+        estadoVentaVendedor: "Pendiente",
+        idFuncionario: funcionarioSolicitante.idFuncionario,
+        fechaHoraEmision: new Date(),
+        total: totalVenta,
+        totalDescuentos: totalDescuentos,
+      },
+      { transaction: t },
+    );
+
+    //detalle de productos vendidos
+    for (const producto of productosVendidos) {
+      await DetalleVentaVendedor.create(
+        {
+          descripcion: `Venta de ${producto.nombre} (Pendiente)`,
+          cantidad: producto.cantidad,
+          precio: producto.precio,
+          tipoDeEntrega: "Entrega Inmediata",
+          fechaHoraEmision: new Date(),
+          subtotal: producto.precio * producto.cantidad,
+          iva: producto.subtotal - Math.round(producto.subtotal / 1.19),
+          estadoVentaVendedor: "Pendiente",
+          idProducto: producto.idProducto,
+          idVentaVendedor: nuevaVentaVendedor.idVentaVendedor,
+        },
+        { transaction: t },
+      );
+      if (
+        producto.descuentosAplicados &&
+        producto.descuentosAplicados.length > 0
+      ) {
+        for (const descuento of producto.descuentosAplicados) {
+          await DetalleVentaVendedor.create(
+            {
+              descripcion: `Descuento: ${descuento.origen} (${descuento.detalle})`,
+              cantidad: 1,
+              precio: 0,
+              montoDescuento: descuento.montoDescontado,
+              tipoDeEntrega: "Descuento en producto vendido pendiente",
+              fechaHoraEmision: new Date(),
+              subtotal: -descuento.montoDescontado,
+              iva: 0,
+              estadoVentaVendedor: "Pendiente",
+              idProducto: producto.idProducto,
+              idVentaVendedor: nuevaVentaVendedor.idVentaVendedor,
+            },
+            { transaction: t },
+          );
+        }
+      }
+    }
+
+    await t.commit();
+    return res.status(200).json({
+      message: "Venta pendiente de pago creada exitosamente",
+      idVenta: nuevaVentaVendedor.idVentaVendedor,
+    });
+  } catch (error) {
+    if (!t.finished) {
+      await t.rollback();
+    }
+    console.error("Error al consultar venta pendiente de pago:", error);
+    return res
+      .status(500)
+      .json({ message: "Error al consultar venta pendiente de pago" });
+  }
+};
+
+exports.consultarVentaPendiente = async (req, res) => {
+  try {
+    const { token } = req.cookies;
+    if (!token) {
+      return res.status(401).json({ message: "Token no proporcionado" });
+    }
+    const decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
+
+    const funcionarioSolicitante = await Funcionario.findOne({
+      where: { rut: decodedPayload.rut },
+    });
+    if (!funcionarioSolicitante) {
+      return res
+        .status(401)
+        .json({ message: "Credenciales de funcionario inválidas" });
+    }
+
+    const ventasPendientes = await VentaVendedor.findAll({
+      //where: { estadoVentaVendedor: "Pendiente" },
+      include: [
+        {
+          model: DetalleVentaVendedor,
+          include: [{ model: Producto }],
+        },
+      ],
+    });
+
+    if (ventasPendientes.length === 0) {
+      return res
+        .status(204)
+        .json({ message: "No hay ventas pendientes de pago" });
+    }
+
+    return res.status(200).json(ventasPendientes);
+  } catch (error) {
+    console.error("Error al obtener ventas pendientes:", error);
+    return res
+      .status(500)
+      .json({ message: "Error al obtener ventas pendientes" });
+  }
+};
+
+exports.consultarVentasPendientesCaja = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { idVentaPendiente } = req.params;
+    const { token } = req.cookies;
+    if (!token) {
+      return res.status(401).json({ message: "Token no proporcionado" });
+    }
+    if (!idVentaPendiente) {
+      return res.status(400).json({ message: "Falta el ID de la venta" });
+    }
+
+    let decodedPayload;
+    try {
+      decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({ message: "No autorizado" });
+    }
+
+    const sucursalFuncionario = await ContratoFuncionario.findOne({
+      include: [
+        {
+          model: Sucursal,
+        },
+        {
+          model: Funcionario,
+          where: { rut: decodedPayload.rut },
+          attributes: ["nombre", "rut"],
+        },
+      ],
+    });
+
+    if (!sucursalFuncionario) {
+      await t.rollback();
+      return res
+        .status(401)
+        .json({ message: "Credenciales de funcionario inválidas" });
+    }
+    const ventaDetallePendiente = await DetalleVentaVendedor.findAll({
+      where: { idVentaVendedor: idVentaPendiente },
+      include: [
+        {
+          model: VentaVendedor,
+          where: { estadoVentaVendedor: "Pendiente" },
+        },
+        {
+          model: Producto,
+          attributes: ["idProducto", "codigo", "nombre", "precioVenta"],
+        },
+      ],
+      transaction: t,
+    });
+
+    if (ventaDetallePendiente.length === 0) {
+      await t.commit();
+      return res.status(404).json({
+        message: "Venta Finalizada, no encontrada, verifique con vendedor",
+      });
+    }
+
+    const detallesPlanos = ventaDetallePendiente.map((d) =>
+      d.get({ plain: true }),
+    );
+
+    const filasProductos = detallesPlanos.filter(
+      (d) => !d.descripcion.includes("Descuento:"),
+    );
+    const filasDescuentos = detallesPlanos.filter((d) =>
+      d.descripcion.includes("Descuento:"),
+    );
+
+    const detalleVenta = filasProductos.map((filaProd) => {
+      const descuentosDelProducto = filasDescuentos.filter(
+        (desc) => desc.idProducto === filaProd.idProducto,
+      );
+
+      const totalDescuento = descuentosDelProducto.reduce(
+        (suma, desc) =>
+          suma + Number(desc.montoDescuento || Math.abs(desc.subtotal)),
+        0,
+      );
+
+      const descuentosAplicados = descuentosDelProducto.map((desc) => ({
+        idDescuento: desc.idDetalleVentaVendedor,
+        origen: desc.descripcion.replace("Descuento: ", ""),
+        detalle: "",
+        montoDescontado: Number(desc.montoDescuento || Math.abs(desc.subtotal)),
+      }));
+
+      return {
+        key: `prod-${filaProd.idProducto}`,
+
+        idDetalleVenta: filaProd.idDetalleVentaVendedor,
+        idProducto: filaProd.producto.idProducto,
+        codigo: filaProd.producto.codigo,
+        nombre: filaProd.producto.nombre,
+        precio: Number(filaProd.precio),
+        cantidad: Number(filaProd.cantidad),
+        descuento: totalDescuento,
+        descuentosAplicados: descuentosAplicados,
+        subtotal: Number(filaProd.precio) * Number(filaProd.cantidad),
+      };
+    });
+
+    await t.commit();
+    return res.status(200).json(detalleVenta);
+  } catch (error) {
+    console.error("Error al obtener ventas pendientes de caja:", error);
+    if (t && !t.finished) {
+      await t.rollback();
+    }
+    return res
+      .status(500)
+      .json({ message: "Error al obtener ventas pendientes de caja" });
   }
 };

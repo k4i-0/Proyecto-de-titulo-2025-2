@@ -249,6 +249,7 @@ export default function DataTable({
           rowKey={rowKey}
           loading={loading}
           bordered
+          scroll={{ x: "max-content" }}
           size="middle"
           pagination={
             pagination

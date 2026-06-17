@@ -1,10 +1,10 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/bd");
 
-const detalleventa = sequelize.define(
-  "detalleventa",
+const detalleVentaVendedor = sequelize.define(
+  "detalleVentaVendedor",
   {
-    idDetalleVenta: {
+    idDetalleVentaVendedor: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
@@ -46,12 +46,12 @@ const detalleventa = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     },
-    // idDescuento: {
+    // idVentaVendedor: {
     //   type: DataTypes.INTEGER,
-    //   allowNull: true,
+    //   allowNull: false,
     //   references: {
-    //     model: "descuento",
-    //     key: "idDescuento",
+    //     model: "ventaVendedor",
+    //     key: "idVentaVendedor",
     //   },
     //   onDelete: "CASCADE",
     //   onUpdate: "CASCADE",
@@ -68,9 +68,9 @@ const detalleventa = sequelize.define(
     // },
   },
   {
-    tableName: "detalleventa",
+    tableName: "detalleVentaVendedor",
     timestamps: false,
   },
 );
 
-module.exports = detalleventa;
+module.exports = detalleVentaVendedor;

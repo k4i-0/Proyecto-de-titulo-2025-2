@@ -6,7 +6,7 @@ import { notification } from "antd";
 export async function buscarTodosProductos(setState) {
   try {
     const respuesta = await obtenerProductos();
-    console.log("Respuesta de productos:", respuesta.data);
+    //console.log("Respuesta de productos:", respuesta.data);
     if (respuesta.status === 200) {
       setState(Array.isArray(respuesta.data) ? respuesta.data : []);
       return;
