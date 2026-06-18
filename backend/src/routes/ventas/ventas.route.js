@@ -54,4 +54,9 @@ router.post(
   ventasController.guardarArqueoCaja,
 );
 router.post("/crear/venta/pendiente", ventasController.ventaPendientePago);
+
+router.post(
+  "/generar/retiro/caja/:deviceID",
+  ventasController.generarRetiroCaja,
+);
 module.exports = router;

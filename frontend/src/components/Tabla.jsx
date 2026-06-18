@@ -251,6 +251,7 @@ export default function DataTable({
           bordered
           scroll={{ x: "max-content" }}
           size="middle"
+          locale={{ emptyText: "No hay descuentos registrados" }}
           pagination={
             pagination
               ? {

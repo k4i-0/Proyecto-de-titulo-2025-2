@@ -370,3 +370,24 @@ export async function consultarVentasPendientesCaja(idVentaPendiente) {
     return error.response;
   }
 }
+
+export async function generarRetiroCaja(deviceID, datosRetiro) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/generar/retiro/caja/${deviceID}`,
+      {
+        monto: datosRetiro.monto,
+        motivo: datosRetiro.motivo,
+        denominaciones: datosRetiro.denominaciones,
+      },
+      {
+        withCredentials: true,
+      },
+    );
+    console.log("Respuesta de generación de retiro de caja:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al generar retiro de caja:", error);
+    return error.response;
+  }
+}

@@ -16,6 +16,7 @@ const DetallePago = require("../../models/ventas/detallePago");
 const ContratoFuncionario = require("../../models/Usuarios/ContratoFuncionario");
 const VentaVendedor = require("../../models/ventas/ventaVendedor");
 const DetalleVentaVendedor = require("../../models/ventas/detalleVentaVendedor");
+const Retiros = require("../../models/ventas/Retiros");
 const jwt = require("jsonwebtoken");
 const { randomUUID } = require("crypto");
 const { sequelize } = require("../../models/index");
@@ -1820,7 +1821,7 @@ exports.generarArqueoCaja = async (req, res) => {
         //totalGeneral: totalGeneral,
       },
     };
-
+    //console.log("Arqueo generado:", arqueo);
     return res.status(200).json(arqueo);
   } catch (error) {
     console.error("Error al generar arqueo de caja:", error);
@@ -2650,5 +2651,139 @@ exports.consultarVentasPendientesCaja = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Error al obtener ventas pendientes de caja" });
+  }
+};
+
+exports.generarRetiroCaja = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { token } = req.cookies;
+    const { deviceID } = req.params;
+    const { monto, motivo, denominaciones } = req.body;
+    // console.log("Datos recibidos para retiro de caja:", req.body);
+    if (!deviceID || !monto || !motivo || !denominaciones) {
+      return res.status(400).json({ message: "Faltan datos obligatorios" });
+    }
+    if (monto <= 0) {
+      return res
+        .status(400)
+        .json({ message: "El monto del retiro debe ser mayor a cero" });
+    }
+    if (!token) {
+      return res.status(401).json({ message: "No autorizado" });
+    }
+
+    let decodedPayload;
+    try {
+      decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({ message: "No autorizado" });
+    }
+
+    const funcionarioSolicitante = await Funcionario.findOne({
+      where: { rut: decodedPayload.rut },
+      transaction: t,
+    });
+
+    if (!funcionarioSolicitante) {
+      await t.rollback();
+      return res
+        .status(401)
+        .json({ message: "Credenciales de funcionario inválidas" });
+    }
+    if (funcionarioSolicitante.tipoSession !== "Caja") {
+      await t.rollback();
+
+      return res.status(403).json({
+        message:
+          "Funcionario sin sesion de caja no puede realizar retiros de caja",
+      });
+    }
+    if (funcionarioSolicitante.estado !== "Activo") {
+      await t.rollback();
+
+      return res.status(403).json({
+        message: "El funcionario no está activo para realizar retiros de caja",
+      });
+    }
+    if (funcionarioSolicitante.estaEliminado === true) {
+      await t.rollback();
+
+      return res.status(403).json({
+        message:
+          "El funcionario no está habilitado para realizar retiros de caja",
+      });
+    }
+
+    const caja = await Caja.findOne({
+      where: { computadorID: deviceID },
+      transaction: t,
+    });
+
+    if (!caja) {
+      await t.rollback();
+
+      return res.status(404).json({ message: "Caja no encontrada" });
+    }
+    if (caja.estadoCaja === "Cerrada" || caja.estadoCaja === "Bloqueada") {
+      await t.rollback();
+
+      return res.status(400).json({
+        message: "No se puede realizar retiro en una caja cerrada o bloqueada",
+      });
+    }
+
+    if (caja.montoCajaEfectivo < monto) {
+      await t.rollback();
+
+      return res.status(400).json({
+        message:
+          "No hay suficiente efectivo en la caja para realizar el retiro",
+      });
+    }
+
+    if (caja.montoCajaEfectivo - monto < 0) {
+      await t.rollback();
+
+      return res
+        .status(400)
+        .json({ message: "El retiro dejaría la caja con monto negativo" });
+    }
+
+    //generar RetiroCaja en la base de datos
+    const nuevoRetiroCaja = await Retiros.create({
+      fechaHoraRetiro: new Date(),
+      monto: monto,
+      motivo: motivo,
+      denominaciones: JSON.stringify(denominaciones),
+      idCaja: caja.idCaja,
+      idFuncionario: funcionarioSolicitante.idFuncionario,
+    });
+    if (!nuevoRetiroCaja) {
+      await t.rollback();
+
+      return res
+        .status(500)
+        .json({ message: "Error al generar retiro de caja" });
+    }
+
+    //actualizar montoCajaEfectivo de la caja
+    await caja.update(
+      { montoCajaEfectivo: caja.montoCajaEfectivo - monto },
+      { transaction: t },
+    );
+
+    await t.commit();
+    return res.status(200).json({
+      message: "Retiro de caja generado exitosamente",
+      data: nuevoRetiroCaja,
+    });
+  } catch (error) {
+    if (t && !t.finished) {
+      await t.rollback();
+    }
+
+    console.error("Error al generar retiro de caja:", error);
+    return res.status(500).json({ message: "Error al generar retiro de caja" });
   }
 };

@@ -31,9 +31,14 @@ const descuento = sequelize.define(
       allowNull: true,
     },
     estadoDescuento: {
-      type: DataTypes.ENUM("Activo", "Inactivo"),
+      type: DataTypes.ENUM("Activo", "Inactivo", "Expirado"),
       allowNull: false,
       defaultValue: "Activo",
+    },
+    esDescuentoUnico: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
   },
   {

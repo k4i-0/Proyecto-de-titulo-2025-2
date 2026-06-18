@@ -98,6 +98,7 @@ exports.registrarDescuentoSobreProducto = async (req, res) => {
         descripcion: " ",
         porcentajeDescuento: porcentajeDescuento,
         estadoDescuento: "Activo",
+        esDescuentoUnico: false,
       },
       { transaction: t },
     );
@@ -446,6 +447,7 @@ exports.agregarDescuentoCategoria = async (req, res) => {
         descripcion: " ",
         porcentajeDescuento: porcentajeDescuento,
         estadoDescuento: "Activo",
+        esDescuentoUnico: false,
       },
       { transaction: t },
     );
@@ -475,6 +477,55 @@ exports.agregarDescuentoCategoria = async (req, res) => {
       await t.rollback();
     }
     console.log("Error en funcion agregar descuento categoria", error);
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+exports.obtenerDescuentosUnicos = async (req, res) => {
+  try {
+    const descuentosUnicos = await Descuento.findAll({
+      where: { esDescuentoUnico: true },
+    });
+
+    if (!descuentosUnicos || descuentosUnicos.length === 0) {
+      return res.status(204).json([]);
+    }
+
+    return res.status(200).json(descuentosUnicos);
+  } catch (error) {
+    console.error("Error al obtener descuentos únicos:", error);
+    res.status(500).json({
+      code: 500,
+      error: "Error interno al obtener los descuentos únicos",
+    });
+  }
+};
+
+exports.crearDescuentoUnico = async (req, res) => {
+  try {
+    const { porcentajeDescuento, montoDescuento, descripcion } = req.body;
+
+    if (porcentajeDescuento === undefined || montoDescuento === undefined) {
+      return res.status(400).json({ message: "Faltan datos" });
+    }
+
+    const nuevoDescuentoUnico = await Descuento.create({
+      montoDescuento: montoDescuento,
+      fechaInicio: new Date(),
+      fechaFin: new Date(),
+      descripcion: descripcion || " ",
+      porcentajeDescuento: porcentajeDescuento,
+      estadoDescuento: "Expirado",
+      esDescuentoUnico: true,
+    });
+
+    if (!nuevoDescuentoUnico) {
+      return res.status(500).json({ message: "Error al crear el descuento" });
+    }
+
+    return res.status(200).json(nuevoDescuentoUnico);
+  } catch (error) {
+    console.error("Error al crear el descuento único:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
   }
 };

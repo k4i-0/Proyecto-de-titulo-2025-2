@@ -22,6 +22,13 @@ router.get(
   descuentoController.buscarDescuentoCategoria,
 );
 
+router.get(
+  "/ver/descuentos/unicos",
+  descuentoController.obtenerDescuentosUnicos,
+);
+
+router.post("/crear/descuento/unico", descuentoController.crearDescuentoUnico);
+
 router.post(
   "/cambiar/estado/descuento",
   descuentoController.cambiarEstadoDescuento,

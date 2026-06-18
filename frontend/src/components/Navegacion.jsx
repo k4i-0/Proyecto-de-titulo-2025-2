@@ -17,6 +17,9 @@ import {
   InboxOutlined,
   ReconciliationOutlined,
   OrderedListOutlined,
+  BarChartOutlined,
+  TagOutlined,
+  TruckOutlined,
 } from "@ant-design/icons";
 
 export default function Navegacion({
@@ -99,10 +102,38 @@ export default function Navegacion({
               onClick: () => handleNavigate("/admin"),
             },
             {
+              key: "Informes",
+              icon: <BarChartOutlined />,
+              label: "Informes",
+              disabled: true,
+              children: [
+                {
+                  key: "informe_ventas",
+                  label: "Informe de Ventas",
+                  onClick: () => handleNavigate("/admin/informes/ventas"),
+                },
+                {
+                  key: "informe_inventario",
+                  label: "Informe de Inventario",
+                  onClick: () => handleNavigate("/admin/informes/inventario"),
+                },
+                {
+                  key: "informe_caja",
+                  label: "Informe de Caja",
+                  onClick: () => handleNavigate("/admin/informes/caja"),
+                },
+              ],
+            },
+            {
               key: "Ventas",
-              icon: <AreaChartOutlined />,
+              icon: <TagOutlined />,
               label: "Ventas",
               children: [
+                {
+                  key: "Descuentos_Unicos",
+                  label: "Descuentos Únicos",
+                  onClick: () => handleNavigate("/admin/descuentos/unicos"),
+                },
                 {
                   key: "gestion_descuentos",
                   label: "Gestionar Descuentos",
@@ -116,13 +147,14 @@ export default function Navegacion({
                 {
                   key: "clientes",
                   label: "Clientes",
+                  disabled: true,
                   onClick: () => handleNavigate("/admin/clientes"),
                 },
               ],
             },
             {
               key: "Inventario",
-              icon: <AreaChartOutlined />,
+              icon: <TruckOutlined />,
               label: "Inventario",
 
               children: [

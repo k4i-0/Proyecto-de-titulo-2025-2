@@ -98,3 +98,33 @@ export async function crearDescuentoCategoria(datos) {
     return error.response.data;
   }
 }
+
+export async function obtenerDescuentosUnicos() {
+  try {
+    const response = await axios.get(`${API_URL}/ver/descuentos/unicos`, {
+      withCredentials: true,
+    });
+    //console.log("Descuentos únicos obtenidos:", response);
+    return response;
+  } catch (error) {
+    console.error("Error al obtener los descuentos únicos:", error);
+    return error.response.data;
+  }
+}
+
+export async function crearDescuentoUnico(datos) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/crear/descuento/unico`,
+      datos,
+      {
+        withCredentials: true,
+      },
+    );
+    console.log("Respuesta de creación de descuento único:", response);
+    return response;
+  } catch (error) {
+    console.error("Error al crear el descuento único:", error);
+    return error.response.data;
+  }
+}

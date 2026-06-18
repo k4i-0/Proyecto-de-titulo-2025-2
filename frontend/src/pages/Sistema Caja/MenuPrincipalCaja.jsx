@@ -53,6 +53,8 @@ import {
   FileSearchOutlined,
   SettingOutlined,
   NumberOutlined,
+  PercentageOutlined,
+  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 
 import {
@@ -72,6 +74,7 @@ import {
   cierreCajaPendienteAdmin,
   guardarArqueoCaja,
   consultarVentasPendientesCaja,
+  generarRetiroCaja,
 } from "../../services/ventas/ventas.service.js";
 
 import {
@@ -79,8 +82,12 @@ import {
   desbloquearFuncionamientoCaja,
 } from "../../services/ventas/caja.service.js";
 
+import { inicioSesionCajaAlternativo } from "../../services/Auth.services.js";
+
 import { buscarTodasSucursales } from "../../services/functions/Sucursales.js";
 import { buscarTodosProductos } from "../../services/functions/Productos.js";
+
+import { crearDescuentoUnico } from "../../services/ventas/descuento.service.js";
 
 const estiloBoton = {
   height: "80px",
@@ -128,6 +135,7 @@ export default function MenuPrincipalCaja() {
   const [modalRegistroCaja, setModalRegistroCaja] = useState(false);
   const [modalCierreCaja, setModalCierreCaja] = useState(false);
   const [modalCierreCajaAdmin, setModalCierreCajaAdmin] = useState(false);
+  const [modalRetiros, setModalRetiros] = useState(false);
   const [infoCierreCajaAdmin, setInfoCierreCajaAdmin] = useState(null);
   const [modalBusquedaProducto, setModalBusquedaProducto] = useState(false);
   const [totalPendientePagar, setTotalPendientePagar] = useState(0);
@@ -151,6 +159,12 @@ export default function MenuPrincipalCaja() {
   const [mensajeLoading, setMensajeLoading] = useState("Procesando pago...");
   const [clavesSeleccionadas, setClavesSeleccionadas] = useState([]);
 
+  const [modalDescuentoVisible, setModalDescuentoVisible] = useState(false);
+  const [modalAutorizacionVisible, setModalAutorizacionVisible] =
+    useState(false);
+
+  const [formDescuentoProducto] = Form.useForm();
+  const [formAutorizacion] = Form.useForm();
   const [formVentaProducto] = Form.useForm();
   const [formAperturaCaja] = Form.useForm();
   const [formRegistroCaja] = Form.useForm();
@@ -159,6 +173,7 @@ export default function MenuPrincipalCaja() {
   const [formArqueoCaja] = Form.useForm();
   const [formCierreCajaAdmin] = Form.useForm();
   const [formRecuperarVentaCaja] = Form.useForm();
+  const [formRetiros] = Form.useForm();
 
   const inputRef = useRef(null);
 
@@ -1090,7 +1105,7 @@ export default function MenuPrincipalCaja() {
   const obtenerDatosArqueoCaja = async () => {
     try {
       const res = await generarArqueoCaja(localStorage.getItem("deviceID"));
-      console.log("Resumen Caja State:", resumenCaja);
+      console.log("Resumen Caja State:", res.data);
       if (res.status === 200) {
         setResumenCaja(res.data);
 
@@ -1294,20 +1309,23 @@ export default function MenuPrincipalCaja() {
     }
   };
 
-  const seleccionMultipleConfig =
-    user.nombreRol === "Administrador"
-      ? {
-          selectedRowKeys: clavesSeleccionadas,
-          onChange: (nuevasClaves) => {
-            setClavesSeleccionadas(nuevasClaves);
-            console.log("Filas seleccionadas:", nuevasClaves);
-          },
-          // 💡 Opcional pero recomendado: Deshabilitar el checkbox en filas de descuento
-          getCheckboxProps: (record) => ({
-            disabled: record.esFilaDescuento,
-          }),
-        }
-      : undefined;
+  const seleccionUnicaConfig = {
+    type: "radio",
+    selectedRowKeys: clavesSeleccionadas,
+
+    onChange: (nuevasClaves) => {
+      const productoSeleccionado = filasParaTabla.find(
+        (p) => p.key === nuevasClaves[0],
+      );
+
+      setClavesSeleccionadas(nuevasClaves);
+      console.log("Fila seleccionada:", productoSeleccionado);
+    },
+
+    getCheckboxProps: (record) => ({
+      disabled: record.esFilaDescuento,
+    }),
+  };
 
   //funciones recuparar venta para caja
   const buscarVentaParaCaja = async () => {
@@ -1360,6 +1378,151 @@ export default function MenuPrincipalCaja() {
         description: error.response?.data?.message || "Intente nuevamente",
       });
     }
+  };
+
+  //funciones modal retiros
+  const abrirModalRetiros = () => {
+    setModalRetiros(true);
+  };
+
+  const cerrarModalRetiros = () => {
+    setModalRetiros(false);
+  };
+
+  const funcionRetiro = async (values) => {
+    try {
+      const deviceID = localStorage.getItem("deviceID");
+      const { motivoRetiro, ...denominacionesRetiro } = values;
+      const datosEnviar = {
+        monto: totalDenominaciones,
+        motivo: motivoRetiro,
+        denominaciones: denominacionesRetiro,
+      };
+      console.log("Datos a enviar para retiro/consignación:", datosEnviar);
+      const respuesta = await generarRetiroCaja(deviceID, datosEnviar);
+      console.log("Respuesta al realizar retiro/consignación:", respuesta);
+      if (respuesta.status === 200) {
+        notification.success({
+          message: respuesta.data.message || "Operación realizada",
+        });
+        cerrarModalRetiros();
+        formRetiros.resetFields();
+        setCantidades({});
+        obtenerDatosCaja(deviceID);
+        return;
+      }
+      notification.error({
+        message: respuesta.data.message || "Error al procesar la solicitud",
+        description: "Intente nuevamente",
+      });
+    } catch (error) {
+      console.error("Error al realizar retiro o consignación:", error);
+      notification.error({
+        message: "Error al procesar la solicitud",
+        description: error.response?.data?.message || "Intente nuevamente",
+      });
+    }
+  };
+
+  //modal descuento
+  const valorPorcentaje = Form.useWatch(
+    "porcentajeDescuento",
+    formDescuentoProducto,
+  );
+  const valorMonto = Form.useWatch("montoDescuento", formDescuentoProducto);
+
+  const selectedProduct = filasParaTabla.find(
+    (p) => p.key === clavesSeleccionadas[0],
+  );
+
+  const abrirModalDescuento = () => {
+    formDescuentoProducto.resetFields();
+    setModalDescuentoVisible(true);
+  };
+
+  const cerrarModalDescuento = () => {
+    setModalDescuentoVisible(false);
+    formDescuentoProducto.resetFields();
+  };
+
+  const confirmarDescuentoProducto = async (values) => {
+    console.log("Aplicando descuento con valores:", values);
+
+    // 1. Calculamos el dinero real a descontar en caso de que sea porcentaje
+    const subtotalBase = selectedProduct.precio * selectedProduct.cantidad;
+    let montoRealADescontar = 0;
+    let detalleVisual = "";
+
+    if (values.porcentajeDescuento > 0) {
+      montoRealADescontar = subtotalBase * (values.porcentajeDescuento / 100);
+      detalleVisual = `${values.porcentajeDescuento}%`;
+    } else {
+      montoRealADescontar = Number(values.montoDescuento) || 0;
+      detalleVisual = `Monto fijo`;
+    }
+
+    const datosEnviar = {
+      porcentajeDescuento: values.porcentajeDescuento || 0,
+      montoDescuento: montoRealADescontar, // El valor ya en pesos
+      descripcion: `Descuento Autorizado: ${detalleVisual}`,
+    };
+
+    try {
+      const respuesta = await crearDescuentoUnico(datosEnviar);
+
+      if (respuesta.status === 200) {
+        setProductos((listaActual) =>
+          listaActual.map((prod) => {
+            // 🚀 CRÍTICO: Como tu estado original no tiene 'key', lo buscamos por 'idProducto'
+            if (prod.idProducto === selectedProduct.idProducto) {
+              const descuentoHistorico = prod.descuento || 0;
+              const nuevoDescuentoTotal =
+                descuentoHistorico + montoRealADescontar;
+
+              return {
+                ...prod,
+                descuento: nuevoDescuentoTotal,
+                descuentosAplicados: [
+                  ...(prod.descuentosAplicados || []),
+                  {
+                    idDescuento: respuesta.data?.idDescuento || Math.random(),
+                    // 🚀 Pasamos origen y detalle para que coincida con tu mapeo de filasParaTabla
+                    origen: "Administrador",
+                    detalle: detalleVisual,
+                    montoDescontado: montoRealADescontar,
+                  },
+                ],
+                subtotal: prod.precio * prod.cantidad - nuevoDescuentoTotal,
+              };
+            }
+            return prod;
+          }),
+        );
+
+        notification.success({
+          message: "Descuento aplicado",
+          description: `Se descontaron $${montoRealADescontar.toLocaleString("es-CL")} a ${selectedProduct.nombre}`,
+        });
+
+        cerrarModalDescuento();
+        setClavesSeleccionadas([]); // Limpiamos la selección para evitar clics accidentales
+      } else {
+        notification.error({
+          message: "Error",
+          description: respuesta.data?.message || "Intente nuevamente",
+        });
+      }
+    } catch (error) {
+      console.error("Error al aplicar descuento:", error);
+      notification.error({
+        message: "Error",
+        description: "Intente nuevamente",
+      });
+    }
+  };
+  const solicitarAutorizacion = () => {
+    formAutorizacion.resetFields();
+    setModalAutorizacionVisible(true);
   };
 
   return (
@@ -1490,8 +1653,7 @@ export default function MenuPrincipalCaja() {
                   icon: <FileSearchOutlined />,
                   label: "Retiros y Consignaciones",
                   disabled: cajaNoRegistrada || !cajaAperturada,
-                  onClick: () =>
-                    notification.info({ message: "Función en desarrollo" }),
+                  onClick: abrirModalRetiros,
                 },
                 user?.nombreRol === "Administrador" && {
                   key: "8",
@@ -1499,7 +1661,7 @@ export default function MenuPrincipalCaja() {
                   label: "Cierre Caja dia anterior",
                   onClick: abrirModalCierreCajaAdmin,
                 },
-                user?.nombreRol === "Administrador" && {
+                {
                   key: "9",
                   icon: <SettingOutlined />,
                   label: "Descuento Administrador",
@@ -1507,8 +1669,7 @@ export default function MenuPrincipalCaja() {
                     cajaNoRegistrada ||
                     !cajaAperturada ||
                     clavesSeleccionadas.length === 0,
-                  onClick: () =>
-                    notification.info({ message: "Función en desarrollo" }),
+                  onClick: solicitarAutorizacion,
                 },
               ]}
             />
@@ -1724,33 +1885,33 @@ export default function MenuPrincipalCaja() {
                     dataSource={filasParaTabla}
                     rowKey="key"
                     locale={{ emptyText: "Sin productos agregados" }}
-                    rowSelection={seleccionMultipleConfig}
-                    onRow={(record) => {
-                      return {
-                        onClick: () => {
-                          // Solo ejecuta la acción si es administrador y no es una fila de descuento
-                          if (
-                            user.nombreRol === "Administrador" &&
-                            !record.esFilaDescuento
-                          ) {
-                            console.log(
-                              "Fila clickeada por Administrador:",
-                              record,
-                            );
-                            // Aquí llamas a tu función, por ejemplo:
-                            // abrirModalEdicionAdmin(record);
-                          }
-                        },
-                        // Cambiamos el cursor a "pointer" solo para administradores
-                        style: {
-                          cursor:
-                            user.nombreRol === "Administrador" &&
-                            !record.esFilaDescuento
-                              ? "pointer"
-                              : "default",
-                        },
-                      };
-                    }}
+                    rowSelection={seleccionUnicaConfig}
+                    // onRow={(record) => {
+                    //   return {
+                    //     onClick: () => {
+                    //       // Solo ejecuta la acción si es administrador y no es una fila de descuento
+                    //       if (
+                    //         user.nombreRol === "Administrador" &&
+                    //         !record.esFilaDescuento
+                    //       ) {
+                    //         console.log(
+                    //           "Fila clickeada por Administrador:",
+                    //           record,
+                    //         );
+                    //         // Aquí llamas a tu función, por ejemplo:
+                    //         // abrirModalEdicionAdmin(record);
+                    //       }
+                    //     },
+                    //     // Cambiamos el cursor a "pointer" solo para administradores
+                    //     style: {
+                    //       cursor:
+                    //         user.nombreRol === "Administrador" &&
+                    //         !record.esFilaDescuento
+                    //           ? "pointer"
+                    //           : "default",
+                    //     },
+                    //   };
+                    // }}
                     columns={[
                       {
                         title: "Código",
@@ -2082,63 +2243,6 @@ export default function MenuPrincipalCaja() {
         </Card>
       </div>
 
-      <Modal>
-        <Row
-          gutter={[16, 16]}
-          align="middle"
-          justify="space-between"
-          style={{ marginBottom: 8 }}
-        >
-          <Col xs={24} md={10}>
-            <Typography.Title level={5} style={{ margin: 0, color: "#1890ff" }}>
-              Recuperar Venta
-            </Typography.Title>
-            <Typography.Text type="secondary" style={{ fontSize: "12px" }}>
-              Ingresa N° de solicitud pendiente
-            </Typography.Text>
-          </Col>
-
-          <Col
-            xs={24}
-            md={14}
-            style={{ display: "flex", justifyContent: "flex-end" }}
-          >
-            <Form
-              layout="inline"
-              onFinish={(values) => {
-                console.log("Buscar venta:", values.idVenta);
-                notification.info({ message: "Función en desarrollo" });
-              }}
-              style={{
-                flexWrap: "nowrap",
-                width: "100%",
-                justifyContent: "flex-end",
-              }}
-            >
-              <Form.Item
-                name="idVenta"
-                style={{ marginEnd: 8, flex: 1, maxWidth: 160 }}
-                rules={[{ required: true, message: "Ingresa ID" }]}
-              >
-                <Input
-                  placeholder="N° de venta"
-                  prefix={<NumberOutlined style={{ color: "#bfbfbf" }} />}
-                />
-              </Form.Item>
-
-              <Form.Item style={{ marginEnd: 0 }}>
-                <Button
-                  type="default"
-                  icon={<SearchOutlined />}
-                  htmlType="submit"
-                >
-                  Buscar
-                </Button>
-              </Form.Item>
-            </Form>
-          </Col>
-        </Row>
-      </Modal>
       {/** Modal para seleccionar método de pago */}
       <Modal
         title="Seleccionar Método de Pago"
@@ -3325,28 +3429,30 @@ export default function MenuPrincipalCaja() {
           </Row>
 
           <Row gutter={12}>
-            {/* <Col span={6}>
-              <Card
-                size="small"
-                style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
-              >
-                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  <DollarOutlined style={{ marginRight: 4 }} />
-                  Total Efectivo
-                </Typography.Text>
-                <div
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 700,
-                    color: "#0f172a",
-                    marginTop: 4,
-                  }}
+            {user.nombreRol == "Administrador" && (
+              <Col span={6}>
+                <Card
+                  size="small"
+                  style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
                 >
-                  ${resumen.totalEfectivo.toLocaleString("es-CL")}
-                </div>
-              </Card>
-            </Col> */}
-            <Col span={8}>
+                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                    <DollarOutlined style={{ marginRight: 4 }} />
+                    Total Efectivo
+                  </Typography.Text>
+                  <div
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      marginTop: 4,
+                    }}
+                  >
+                    ${resumen.totalEfectivo.toLocaleString("es-CL")}
+                  </div>
+                </Card>
+              </Col>
+            )}
+            <Col span={user.nombreRol == "Administrador" ? 6 : 8}>
               <Card
                 size="small"
                 style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
@@ -3367,7 +3473,7 @@ export default function MenuPrincipalCaja() {
                 </div>
               </Card>
             </Col>
-            <Col span={8}>
+            <Col span={user.nombreRol == "Administrador" ? 6 : 8}>
               <Card
                 size="small"
                 style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
@@ -3408,7 +3514,7 @@ export default function MenuPrincipalCaja() {
                 </div>
               </Card>
             </Col> */}
-            <Col span={8}>
+            <Col span={user.nombreRol == "Administrador" ? 6 : 8}>
               <Card
                 size="small"
                 style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
@@ -3964,6 +4070,467 @@ export default function MenuPrincipalCaja() {
             />
           </div>
         )}
+      </Modal>
+      {/**Modal Retiros */}
+      <Modal
+        title={
+          <span style={{ fontSize: "18px", fontWeight: 600 }}>
+            Retiro de Efectivo
+          </span>
+        }
+        open={modalRetiros} // Ant Design v5 usa 'open' en lugar de 'visible'
+        onCancel={cerrarModalRetiros}
+        footer={null}
+        centered
+        width={600} // Un poco más angosto que el de arqueo para no verse tan vacío
+        styles={{ body: { padding: "0" } }}
+      >
+        {/* ==========================================
+      SECCIÓN 1: MOTIVO DEL RETIRO
+      ========================================== */}
+        <div
+          style={{
+            padding: "24px 24px 16px 24px",
+            backgroundColor: "#f8fafc",
+            borderBottom: "1px solid #f0f0f0",
+          }}
+        >
+          <div style={{ marginBottom: 16 }}>
+            <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+              <InfoCircleOutlined style={{ marginRight: 6 }} />
+              Ingresa el motivo del retiro y el detalle exacto de los billetes y
+              monedas que vas a sacar de la gaveta.
+            </Typography.Text>
+          </div>
+
+          {/* Formulario envolvente para Motivo y Denominaciones */}
+          <Form
+            form={formRetiros}
+            layout="vertical"
+            onFinish={(values) => {
+              funcionRetiro(values);
+            }}
+          >
+            <Form.Item
+              name="motivoRetiro"
+              label={
+                <span style={{ fontWeight: 500, color: "#475569" }}>
+                  Motivo del Retiro
+                </span>
+              }
+              rules={[
+                {
+                  required: true,
+                  message: "Por favor, ingresa el motivo del retiro.",
+                },
+                {
+                  min: 5,
+                  message:
+                    "El motivo debe ser más descriptivo (mín. 5 caracteres).",
+                },
+              ]}
+            >
+              <Input.TextArea
+                placeholder="Ej: Pago a proveedor de agua, Retiro por exceso de efectivo en caja..."
+                rows={3}
+                style={{ borderRadius: 6 }}
+              />
+            </Form.Item>
+
+            {/* ==========================================
+          SECCIÓN 2: FORMULARIO DE CONTEO FÍSICO
+          ========================================== */}
+            <div
+              style={{
+                marginTop: 24,
+                paddingTop: 16,
+                borderTop: "1px solid #e2e8f0",
+              }}
+            >
+              {/* --- Billetes --- */}
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  color: "rgba(0,0,0,0.4)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  marginBottom: 12,
+                }}
+              >
+                Billetes a Retirar
+              </div>
+
+              {/* Usamos Row para mostrar Billetes a dos columnas y ahorrar espacio vertical */}
+              <Row gutter={16}>
+                {denominaciones
+                  .filter((d) => d.valor >= 1000)
+                  .map((d) => (
+                    <Col span={12} key={d.name}>
+                      {/* Cambiamos a layout horizontal solo para las denominaciones */}
+                      <Form.Item
+                        labelCol={{ span: 10 }}
+                        wrapperCol={{ span: 14 }}
+                        label={d.label}
+                        name={d.name}
+                        initialValue={0}
+                        style={{ marginBottom: 8 }}
+                      >
+                        <InputNumber
+                          min={0}
+                          style={{ width: "100%" }}
+                          addonAfter={
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: "#64748b",
+                                minWidth: 50,
+                                display: "inline-block",
+                                textAlign: "right",
+                              }}
+                            >
+                              = $
+                              {(
+                                (cantidades[d.name] || 0) * d.valor
+                              ).toLocaleString("es-CL")}
+                            </span>
+                          }
+                          onChange={(val) =>
+                            setCantidades((prev) => ({
+                              ...prev,
+                              [d.name]: val || 0,
+                            }))
+                          }
+                        />
+                      </Form.Item>
+                    </Col>
+                  ))}
+              </Row>
+
+              <Divider dashed style={{ margin: "16px 0" }} />
+
+              {/* --- Monedas --- */}
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  color: "rgba(0,0,0,0.4)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  marginBottom: 12,
+                }}
+              >
+                Monedas a Retirar
+              </div>
+
+              <Row gutter={16}>
+                {denominaciones
+                  .filter((d) => d.valor < 1000)
+                  .map((d) => (
+                    <Col span={12} key={d.name}>
+                      <Form.Item
+                        labelCol={{ span: 10 }}
+                        wrapperCol={{ span: 14 }}
+                        label={d.label}
+                        name={d.name}
+                        initialValue={0}
+                        style={{ marginBottom: 8 }}
+                      >
+                        <InputNumber
+                          min={0}
+                          style={{ width: "100%" }}
+                          addonAfter={
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: "#64748b",
+                                minWidth: 50,
+                                display: "inline-block",
+                                textAlign: "right",
+                              }}
+                            >
+                              = $
+                              {(
+                                (cantidades[d.name] || 0) * d.valor
+                              ).toLocaleString("es-CL")}
+                            </span>
+                          }
+                          onChange={(val) =>
+                            setCantidades((prev) => ({
+                              ...prev,
+                              [d.name]: val || 0,
+                            }))
+                          }
+                        />
+                      </Form.Item>
+                    </Col>
+                  ))}
+              </Row>
+            </div>
+
+            {/* --- Resultado Dinámico y Botón --- */}
+            <div
+              style={{
+                background: "#fff1f0", // 🚀 Fondo rojo claro para indicar que es una SALIDA de dinero
+                border: "1px solid #ffccc7",
+                borderRadius: 8,
+                padding: "16px",
+                marginTop: "24px",
+                marginBottom: "24px",
+              }}
+            >
+              <Row justify="space-between" align="middle">
+                <Col>
+                  <span
+                    style={{ fontWeight: 500, fontSize: 14, color: "#cf1322" }}
+                  >
+                    Total Físico a Retirar
+                  </span>
+                </Col>
+                <Col>
+                  <span
+                    style={{ fontWeight: 700, fontSize: 22, color: "#cf1322" }}
+                  >
+                    ${totalDenominaciones.toLocaleString("es-CL")}
+                  </span>
+                </Col>
+              </Row>
+            </div>
+
+            <Row justify="end">
+              <Col>
+                <Button onClick={cerrarModalRetiros} style={{ marginRight: 8 }}>
+                  Cancelar
+                </Button>
+                <Button
+                  type="primary"
+                  danger // 🚀 Botón rojo para acciones de egreso
+                  htmlType="submit"
+                  icon={<SaveOutlined />}
+                  // Deshabilitamos el botón si el total es 0
+                  disabled={totalDenominaciones === 0}
+                >
+                  Registrar Retiro
+                </Button>
+              </Col>
+            </Row>
+          </Form>
+        </div>
+      </Modal>
+      {/** Modal Descuento */}
+      <Modal
+        title={
+          <span style={{ fontSize: "18px", fontWeight: 600 }}>
+            Aplicar Descuento Especial
+          </span>
+        }
+        open={modalDescuentoVisible}
+        onCancel={cerrarModalDescuento}
+        footer={null} // Ocultamos el footer de AntD porque el Form tiene su propio botón submit
+        centered
+        destroyOnClose // Destruye el DOM al cerrar para limpiar estados residuales
+      >
+        {selectedProduct ? (
+          <Form
+            form={formDescuentoProducto}
+            layout="vertical"
+            onFinish={(values) => {
+              confirmarDescuentoProducto(values);
+            }}
+            initialValues={{
+              porcentajeDescuento: 0,
+              montoDescuento: 0,
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "#f8fafc",
+                padding: "16px",
+                borderRadius: 8,
+                marginBottom: 24,
+                border: "1px solid #f0f0f0",
+              }}
+            >
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="Producto">
+                  <Typography.Text strong>
+                    {selectedProduct.nombre}
+                  </Typography.Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Código/SKU">
+                  <Typography.Text type="secondary">
+                    {selectedProduct.codigo}
+                  </Typography.Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Precio Actual">
+                  <Typography.Text
+                    style={{ color: "#1890ff", fontWeight: 600 }}
+                  >
+                    ${Number(selectedProduct.precio).toLocaleString("es-CL")}
+                  </Typography.Text>
+                </Descriptions.Item>
+              </Descriptions>
+            </div>
+
+            <Typography.Text
+              type="secondary"
+              style={{ display: "block", marginBottom: 16 }}
+            >
+              Ingresa el descuento como porcentaje <strong>O</strong> como monto
+              fijo:
+            </Typography.Text>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="Descuento en Porcentaje"
+                  name="porcentajeDescuento"
+                >
+                  <InputNumber
+                    min={0}
+                    max={100}
+                    style={{ width: "100%" }}
+                    addonAfter={<PercentageOutlined />}
+                    // 🚀 Se deshabilita si el monto es mayor a 0
+                    disabled={Number(valorMonto) > 0}
+                  />
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item
+                  label="Descuento Fijo (Dinero)"
+                  name="montoDescuento"
+                >
+                  <InputNumber
+                    min={0}
+                    style={{ width: "100%" }}
+                    addonBefore={<DollarOutlined />}
+                    // 🚀 Se deshabilita si el porcentaje es mayor a 0
+                    disabled={Number(valorPorcentaje) > 0}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row justify="end" style={{ marginTop: 24 }}>
+              <Space>
+                <Button onClick={cerrarModalDescuento}>Cancelar</Button>
+                <Button type="primary" htmlType="submit">
+                  Aplicar Descuento
+                </Button>
+              </Space>
+            </Row>
+          </Form>
+        ) : (
+          <div style={{ textAlign: "center", padding: "20px" }}>
+            <Typography.Text type="danger">
+              No hay ningún producto válido seleccionado.
+            </Typography.Text>
+          </div>
+        )}
+      </Modal>
+      {/** Modal Autorización */}
+      <Modal
+        title={
+          <Space>
+            <SafetyCertificateOutlined style={{ color: "#faad14" }} />
+            Autorización Requerida
+          </Space>
+        }
+        open={modalAutorizacionVisible}
+        onCancel={() => setModalAutorizacionVisible(false)}
+        footer={null}
+        width={400}
+        centered
+        destroyOnClose
+      >
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <Typography.Text type="secondary">
+            Esta acción requiere permisos de administrador. Por favor, ingresa
+            tus credenciales.
+          </Typography.Text>
+        </div>
+
+        <Form
+          form={formAutorizacion}
+          layout="vertical"
+          onFinish={async (values) => {
+            try {
+              const respuesta = await inicioSesionCajaAlternativo(
+                values.rut,
+                values.password,
+              );
+              console.log("Respuesta de autorización:", respuesta.data);
+              if (respuesta.status === 200) {
+                if (respuesta.data.nombreRol !== "admin") {
+                  notification.error({
+                    message: "Acceso Denegado",
+                    description:
+                      "El usuario no tiene permisos de administrador para realizar esta acción.",
+                  });
+                  return;
+                }
+                setModalAutorizacionVisible(false);
+                formAutorizacion.resetFields();
+                formDescuentoProducto.resetFields();
+                abrirModalDescuento();
+                return;
+              }
+              notification.error({
+                message: "Error de Autorización",
+                description:
+                  respuesta.data?.message ||
+                  "Credenciales incorrectas o usuario no autorizado.",
+              });
+            } catch (error) {
+              console.error("Error al autorizar:", error);
+              notification.error({
+                message: "Error de Autorización",
+                description:
+                  error.response?.data?.message ||
+                  "Ocurrió un error al intentar autorizar. Intenta nuevamente.",
+              });
+            }
+          }}
+        >
+          <Form.Item
+            name="rut"
+            rules={[
+              {
+                required: true,
+                message: "Ingresa el usuario/RUT",
+              },
+              {
+                pattern: /^\d{6,8}-[0-9Kk]$/,
+                message:
+                  "Formato inválido. Usa el formato 12345678-9 (sin puntos)",
+              },
+            ]}
+          >
+            <Input
+              prefix={<UserOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+              placeholder="Ej: 12345678-9"
+              size="large"
+              autoFocus
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            rules={[{ required: true, message: "Ingresa la contraseña o PIN" }]}
+          >
+            <Input.Password
+              prefix={<LockOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+              placeholder="Contraseña / PIN de Autorización"
+              size="large"
+            />
+          </Form.Item>
+
+          <Button type="primary" htmlType="submit" size="large" block>
+            Autorizar
+          </Button>
+        </Form>
       </Modal>
     </div>
   );
