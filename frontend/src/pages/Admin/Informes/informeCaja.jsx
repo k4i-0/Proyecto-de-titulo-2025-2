@@ -32,11 +32,17 @@ import { obtenerInformeCaja } from "../../../services/Metricas.service";
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
+import dayjs from "dayjs";
 
 // --- Función de formato de dinero (Estándar CLP) ---
 const formatearDinero = (valor) => {
   return `$${Number(valor || 0).toLocaleString("es-CL")}`;
 };
+
+import { buscarTodasLasCajas } from "../../../services/ventas/caja.service";
+
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function InformeCaja() {
   const [loading, setLoading] = useState(false);
@@ -44,6 +50,7 @@ export default function InformeCaja() {
   // --- Estados de Datos de la API ---
   const [metricasCaja, setMetricasCaja] = useState(null);
   const [historialCajas, setHistorialCajas] = useState([]);
+  const [cajasDisponibles, setCajasDisponibles] = useState([]);
 
   // --- Estados de Filtros ---
   const [cajaFiltro, setCajaFiltro] = useState("todas");
@@ -75,10 +82,27 @@ export default function InformeCaja() {
     }
   }, []);
 
+  // ---- Funcion cargar cajas disponibles para el filtro ---
+  const cargarCajasDisponibles = useCallback(async () => {
+    try {
+      const response = await buscarTodasLasCajas();
+      //console.log("Respuesta al cargar cajas disponibles:", response);
+      if (response.status === 200) {
+        setCajasDisponibles(response.data);
+      } else {
+        message.error("No se pudieron cargar las cajas disponibles");
+      }
+    } catch (error) {
+      console.error("Error al cargar cajas disponibles:", error);
+      message.error("Ocurrió un error al cargar las cajas");
+    }
+  }, []);
+
   // --- Carga Inicial ---
   useEffect(() => {
     cargarInforme("todas", null, null);
-  }, [cargarInforme]);
+    cargarCajasDisponibles();
+  }, [cargarInforme, cargarCajasDisponibles]);
 
   // --- Manejador del Botón Filtrar ---
   const handleFiltrar = () => {
@@ -174,6 +198,153 @@ export default function InformeCaja() {
     },
   ];
 
+  //---- Manejo de fechas ----------
+  const bloquearFechasFuturas = (current) => {
+    return current && current > dayjs().endOf("day");
+  };
+
+  // ------ Funcion Generar PDF -----------
+  const generarPDF = () => {
+    // 1. Inicializar jsPDF en formato A4 vertical
+    const doc = new jsPDF("p", "mm", "a4");
+
+    // --- ENCABEZADO DEL REPORTES ---
+    doc.setFontSize(18);
+    doc.setTextColor(33, 33, 33);
+    doc.text("Reporte de Flujo y Cuadratura de Cajas", 14, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    const cajaTexto =
+      cajaFiltro === "todas" ? "Todas las cajas" : `Caja N° ${cajaFiltro}`;
+    doc.text(`Filtro de Caja: ${cajaTexto}`, 14, 28);
+    doc.text(`Fecha de emisión: ${new Date().toLocaleString("es-CL")}`, 14, 33);
+
+    // --- SECCIÓN 1: MÉTRICAS CONSOLIDADAS ---
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text("1. Resumen de Saldos Actuales", 14, 45);
+
+    autoTable(doc, {
+      startY: 50,
+      head: [["Flujo Financiero", "Monto Calculado"]],
+      body: [
+        [
+          "Efectivo Físico Estimado (En Gaveta)",
+          formatearDinero(metricasCaja?.efectivoEnCaja),
+        ],
+        [
+          "Retiros / Salidas de Efectivo",
+          formatearDinero(metricasCaja?.totalRetiros),
+        ],
+        [
+          "Total Débito Acumulado (Ventas POS)",
+          formatearDinero(metricasCaja?.debitoTotal),
+        ],
+        [
+          "Total Crédito Acumulado (Ventas POS)",
+          formatearDinero(metricasCaja?.creditoTotal),
+        ],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [24, 144, 255] }, // Azul Ant Design
+      columnStyles: {
+        1: { halign: "right", fontStyle: "bold" }, // Alinear montos a la derecha
+      },
+      styles: { fontSize: 10 },
+    });
+
+    // --- SECCIÓN 2: HISTORIAL DE TURNOS Y CUADRATURAS ---
+    let finalY = doc.lastAutoTable.finalY + 15;
+
+    // Validación de espacio: si la tabla de resumen terminó muy abajo, saltamos de hoja
+    if (finalY > 230) {
+      doc.addPage();
+      finalY = 20;
+    }
+
+    doc.setFontSize(14);
+    doc.text("2. Historial de Turnos y Arqueos", 14, finalY);
+
+    // Mapeamos el arreglo de historialCajas al formato requerido por la tabla del PDF
+    const filasHistorial = historialCajas.map((turno) => {
+      const fechaAperturaStr = new Date(turno.fechaApertura).toLocaleString(
+        "es-CL",
+        {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        },
+      );
+
+      const fechaCierreStr = turno.fechaCierre
+        ? new Date(turno.fechaCierre).toLocaleString("es-CL", {
+            day: "2-digit",
+            month: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "En curso";
+
+      // Formateo condicional para la diferencia
+      let diferenciaTexto = "-";
+      if (turno.estadoCaja !== "Abierta") {
+        diferenciaTexto =
+          turno.diferencia === 0
+            ? "Cuadrada"
+            : `${turno.diferencia > 0 ? "+" : ""}${formatearDinero(turno.diferencia)}`;
+      }
+
+      return [
+        `N° ${turno.numeroCaja}`,
+        turno.cajero,
+        fechaAperturaStr,
+        fechaCierreStr,
+        formatearDinero(turno.montoInicial),
+        formatearDinero(turno.montoFinalResperado || turno.montoFinalEsperado),
+        diferenciaTexto,
+        turno.estadoCaja.toUpperCase(),
+      ];
+    });
+
+    autoTable(doc, {
+      startY: finalY + 5,
+      head: [
+        [
+          "Caja",
+          "Cajero",
+          "Apertura",
+          "Cierre",
+          "M. Inicial",
+          "Esperado Em.",
+          "Dif. Arqueo",
+          "Estado",
+        ],
+      ],
+      body: filasHistorial,
+      theme: "striped",
+      headStyles: { fillColor: [24, 144, 255] },
+      styles: { fontSize: 8.5 }, // Reducimos un poco la fuente para que quepan holgadamente las 8 columnas
+      columnStyles: {
+        4: { halign: "right" },
+        5: { halign: "right" },
+        6: { halign: "right" },
+        7: { halign: "center" },
+      },
+      // Pintamos filas de color sutil si la caja sigue abierta
+      willDrawCell: (data) => {
+        if (data.section === "body" && data.row.raw[7] === "ABIERTA") {
+          doc.setFillColor(230, 247, 255); // Color celeste suave para destacar turno activo
+        }
+      },
+    });
+
+    // --- TRANSMITIR AL NAVEGADOR ---
+    const pdfBlobUrl = doc.output("bloburl");
+    window.open(pdfBlobUrl, "_blank");
+  };
+
   return (
     <div style={{ padding: "0 10px" }}>
       {/* --- ENCABEZADO Y ACCIONES --- */}
@@ -196,17 +367,18 @@ export default function InformeCaja() {
             <Button
               icon={<FilePdfOutlined />}
               danger
+              onClick={generarPDF}
               disabled={loading || !metricasCaja}
             >
               Exportar PDF
             </Button>
-            <Button
+            {/* <Button
               icon={<FileExcelOutlined />}
               style={{ color: "#3f8600", borderColor: "#3f8600" }}
               disabled={loading || !metricasCaja}
             >
               Exportar Excel
-            </Button>
+            </Button> */}
           </Space>
         </Col>
       </Row>
@@ -224,9 +396,11 @@ export default function InformeCaja() {
               style={{ width: "100%" }}
             >
               <Select.Option value="todas">Todas las Cajas</Select.Option>
-              {/* Ajusta estos valores según los ID reales de tus cajas */}
-              <Select.Option value="1">Caja N° 1 (Mesón)</Select.Option>
-              <Select.Option value="2">Caja N° 2 (Rápida)</Select.Option>
+              {cajasDisponibles.map((caja) => (
+                <Select.Option key={caja.idCaja} value={caja.idCaja}>
+                  N° {caja.numeroCaja} - {caja.sucursal.nombre}
+                </Select.Option>
+              ))}
             </Select>
           </Col>
           <Col xs={24} sm={12} lg={8}>
@@ -236,6 +410,7 @@ export default function InformeCaja() {
             <RangePicker
               style={{ width: "100%" }}
               placeholder={["Fecha Inicio", "Fecha Fin"]}
+              disabledDate={bloquearFechasFuturas}
               onChange={(fechas) => setFechasFiltro(fechas || [null, null])}
             />
           </Col>

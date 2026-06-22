@@ -33,6 +33,11 @@ router.get(
   ventasController.consultarVentasPendientesCaja,
 );
 
+router.get(
+  "/consulta/stock/producto/:codigoProducto",
+  ventasController.consultarStockProductos,
+);
+
 router.post("/apertura/caja/:deviceID", ventasController.aperturaCaja);
 router.post("/registro/caja", ventasController.registroCajaSucursal);
 router.post("/cierre/caja/:deviceID", ventasController.cierreCaja);
@@ -68,5 +73,10 @@ router.post(
 router.post(
   "/imprimir/comprobante/retiro/:idRetiro/:deviceID",
   ventasController.imprimirRetiroCaja,
+);
+
+router.get(
+  "/imprimir/arqueo/caja/:idArqueo/:deviceID",
+  ventasController.imprimirArqueoCaja,
 );
 module.exports = router;

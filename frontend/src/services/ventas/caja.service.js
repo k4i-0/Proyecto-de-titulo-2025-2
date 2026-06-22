@@ -3,6 +3,25 @@ import URL from "../Constante";
 
 const API_URL = `${URL}/cajas`;
 
+export async function buscarTodasLasCajas() {
+  try {
+    const response = await axios.get(`${API_URL}/buscar/todas/cajas`, {
+      withCredentials: true,
+    });
+    //console.log("Todas las cajas obtenidas:", response);
+    return response;
+  } catch (error) {
+    console.error(
+      "Error al obtener todas las cajas:",
+      error.response?.data?.error || error.message,
+    );
+    if (error.response?.data?.error == undefined) {
+      return { code: 500, error: "Error del servidor" };
+    }
+    return error.response?.data;
+  }
+}
+
 export async function buscarCajasPorSucursal(idSucursal) {
   try {
     const response = await axios.get(

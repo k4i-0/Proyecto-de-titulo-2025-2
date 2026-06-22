@@ -42,7 +42,7 @@ export async function aperturaCaja(
         withCredentials: true,
       },
     );
-    console.log("Respuesta de apertura de caja:", response);
+    //console.log("Respuesta de apertura de caja:", response);
     return response;
   } catch (error) {
     console.error("Error al abrir caja:", error);
@@ -116,7 +116,7 @@ export async function cierreCaja(valores) {
         withCredentials: true,
       },
     );
-    console.log("Respuesta de cierre de caja:", response.status);
+    // console.log("Respuesta de cierre de caja:", response.status);
     return response;
   } catch (error) {
     console.error("Error al cerrar caja:", error);
@@ -133,7 +133,7 @@ export async function solicitarPagoTarjeta(deviceID, datos) {
         withCredentials: true,
       },
     );
-    console.log("Respuesta de solicitud de pago con tarjeta:", response.status);
+    //console.log("Respuesta de solicitud de pago con tarjeta:", response.status);
     return response;
   } catch (error) {
     console.error("Error al solicitar pago con tarjeta:", error);
@@ -212,10 +212,10 @@ export async function cancelarVentaTarjeta(idOrdenMP) {
         withCredentials: true,
       },
     );
-    console.log(
-      "Respuesta de cancelación de venta con tarjeta:",
-      response.status,
-    );
+    // console.log(
+    //   "Respuesta de cancelación de venta con tarjeta:",
+    //   response.status,
+    // );
     return response;
   } catch (error) {
     console.error("Error al cancelar venta con tarjeta:", error);
@@ -228,7 +228,7 @@ export async function verVentasDelDia(deviceID) {
     const response = await axios.get(`${API_URL}/ver/ventas/dia/${deviceID}`, {
       withCredentials: true,
     });
-    console.log("Respuesta de consulta de ventas del día:", response.status);
+    //console.log("Respuesta de consulta de ventas del día:", response.status);
     return response;
   } catch (error) {
     console.error("Error al consultar ventas del día:", error);
@@ -244,7 +244,7 @@ export async function generarArqueoCaja(deviceID) {
         withCredentials: true,
       },
     );
-    console.log("Respuesta de generación de arqueo de caja:", response.status);
+    //console.log("Respuesta de generación de arqueo de caja:", response.status);
     return response;
   } catch (error) {
     console.error("Error al generar arqueo de caja:", error);
@@ -264,7 +264,7 @@ export async function guardarArqueoCaja(deviceID, datosArqueo) {
         withCredentials: true,
       },
     );
-    console.log("Respuesta de guardado de arqueo de caja:", response.status);
+    //console.log("Respuesta de guardado de arqueo de caja:", response.status);
     return response;
   } catch (error) {
     console.error("Error al guardar arqueo de caja:", error);
@@ -280,10 +280,10 @@ export async function consultaCierreCajaPendiente(deviceID) {
         withCredentials: true,
       },
     );
-    console.log(
-      "Respuesta de consulta de cierre de caja pendiente:",
-      response.status,
-    );
+    // console.log(
+    //   "Respuesta de consulta de cierre de caja pendiente:",
+    //   response.status,
+    // );
     return response;
   } catch (error) {
     console.error("Error al consultar cierre de caja pendiente:", error);
@@ -305,10 +305,10 @@ export async function cierreCajaPendienteAdmin(deviceID, datosCierre) {
         withCredentials: true,
       },
     );
-    console.log(
-      "Respuesta de cierre de caja pendiente admin:",
-      response.status,
-    );
+    // console.log(
+    //   "Respuesta de cierre de caja pendiente admin:",
+    //   response.status,
+    // );
     return response;
   } catch (error) {
     console.error("Error al cerrar caja pendiente admin:", error);
@@ -344,7 +344,7 @@ export async function consultarVentaPendiente() {
     const response = await axios.get(`${API_URL}/consultar/venta/pendiente`, {
       withCredentials: true,
     });
-    console.log("Respuesta de consulta de venta pendiente:", response.status);
+    //console.log("Respuesta de consulta de venta pendiente:", response.status);
     return response;
   } catch (error) {
     console.error("Error al consultar venta pendiente:", error);
@@ -360,10 +360,10 @@ export async function consultarVentasPendientesCaja(idVentaPendiente) {
         withCredentials: true,
       },
     );
-    console.log(
-      "Respuesta de consulta de ventas pendientes de caja:",
-      response.status,
-    );
+    // console.log(
+    //   "Respuesta de consulta de ventas pendientes de caja:",
+    //   response.status,
+    // );
     return response;
   } catch (error) {
     console.error("Error al consultar ventas pendientes de caja:", error);
@@ -384,7 +384,7 @@ export async function generarRetiroCaja(deviceID, datosRetiro) {
         withCredentials: true,
       },
     );
-    console.log("Respuesta de generación de retiro de caja:", response.status);
+    //console.log("Respuesta de generación de retiro de caja:", response.status);
     return response;
   } catch (error) {
     console.error("Error al generar retiro de caja:", error);
@@ -401,10 +401,10 @@ export async function imprimirComprobanteVenta(idVenta, deviceID) {
         withCredentials: true,
       },
     );
-    console.log(
-      "Respuesta de impresión de comprobante de venta:",
-      response.status,
-    );
+    // console.log(
+    //   "Respuesta de impresión de comprobante de venta:",
+    //   response.status,
+    // );
     return response;
   } catch (error) {
     console.error("Error al imprimir comprobante de venta:", error);
@@ -421,13 +421,52 @@ export async function imprimirComprobanteRetiro(idRetiro, deviceID) {
         withCredentials: true,
       },
     );
-    console.log(
-      "Respuesta de impresión de comprobante de retiro:",
-      response.status,
-    );
+    // console.log(
+    //   "Respuesta de impresión de comprobante de retiro:",
+    //   response.status,
+    // );
     return response;
   } catch (error) {
     console.error("Error al imprimir comprobante de retiro:", error);
+    return error.response;
+  }
+}
+
+export async function consultarStockProductos(codigoProducto) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/consulta/stock/producto/${codigoProducto}`,
+      {
+        withCredentials: true,
+      },
+    );
+    //console.log("Respuesta de consulta de stock de producto:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al consultar stock de producto:", error);
+    console.error(
+      "Detalle del error:",
+      error.response?.data?.error || error.message,
+    );
+    return error.response;
+  }
+}
+
+export async function imprimirArqueoCaja(idArqueo, deviceID) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/imprimir/arqueo/caja/${idArqueo}/${deviceID}`,
+      {
+        withCredentials: true,
+      },
+    );
+    // console.log(
+    //   "Respuesta de impresión de arqueo de caja:",
+    //   response.status,
+    // );
+    return response;
+  } catch (error) {
+    console.error("Error al imprimir arqueo de caja:", error);
     return error.response;
   }
 }

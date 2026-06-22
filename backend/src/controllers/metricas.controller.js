@@ -65,7 +65,7 @@ exports.obtenerMetricasDashboard = async (req, res) => {
           } else {
             acumulador[idProducto] = {
               idProducto,
-              nombre: producto.nombre,
+              nombre: producto?.nombre,
               cantidad: Number(cantidad),
             };
           }
@@ -807,7 +807,7 @@ exports.obtenerInformeCaja = async (req, res) => {
           },
           {
             model: Funcionario,
-            attributes: ["nombre"], // El cajero que abrió/cerró el turno
+            attributes: ["nombre"],
           },
         ],
       }),

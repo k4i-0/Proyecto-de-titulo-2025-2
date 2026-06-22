@@ -66,6 +66,33 @@ exports.buscarCajasPorSucursal = async (req, res) => {
   }
 };
 
+exports.buscarTodasLasCajas = async (req, res) => {
+  try {
+    const cajas = await Caja.findAll({
+      attributes: [
+        "idCaja",
+        "numeroCaja",
+        "montoCajaEfectivo",
+        "montoCajaDebito",
+        "montoCajaCredito",
+        "estadoCaja",
+      ],
+      include: [
+        {
+          model: Sucursal,
+          attributes: ["nombre"],
+        },
+      ],
+    });
+    if (!cajas || cajas.length === 0) {
+      return res.status(404).json({ error: "No se encontraron cajas" });
+    }
+    return res.status(200).json(cajas);
+  } catch (error) {
+    console.error("Error al buscar todas las cajas:", error);
+    return res.status(500).json({ error: "Error del servidor" });
+  }
+};
 exports.buscarDatosCuadraturaCaja = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {

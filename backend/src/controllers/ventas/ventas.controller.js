@@ -48,15 +48,17 @@ const {
 
 const { type } = require("os");
 
-/**
- * Genera el string con formato Mercado Pago Point usando el JSON de Sequelize
- */
 const generarTicketMercadoPago = (venta, nombreSucursal = "Casa Matriz") => {
-  // Función auxiliar para formato de moneda chilena
-  const formatearDinero = (monto) =>
-    `$${Number(monto).toLocaleString("es-CL")}`;
+  // 🚀 Función de formato corregida para soportar signos negativos contables (-$60)
+  const formatearDinero = (monto) => {
+    const numero = Number(monto || 0);
+    if (numero < 0) {
+      return `-$${Math.abs(numero).toLocaleString("es-CL")}`;
+    }
+    return `$${numero.toLocaleString("es-CL")}`;
+  };
 
-  // Formato de fecha
+  // Formato de fecha y hora
   const fechaStr = new Date(venta.fechaVenta).toLocaleString("es-CL", {
     day: "2-digit",
     month: "2-digit",
@@ -65,7 +67,7 @@ const generarTicketMercadoPago = (venta, nombreSucursal = "Casa Matriz") => {
     minute: "2-digit",
   });
 
-  // 1. Extraemos cajero y caja navegando por el array 'realizaVenta'
+  // Extraemos cajero y caja desde 'realizaVenta'
   const atiende = venta.realizaVenta?.[0]?.funcionario?.nombre || "Cajero";
   const cajaNum = venta.realizaVenta?.[0]?.caja?.numeroCaja || "1";
 
@@ -80,18 +82,32 @@ const generarTicketMercadoPago = (venta, nombreSucursal = "Casa Matriz") => {
   ticket += "{s}ARTICULO               CANT     SUBTOTAL{/s}{br}";
   ticket += "{s}----------------------------------------{/s}{br}";
 
-  // 2. Extraemos el arreglo de 'detalleventa' (ahora en minúscula)
   const detalles = venta.detalleventa || [];
 
   detalles.forEach((detalle) => {
-    let nombre = detalle.producto?.nombre || "Producto";
+    let nombre = "";
+
+    // 🚀 VALIDACIÓN: Si tiene producto es venta normal, si es null es un descuento
+    if (detalle.producto) {
+      nombre = detalle.producto.nombre;
+    } else {
+      // Limpiamos el texto largo "Descuento en producto Categoria Abarrotes" a algo legible de POS
+      const tipoEntrega = detalle.tipoDeEntrega || "";
+      if (tipoEntrega.includes("Categoria")) {
+        nombre = `Dcto. ${tipoEntrega.split("Categoria ")[1]}`; // Resultado: "Dcto. Abarrotes"
+      } else {
+        nombre = "Descuento Aplicado";
+      }
+    }
+
+    // Ajuste estricto a 22 caracteres para mantener la cuadrícula del ticket
     if (nombre.length > 22) nombre = nombre.substring(0, 21) + ".";
     const nombreFormateado = nombre.padEnd(22, " ");
 
-    // Convertimos a número para limpiar ceros innecesarios (ej: "0.250" -> "0.25")
-    // y lo rellenamos a 4 caracteres para alinear
+    // Formateamos cantidad (ej: "1.00" -> "1")
     const cantFormateada = String(Number(detalle.cantidad)).padStart(4, " ");
 
+    // Procesa subtotales positivos y negativos dinámicamente
     const subtotalFormateado = formatearDinero(detalle.subtotal).padStart(
       12,
       " ",
@@ -106,7 +122,7 @@ const generarTicketMercadoPago = (venta, nombreSucursal = "Casa Matriz") => {
 
   ticket += "{s}DETALLE DE PAGO:{/s}{br}";
 
-  // 3. Extraemos el arreglo de 'detallepagos' (ahora en minúscula)
+  // Extraemos el arreglo de 'detallepagos'
   const pagos = venta.detallepagos || [];
 
   pagos.forEach((pago) => {
@@ -222,6 +238,103 @@ const generarTicketRetiroMercadoPago = (
 
   return ticket;
 };
+
+const generarTicketArqueoCaja = (arqueo, datosSucursal = {}) => {
+  const nombreSucursal = datosSucursal.nombre || "Casa Matriz";
+  const idSucursal = datosSucursal.id || "N/A";
+
+  const formatearDinero = (monto) => {
+    const numero = Number(monto || 0);
+    if (numero < 0) {
+      return `-$${Math.abs(numero).toLocaleString("es-CL")}`;
+    }
+    return `$${numero.toLocaleString("es-CL")}`;
+  };
+
+  const formatearFecha = (fechaRaw) => {
+    if (!fechaRaw) return "N/A";
+    return new Date(fechaRaw).toLocaleString("es-CL", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const cajaNum = arqueo.caja?.numeroCaja || "N/A";
+  const fechaArqueo =
+    arqueo.fechaGeneracionArqueo || arqueo.fechaCierre || new Date();
+
+  let ticket = "{br}----------------------------------------{br}";
+  ticket += "{center}{w} DETALLE DE ARQUEO {/w}{br}";
+  ticket += "{center}{w} DE CAJA {/w}{br}{br}";
+
+  // --- DATOS BÁSICOS ---
+  ticket += `{center}{s}${nombreSucursal.toUpperCase()}{/s}{br}`;
+  ticket += `{center}{s}ID Sucursal: ${idSucursal}{/s}{br}`;
+  ticket += "----------------------------------------{br}";
+  ticket += `{s} Nro Registro: ${arqueo.idRegistroCaja}{/s}{br}`;
+  ticket += `{s} Caja Asignada: N° ${cajaNum}{/s}{br}`;
+  ticket += `{s} Fecha: ${formatearFecha(fechaArqueo)}{/s}{br}`;
+  ticket += "----------------------------------------{br}";
+
+  // --- DESGLOSE DE DENOMINACIONES ---
+  ticket += "{s}DENOMINACIÓN          CANT         TOTAL{/s}{br}";
+  ticket += "{s}----------------------------------------{/s}{br}";
+
+  const mapaDenominaciones = [
+    { key: "d20000", valor: 20000, label: "$20.000" },
+    { key: "d10000", valor: 10000, label: "$10.000" },
+    { key: "d5000", valor: 5000, label: "$5.000" },
+    { key: "d2000", valor: 2000, label: "$2.000" },
+    { key: "d1000", valor: 1000, label: "$1.000" },
+    { key: "d500", valor: 500, label: "$500" },
+    { key: "d100", nan: 100, label: "$100" },
+    { key: "d50", valor: 50, label: "$50" },
+    { key: "d10", valor: 10, label: "$10" },
+    { key: "d1", valor: 1, label: "$1" },
+  ];
+
+  const desgloseCierre = arqueo.cantidadMontoCierreReal || {};
+  let tieneEfectivo = false;
+
+  mapaDenominaciones.forEach((deno) => {
+    const cantidad = Number(desgloseCierre[deno.key] || 0);
+
+    if (cantidad > 0) {
+      tieneEfectivo = true;
+      const totalPorDenominacion = cantidad * deno.valor;
+
+      const colDenominacion = deno.label.padEnd(18, " ");
+      const colCantidad = `x${cantidad}`.padStart(6, " ");
+      const colTotal = formatearDinero(totalPorDenominacion).padStart(16, " ");
+
+      ticket += `{s}${colDenominacion}${colCantidad}${colTotal}{/s}{br}`;
+    }
+  });
+
+  if (!tieneEfectivo) {
+    ticket += "{center}{s}Sin efectivo registrado{/s}{br}";
+  }
+
+  ticket += "----------------------------------------{br}";
+
+  // --- TOTAL DEL ARQUEO (MONTO REAL) ---
+  ticket += `{center}{w} TOTAL EFECTIVO FÍSICO {/w}{br}`;
+  ticket += `{center}{w} ${formatearDinero(arqueo.montoCierreReal)} {/w}{br}`;
+  ticket += "----------------------------------------{br}{br}{br}";
+
+  // --- 🚀 SECCIÓN DE FIRMAS ---
+  ticket += "{s}    ________________    ________________{/s}{br}";
+  ticket += "{s}      Firma Cajero      Firma Supervisor{/s}{br}{br}";
+
+  ticket += "----------------------------------------{br}";
+  ticket += "{center}{s}Auditoría de Sistemas POS{/s}{br}{br}";
+
+  return ticket;
+};
+
 exports.buscarProductoVenta = async (req, res) => {
   try {
     const { codigo } = req.query;
@@ -1615,20 +1728,45 @@ exports.registroVenta = async (req, res) => {
       const subtotalVenta = Number(producto.subtotal);
       const neto = Math.round(subtotalVenta / 1.19);
 
-      await DetalleVenta.create(
+      const nuevoDetalle = await DetalleVenta.create(
         {
           descripcion: `Venta de ${producto.nombre}`,
           cantidad: producto.cantidad,
           precio: producto.precio,
           tipoDeEntrega: "Entrega Inmediata",
           fechaHoraEmision: new Date(),
-          subtotal: subtotalVenta,
+          subtotal: producto.precio * producto.cantidad,
           iva: subtotalVenta - neto,
           idVentaCliente: venta.idVentaCliente,
           idProducto: producto.idProducto,
         },
         { transaction: t },
       );
+
+      if (
+        producto.descuentosAplicados &&
+        producto.descuentosAplicados.length > 0
+      ) {
+        console.log("Entre");
+        for (const descuento of producto.descuentosAplicados) {
+          await DetalleVenta.create(
+            {
+              descripcion: `Descuento: {descuento.detalle}`,
+              cantidad: 1,
+              precio: 0,
+              montoDescuento: descuento.montoDescontado,
+              tipoDeEntrega: `Descuento en producto ${descuento.origen}`,
+              fechaHoraEmision: new Date(),
+              subtotal: -descuento.montoDescontado,
+              iva: 0,
+              idDescuento: descuento.idDescuento,
+
+              idVentaCliente: venta.idVentaCliente,
+            },
+            { transaction: t },
+          );
+        }
+      }
 
       const inventario = await Inventario.findOne({
         where: { idProducto: producto.idProducto, idBodega: idBodegaSucursal },
@@ -2119,9 +2257,10 @@ exports.guardarArqueoCaja = async (req, res) => {
       seRealizoArqueo: true,
     });
 
-    return res
-      .status(200)
-      .json({ message: "Arqueo de caja guardado exitosamente" });
+    return res.status(200).json({
+      message: "Arqueo de caja guardado exitosamente",
+      idRegistroCaja: registroAbierto.idRegistroCaja,
+    });
   } catch (error) {
     console.error("Error al guardar arqueo de caja:", error);
     return res.status(500).json({ message: "Error al guardar arqueo de caja" });
@@ -3064,7 +3203,7 @@ exports.imprimirComprobanteVenta = async (req, res) => {
         },
       ],
     });
-    //console.log("Venta encontrada para impresión:", JSON.stringify(venta));
+    console.log("Venta encontrada para impresión:", JSON.stringify(venta));
     //return res.status(200).json({ message: "Venta encontrada para impresión" });
     const idempotencyKey = randomUUID();
     configMP = {
@@ -3252,5 +3391,168 @@ exports.imprimirRetiroCaja = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Error al imprimir comprobante de retiro de caja" });
+  }
+};
+
+exports.imprimirArqueoCaja = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { deviceID, idArqueo } = req.params;
+    if (!deviceID || !idArqueo) {
+      return res
+        .status(400)
+        .json({ message: "Falta el ID del dispositivo o el ID del arqueo" });
+    }
+    const caja = await Caja.findOne({
+      where: { computadorID: deviceID },
+      transaction: t,
+    });
+    //console.group("Caja encontrada", caja);
+    if (!caja) {
+      await t.rollback();
+      return res.status(404).json({ message: "Caja no encontrada" });
+    }
+    if (!caja.idMercadoPagoPOS) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: "Esta caja no tiene un ID de Mercado Pago asociado" });
+    }
+    const sucursalCaja = await Sucursal.findOne({
+      where: { idSucursal: caja.idSucursal },
+      transaction: t,
+    });
+    if (!sucursalCaja) {
+      await t.rollback();
+      return res
+        .status(404)
+        .json({ error: "Sucursal de la caja no encontrada" });
+    }
+    let configMP = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+      },
+      validateStatus: () => true, // Para manejar manualmente los errores de status
+    };
+    const resTerminalesAsociadosCaja = await axios.get(
+      `https://api.mercadopago.com/terminals/v1/list?limit=50&pos_id=${Number(caja.idMercadoPagoPOS)}&store_id=${String(sucursalCaja.idMercadoPago)}`,
+      configMP,
+    );
+
+    //console.log("terminales", resTerminalesAsociadosCaja.data.data);
+    const listaTerminales = resTerminalesAsociadosCaja.data.data.terminals;
+    const terminal = listaTerminales.find(
+      (t) => t.pos_id === Number(caja.idMercadoPagoPOS),
+    );
+
+    if (!terminal) {
+      await t.rollback();
+      return res.status(400).json({
+        error: "Terminal de Mercado Pago  no fue encontrada en esta sucursal.",
+      });
+    }
+
+    const arqueoCaja = await RegistroCaja.findOne({
+      where: { idRegistroCaja: idArqueo },
+
+      include: [
+        {
+          model: Caja,
+        },
+      ],
+    });
+
+    if (!arqueoCaja) {
+      await t.rollback();
+      return res.status(404).json({ message: "Arqueo de caja no encontrado" });
+    }
+    const idempotencyKey = randomUUID();
+    configMP = {
+      headers: {
+        Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": idempotencyKey,
+      },
+      validateStatus: () => true,
+    };
+
+    const textoImprimir = generarTicketArqueoCaja(arqueoCaja);
+
+    const bodyMP = {
+      type: "print",
+      external_reference: `arqueo-${idArqueo}`,
+      config: {
+        point: {
+          terminal_id: terminal.id,
+          subtype: "custom",
+        },
+      },
+      content: textoImprimir,
+    };
+
+    const consulta = await axios.post(
+      "https://api.mercadopago.com/terminals/v1/actions",
+      bodyMP,
+      configMP,
+    );
+    if (consulta.status === 200 || consulta.status === 201) {
+      await t.commit();
+      return res.status(200).json({
+        message: "Comprobante de arqueo enviado a impresión exitosamente",
+      });
+    } else {
+      console.error(
+        "Error al enviar a imprimir en Mercado Pago:",
+        consulta.data,
+      );
+      await t.rollback();
+      return res
+        .status(500)
+        .json({ message: "Error al enviar a imprimir en Mercado Pago" });
+    }
+  } catch (error) {
+    console.error("Error al imprimir comprobante de arqueo de caja:", error);
+    return res
+      .status(500)
+      .json({ message: "Error al imprimir comprobante de arqueo de caja" });
+  }
+};
+
+exports.consultarStockProductos = async (req, res) => {
+  try {
+    const { codigoProducto } = req.params;
+    if (!codigoProducto) {
+      return res.status(400).json({ message: "Falta el código del producto" });
+    }
+
+    const stockProducto = await Inventario.findOne({
+      attributes: ["stock", "estado"],
+      include: [
+        {
+          model: Producto,
+          where: { codigo: codigoProducto },
+          attributes: ["nombre", "precioVenta"],
+        },
+      ],
+    });
+
+    if (!stockProducto) {
+      return res
+        .status(404)
+        .json({ message: "Producto no encontrado en inventario" });
+    }
+
+    return res.status(200).json({
+      stock: stockProducto.stock,
+      estado: stockProducto.estado,
+      nombre: stockProducto.producto.nombre,
+      precioVenta: stockProducto.producto.precioVenta,
+    });
+  } catch (error) {
+    console.error("Error al consultar stock de productos:", error);
+    return res
+      .status(500)
+      .json({ message: "Error al consultar stock de productos" });
   }
 };

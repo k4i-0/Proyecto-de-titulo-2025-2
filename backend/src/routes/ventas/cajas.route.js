@@ -2,6 +2,7 @@ const router = require("express").Router();
 
 const cajaController = require("../../controllers/ventas/caja.controller");
 
+router.get("/buscar/todas/cajas", cajaController.buscarTodasLasCajas);
 router.get(
   "/buscar/por/sucursal/:idSucursal",
   cajaController.buscarCajasPorSucursal,

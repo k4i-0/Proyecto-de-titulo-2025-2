@@ -57,6 +57,9 @@ import {
   NumberOutlined,
   PercentageOutlined,
   SafetyCertificateOutlined,
+  EyeOutlined,
+  TagOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 
 import {
@@ -79,6 +82,8 @@ import {
   generarRetiroCaja,
   imprimirComprobanteVenta,
   imprimirComprobanteRetiro,
+  consultarStockProductos,
+  imprimirArqueoCaja,
 } from "../../services/ventas/ventas.service.js";
 
 import {
@@ -116,7 +121,7 @@ const datosResumen = {
   efectivoEsperado: 0,
 };
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 export default function MenuPrincipalCaja() {
   const { user, logout } = useAuth();
@@ -143,7 +148,7 @@ export default function MenuPrincipalCaja() {
   const [infoPagosDiferidos, setInfoPagosDiferidos] = useState([]);
   const [montoVuelto, setMontoVuelto] = useState(0);
   const [esperandoPago, setEsperandoPago] = useState(false);
-  const [idVentaTemporal, setIdVentaTemporal] = useState(null);
+  //const [idVentaTemporal, setIdVentaTemporal] = useState(null);
 
   const [modalVentasDia, setModalVentasDia] = useState(false);
   const [ventasDelDia, setVentasDelDia] = useState([]);
@@ -157,6 +162,9 @@ export default function MenuPrincipalCaja() {
   const [modalDescuentoVisible, setModalDescuentoVisible] = useState(false);
   const [modalAutorizacionVisible, setModalAutorizacionVisible] =
     useState(false);
+  const [modalConsultarStockVisible, setModalConsultarStockVisible] =
+    useState(false);
+  const [stockProducto, setStockProducto] = useState(null);
 
   const [formDescuentoProducto] = Form.useForm();
   const [formAutorizacion] = Form.useForm();
@@ -169,6 +177,7 @@ export default function MenuPrincipalCaja() {
   const [formCierreCajaAdmin] = Form.useForm();
   const [formRecuperarVentaCaja] = Form.useForm();
   const [formRetiros] = Form.useForm();
+  const [formConsultarStock] = Form.useForm();
 
   const inputRef = useRef(null);
 
@@ -655,7 +664,7 @@ export default function MenuPrincipalCaja() {
     setInfoPagosDiferidos([]);
     setMontoVuelto(0);
     setTotalPendientePagar(0);
-    setIdVentaTemporal(null);
+    //setIdVentaTemporal(null);
     formMetodoPago.resetFields();
     formMetodoPago.setFieldsValue({ montoPago: 0 });
   };
@@ -843,7 +852,7 @@ export default function MenuPrincipalCaja() {
     setTotalPendientePagar(total);
     setInfoPagosDiferidos([]);
     setMontoVuelto(0);
-    setIdVentaTemporal(null); // Reseteamos ID
+    //setIdVentaTemporal(null); // Reseteamos ID
     formMetodoPago.setFieldsValue({ montoPago: 0 });
     setModalMetodoPago(true);
   };
@@ -989,7 +998,7 @@ export default function MenuPrincipalCaja() {
   const obtenerVentasDelDia = async () => {
     try {
       const res = await verVentasDelDia(localStorage.getItem("deviceID"));
-      console.log("Respuesta de consulta de ventas del día:", res.data);
+      // console.log("Respuesta de consulta de ventas del día:", res.data);
       if (res.status === 200) {
         setVentasDelDia(res.data);
       } else {
@@ -1115,7 +1124,7 @@ export default function MenuPrincipalCaja() {
   const obtenerDatosArqueoCaja = async () => {
     try {
       const res = await generarArqueoCaja(localStorage.getItem("deviceID"));
-      console.log("Resumen Caja State:", res.data);
+      // console.log("Resumen Caja State:", res.data);
       if (res.status === 200) {
         setResumenCaja(res.data);
 
@@ -1154,6 +1163,30 @@ export default function MenuPrincipalCaja() {
           description:
             res.data.message || "El arqueo de caja se ha enviado exitosamente",
         });
+        try {
+          const idArqueo = res.data.idRegistroCaja;
+          const response = await imprimirArqueoCaja(idArqueo, deviceID);
+          console.log("response al imprimir arqueo de caja:", response);
+          if (response.status === 200) {
+            notification.success({
+              message: "Arqueo de caja impreso",
+              description:
+                response.data.message ||
+                "El arqueo de caja se ha impreso exitosamente",
+            });
+          } else {
+            notification.error({
+              message: "Error al imprimir arqueo de caja",
+              description: response.data.message || "Intente nuevamente",
+            });
+          }
+        } catch (error) {
+          console.error("Error al enviar arqueo de caja:", error);
+          notification.error({
+            message: "Error al enviar arqueo de caja",
+            description: error.response?.data?.message || "Intente nuevamente",
+          });
+        }
         cerrarModalArqueoCaja();
         obtenerDatosCaja(localStorage.getItem("deviceID"));
         formArqueoCaja.resetFields();
@@ -1196,8 +1229,7 @@ export default function MenuPrincipalCaja() {
     try {
       const deviceID = localStorage.getItem("deviceID");
       const res = await consultaCierreCajaPendiente(deviceID);
-      console.log("Abriendo modal de cierre de caja administrativo...");
-      console.log("Ventas del día obtenidas para mostrar en modal:", res);
+      // console.log("Abriendo modal de cierre de caja administrativo...", res);
       if (res.status === 200) {
         setInfoCierreCajaAdmin(res.data.registroPendiente);
         notification.info({
@@ -1577,6 +1609,45 @@ export default function MenuPrincipalCaja() {
     setModalAutorizacionVisible(true);
   };
 
+  // ----- Funciones para Consulta Stock -----
+  const abrirModalConsultaStock = () => {
+    formConsultarStock.resetFields();
+    setModalConsultarStockVisible(true);
+  };
+
+  const cerrarModalConsultaStock = () => {
+    setModalConsultarStockVisible(false);
+    formConsultarStock.resetFields();
+    setStockProducto(null);
+  };
+
+  const funcionConsultaStock = async (values) => {
+    console.log("Consultando stock para código:", values.codigoProducto);
+
+    try {
+      const respuesta = await consultarStockProductos(values.codigoProducto);
+      if (respuesta.status === 200) {
+        setStockProducto(respuesta.data);
+        notification.success({
+          message: "Consulta exitosa",
+          description: `El stock actual de ${respuesta.data.nombre} es ${respuesta.data.stock}`,
+        });
+        return;
+      } else {
+        notification.error({
+          message: "Error",
+          description: respuesta.data?.message || "Intente nuevamente",
+        });
+      }
+    } catch (error) {
+      console.error("Error al consultar stock:", error);
+      notification.error({
+        message: "Error",
+        description: error.response?.data?.message || "Intente nuevamente",
+      });
+    }
+  };
+
   return (
     <div
       style={{
@@ -1728,6 +1799,13 @@ export default function MenuPrincipalCaja() {
                     !cajaAperturada ||
                     clavesSeleccionadas.length === 0,
                   onClick: solicitarAutorizacion,
+                },
+                {
+                  key: "10",
+                  icon: <FileSearchOutlined />,
+                  label: "Consultar Stock",
+                  disabled: cajaNoRegistrada || !cajaAperturada,
+                  onClick: abrirModalConsultaStock,
                 },
               ]}
             />
@@ -1946,6 +2024,7 @@ export default function MenuPrincipalCaja() {
                     rowKey="key"
                     locale={{ emptyText: "Sin productos agregados" }}
                     rowSelection={seleccionUnicaConfig}
+                    scroll={{ y: 300 }}
                     // onRow={(record) => {
                     //   return {
                     //     onClick: () => {
@@ -4607,6 +4686,79 @@ export default function MenuPrincipalCaja() {
             Autorizar
           </Button>
         </Form>
+      </Modal>
+      {/** Modal Consulta Stock */}
+      <Modal
+        open={modalConsultarStockVisible}
+        onCancel={cerrarModalConsultaStock}
+        title={
+          <Space>
+            <EyeOutlined style={{ color: "#1890ff" }} />
+            Consulta de Stock
+          </Space>
+        }
+        width={500}
+        centered
+        footer={null}
+      >
+        <Form
+          form={formConsultarStock}
+          layout="vertical"
+          onFinish={(values) => {
+            funcionConsultaStock(values);
+          }}
+        >
+          <Form.Item
+            name="codigoProducto"
+            label="Código o SKU del Producto"
+            rules={[
+              {
+                required: true,
+                message: "Ingresa el código o SKU del producto",
+              },
+            ]}
+          >
+            <Input
+              placeholder="Ingrese Codigo Del Producto ..."
+              prefix={<BarcodeOutlined style={{ color: "rgba(0,0,0,.25)" }} />}
+              autoFocus
+            />
+          </Form.Item>
+
+          <Button type="primary" htmlType="submit" block>
+            Consultar Stock
+          </Button>
+        </Form>
+
+        {stockProducto !== null && (
+          <div
+            style={{
+              marginTop: 24,
+              padding: 16,
+              backgroundColor: "#f0f7ff",
+              borderRadius: 8,
+              border: "1px solid #d6e4ff",
+            }}
+          >
+            <p style={{ margin: "4px 0", fontSize: "16px" }}>
+              <strong>Producto:</strong> {stockProducto.nombre}
+            </p>
+            <p style={{ margin: "4px 0", fontSize: "16px" }}>
+              {/* Apuntamos directamente a la propiedad stock */}
+              <strong>Stock Disponible:</strong>{" "}
+              <span style={{ color: "#1890ff", fontWeight: "bold" }}>
+                {stockProducto.stock}
+              </span>
+            </p>
+            <p style={{ margin: "4px 0", fontSize: "16px" }}>
+              <strong>Precio Venta:</strong> $
+              {Number(stockProducto.precioVenta || 0).toLocaleString("es-CL")}
+            </p>
+            <p style={{ margin: "4px 0", fontSize: "16px" }}>
+              <strong>Estado:</strong> {stockProducto.estado}
+            </p>
+          </div>
+        )}
       </Modal>
     </div>
   );
