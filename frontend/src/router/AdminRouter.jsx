@@ -22,6 +22,11 @@ import GestionCajas from "../pages/Admin/ventas/gestionCajas.jsx";
 import DescuentosUnicos from "../pages/Admin/ventas/DescuentosUnicos.jsx";
 import Pruebas from "../pages/Pruebas.jsx";
 
+//informes
+import InformesVentas from "../pages/Admin/Informes/informesVentas.jsx";
+import InformeInventario from "../pages/Admin/Informes/informeInventario.jsx";
+import InformeCaja from "../pages/Admin/Informes/informeCaja.jsx";
+
 import NoEncontrado from "../pages/Compartidas/NoEncontrado.jsx";
 
 const AdminRouter = () => {
@@ -60,6 +65,11 @@ const AdminRouter = () => {
         <Route path="descuentos" element={<GestionDescuentos />} />
         <Route path="gestion/cajas" element={<GestionCajas />} />
         <Route path="descuentos/unicos" element={<DescuentosUnicos />} />
+
+        {/**Informes */}
+        <Route path="informes/ventas" element={<InformesVentas />} />
+        <Route path="informes/inventario" element={<InformeInventario />} />
+        <Route path="informes/caja" element={<InformeCaja />} />
       </Route>
     </Routes>
   );

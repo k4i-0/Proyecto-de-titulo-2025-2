@@ -64,7 +64,7 @@ export async function miEstado() {
     //console.log("Respuesta verificación token:", response);
     return response;
   } catch (error) {
-    console.log("Error en miEstado:", error);
+    //console.log("Error en miEstado:", error);
     return error.response;
   }
 }
@@ -112,13 +112,13 @@ export async function inicioSesionCajaAlternativo(
       { rut, passwordCajaAlternativo },
       { withCredentials: true },
     );
-    console.log(
-      "Respuesta del servidor en inicioSesionCajaAlternativo:",
-      response,
-    );
+    // console.log(
+    //   "Respuesta del servidor en inicioSesionCajaAlternativo:",
+    //   response,
+    // );
     return response;
   } catch (error) {
-    console.log(error);
+    //console.log(error);
     return error.response;
   }
 }

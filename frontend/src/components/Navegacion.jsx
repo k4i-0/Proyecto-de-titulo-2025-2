@@ -105,7 +105,7 @@ export default function Navegacion({
               key: "Informes",
               icon: <BarChartOutlined />,
               label: "Informes",
-              disabled: true,
+
               children: [
                 {
                   key: "informe_ventas",
@@ -115,11 +115,13 @@ export default function Navegacion({
                 {
                   key: "informe_inventario",
                   label: "Informe de Inventario",
+
                   onClick: () => handleNavigate("/admin/informes/inventario"),
                 },
                 {
                   key: "informe_caja",
                   label: "Informe de Caja",
+
                   onClick: () => handleNavigate("/admin/informes/caja"),
                 },
               ],

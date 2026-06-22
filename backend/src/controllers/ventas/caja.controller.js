@@ -5,6 +5,7 @@ const Venta = require("../../models/ventas/VentaCliente");
 const Funcionario = require("../../models/Usuarios/Funcionario");
 const RealizaVenta = require("../../models/ventas/RealizaVenta");
 const DetallePago = require("../../models/ventas/detallePago");
+const Retiros = require("../../models/ventas/Retiros");
 
 const { sequelize } = require("../../models");
 const { Op } = require("sequelize");
@@ -35,6 +36,17 @@ exports.buscarCajasPorSucursal = async (req, res) => {
         "montoCajaDebito",
         "montoCajaCredito",
         "estadoCaja",
+      ],
+      include: [
+        {
+          model: RegistroCaja,
+          where: { estadoRegistroCaja: "Abierta" },
+          attributes: ["fechaApertura", "montoInicial", "seRealizoArqueo"],
+        },
+        {
+          model: Retiros,
+          attributes: ["idRetiro", "monto", "motivo"],
+        },
       ],
       transaction,
     });
@@ -91,6 +103,12 @@ exports.buscarDatosCuadraturaCaja = async (req, res) => {
       return res
         .status(404)
         .json({ error: "No se encontraron registros para esta caja" });
+    }
+    if (ultimoRegistro.seRealizoArqueo === false) {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ error: "No se ha realizado el arqueo de caja" });
     }
 
     const finDeHoy = new Date();
@@ -307,13 +325,20 @@ exports.cuadrarCaja = async (req, res) => {
       {
         fechaCierre: new Date(),
         estadoRegistroCaja: "Cerrada",
+        montoCierreDebito: caja.montoCajaDebito || 0,
+        montoCierreCredito: caja.montoCajaCredito || 0,
         observacionesCierre: observaciones || null,
       },
       { transaction: t },
     );
 
     await caja.update(
-      { estadoCaja: "Cerrada", estadoPOS: "Bloqueada" },
+      {
+        estadoCaja: "Cerrada",
+        estadoPOS: "Bloqueada",
+        montoCajaDebito: 0,
+        montoCajaCredito: 0,
+      },
       { transaction: t },
     );
     await t.commit();

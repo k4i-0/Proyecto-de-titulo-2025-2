@@ -16,6 +16,7 @@ const DetallePago = sequelize.define(
         "Tarjeta Debito",
         "Tarjeta Credito",
         "Funcionario",
+        "Pago Mixto",
       ),
       allowNull: false,
     },

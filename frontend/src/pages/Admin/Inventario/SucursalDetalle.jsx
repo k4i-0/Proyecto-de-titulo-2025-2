@@ -5,475 +5,380 @@ import {
   Col,
   Card,
   Statistic,
-  Button,
-  Table,
   Typography,
   Space,
   Tag,
   Divider,
-  Empty,
-  message,
-  Drawer,
-  Spin,
+  Button,
+  Skeleton,
+  Progress,
   List,
   Avatar,
   notification,
 } from "antd";
 import {
-  ShoppingCartOutlined,
-  TeamOutlined,
-  DollarOutlined,
-  ClockCircleOutlined,
-  AppstoreAddOutlined,
-  ArrowLeftOutlined,
-  RiseOutlined,
   ShopOutlined,
-  UserOutlined,
-  PhoneOutlined,
-  MailOutlined,
-  PlusOutlined,
+  DollarOutlined,
+  ShoppingCartOutlined,
+  ProfileOutlined,
+  WarningOutlined,
+  TrophyOutlined,
+  SyncOutlined,
+  TeamOutlined,
+  DesktopOutlined,
+  ArrowLeftOutlined,
+  ClockCircleOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
-import obtenerInventarios from "../../../services/inventario/Inventario.service";
-import { getAllProveedores } from "../../../services/inventario/Proveedor.service";
+// --- Función auxiliar para dar formato a moneda ---
+const formatearDinero = (valor) => {
+  if (isNaN(valor)) return "$ 0";
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    minimumFractionDigits: 0,
+  }).format(valor);
+};
+
+// --- Componente reutilizable para tarjetas armoniosas ---
+const CardMetrica = ({
+  loading,
+  title,
+  value,
+  prefix,
+  children,
+  valueStyle,
+}) => (
+  <Card
+    hoverable
+    //bordered={false}
+    style={{
+      height: "100%",
+      minHeight: "160px",
+      borderRadius: "12px",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+    }}
+  >
+    <Skeleton loading={loading} active paragraph={{ rows: 2 }}>
+      <Statistic
+        title={
+          <Text type="secondary" strong>
+            {title}
+          </Text>
+        }
+        value={value}
+        prefix={prefix}
+        valueStyle={{ fontWeight: "bold", fontSize: "24px", ...valueStyle }}
+      />
+      <div style={{ marginTop: 12 }}>{children}</div>
+    </Skeleton>
+  </Card>
+);
+
+import { obtenerDashboardSucursal } from "../../../services/Metricas.service";
+
 import { obtenerSucursalPorId } from "../../../services/inventario/Sucursal.service";
+
+import obtenerInventarios from "../../../services/inventario/Inventario.service";
+
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function SucursalDetalle() {
   const { idSucursal } = useParams();
-
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Datos de ejemplo - Reemplazar con datos reales de tu API
-  const [sucursalInfo, setSucursalInfo] = useState();
-  const [inventarios, setInventarios] = useState([]);
-
-  //Consulta a api
-  const [metricas, setMetricas] = useState({
-    ventasDia: 0,
-    funcionariosActivos: 0,
-    cajasActivas: 0,
-    ventasHora: 0,
-    crecimiento: 0,
+  // --- Estado de la Sucursal ---
+  const [sucursalInfo, setSucursalInfo] = useState({
+    nombre: "Cargando...",
+    direccion: "",
+    estado: "Cerrada",
   });
-  // const [verProveedores, setVerProveedores] = useState(false);
-  // const [proveedores, setProveedores] = useState([]);
+  const [sucursalInventarios, setSucursalInventarios] = useState([]);
 
-  //llamar api para obtener inventario
-  const cargarInventarios = async () => {
+  // --- Estado MOCK de Métricas (Lo que el backend deberá enviar) ---
+  const [metricas, setMetricas] = useState(null);
+
+  const cargarDatos = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await obtenerInventarios();
-      //console.log("Respuesta inventarios:", response);
-      if (!response) {
-        message.error("Error al obtener inventarios");
-        setInventarios([]);
+      const response = await obtenerSucursalPorId(idSucursal);
+      if (response.status === 200) {
+        setSucursalInfo(response.data);
+        try {
+          const response = await obtenerDashboardSucursal(idSucursal);
+          if (response.status === 200) {
+            setMetricas(response.data);
+            return;
+          }
+          notification.error({
+            message: "Error",
+            description: "No se pudieron cargar las métricas de la sucursal",
+          });
+        } catch (error) {
+          console.error("Error al cargar métricas de la sucursal:", error);
+          notification.error({
+            message: "Error",
+            description: "No se pudieron cargar las métricas de la sucursal",
+          });
+        }
         return;
       }
-
-      if (response.status === 422) {
-        message.warning("No hay productos en el inventario");
-        setInventarios([]);
-        return;
-      }
-
-      // Asumiendo que la respuesta tiene la data en response.data
-      const data = response.data || response;
-      setInventarios(Array.isArray(data) ? data : []);
+      notification.error({
+        message: "Error",
+        description: "No se pudo cargar la información de la sucursal",
+      });
     } catch (error) {
-      console.error("Error al obtener inventarios:", error);
-      message.error("No se pudieron cargar los productos");
-      setInventarios([]);
+      console.error("Error al cargar información de la sucursal:", error);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  //funcion para traer inventarios de la sucursal
+  const generarPDF = (inventarios) => {
+    const doc = new jsPDF("p", "mm", "a4");
+
+    doc.setFontSize(18);
+    doc.text("Reporte de Inventario", 14, 20);
+
+    doc.setFontSize(10);
+    doc.text(`Fecha: ${new Date().toLocaleDateString("es-CL")}`, 14, 28);
+
+    const columnas = [
+      "Producto",
+      "Código",
+      "Marca",
+      "Bodega",
+      "Stock Actual",
+      "Estado",
+    ];
+
+    const filas = inventarios.map((item) => [
+      item.producto.nombre,
+      item.producto.codigo,
+      item.producto.marca,
+      item.bodega.nombre,
+      Number(item.stock).toString(), // Quitamos decimales innecesarios
+      item.estado,
+    ]);
+
+    autoTable(doc, {
+      head: [columnas],
+      body: filas,
+      startY: 35,
+      theme: "striped",
+      headStyles: { fillColor: [24, 144, 255] },
+      styles: { fontSize: 9 },
+    });
+
+    const pdfBlobUrl = doc.output("bloburl");
+    window.open(pdfBlobUrl, "_blank");
   };
-  const cargarMetricas = useCallback(async () => {
+
+  const cargarInventarios = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const sucusal = await obtenerSucursalPorId(idSucursal);
-      if (sucusal.status === 200) {
-        message.success("Sucursal cargada correctamente");
-        setSucursalInfo(sucusal.data);
-        setLoading(false);
+      const response = await obtenerInventarios(idSucursal);
+      if (response.status === 200) {
+        console.log("inventarios obtenidos:", response.data);
+        setSucursalInventarios(response.data);
+        generarPDF(response.data);
         return;
       }
-      if (sucusal.status === 204) {
-        message.info("Sucursal no encontrada");
-        setSucursalInfo([]);
-        setLoading(false);
-        return;
-      }
-      message.error("Error en el servidor al obtener la sucursal");
-      setLoading(false);
-      return;
+      notification.error({
+        message: "Error",
+        description: "No se pudieron cargar los inventarios de la sucursal",
+      });
     } catch (error) {
-      message.error("Error al cargar métricas");
-      console.error("Error al cargar métricas:", error);
+      console.error("Error al cargar inventarios de la sucursal:", error);
+      notification.error({
+        message: "Error",
+        description: "No se pudieron cargar los inventarios de la sucursal",
+      });
+    } finally {
       setLoading(false);
-      return;
     }
   }, [idSucursal]);
 
   useEffect(() => {
-    console.log("Dentro de useEffect :", idSucursal === "undefined");
-    if (idSucursal == "undefined" || idSucursal == "null") {
-      notification.warning({
-        message: "Error al obtener sucursal!!",
-      });
+    if (!idSucursal || idSucursal === "undefined") {
       navigate("/");
       return;
     }
-
-    cargarInventarios();
-    cargarMetricas();
-  }, [cargarMetricas, idSucursal, navigate]);
-
-  if (!idSucursal) return null;
-
-  const columnsInventario = [
-    {
-      title: "Producto",
-      dataIndex: "producto",
-      key: "producto",
-      render: (producto) => producto?.nombre || "N/A",
-      //   sorter: (a, b) => a.producto.localeCompare(b.producto),
-    },
-    {
-      title: "Código Producto",
-      dataIndex: "producto",
-      key: "producto",
-      align: "center",
-      render: (producto) => producto?.codigo || "N/A",
-    },
-    {
-      title: "Código Lote",
-      dataIndex: "lote",
-      key: "lote",
-      align: "center",
-      render: (lote) => lote?.codigo || "N/A",
-    },
-    {
-      title: "Stock Actual",
-      dataIndex: "stock",
-      key: "stock",
-      align: "center",
-      sorter: (a, b) => a.stock - b.stock,
-      render: (stock, record) => (
-        <Text
-          strong
-          style={{
-            color:
-              stock === 0
-                ? "#ff4d4f"
-                : stock < record.stockMinimo
-                  ? "#faad14"
-                  : "#52c41a",
-          }}
-        >
-          {stock}
-        </Text>
-      ),
-    },
-    // {
-    //   title: "Stock Mínimo",
-    //   dataIndex: "stockMinimo",
-    //   key: "stockMinimo",
-    //   align: "center",
-    // },
-    {
-      title: "Ubicación en Bodega",
-      dataIndex: "ubicacion",
-      key: "ubicacion",
-      align: "center",
-    },
-    {
-      title: "Estado",
-      dataIndex: "estado",
-      key: "estado",
-      align: "center",
-      filters: [
-        { text: "Buena", value: "Buena" },
-        { text: "Malo", value: "Malo" },
-        { text: "Revision", value: "Revision" },
-      ],
-      onFilter: (value, record) => record.estado === value,
-      render: (estado) => {
-        const colores = {
-          Buena: "success",
-          Malo: "error",
-          Revision: "warning",
-        };
-        return <Tag color={colores[estado]}>{estado}</Tag>;
-      },
-    },
-  ];
-
-  const handleGestionProductos = () => {
-    // Navegar a la página de gestión de productos
-    navigate("/admin/productos");
-  };
+    cargarDatos();
+  }, [idSucursal, navigate, cargarDatos]);
 
   return (
-    <>
-      <Row justify="center" style={{ marginBottom: 24 }}>
-        <Col span={24}>
-          <Space direction="vertical" size="small" style={{ width: "100%" }}>
-            <Space>
-              <ShopOutlined style={{ fontSize: "32px", color: "#1890ff" }} />
+    <div style={{ padding: "0 12px" }}>
+      {/* --- CABECERA --- */}
+      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+        <Col>
+          <Space size="large">
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+              shape="circle"
+            />
+            <Space align="center">
+              <Avatar
+                size={54}
+                icon={<ShopOutlined />}
+                style={{ backgroundColor: "#1890ff" }}
+              />
               <div>
                 <Title level={2} style={{ margin: 0 }}>
-                  {sucursalInfo?.nombre} {idSucursal}
+                  {sucursalInfo.nombre}
                 </Title>
-                <Text type="secondary">{sucursalInfo?.direccion}</Text>
+                <Space>
+                  <Text type="secondary">{sucursalInfo.direccion}</Text>
+                  <Tag
+                    color={
+                      sucursalInfo.estado === "Abierta" ? "success" : "error"
+                    }
+                  >
+                    {sucursalInfo.estado}
+                  </Tag>
+                </Space>
               </div>
             </Space>
           </Space>
         </Col>
-      </Row>
-
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Ventas del Día"
-              value={metricas.ventasDia}
-              prefix={<DollarOutlined />}
-              suffix="CLP"
-              valueStyle={{ color: "#3f8600" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Funcionarios Activos"
-              value={metricas.funcionariosActivos}
-              prefix={<TeamOutlined />}
-              valueStyle={{ color: "#1890ff" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Cajas Activas"
-              value={metricas.cajasActivas}
-              prefix={<ShoppingCartOutlined />}
-              valueStyle={{ color: "#722ed1" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Ventas por Hora"
-              value={metricas.ventasHora}
-              prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: "#fa8c16" }}
-            />
-          </Card>
+        <Col>
+          <Button type="primary" onClick={cargarInventarios}>
+            Descargar Inventario
+          </Button>
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} lg={12}>
-          <Card title="Rendimiento de Ventas">
-            <Statistic
-              title="Crecimiento vs. Mes Anterior"
-              value={metricas.crecimiento}
-              precision={2}
-              valueStyle={{ color: "#3f8600" }}
-              prefix={<RiseOutlined />}
-              suffix="%"
-            />
-          </Card>
+      <Divider style={{ margin: "16px 0 24px 0" }} />
+
+      {/* --- SECCIÓN 1: FINANZAS Y FLUJO (Lo que más importa al gerente) --- */}
+      <Title level={4} style={{ marginBottom: 16 }}>
+        Rendimiento Comercial de Hoy
+      </Title>
+      <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
+        <Col xs={24} sm={12} lg={6}>
+          <CardMetrica
+            loading={loading}
+            title="Ingresos del Día"
+            value={metricas ? formatearDinero(metricas.ventasHoy) : "$ 0"}
+            prefix={<DollarOutlined />}
+            valueStyle={{ color: "#3f8600" }}
+          >
+            {/* <Progress
+              percent={75}
+              size="small"
+              strokeColor="#3f8600"
+              format={() => "Meta diaria"}
+            /> */}
+          </CardMetrica>
         </Col>
-        <Col xs={24} lg={12}>
-          <Card title="Estado del Inventario">
-            <Space direction="vertical" style={{ width: "100%" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Text>Productos Disponibles:</Text>
-                <Text strong style={{ color: "#52c41a" }}>
-                  {inventarios.filter((p) => p.estado === "Disponible").length}
-                </Text>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Text>Stock Bajo:</Text>
-                <Text strong style={{ color: "#faad14" }}>
-                  {inventarios.filter((p) => p.estado === "Stock Bajo").length}
-                </Text>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <Text>Agotados:</Text>
-                <Text strong style={{ color: "#ff4d4f" }}>
-                  {inventarios.filter((p) => p.estado === "Agotado").length}
-                </Text>
-              </div>
+
+        <Col xs={24} sm={12} lg={6}>
+          <CardMetrica
+            loading={loading}
+            title="Transacciones (Boletas)"
+            value={metricas?.transaccionesHoy || 0}
+            prefix={<ShoppingCartOutlined style={{ color: "#722ed1" }} />}
+          >
+            <Text type="secondary">
+              <ClockCircleOutlined /> Hora pico: {metricas?.horaPico?.hora} hrs
+              ({metricas?.horaPico?.cantidad} ventas)
+            </Text>
+          </CardMetrica>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <CardMetrica
+            loading={loading}
+            title="Ticket Promedio"
+            value={metricas ? formatearDinero(metricas.ticketPromedio) : "$ 0"}
+            prefix={<ProfileOutlined style={{ color: "#1890ff" }} />}
+          >
+            <Text type="secondary">Gasto promedio por cliente</Text>
+          </CardMetrica>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <CardMetrica
+            loading={loading}
+            title="Operatividad"
+            value={`${metricas?.cajasActivas || 0} / ${metricas?.totalCajas || 0}`}
+            prefix={<DesktopOutlined style={{ color: "#fa8c16" }} />}
+          >
+            <Space>
+              <TeamOutlined style={{ color: "#8c8c8c" }} />
+              <Text type="secondary">
+                {metricas?.funcionariosActivos || 0} funcionarios en turno
+              </Text>
             </Space>
-          </Card>
+          </CardMetrica>
         </Col>
       </Row>
-      {/* <Row gutter={16}>
-        <Col>
-          <Button
-            type="primary"
-            onClick={() =>
-              navigate("/admin/gestion/colaboradores/" + idSucursal)
-            }
-          >
-            Administrar Colaboradores
-          </Button>
-        </Col>
-        <Col>
-          <Button
-            type="primary"
-            onClick={() => navigate("/admin/proveedores/" + idSucursal)}
-          >
-            Ver Proveedores
-          </Button>
-        </Col>
-      </Row> */}
-      {/* <Drawer open={verProveedores} onClose={() => setVerProveedores(false)}>
-        <Row justify="end" style={{ marginBottom: 16 }}>
-          <Col>
-            <Button
-              type="default"
-              onClick={() => navigate("/admin/aprovisionamiento/" + idSucursal)}
-            >
-              <PlusOutlined />
-            </Button>
-          </Col>
-        </Row>
-        <Title style={{ textAlign: "center" }} level={4}>
-          Proveedores de la Sucursal
-        </Title>
 
-        {loading ? (
-          <Spin tip="Loading" size="large" fullscreen>
-            Cargando...
-          </Spin>
-        ) : proveedores.length > 0 ? (
-          <>
-            <List
-              dataSource={proveedores}
-              renderItem={(prov) => (
-                <List.Item key={prov.idProveedor}>
-                  <List.Item.Meta
-                    title={
-                      <Space>
-                        <UserOutlined />
-                        {prov.nombre}
-                        <Tag color={prov.estado === "Activo" ? "green" : "red"}>
-                          {prov.estado}
-                        </Tag>
-                      </Space>
-                    }
-                    description={
-                      <Space
-                        direction="vertical"
-                        size="small"
-                        style={{ width: "100%" }}
-                      >
-                        <div>
-                          <strong>RUT:</strong> {prov.rut}
-                        </div>
-                        <div>
-                          <PhoneOutlined /> {prov.telefono}
-                        </div>
-                        <div>
-                          <MailOutlined /> {prov.email}
-                        </div>
-                        <div>
-                          <ShopOutlined /> <strong>Rubro:</strong> {prov.rubro}
-                        </div>
-                        <div>
-                          <strong>Giro:</strong> {prov.giro}
-                        </div>
-                      </Space>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
-          </>
-        ) : (
-          <>
-            <Empty
-              description="No hay proveedores registrados"
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
-
-            <Row justify="center">
-              <Button
-                type="primary"
-                onClick={() =>
-                  navigate("/admin/aprovisionamiento/" + idSucursal)
-                }
-              >
-                Ingresar Nuevo Proveedor
-              </Button>
-            </Row>
-          </>
-        )}
-      </Drawer> */}
-
-      <Divider />
-
-      {/* Sección de Inventario */}
-      {/* <Row style={{ marginBottom: 16 }}>
-        <Col span={24}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+      {/* --- SECCIÓN 2: INVENTARIO Y OPERACIONES --- */}
+      <Title level={4} style={{ marginBottom: 16 }}>
+        Estado de Inventario
+      </Title>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={8}>
+          <CardMetrica
+            loading={loading}
+            title="Alertas de Stock Crítico"
+            value={metricas?.productosStockCritico || 0}
+            prefix={<WarningOutlined />}
+            valueStyle={{
+              color:
+                metricas?.productosStockCritico > 0 ? "#cf1322" : "#52c41a",
             }}
           >
-            <Title level={3}>Inventario de Productos</Title>
-            <Button
-              type="primary"
-              icon={<AppstoreAddOutlined />}
-              onClick={handleGestionProductos}
-              size="large"
-            >
-              Gestión de Productos
-            </Button>
-          </div>
-          <Text type="secondary">
-            Gestiona productos, categorías y visualiza el inventario de esta
-            sucursal
-          </Text>
+            {metricas?.productosStockCritico > 0 ? (
+              <Button type="link" danger style={{ padding: 0 }}>
+                Revisar productos a reponer
+              </Button>
+            ) : (
+              <Text type="success">Inventario saludable</Text>
+            )}
+          </CardMetrica>
         </Col>
-      </Row> */}
 
-      {/* Tabla de inventario */}
-      {/* <Row>
-        <Col span={24}>
-          <Card>
-            <Table
-              columns={columnsInventario}
-              dataSource={inventarios}
-              loading={loading}
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showTotal: (total) => `Total: ${total} productos`,
-              }}
-              locale={{
-                emptyText: (
-                  <Empty
-                    description="No hay productos en el inventario"
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  />
-                ),
-              }}
-            />
-          </Card>
+        <Col xs={24} md={8}>
+          <CardMetrica
+            loading={loading}
+            title="Producto Más Vendido"
+            value={metricas?.productoEstrella?.nombre || "N/A"}
+            prefix={<TrophyOutlined style={{ color: "#faad14" }} />}
+            valueStyle={{ fontSize: "18px", color: "#876800" }}
+          >
+            <Text type="secondary">
+              Se han vendido{" "}
+              <strong>{metricas?.productoEstrella?.cantidad || 0}</strong>{" "}
+              unidades hoy.
+            </Text>
+          </CardMetrica>
         </Col>
-      </Row> */}
-    </>
+
+        <Col xs={24} md={8}>
+          <CardMetrica
+            loading={loading}
+            title="Rotación de Inventario (Mes)"
+            value={metricas?.rotacionInventario || 0}
+            prefix={<SyncOutlined style={{ color: "#13c2c2" }} />}
+            valueStyle={{ color: "#13c2c2" }}
+          >
+            <Progress
+              percent={metricas?.rotacionInventario}
+              size="small"
+              strokeColor="#13c2c2"
+              format={(val) => `${val}% rotado`}
+            />
+          </CardMetrica>
+        </Col>
+      </Row>
+    </div>
   );
 }

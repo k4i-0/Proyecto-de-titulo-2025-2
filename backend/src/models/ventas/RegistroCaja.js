@@ -7,6 +7,7 @@ const RegistroCaja = sequelize.define(
     idRegistroCaja: {
       type: DataTypes.INTEGER,
       primaryKey: true,
+      unique: true,
       autoIncrement: true,
     },
     montoInicial: {
@@ -26,6 +27,14 @@ const RegistroCaja = sequelize.define(
       allowNull: false,
       defaultValue: "Abierta",
     },
+    montoCierreDebito: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+    },
+    montoCierreCredito: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+    },
     montoCierreTeorico: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
@@ -37,6 +46,11 @@ const RegistroCaja = sequelize.define(
     cantidadMontoCierreReal: {
       type: DataTypes.JSON,
       allowNull: true,
+    },
+    seRealizoArqueo: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: false,
     },
     idFuncionarioArquea: {
       type: DataTypes.INTEGER,

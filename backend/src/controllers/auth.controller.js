@@ -105,11 +105,11 @@ async function login(req, res) {
     });
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false, //process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 1 * 60 * 60 * 1000,
+      secure: false, //process.env.NODE_ENV === "production", // candado http si es true solo acepta https
+      sameSite: "lax", // para evitar ataques CSRF, permite enviar cookies solo en solicitudes del mismo sitio
+      maxAge: 24 * 60 * 60 * 1000,
     });
-    console.log(funcionarioEncontrado);
+    //console.log(funcionarioEncontrado);
     return res.status(200).json({
       datos: {
         email: funcionarioEncontrado.email,
@@ -145,7 +145,7 @@ async function loginCodigo(req, res) {
   try {
     const { codigo } = req.body;
     //VERIFICA QUE SE RECIBA EL CODIGO
-    console.log("Codigo:", codigo);
+    //console.log("Codigo:", codigo);
     if (!codigo) {
       return res.status(203).json({ message: "Faltan datos" });
     }
@@ -163,7 +163,7 @@ async function loginCodigo(req, res) {
       ],
     });
 
-    console.log("Funcionario encontrado:", verificarFuncionario);
+    //console.log("Funcionario encontrado:", verificarFuncionario);
 
     //SI NO EXISTE RETURN 404
     if (!verificarFuncionario) {
@@ -193,7 +193,7 @@ async function loginCodigo(req, res) {
         tipoSession: "Caja",
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" },
+      { expiresIn: "1h" },
     );
 
     //SI NO SE CREA TOKEN RETURN 404
@@ -215,7 +215,7 @@ async function loginCodigo(req, res) {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias de session activa
+      maxAge: 1 * 60 * 60 * 1000, // 1 hora de session activa
     });
 
     //ENVIA DATOS PARA SESSION ABIERTA
@@ -289,7 +289,7 @@ async function loginCajaAlternativo(req, res) {
         session: "Caja",
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" },
+      { expiresIn: "1h" },
     );
     //SI NO SE CREA TOKEN RETURN 404
     if (!token) {

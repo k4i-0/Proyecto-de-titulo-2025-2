@@ -59,4 +59,14 @@ router.post(
   "/generar/retiro/caja/:deviceID",
   ventasController.generarRetiroCaja,
 );
+
+router.post(
+  "/imprimir/venta/:idVenta/:deviceID",
+  ventasController.imprimirComprobanteVenta,
+);
+
+router.post(
+  "/imprimir/comprobante/retiro/:idRetiro/:deviceID",
+  ventasController.imprimirRetiroCaja,
+);
 module.exports = router;

@@ -45,14 +45,188 @@ const {
 const {
   crearOrdenPago,
 } = require("../../services/mercadoPago/ordenesPago/crearOrdenPago");
+
 const { type } = require("os");
 
+/**
+ * Genera el string con formato Mercado Pago Point usando el JSON de Sequelize
+ */
+const generarTicketMercadoPago = (venta, nombreSucursal = "Casa Matriz") => {
+  // Función auxiliar para formato de moneda chilena
+  const formatearDinero = (monto) =>
+    `$${Number(monto).toLocaleString("es-CL")}`;
+
+  // Formato de fecha
+  const fechaStr = new Date(venta.fechaVenta).toLocaleString("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  // 1. Extraemos cajero y caja navegando por el array 'realizaVenta'
+  const atiende = venta.realizaVenta?.[0]?.funcionario?.nombre || "Cajero";
+  const cajaNum = venta.realizaVenta?.[0]?.caja?.numeroCaja || "1";
+
+  let ticket = "{br}----------------------------------------{br}";
+  ticket += "{center}{w} COMPROBANTE DE VENTA {/w}{br}{br}";
+  ticket += `{s} Tienda: ${nombreSucursal}{/s}{br}`;
+  ticket += `{s} Nro Venta: ${venta.idVentaCliente}{/s}{br}`;
+  ticket += `{s} Fecha: ${fechaStr}{/s}{br}`;
+  ticket += `{s} Atiende: ${atiende} (Caja ${cajaNum}){/s}{br}`;
+  ticket += "----------------------------------------{br}";
+
+  ticket += "{s}ARTICULO               CANT     SUBTOTAL{/s}{br}";
+  ticket += "{s}----------------------------------------{/s}{br}";
+
+  // 2. Extraemos el arreglo de 'detalleventa' (ahora en minúscula)
+  const detalles = venta.detalleventa || [];
+
+  detalles.forEach((detalle) => {
+    let nombre = detalle.producto?.nombre || "Producto";
+    if (nombre.length > 22) nombre = nombre.substring(0, 21) + ".";
+    const nombreFormateado = nombre.padEnd(22, " ");
+
+    // Convertimos a número para limpiar ceros innecesarios (ej: "0.250" -> "0.25")
+    // y lo rellenamos a 4 caracteres para alinear
+    const cantFormateada = String(Number(detalle.cantidad)).padStart(4, " ");
+
+    const subtotalFormateado = formatearDinero(detalle.subtotal).padStart(
+      12,
+      " ",
+    );
+
+    ticket += `{s}${nombreFormateado} ${cantFormateada} ${subtotalFormateado}{/s}{br}`;
+  });
+
+  ticket += "----------------------------------------{br}";
+  ticket += `{center}{w} TOTAL: ${formatearDinero(venta.totalVenta)} {/w}{br}`;
+  ticket += "----------------------------------------{br}";
+
+  ticket += "{s}DETALLE DE PAGO:{/s}{br}";
+
+  // 3. Extraemos el arreglo de 'detallepagos' (ahora en minúscula)
+  const pagos = venta.detallepagos || [];
+
+  pagos.forEach((pago) => {
+    const metodo = pago.metodoPago.padEnd(26, " ");
+    const monto = formatearDinero(pago.montoPagado).padStart(13, " ");
+    ticket += `{s}- ${metodo}${monto}{/s}{br}`;
+  });
+
+  ticket += "----------------------------------------{br}";
+  ticket += "{center}{s}¡Gracias por su preferencia!{/s}{br}{br}";
+
+  return ticket;
+};
+
+/**
+ * Genera el string con formato Mercado Pago Point para un Retiro de Caja
+ * @param {Object} retiro - Objeto Retiro consultado desde Sequelize
+ * @param {String} nombreSucursal - Nombre de la sucursal o local
+ */
+const generarTicketRetiroMercadoPago = (
+  retiro,
+  nombreSucursal = "Casa Matriz",
+) => {
+  // Función auxiliar para formato de moneda chilena
+  const formatearDinero = (monto) =>
+    `$${Number(monto).toLocaleString("es-CL")}`;
+
+  // Formato de fecha
+  const fechaStr = new Date(retiro.fechaHoraRetiro).toLocaleString("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  // Datos del funcionario que realiza el retiro
+  const atiende = retiro.funcionario?.nombre || "Cajero";
+  const rutCajero = retiro.funcionario?.rut || "";
+  const cajaNum = retiro.caja?.numeroCaja || "1";
+
+  // Encabezado del ticket
+  let ticket = "{br}----------------------------------------{br}";
+  ticket += "{center}{w} COMPROBANTE DE RETIRO {/w}{br}{br}";
+  ticket += `{s} Tienda: ${nombreSucursal}{/s}{br}`;
+  ticket += `{s} Nro Retiro: ${retiro.idRetiro}{/s}{br}`;
+  ticket += `{s} Fecha: ${fechaStr}{/s}{br}`;
+  ticket += `{s} Cajero: ${atiende} (Caja ${cajaNum}){/s}{br}`;
+  ticket += `{s} Motivo: ${retiro.motivo || "No especificado"}{/s}{br}`;
+  ticket += "----------------------------------------{br}";
+
+  // Desglose de billetes/monedas
+  if (retiro.denominaciones) {
+    try {
+      // Convertimos el string a objeto JSON
+      const denom = JSON.parse(retiro.denominaciones);
+
+      // Mapeamos las llaves de tu JSON al valor real en pesos chilenos
+      const valoresMoneda = {
+        d20000: 20000,
+        d10000: 10000,
+        d5000: 5000,
+        d2000: 2000,
+        d1000: 1000,
+        d500: 500,
+        d100: 100,
+        d50: 50,
+        d10: 10,
+        d1: 1,
+      };
+
+      ticket += "{s}DENOMINACION           CANT   SUBTOTAL{/s}{br}";
+      ticket += "{s}----------------------------------------{/s}{br}";
+
+      let mostroDesglose = false;
+
+      // Iteramos sobre las denominaciones
+      for (const [llave, cantidad] of Object.entries(denom)) {
+        // Solo imprimimos si hay al menos 1 billete/moneda de este tipo
+        if (cantidad > 0 && valoresMoneda[llave]) {
+          mostroDesglose = true;
+          const valorReal = valoresMoneda[llave];
+          const subtotalDenominacion = valorReal * cantidad;
+
+          // Alineación de columnas: 20 chars | 5 chars | 11 chars
+          const nombreDenom = formatearDinero(valorReal).padEnd(20, " ");
+          const cantFormateada = String(cantidad).padStart(5, " ");
+          const subFormateado = formatearDinero(subtotalDenominacion).padStart(
+            11,
+            " ",
+          );
+
+          ticket += `{s}${nombreDenom} ${cantFormateada} ${subFormateado}{/s}{br}`;
+        }
+      }
+
+      if (mostroDesglose) {
+        ticket += "----------------------------------------{br}";
+      }
+    } catch (error) {
+      console.error("Error al leer denominaciones del retiro:", error);
+    }
+  }
+
+  // Total
+  ticket += `{center}{w} TOTAL RETIRADO: ${formatearDinero(retiro.monto)} {/w}{br}`;
+  ticket += "----------------------------------------{br}{br}{br}";
+
+  // Espacio para la firma de respaldo (Muy importante en retiros de efectivo)
+  ticket += "{center}{s}________________________________{/s}{br}";
+  ticket += `{center}{s}Firma ${atiende}{/s}{br}`;
+  ticket += `{center}{s}RUT: ${rutCajero}{/s}{br}{br}`;
+
+  return ticket;
+};
 exports.buscarProductoVenta = async (req, res) => {
   try {
     const { codigo } = req.query;
-    console.log("Código recibido para búsqueda de venta:", codigo);
+    //console.log("Código recibido para búsqueda de venta:", codigo);
 
-    // 1. Buscamos el producto
     const producto = await Producto.findOne({
       where: { codigo },
       include: [{ model: Categoria }],
@@ -60,14 +234,25 @@ exports.buscarProductoVenta = async (req, res) => {
     if (!producto) {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
-    console.log("Producto encontrado:", producto.toJSON());
-    // 2. Preparamos las condiciones de búsqueda
+    //console.log("Producto encontrado:", producto.toJSON());
+
+    const inventario = await Inventario.findOne({
+      where: { idProducto: producto.idProducto },
+      attributes: ["stock", "stockMinimo"],
+    });
+    if (!inventario) {
+      return res
+        .status(404)
+        .json({ message: "Inventario del producto no encontrado" });
+    }
+    if (inventario.stock <= 0) {
+      return res.status(400).json({ message: "Producto sin stock disponible" });
+    }
     const condicionesBusqueda = [{ idProducto: producto.idProducto }];
     if (producto.idCategoria) {
       condicionesBusqueda.push({ idCategoria: producto.idCategoria });
     }
 
-    // 3. Traemos los descuentos activos
     const descuentosSobre = await DescuentoSobre.findAll({
       where: {
         [Op.or]: condicionesBusqueda,
@@ -81,11 +266,10 @@ exports.buscarProductoVenta = async (req, res) => {
       ],
     });
     //console.log("Descuentos encontrados para el producto:", descuentosSobre);
-    // 4. Variables para acumular el total y guardar el detalle
+
     let montoTotalDescuento = 0;
     const listaDescuentos = [];
 
-    // 5. Calculamos todo en un solo ciclo
     descuentosSobre.forEach((item) => {
       const objDescuento = item.descuento;
       if (!objDescuento) return;
@@ -121,8 +305,8 @@ exports.buscarProductoVenta = async (req, res) => {
       }
     });
 
-    console.log("Descuentos aplicados:", listaDescuentos);
-    console.log("Monto total calculado:", montoTotalDescuento);
+    //console.log("Descuentos aplicados:", listaDescuentos);
+    //console.log("Monto total calculado:", montoTotalDescuento);
 
     // 6. Preparamos el objeto final incluyendo el nuevo arreglo
     const productoEnviar = {
@@ -131,7 +315,7 @@ exports.buscarProductoVenta = async (req, res) => {
       nombre: producto.nombre,
       precioVenta: producto.precioVenta,
       montoDescuento: Math.round(montoTotalDescuento),
-      descuentosAplicados: listaDescuentos, // 👈 Aquí viaja el arreglo
+      descuentosAplicados: listaDescuentos,
     };
 
     return res.status(200).json(productoEnviar);
@@ -262,6 +446,7 @@ exports.aperturaCaja = async (req, res) => {
         fechaApertura: new Date(),
         idCaja: busquedaCaja.idCaja,
         estadoRegistroCaja: "Abierta",
+        seRealizoArqueo: false,
       },
       { transaction: t },
     );
@@ -848,8 +1033,7 @@ exports.solicitarPagoTarjeta = async (req, res) => {
       metodoPago, // "Efectivo", "Debito", "Credito", "Mixto"
       idVentaCliente,
     } = req.body;
-    console.log("Params", req.params);
-    console.log("Datos body", req.body);
+
     const montoACobrar = montoTarjeta
       ? String(montoTarjeta)
       : String(totalVenta);
@@ -859,7 +1043,7 @@ exports.solicitarPagoTarjeta = async (req, res) => {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
     }
 
-    console.log("Datos recibidos:", req.body);
+    //console.log("Datos recibidos:", req.body);
 
     let decodedPayload;
     try {
@@ -936,7 +1120,7 @@ exports.solicitarPagoTarjeta = async (req, res) => {
     const terminal = listaTerminales.find(
       (t) => t.pos_id === Number(caja.idMercadoPagoPOS),
     );
-    console.log("Terminal encontrada para la caja:", terminal);
+    //console.log("Terminal encontrada para la caja:", terminal);
     if (!terminal) {
       await t.rollback();
       return res.status(400).json({
@@ -948,16 +1132,16 @@ exports.solicitarPagoTarjeta = async (req, res) => {
     const idempotencyKey = randomUUID();
     const external_reference = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    console.log("Detalles de pago para MP:", {
-      idempotencyKey,
-      external_reference,
-      monto: String(montoACobrar),
-      terminal: terminal.id,
-      metodo_impresion: "seller_ticket",
-      metodo_pago: tipoTarjetaMP,
-      descripcion: `Venta sucursal ${caja.numeroCaja}`,
-      condicion_iva: "payment_exempt_iva",
-    });
+    // console.log("Detalles de pago para MP:", {
+    //   idempotencyKey,
+    //   external_reference,
+    //   monto: String(montoACobrar),
+    //   terminal: terminal.id,
+    //   metodo_impresion: "seller_ticket",
+    //   metodo_pago: tipoTarjetaMP,
+    //   descripcion: `Venta sucursal ${caja.numeroCaja}`,
+    //   condicion_iva: "payment_exempt_iva",
+    // });
     //crear venta en BD con estado Pendiente para finalizarla en registroventaMP
 
     const venta = await Venta.create(
@@ -983,7 +1167,7 @@ exports.solicitarPagoTarjeta = async (req, res) => {
       { transaction: t },
     );
 
-    console.log("Venta parcial MP", venta);
+    //console.log("Venta parcial MP", venta);
     let ordenVentaSolicitada;
     try {
       const body = {
@@ -1014,7 +1198,7 @@ exports.solicitarPagoTarjeta = async (req, res) => {
           },
         ],
       };
-      console.log("MPTOKEN:", process.env.MERCADO_PAGO_ACCESS_TOKEN);
+      //console.log("MPTOKEN:", process.env.MERCADO_PAGO_ACCESS_TOKEN);
       // validateStatus devuelve true para que axios no lance por status >= 300
       const consulta = await axios.post(
         "https://api.mercadopago.com/v1/orders",
@@ -1080,9 +1264,7 @@ exports.solicitarPagoTarjeta = async (req, res) => {
     return res.status(200).json({
       message: "Venta registrada exitosamente",
       idOrdenMP: ordenVentaSolicitada.id,
-      idVentaCliente: ventaRealizadaPorVendedor
-        ? ventaRealizadaPorVendedor.idVentaCliente
-        : venta.idVentaCliente,
+      idVentaCliente: venta.idVentaCliente,
     });
   } catch (error) {
     //console.error("Error al registrar venta:", error);
@@ -1452,7 +1634,14 @@ exports.registroVenta = async (req, res) => {
         where: { idProducto: producto.idProducto, idBodega: idBodegaSucursal },
         transaction: t,
       });
-      if (!inventario) throw new Error(`Producto ${producto.nombre} sin stock`);
+      if (!inventario)
+        throw new Error(`Producto ${producto.nombre} sin Existencias`);
+
+      if (inventario.stock < producto.cantidad) {
+        throw new Error(
+          `Stock insuficiente para el producto ${producto.nombre}. Stock actual: ${inventario.stock}, cantidad solicitada: ${producto.cantidad}`,
+        );
+      }
 
       await inventario.update(
         { stock: Number((inventario.stock - producto.cantidad).toFixed(2)) },
@@ -1927,6 +2116,7 @@ exports.guardarArqueoCaja = async (req, res) => {
       diferenciaCierre: diferencia,
       fechaGeneracionArqueo: new Date(),
       idFuncionarioArquea: funcionarioSolicitante.idFuncionario,
+      seRealizoArqueo: true,
     });
 
     return res
@@ -2776,7 +2966,7 @@ exports.generarRetiroCaja = async (req, res) => {
     await t.commit();
     return res.status(200).json({
       message: "Retiro de caja generado exitosamente",
-      data: nuevoRetiroCaja,
+      nuevoRetiroCaja,
     });
   } catch (error) {
     if (t && !t.finished) {
@@ -2785,5 +2975,282 @@ exports.generarRetiroCaja = async (req, res) => {
 
     console.error("Error al generar retiro de caja:", error);
     return res.status(500).json({ message: "Error al generar retiro de caja" });
+  }
+};
+
+exports.imprimirComprobanteVenta = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { idVenta, deviceID } = req.params;
+    if (!idVenta || !deviceID) {
+      return res
+        .status(400)
+        .json({ message: "Falta el ID de la venta o el ID del dispositivo" });
+    }
+
+    const caja = await Caja.findOne({
+      where: { computadorID: deviceID },
+      transaction: t,
+    });
+    //console.group("Caja encontrada", caja);
+    if (!caja) {
+      await t.rollback();
+      return res.status(404).json({ message: "Caja no encontrada" });
+    }
+    if (!caja.idMercadoPagoPOS) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: "Esta caja no tiene un ID de Mercado Pago asociado" });
+    }
+    const sucursalCaja = await Sucursal.findOne({
+      where: { idSucursal: caja.idSucursal },
+      transaction: t,
+    });
+    if (!sucursalCaja) {
+      await t.rollback();
+      return res
+        .status(404)
+        .json({ error: "Sucursal de la caja no encontrada" });
+    }
+
+    let configMP = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+      },
+      validateStatus: () => true, // Para manejar manualmente los errores de status
+    };
+    const resTerminalesAsociadosCaja = await axios.get(
+      `https://api.mercadopago.com/terminals/v1/list?limit=50&pos_id=${Number(caja.idMercadoPagoPOS)}&store_id=${String(sucursalCaja.idMercadoPago)}`,
+      configMP,
+    );
+
+    //console.log("terminales", resTerminalesAsociadosCaja.data.data);
+    const listaTerminales = resTerminalesAsociadosCaja.data.data.terminals;
+    const terminal = listaTerminales.find(
+      (t) => t.pos_id === Number(caja.idMercadoPagoPOS),
+    );
+
+    if (!terminal) {
+      await t.rollback();
+      return res.status(400).json({
+        error: "Terminal de Mercado Pago  no fue encontrada en esta sucursal.",
+      });
+    }
+
+    const venta = await Venta.findOne({
+      where: { idVentaCliente: idVenta },
+      include: [
+        {
+          model: DetalleVenta,
+          include: [{ model: Producto }],
+        },
+        {
+          model: DetallePago,
+        },
+        {
+          model: RealizaVenta,
+          include: [
+            {
+              model: Funcionario,
+              attributes: ["nombre", "rut"],
+            },
+            {
+              model: Caja,
+              attributes: ["numeroCaja"],
+            },
+          ],
+        },
+      ],
+    });
+    //console.log("Venta encontrada para impresión:", JSON.stringify(venta));
+    //return res.status(200).json({ message: "Venta encontrada para impresión" });
+    const idempotencyKey = randomUUID();
+    configMP = {
+      headers: {
+        Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": idempotencyKey,
+      },
+      validateStatus: () => true,
+    };
+
+    const textoImprimir = generarTicketMercadoPago(venta, sucursalCaja.nombre);
+
+    const bodyMP = {
+      type: "print",
+      external_reference: `venta-${idVenta}`,
+      config: {
+        point: {
+          terminal_id: terminal.id,
+          subtype: "custom",
+        },
+      },
+      content: textoImprimir,
+    };
+
+    const consulta = await axios.post(
+      "https://api.mercadopago.com/terminals/v1/actions",
+      bodyMP,
+      configMP,
+    );
+
+    if (consulta.status === 200 || consulta.status === 201) {
+      await t.commit();
+      return res.status(200).json({
+        message: "Comprobante de venta enviado a impresión exitosamente",
+      });
+    } else {
+      console.error(
+        "Error al enviar a imprimir en Mercado Pago:",
+        consulta.data,
+      );
+      await t.rollback();
+      return res
+        .status(500)
+        .json({ message: "Error al enviar a imprimir en Mercado Pago" });
+    }
+  } catch (error) {
+    console.error("Error al imprimir comprobante de venta:", error);
+    if (t && !t.finished) {
+      await t.rollback();
+    }
+    return res
+      .status(500)
+      .json({ message: "Error al imprimir comprobante de venta" });
+  }
+};
+
+exports.imprimirRetiroCaja = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { deviceID, idRetiro } = req.params;
+    if (!deviceID || !idRetiro) {
+      return res
+        .status(400)
+        .json({ message: "Falta el ID del dispositivo o el ID del retiro" });
+    }
+    const caja = await Caja.findOne({
+      where: { computadorID: deviceID },
+      transaction: t,
+    });
+    //console.group("Caja encontrada", caja);
+    if (!caja) {
+      await t.rollback();
+      return res.status(404).json({ message: "Caja no encontrada" });
+    }
+    if (!caja.idMercadoPagoPOS) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: "Esta caja no tiene un ID de Mercado Pago asociado" });
+    }
+    const sucursalCaja = await Sucursal.findOne({
+      where: { idSucursal: caja.idSucursal },
+      transaction: t,
+    });
+    if (!sucursalCaja) {
+      await t.rollback();
+      return res
+        .status(404)
+        .json({ error: "Sucursal de la caja no encontrada" });
+    }
+    let configMP = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+      },
+      validateStatus: () => true, // Para manejar manualmente los errores de status
+    };
+    const resTerminalesAsociadosCaja = await axios.get(
+      `https://api.mercadopago.com/terminals/v1/list?limit=50&pos_id=${Number(caja.idMercadoPagoPOS)}&store_id=${String(sucursalCaja.idMercadoPago)}`,
+      configMP,
+    );
+
+    //console.log("terminales", resTerminalesAsociadosCaja.data.data);
+    const listaTerminales = resTerminalesAsociadosCaja.data.data.terminals;
+    const terminal = listaTerminales.find(
+      (t) => t.pos_id === Number(caja.idMercadoPagoPOS),
+    );
+
+    if (!terminal) {
+      await t.rollback();
+      return res.status(400).json({
+        error: "Terminal de Mercado Pago  no fue encontrada en esta sucursal.",
+      });
+    }
+
+    const RetiroCaja = await Retiros.findOne({
+      where: { idRetiro: idRetiro },
+      include: [
+        {
+          model: Funcionario,
+          attributes: ["nombre", "rut"],
+        },
+        {
+          model: Caja,
+          attributes: ["numeroCaja"],
+        },
+      ],
+    });
+
+    if (!RetiroCaja) {
+      await t.rollback();
+      return res.status(404).json({ message: "Retiro de caja no encontrado" });
+    }
+
+    const idempotencyKey = randomUUID();
+    configMP = {
+      headers: {
+        Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": idempotencyKey,
+      },
+      validateStatus: () => true,
+    };
+
+    const textoImprimir = generarTicketRetiroMercadoPago(
+      RetiroCaja,
+      sucursalCaja.nombre,
+    );
+
+    const bodyMP = {
+      type: "print",
+      external_reference: `retiro-${idRetiro}`,
+      config: {
+        point: {
+          terminal_id: terminal.id,
+          subtype: "custom",
+        },
+      },
+      content: textoImprimir,
+    };
+
+    const consulta = await axios.post(
+      "https://api.mercadopago.com/terminals/v1/actions",
+      bodyMP,
+      configMP,
+    );
+    if (consulta.status === 200 || consulta.status === 201) {
+      await t.commit();
+      return res.status(200).json({
+        message: "Comprobante de retiro enviado a impresión exitosamente",
+      });
+    } else {
+      console.error(
+        "Error al enviar a imprimir en Mercado Pago:",
+        consulta.data,
+      );
+      await t.rollback();
+      return res
+        .status(500)
+        .json({ message: "Error al enviar a imprimir en Mercado Pago" });
+    }
+  } catch (error) {
+    console.error("Error al imprimir comprobante de retiro de caja:", error);
+    return res
+      .status(500)
+      .json({ message: "Error al imprimir comprobante de retiro de caja" });
   }
 };

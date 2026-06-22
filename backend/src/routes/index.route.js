@@ -22,6 +22,8 @@ const DescuentoRoutes = require("./ventas/descuento.route");
 
 const cajaRoutes = require("./ventas/cajas.route");
 
+const metricasRoutes = require("./metricas.route");
+
 //Autenticacion
 router.use("/auth", AuthRoutes);
 
@@ -66,5 +68,8 @@ router.use("/descuentos", DescuentoRoutes);
 
 //Rutas Cajas
 router.use("/cajas", cajaRoutes);
+
+//Rutas metricas dashboard
+router.use("/metricas", metricasRoutes);
 
 module.exports = router;

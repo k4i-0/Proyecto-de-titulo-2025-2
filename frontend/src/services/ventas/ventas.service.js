@@ -18,7 +18,7 @@ export async function buscarProductoVenta(codigo) {
   } catch (error) {
     //console.error("Error al buscar producto para venta:", error);
 
-    return error;
+    return error.response;
   }
 }
 
@@ -94,7 +94,7 @@ export async function consultarEstadoCaja(deviceID) {
         withCredentials: true,
       },
     );
-    console.log("Respuesta de consulta de estado de caja:", response.status);
+    //console.log("Respuesta de consulta de estado de caja:", response.status);
     return response;
   } catch (error) {
     console.error("Error al consultar estado de caja:", error);
@@ -143,7 +143,7 @@ export async function solicitarPagoTarjeta(deviceID, datos) {
 
 export async function registroVenta(deviceID, datosVenta) {
   try {
-    console.log("Datos recibidos para registro de venta:", datosVenta);
+    //console.log("Datos recibidos para registro de venta:", datosVenta);
     const response = await axios.post(
       `${API_URL}/registro/venta/${deviceID}`,
       {
@@ -163,7 +163,7 @@ export async function registroVenta(deviceID, datosVenta) {
         withCredentials: true,
       },
     );
-    console.log("Respuesta de registro de venta:", response.status);
+    //console.log("Respuesta de registro de venta:", response.status);
     return response;
   } catch (error) {
     console.error("Error al registrar venta:", error);
@@ -388,6 +388,46 @@ export async function generarRetiroCaja(deviceID, datosRetiro) {
     return response;
   } catch (error) {
     console.error("Error al generar retiro de caja:", error);
+    return error.response;
+  }
+}
+
+export async function imprimirComprobanteVenta(idVenta, deviceID) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/imprimir/venta/${idVenta}/${deviceID}`,
+      {},
+      {
+        withCredentials: true,
+      },
+    );
+    console.log(
+      "Respuesta de impresión de comprobante de venta:",
+      response.status,
+    );
+    return response;
+  } catch (error) {
+    console.error("Error al imprimir comprobante de venta:", error);
+    return error.response;
+  }
+}
+
+export async function imprimirComprobanteRetiro(idRetiro, deviceID) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/imprimir/comprobante/retiro/${idRetiro}/${deviceID}`,
+      {},
+      {
+        withCredentials: true,
+      },
+    );
+    console.log(
+      "Respuesta de impresión de comprobante de retiro:",
+      response.status,
+    );
+    return response;
+  } catch (error) {
+    console.error("Error al imprimir comprobante de retiro:", error);
     return error.response;
   }
 }

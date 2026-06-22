@@ -22,6 +22,8 @@ import {
   Spin,
   Empty,
   Tabs,
+  Statistic,
+  Popconfirm,
 } from "antd";
 import React, { useEffect, useMemo, useState, useRef } from "react";
 
@@ -75,6 +77,8 @@ import {
   guardarArqueoCaja,
   consultarVentasPendientesCaja,
   generarRetiroCaja,
+  imprimirComprobanteVenta,
+  imprimirComprobanteRetiro,
 } from "../../services/ventas/ventas.service.js";
 
 import {
@@ -88,17 +92,6 @@ import { buscarTodasSucursales } from "../../services/functions/Sucursales.js";
 import { buscarTodosProductos } from "../../services/functions/Productos.js";
 
 import { crearDescuentoUnico } from "../../services/ventas/descuento.service.js";
-
-const estiloBoton = {
-  height: "80px",
-  fontSize: "16px",
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "center",
-  alignItems: "center",
-  gap: "8px", // Espacio entre el ícono y el texto
-  borderRadius: "8px",
-};
 
 const METODO_PAGO_DIFERIDO = "Pago diferido";
 
@@ -122,6 +115,8 @@ const datosResumen = {
   ventasTarjeta: 0,
   efectivoEsperado: 0,
 };
+
+const { Text } = Typography;
 
 export default function MenuPrincipalCaja() {
   const { user, logout } = useAuth();
@@ -196,7 +191,7 @@ export default function MenuPrincipalCaja() {
   const obtenerDatosCaja = async (deviceID) => {
     try {
       const datos = await consultarEstadoCaja(deviceID);
-      console.log("Datos de estado de caja obtenidos:", datos.data);
+      //console.log("Datos de estado de caja obtenidos:", datos.data);
 
       if (datos.status === 200) {
         localStorage.setItem("numeroCaja", datos.data.numeroCaja);
@@ -216,10 +211,6 @@ export default function MenuPrincipalCaja() {
           tipoMaquinaPOS: datos.data.tipoMaquinaPOS,
           estadoPoint: datos.data.estadoPOS === "Operativo" ? true : false,
         });
-        console.log(
-          "Estado de caja:",
-          datos.data.estadoRegistroCaja === "Sin Apertura",
-        );
 
         if (
           datos.data.estadoRegistroCaja == "Sin Apertura" ||
@@ -321,7 +312,7 @@ export default function MenuPrincipalCaja() {
 
     try {
       const respuesta = await buscarProductoVenta(codigo);
-
+      //console.log("Respuesta de búsqueda de producto por código:", respuesta);
       if (respuesta.status === 200) {
         const producto = respuesta.data;
         const nuevaCantidad =
@@ -389,8 +380,7 @@ export default function MenuPrincipalCaja() {
         });
       } else {
         notification.error({
-          message: "Error",
-          description: "Producto no encontrado",
+          message: respuesta.data.message || "Error",
         });
       }
     } catch (error) {
@@ -693,6 +683,48 @@ export default function MenuPrincipalCaja() {
     const response = await registroVenta(deviceID, datosVenta);
     if (response?.status !== 200) {
       throw new Error(response?.data?.message || "Intente nuevamente");
+    } else {
+      Modal.confirm({
+        title: "Venta Registrada Exitosamente",
+        content: "¿Desea imprimir el comprobante de venta en la terminal?",
+        okText: "Imprimir Comprobante",
+        cancelText: "No imprimir",
+        centered: true,
+
+        maskClosable: false,
+
+        async onOk() {
+          try {
+            notification.info({ message: "Enviando a impresora..." });
+            const res = await imprimirComprobanteVenta(
+              response.data.idVenta, // Asegúrate que el backend envíe este ID
+              deviceID,
+            );
+
+            if (res?.status === 200) {
+              notification.success({ message: "Comprobante impreso" });
+            } else {
+              notification.error({
+                message: "Error al imprimir comprobante",
+                description: res?.data?.message || "Intente nuevamente",
+              });
+            }
+          } catch (error) {
+            console.error("Error al imprimir comprobante:", error);
+            notification.error({
+              message: "Error al imprimir comprobante",
+              description:
+                error.response?.data?.message || "Intente nuevamente",
+            });
+          } finally {
+            finalizarVentaExito();
+          }
+        },
+
+        onCancel() {
+          finalizarVentaExito();
+        },
+      });
     }
   };
 
@@ -830,28 +862,22 @@ export default function MenuPrincipalCaja() {
       return;
     }
 
+    // 🚀 NUEVA VALIDACIÓN: Solo una tarjeta por transacción
+    const yaTieneTarjeta = infoPagosDiferidos.some((p) =>
+      esMetodoTarjeta(p.metodo),
+    );
+    if (yaTieneTarjeta && esMetodoTarjeta(metodo)) {
+      notification.warning({
+        message: "Tarjeta ya ingresada",
+        description:
+          "Solo se permite un pago con tarjeta. El resto del saldo debe ser pagado en efectivo.",
+      });
+      return;
+    }
+
     const montoIngresado = Number(
       formMetodoPago.getFieldValue("montoPago") || 0,
     );
-    const esPrimerPago = infoPagosDiferidos.length === 0;
-    const esSegundoPago = infoPagosDiferidos.length === 1;
-    const esPagoUnicoConCero = esPrimerPago && montoIngresado === 0;
-
-    if (infoPagosDiferidos.length >= 2) {
-      notification.warning({ message: "Sólo se permiten 2 pagos" });
-      return;
-    }
-
-    if (esPrimerPago && !esMetodoTarjeta(metodo) && !esPagoUnicoConCero) {
-      notification.warning({ message: "El primer pago debe ser con tarjeta" });
-      return;
-    }
-
-    if (esSegundoPago && metodo !== "Efectivo") {
-      notification.warning({ message: "El segundo pago debe ser en efectivo" });
-      return;
-    }
-
     const montoSeleccionado =
       montoIngresado === 0 ? Number(totalPendientePagar) : montoIngresado;
 
@@ -860,7 +886,17 @@ export default function MenuPrincipalCaja() {
       return;
     }
 
+    let montoRegistrado = montoSeleccionado;
+    let vuelto = 0;
+
+    // Lógica de cálculo de vuelto y topes
     if (
+      metodo === "Efectivo" &&
+      montoSeleccionado > Number(totalPendientePagar)
+    ) {
+      vuelto = montoSeleccionado - Number(totalPendientePagar);
+      montoRegistrado = Number(totalPendientePagar);
+    } else if (
       esMetodoTarjeta(metodo) &&
       montoSeleccionado > Number(totalPendientePagar)
     ) {
@@ -870,110 +906,84 @@ export default function MenuPrincipalCaja() {
       return;
     }
 
-    let montoRegistrado = montoSeleccionado;
-    if (
-      metodo === "Efectivo" &&
-      montoSeleccionado > Number(totalPendientePagar)
-    ) {
-      setMontoVuelto(montoSeleccionado - Number(totalPendientePagar));
-      montoRegistrado = Number(totalPendientePagar);
-    } else {
-      setMontoVuelto(0);
-    }
-
     const nuevoPago = {
       metodo,
       monto: montoRegistrado,
       montoPagado: montoRegistrado,
       montoIngresado,
     };
+
     const nuevosPagos = [...infoPagosDiferidos, nuevoPago];
     const nuevoPendiente = Number(totalPendientePagar) - montoRegistrado;
 
+    // -------------------------------------------------------------------
+    // CASO 1: AÚN QUEDA SALDO PENDIENTE
+    // -------------------------------------------------------------------
+    if (nuevoPendiente > 0) {
+      setInfoPagosDiferidos(nuevosPagos);
+      setTotalPendientePagar(nuevoPendiente);
+      setMontoVuelto(vuelto);
+      formMetodoPago.setFieldsValue({ montoPago: 0 });
+      notification.info({
+        message: "Pago agregado",
+        description: `Falta abonar $${nuevoPendiente.toLocaleString("es-CL")} para completar la venta.`,
+      });
+      return;
+    }
+
+    // -------------------------------------------------------------------
+    // CASO 2: SE COMPLETÓ EL TOTAL
+    // -------------------------------------------------------------------
+    setInfoPagosDiferidos(nuevosPagos);
+    setTotalPendientePagar(0);
+    setMontoVuelto(vuelto);
+
     try {
-      // ----------------------------------------------------
-      // CASO 1: Es el primer pago y es con TARJETA
-      // ----------------------------------------------------
-      if (esPrimerPago && esMetodoTarjeta(metodo)) {
-        // PROCESAMOS INMEDIATAMENTE
-        const idVentaRecibido = await procesarPagoTarjeta(
-          montoRegistrado,
-          metodo,
+      let idVentaRecibido = null;
+      const pagoConTarjeta = nuevosPagos.find((p) => esMetodoTarjeta(p.metodo));
+
+      if (pagoConTarjeta) {
+        notification.info({
+          message: "Procesando pago en terminal Mercado Pago...",
+        });
+
+        idVentaRecibido = await procesarPagoTarjeta(
+          pagoConTarjeta.monto,
+          pagoConTarjeta.metodo,
+          null,
         );
 
-        if (!idVentaRecibido) return; // Si falla, sale (ya notificado)
-
-        setIdVentaTemporal(idVentaRecibido); // Guardamos la venta pendiente
-
-        if (nuevoPendiente <= 0) {
-          // Cubrió el total, cerramos la venta
-          await registrarVentaFinal({
-            idVentaCliente: idVentaRecibido,
-            metodoPago: metodo,
-            tipoPago: metodo,
-            detallePagos: null,
-          });
-          finalizarVentaExito();
-        } else {
-          // Queda pendiente, pedimos el efectivo
-          setInfoPagosDiferidos(nuevosPagos);
-          setTotalPendientePagar(Math.max(0, nuevoPendiente));
-          formMetodoPago.setFieldsValue({ montoPago: 0 });
-          notification.info({
-            message: "Pago con tarjeta aprobado",
-            description: "Ingrese el monto en efectivo para completar la venta",
-          });
+        if (!idVentaRecibido) {
+          setInfoPagosDiferidos(infoPagosDiferidos); // Revertir
+          setTotalPendientePagar(montoRegistrado);
+          setMontoVuelto(0);
+          return;
         }
-        return;
       }
 
-      // ----------------------------------------------------
-      // CASO 2: Es el primer pago y es EFECTIVO (Total)
-      // ----------------------------------------------------
-      if (esPrimerPago && metodo === "Efectivo") {
-        await registrarVentaFinal({
-          idVentaCliente: null,
-          metodoPago: "Efectivo",
-          tipoPago: "Efectivo",
-          detallePagos: null,
-        });
-        finalizarVentaExito();
-        return;
-      }
+      const metodoVenta =
+        nuevosPagos.length > 1 ? "Pago Mixto" : nuevosPagos[0].metodo;
 
-      // ----------------------------------------------------
-      // CASO 3: Es el SEGUNDO PAGO (Efectivo tras tarjeta)
-      // ----------------------------------------------------
-      if (esSegundoPago) {
-        setInfoPagosDiferidos(nuevosPagos);
-        setTotalPendientePagar(Math.max(0, nuevoPendiente));
+      await registrarVentaFinal({
+        idVentaCliente: idVentaRecibido,
+        metodoPago: metodoVenta,
+        tipoPago: metodoVenta,
+        detallePagos: nuevosPagos,
+      });
 
-        // Cerramos la venta usando el ID de la tarjeta guardado
-        await registrarVentaFinal({
-          idVentaCliente: idVentaTemporal,
-          metodoPago: "Pago Mixto", // El backend igual lo fuerza, pero es buena práctica
-          tipoPago: "Pago Mixto",
-          detallePagos: [
-            {
-              metodo: nuevosPagos[0].metodo,
-              montoPagado: nuevosPagos[0].montoPagado,
-            },
-            {
-              metodo: nuevosPagos[1].metodo,
-              montoPagado: nuevosPagos[1].montoPagado,
-            },
-          ],
-        });
-        finalizarVentaExito();
-        return;
-      }
+      finalizarVentaExito();
     } catch (error) {
       notification.error({
-        message: "Error al registrar la venta",
+        message: "Error al finalizar la venta",
         description: error.message || "Intente nuevamente",
       });
     }
   };
+
+  // Variable para saber si ya hay una tarjeta en la cola
+  const yaTieneTarjeta = infoPagosDiferidos.some(
+    (p) => p.metodo === "Tarjeta Debito" || p.metodo === "Tarjeta Credito",
+  );
 
   //funciones para ver ventas del dia
   const obtenerVentasDelDia = async () => {
@@ -1398,17 +1408,59 @@ export default function MenuPrincipalCaja() {
         motivo: motivoRetiro,
         denominaciones: denominacionesRetiro,
       };
-      console.log("Datos a enviar para retiro/consignación:", datosEnviar);
+      //console.log("Datos a enviar para retiro/consignación:", datosEnviar);
       const respuesta = await generarRetiroCaja(deviceID, datosEnviar);
-      console.log("Respuesta al realizar retiro/consignación:", respuesta);
+      //console.log("Respuesta al realizar retiro/consignación:", respuesta);
       if (respuesta.status === 200) {
         notification.success({
           message: respuesta.data.message || "Operación realizada",
         });
-        cerrarModalRetiros();
-        formRetiros.resetFields();
-        setCantidades({});
-        obtenerDatosCaja(deviceID);
+
+        const idRetiro = respuesta.data.nuevoRetiroCaja.idRetiro;
+
+        const finalizarOperacion = () => {
+          cerrarModalRetiros();
+          formRetiros.resetFields();
+          setCantidades({});
+          obtenerDatosCaja(deviceID);
+        };
+
+        notification.info({
+          message: "Enviando comprobante a la impresora...",
+        });
+
+        try {
+          const resImpresion = await imprimirComprobanteRetiro(
+            idRetiro,
+            deviceID,
+          );
+
+          if (resImpresion?.status === 200) {
+            notification.success({
+              message: "Comprobante impreso exitosamente",
+            });
+          } else {
+            // Usamos warning en vez de error porque el retiro SÍ se hizo
+            notification.warning({
+              message: "Retiro exitoso, pero falló la impresión",
+              description: resImpresion?.data?.message || "Revise la terminal.",
+            });
+          }
+        } catch (errorImpresion) {
+          console.error(
+            "Error al imprimir comprobante de retiro:",
+            errorImpresion,
+          );
+          notification.warning({
+            message: "Retiro exitoso, pero no se pudo imprimir",
+            description:
+              errorImpresion.response?.data?.message ||
+              "Revise la conexión con Mercado Pago.",
+          });
+        }
+
+        // Limpiamos y cerramos el modal sin importar si imprimió bien o mal
+        finalizarOperacion();
         return;
       }
       notification.error({
@@ -1550,11 +1602,17 @@ export default function MenuPrincipalCaja() {
             borderRadius: 12,
             header: { borderBottom: "none", paddingBottom: 0 },
           }}
-          bodyStyle={{
-            display: "flex",
-            flexDirection: "column",
-            padding: 0,
-            height: "100%",
+          styles={{
+            header: {
+              borderBottom: "none",
+              paddingBottom: 0,
+            },
+            body: {
+              display: "flex",
+              flexDirection: "column",
+              padding: 0,
+              height: "100%",
+            },
           }}
         >
           {/**Información del usuario */}
@@ -1708,12 +1766,14 @@ export default function MenuPrincipalCaja() {
             borderRadius: 16,
             boxShadow: "0 18px 48px rgba(15, 23, 42, 0.08)",
           }}
-          bodyStyle={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-            padding: 16,
-            height: "100%",
+          styles={{
+            body: {
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+              padding: 16,
+              height: "100%",
+            },
           }}
         >
           <Row gutter={16} style={{ flex: 1, minHeight: 0 }}>
@@ -1876,7 +1936,7 @@ export default function MenuPrincipalCaja() {
                 }
                 extra={<Tag color="blue">{productos.length} ítems</Tag>}
                 style={{ borderRadius: 14, flex: 1, minHeight: 0 }}
-                bodyStyle={{ height: "100%", padding: 0 }}
+                styles={{ body: { height: "100%", padding: 0 } }}
               >
                 <div style={{ height: "100%", overflow: "auto" }}>
                   <Table
@@ -2004,7 +2064,7 @@ export default function MenuPrincipalCaja() {
                   background: "#f8fafc",
                   borderTop: "2px solid #1890ff",
                 }}
-                bodyStyle={{ padding: 16 }}
+                styles={{ body: { padding: 16 } }}
               >
                 {/* Totales tipo tabla */}
                 <Row justify="space-between" style={{ marginBottom: 6 }}>
@@ -2097,6 +2157,8 @@ export default function MenuPrincipalCaja() {
                 minHeight: 0,
                 flexDirection: "column",
                 gap: 16,
+                width: "400px",
+                flex: "0 0 400px",
               }}
             >
               {/**Tarjeta Hora*/}
@@ -2106,7 +2168,7 @@ export default function MenuPrincipalCaja() {
                   width: "100%",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
                 }}
-                bodyStyle={{ padding: "16px 24px" }} // Un padding ligeramente más ajustado
+                styles={{ body: { padding: "16px 24px" } }}
               >
                 <Row justify="space-between" align="middle">
                   <Col>
@@ -2164,6 +2226,7 @@ export default function MenuPrincipalCaja() {
                   width: "100%",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
                 }}
+                styles={{ body: { padding: "16px 24px" } }}
               >
                 {/**Input para ingresar el código del producto (Agregar Form) */}
                 <Form
@@ -2248,162 +2311,174 @@ export default function MenuPrincipalCaja() {
         title="Seleccionar Método de Pago"
         open={modalMetodoPago}
         onCancel={() => {
-          // if (Number(totalMetodoPagoActual) > 0) {
-          //   notification.warning({
-          //     message: "Pago pendiente",
-          //     description:
-          //       "No puede cerrar el modal hasta completar el total a pagar.",
-          //   });
-          //   return;
-          // }
-          // setTotalMetodoPagoActual(total);
-          // formMetodoPago.setFieldsValue({ totalMetodoPago: 0 });
           setModalMetodoPago(false);
           limpiarEstadoPago();
         }}
         footer={null}
         maskClosable={false}
         centered
-        width={500}
+        width={550} // Ligeramente más ancho para mejor visualización
       >
-        {/* gutter={[espacioHorizontal, espacioVertical]} */}
-        <Spin spinning={esperandoPago} tip={mensajeLoading} fullScreen>
+        <Spin spinning={esperandoPago} tip={mensajeLoading}>
+          {/* Mensaje Informativo */}
           <div
             style={{
               marginBottom: 16,
-              padding: 12,
-              backgroundColor: "#f0f0f0",
+              padding: "10px 14px",
+              backgroundColor: "#e6f7ff",
+              border: "1px solid #91d5ff",
               borderRadius: 8,
-              textAlign: "center",
+              color: "#0050b3",
             }}
           >
-            <InfoCircleOutlined style={{ color: "#1890ff", marginRight: 8 }} />
-            Ingrese el monto entregado por el cliente para el método de pago
-            seleccionado si es 0 es el total
+            <InfoCircleOutlined style={{ marginRight: 8 }} />
+            Ingrese el monto a cobrar. Si deja <strong>0</strong>, se cobrará el
+            total pendiente automáticamente.
           </div>
-          <Row gutter={[16, 16]} justify="center" style={{ marginTop: "20px" }}>
-            <Form
-              form={formMetodoPago}
-              layout="vertical"
-              style={{ width: "100%" }}
-            >
-              <Row justify="center" gutter={16} style={{ marginBottom: 10 }}>
-                <Col>
-                  {/**Total de la venta */}
-                  <Form.Item style={{ marginBottom: 0 }} label="Total Venta">
-                    <Input
-                      value={`$${Number(total).toLocaleString("es-CL")}`}
-                      disabled
-                      style={{ fontSize: 16, fontWeight: 600 }}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Row gutter={16} style={{ margin: 3 }}>
-                <Col span={12}>
-                  {/**Vizual a pagar */}
-                  <Form.Item label="Pendiente de pagar">
-                    <Input
-                      value={`$${Number(totalPendientePagar).toLocaleString("es-CL")}`}
-                      disabled
-                      style={{ fontSize: 16, fontWeight: 600 }}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Monto parcial"
-                    name="montoPago"
-                    initialValue={0}
-                    rules={[
-                      {
-                        required: true,
-                        message: "Ingrese el monto en efectivo",
-                      },
-                    ]}
-                  >
-                    <InputNumber
-                      min={0}
-                      style={{ width: "100%" }}
-                      size="large"
-                      placeholder="Ingrese el monto en efectivo"
-                      formatter={(value) =>
-                        value
-                          ? `$ ${String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`
-                          : ""
-                      }
-                      parser={(value) =>
-                        value ? value.replace(/\$\s?|\./g, "") : ""
-                      }
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Form>
+
+          {/* Resumen de Montos (Total y Pendiente) */}
+          <Row gutter={16} style={{ marginBottom: 16 }}>
+            <Col span={12}>
+              <Card size="small" style={{ backgroundColor: "#fafafa" }}>
+                <Statistic
+                  title="Total Venta"
+                  value={total}
+                  prefix="$"
+                  precision={0}
+                />
+              </Card>
+            </Col>
+            <Col span={12}>
+              <Card
+                size="small"
+                style={{
+                  backgroundColor:
+                    totalPendientePagar > 0 ? "#fff1f0" : "#f6ffed",
+                }}
+              >
+                <Statistic
+                  title="Pendiente a Pagar"
+                  value={totalPendientePagar}
+                  prefix="$"
+                  precision={0}
+                  valueStyle={{
+                    color: totalPendientePagar > 0 ? "#cf1322" : "#3f8600",
+                    fontWeight: "bold",
+                  }}
+                />
+              </Card>
+            </Col>
           </Row>
+
+          {/* Input para ingresar el monto a pagar */}
+          <Form form={formMetodoPago} layout="vertical">
+            <Form.Item
+              label={
+                <span style={{ fontWeight: 600 }}>
+                  Monto a cobrar (Parcial o Total)
+                </span>
+              }
+              name="montoPago"
+              initialValue={0}
+            >
+              <InputNumber
+                min={0}
+                style={{ width: "100%", fontSize: "1.2rem" }}
+                size="large"
+                prefix="$"
+                formatter={(value) =>
+                  `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+                }
+                parser={(value) => value.replace(/\$\s?|\./g, "")}
+                disabled={totalPendientePagar <= 0} // Se bloquea si ya no hay deuda
+              />
+            </Form.Item>
+          </Form>
+
+          {/* Historial de Pagos en Cola */}
           <Card
             size="small"
-            title="Historial de Pagos"
+            title={
+              <span>
+                <ShoppingCartOutlined /> Pagos en cola
+              </span>
+            }
             style={{ marginBottom: 16 }}
-          >
-            {infoPagosDiferidos && infoPagosDiferidos.length > 0 ? (
-              infoPagosDiferidos.map((pago, index) => (
-                <Row
-                  justify="space-between"
-                  key={index}
-                  style={{ marginBottom: 4 }}
-                >
-                  <Col style={{ color: "#595959" }}>{pago.metodo}</Col>
-                  <Col style={{ fontWeight: 500 }}>
-                    ${pago.monto.toLocaleString("es-CL")}
-                  </Col>
-                </Row>
-              ))
-            ) : (
-              <div style={{ color: "#bfbfbf", textAlign: "center" }}>
-                No hay pagos registrados aún
-              </div>
-            )}
-          </Card>
-          <Button
-            block
-            icon={<DeleteOutlined />}
-            danger
-            style={{ marginBottom: 16 }}
-            onClick={borrarUltimoPago}
-            disabled={
-              !infoPagosDiferidos ||
-              infoPagosDiferidos.length === 0 ||
-              esperandoPago
+            extra={
+              <Button
+                type="text"
+                danger
+                size="small"
+                icon={<DeleteOutlined />}
+                onClick={borrarUltimoPago}
+                disabled={
+                  !infoPagosDiferidos ||
+                  infoPagosDiferidos.length === 0 ||
+                  esperandoPago
+                }
+              >
+                Deshacer último
+              </Button>
             }
           >
-            Borrar último pago
-          </Button>
-          {montoVuelto > 0 ? (
+            {infoPagosDiferidos && infoPagosDiferidos.length > 0 ? (
+              <List
+                size="small"
+                dataSource={infoPagosDiferidos}
+                renderItem={(pago) => (
+                  <List.Item>
+                    <Text strong>{pago.metodo}</Text>
+                    <Text>${pago.monto.toLocaleString("es-CL")}</Text>
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <Text
+                type="secondary"
+                style={{ display: "block", textAlign: "center" }}
+              >
+                No hay pagos ingresados
+              </Text>
+            )}
+          </Card>
+
+          {/* Alerta de Vuelto */}
+          {montoVuelto > 0 && (
             <div
               style={{
                 marginBottom: 16,
-                padding: 10,
+                padding: 12,
                 borderRadius: 8,
-                backgroundColor: "#fff7e6",
-                border: "1px solid #ffd591",
-                color: "#ad6800",
-                fontWeight: 600,
+                backgroundColor: "#f6ffed",
+                border: "1px solid #b7eb8f",
+                color: "#3f8600",
+                fontSize: "1.2rem",
+                fontWeight: "bold",
                 textAlign: "center",
               }}
             >
-              Vuelto: ${Number(montoVuelto).toLocaleString("es-CL")}
+              Vuelto a entregar: ${montoVuelto.toLocaleString("es-CL")}
             </div>
-          ) : null}
-          <Row gutter={[16, 16]}>
+          )}
+
+          {/* Botonera de Métodos de Pago */}
+          <Divider plain>Seleccione método para el monto ingresado</Divider>
+
+          <Row gutter={[12, 12]}>
             <Col xs={24} sm={12}>
               <Button
                 block
+                type="primary"
                 icon={<DollarOutlined />}
                 size="large"
-                style={estiloBoton}
+                style={{
+                  height: "50px",
+                  fontSize: "16px",
+                  backgroundColor: "#52c41a",
+                  borderColor: "#52c41a",
+                }}
                 onClick={() => confirmarPago("Efectivo")}
-                disabled={infoPagosDiferidos.length > 1 || esperandoPago}
+                disabled={totalPendientePagar <= 0 || esperandoPago}
               >
                 Efectivo
               </Button>
@@ -2412,34 +2487,42 @@ export default function MenuPrincipalCaja() {
             <Col xs={24} sm={12}>
               <Button
                 block
+                type="primary"
                 icon={<CreditCardOutlined />}
                 size="large"
-                style={estiloBoton}
+                style={{
+                  height: "50px",
+                  fontSize: "16px",
+                  backgroundColor: yaTieneTarjeta ? "#d9d9d9" : "#1890ff",
+                  borderColor: yaTieneTarjeta ? "#d9d9d9" : "#1890ff",
+                }}
                 onClick={() => confirmarPago("Tarjeta Debito")}
                 disabled={
-                  infoPagosDiferidos.length > 0 ||
-                  totalPendientePagar <= 0 ||
-                  esperandoPago
+                  totalPendientePagar <= 0 || esperandoPago || yaTieneTarjeta
                 }
               >
-                Tarjeta Debito
+                Débito
               </Button>
             </Col>
 
             <Col xs={24} sm={12}>
               <Button
                 block
+                type="primary"
                 icon={<CreditCardOutlined />}
                 size="large"
-                style={estiloBoton}
+                style={{
+                  height: "50px",
+                  fontSize: "16px",
+                  backgroundColor: yaTieneTarjeta ? "#d9d9d9" : "#722ed1",
+                  borderColor: yaTieneTarjeta ? "#d9d9d9" : "#722ed1",
+                }}
                 onClick={() => confirmarPago("Tarjeta Credito")}
                 disabled={
-                  infoPagosDiferidos.length > 0 ||
-                  totalPendientePagar <= 0 ||
-                  esperandoPago
+                  totalPendientePagar <= 0 || esperandoPago || yaTieneTarjeta
                 }
               >
-                Tarjeta Crédito
+                Crédito
               </Button>
             </Col>
 
@@ -2448,7 +2531,7 @@ export default function MenuPrincipalCaja() {
                 block
                 icon={<IdcardOutlined />}
                 size="large"
-                style={estiloBoton}
+                style={{ height: "50px", fontSize: "16px" }}
                 onClick={() => confirmarPago("Funcionario")}
                 disabled={true}
               >
@@ -2456,19 +2539,14 @@ export default function MenuPrincipalCaja() {
               </Button>
             </Col>
 
-            {/* Este botón lo centramos usando un offset o dejándolo ocupar el ancho total si prefieres */}
-            <Col xs={24} sm={24}>
+            <Col xs={24}>
               <Button
                 block
                 icon={<ClockCircleOutlined />}
                 size="large"
-                disabled={true}
-                style={{
-                  ...estiloBoton,
-                  borderColor: "#d9d9d9",
-                  backgroundColor: "#fafafa",
-                }} // Un estilo sutilmente distinto
+                style={{ height: "40px", backgroundColor: "#fafafa" }}
                 onClick={() => confirmarPago("Fiado")}
+                disabled={true}
               >
                 Fiado
               </Button>
@@ -4328,7 +4406,6 @@ export default function MenuPrincipalCaja() {
         onCancel={cerrarModalDescuento}
         footer={null} // Ocultamos el footer de AntD porque el Form tiene su propio botón submit
         centered
-        destroyOnClose // Destruye el DOM al cerrar para limpiar estados residuales
       >
         {selectedProduct ? (
           <Form
@@ -4443,7 +4520,6 @@ export default function MenuPrincipalCaja() {
         footer={null}
         width={400}
         centered
-        destroyOnClose
       >
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <Typography.Text type="secondary">

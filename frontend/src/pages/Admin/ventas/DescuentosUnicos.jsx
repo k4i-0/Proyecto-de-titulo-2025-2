@@ -100,30 +100,74 @@ export default function DescuentosUnicos() {
                     ),
                   },
                   {
-                    title: "Valor (%)",
-                    dataIndex: "valorDescuento",
-                    key: "valorDescuento",
+                    title: "Monto Descuento",
+                    dataIndex: "montoDescuento",
+                    key: "montoDescuento",
                     align: "right",
                     width: 120,
                     render: (valor) => (
                       <Tag color="blue" style={{ margin: 0, fontWeight: 600 }}>
+                        {Number(valor)}
+                      </Tag>
+                    ),
+                  },
+                  {
+                    title: "Porcentaje Descuento",
+                    dataIndex: "porcentajeDescuento",
+                    key: "porcentajeDescuento",
+                    align: "right",
+                    width: 150,
+                    render: (valor) => (
+                      <Tag color="green" style={{ margin: 0, fontWeight: 600 }}>
                         {Number(valor)}%
                       </Tag>
                     ),
                   },
                   {
+                    title: "Fecha de Inicio",
+                    dataIndex: "fechaInicio",
+                    key: "fechaInicio",
+                    width: 180,
+                    render: (fecha) =>
+                      fecha
+                        ? new Date(fecha).toLocaleString("es-CL", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })
+                        : "Desconocida",
+                  },
+                  {
+                    title: "Fecha de Vencimiento",
+                    dataIndex: "fechaFin",
+                    key: "fechaFin",
+                    width: 180,
+                    render: (fecha) =>
+                      fecha
+                        ? new Date(fecha).toLocaleString("es-CL", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })
+                        : "Sin vencimiento",
+                  },
+                  {
                     title: "Estado",
-                    dataIndex: "estado",
-                    key: "estado",
+                    dataIndex: "estadoDescuento",
+                    key: "estadoDescuento",
                     align: "center",
                     width: 120,
-                    render: (estado) => {
+                    render: (estadoDescuento) => {
                       return (
                         <Tag
-                          color={estado === "Activo" ? "success" : "error"}
+                          color={
+                            estadoDescuento === "Activo" ? "success" : "error"
+                          }
                           style={{ margin: 0 }}
                         >
-                          {estado.toUpperCase()}
+                          {estadoDescuento
+                            ? estadoDescuento.toUpperCase()
+                            : "Desconocido"}
                         </Tag>
                       );
                     },

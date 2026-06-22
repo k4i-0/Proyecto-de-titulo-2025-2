@@ -47,7 +47,7 @@ const AppRouter = () => {
       />
 
       <Route
-        path="/cajas*"
+        path="/cajas/*"
         element={
           <ProtectedRoute
             allowedRoles={["Cajero", "Administrador", "Vendedor"]}

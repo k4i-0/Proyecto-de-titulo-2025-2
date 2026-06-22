@@ -17,6 +17,7 @@ import {
   List,
   Switch,
   notification,
+  Skeleton,
 } from "antd";
 import {
   BarChartOutlined,
@@ -29,6 +30,8 @@ import {
   TeamOutlined,
   TruckOutlined,
   InboxOutlined,
+  DollarOutlined,
+  TrophyOutlined,
 } from "@ant-design/icons";
 
 import { useNavigate } from "react-router-dom";
@@ -40,13 +43,17 @@ import { useAuth } from "../../context/AuthContext";
 
 import Cookies from "js-cookie";
 
-//funciones backend
-import obtenerSucursales from "../../services/inventario/Sucursal.service";
+//funciones metricas dashboard
+import {
+  obtenerMetricasDashboard,
+  obtenerMetricasSucursalDashboard,
+} from "../../services/Metricas.service";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [sucursales, setSucursales] = useState();
+  const [metricas, setMetricas] = useState(null);
 
   /**
    * Modificar
@@ -59,19 +66,42 @@ const AdminDashboard = () => {
   }
   *Esdo debe traer una funcion de backend
    */
-  const recuperarSucursales = async () => {
+
+  const recuperarMetricas = async () => {
     try {
-      const respuesta = await obtenerSucursales();
+      const respuesta = await obtenerMetricasDashboard();
+
+      if (respuesta.status === 200) {
+        setMetricas(respuesta.data);
+
+        return;
+      }
+      notification.error({
+        message: respuesta.error || "error al cargar métricas del dashboard!!",
+      });
+    } catch (error) {
+      notification.error({
+        message: error || "error desconocido, contacte a soporte",
+      });
+      console.log(error);
+    }
+  };
+
+  const recuperarMetricasSucursal = async () => {
+    try {
+      const respuesta = await obtenerMetricasSucursalDashboard();
+
       if (respuesta.status === 200) {
         //console.log(respuesta.data);
+
         setSucursales(respuesta.data);
         notification.success({
-          message: "Sucursales obtenidas exitamente!!",
+          message: "Métricas por sucursal obtenidas exitamente!!",
         });
         return;
       }
       notification.error({
-        message: respuesta.error || "error al cargar sucursales!!",
+        message: respuesta.error || "error al cargar métricas por sucursal!!",
       });
     } catch (error) {
       notification.error({
@@ -82,39 +112,14 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    recuperarSucursales();
+    recuperarMetricas();
+    recuperarMetricasSucursal();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const [esCaja, setEsCaja] = useState(
-    () => Cookies.get("modoCaja") === "true",
-  );
-
   //usuario
   const { user } = useAuth();
-
-  //handlers
-  const handleChange = (checked) => {
-    Cookies.set("modoCaja", checked);
-    setEsCaja(checked); // actualiza estado → re-renderiza
-  };
-
-  // Datos de ventas por sucursal
-  const ventasPorSucursal = [
-    {
-      key: "100",
-      sucursal: "Sucursal Centro",
-      ventasHoy: 1250000,
-      colabActivos: 10,
-      ventasAyer: 1150000,
-      transacciones: 285,
-      ticketPromedio: 4385,
-      estado: "Activa",
-      tendencia: "up",
-      cambio: 8.7,
-    },
-  ];
 
   // Actividad reciente
   // const actividadReciente = [
@@ -148,56 +153,61 @@ const AdminDashboard = () => {
   //   },
   // ];
 
+  const formatearDinero = (valor) => {
+    const numero = Number(valor);
+
+    if (isNaN(numero)) return "$ 0";
+
+    return new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(numero);
+  };
+
   const columnasSucursales = [
     {
       title: "Sucursal",
       dataIndex: "nombre",
       key: "nombre",
-      render: (text) => (
-        <Space>
-          <div>
-            <div style={{ fontWeight: 500 }}>{text}</div>
-          </div>
-        </Space>
-      ),
+      render: (text) => <span style={{ fontWeight: 600 }}>{text}</span>,
     },
     {
       title: "Estado",
-      key: "estado",
       dataIndex: "estado",
-      render: (text) => (
-        <Space>
-          <div>
-            <Badge status="success" text={text} />
-          </div>
-        </Space>
+      key: "estado",
+      render: (estado) => (
+        <Badge
+          status={estado === "Abierta" ? "success" : "default"}
+          text={estado}
+        />
       ),
     },
     {
       title: "Ventas Hoy",
+      dataIndex: "ventasHoy",
+      key: "ventasHoy",
+      align: "right", // Alineado a la derecha por ser moneda
+      render: (total) => formatearDinero(total), // Usando tu función de formato
     },
     {
       title: "Colaboradores Activos",
-      key: "colabActivos",
       dataIndex: "colabActivos",
-      render: (text) => (
-        <Space>
-          <div style={{ textAlign: "center" }}>
-            <Text>{text}</Text>
-          </div>
-        </Space>
-      ),
+      key: "colabActivos",
+      align: "center",
     },
     {
-      title: "Administracion",
+      title: "Acciones",
       key: "acciones",
+      align: "center",
       render: (_, record) => (
         <Button
           type="link"
           icon={<EyeOutlined />}
           onClick={() => navigate(`/admin/sucursal/${record.idSucursal}`)}
         >
-          Ir sucursal
+          Detalle
         </Button>
       ),
     },
@@ -239,11 +249,6 @@ const AdminDashboard = () => {
   //   },
   // ];
 
-  const totalVentasHoy = ventasPorSucursal.reduce(
-    (acc, curr) => acc + curr.ventasHoy,
-    0,
-  );
-
   const accesosDirectos = [
     {
       title: "Solicitudes Compra",
@@ -283,6 +288,32 @@ const AdminDashboard = () => {
     },
   ];
 
+  const CardEstatistica = ({
+    loading,
+    title,
+    value,
+    prefix,
+    children,
+    valueStyle,
+  }) => (
+    <Card
+      hoverable
+      className="stat-card"
+      //bordered={false}
+      style={{ height: "160px", borderRadius: "12px" }} // Altura fija para armonía
+    >
+      <Skeleton loading={loading} active paragraph={{ rows: 2 }}>
+        <Statistic
+          title={title}
+          value={value}
+          prefix={prefix}
+          valueStyle={valueStyle}
+        />
+        {children}
+      </Skeleton>
+    </Card>
+  );
+
   return (
     <div
       style={{
@@ -313,43 +344,67 @@ const AdminDashboard = () => {
               - {currentTime.toLocaleTimeString("es-CL")}
             </Text>
           </Col>
-          <Col>
-            <Space>
-              <Switch
-                checked={esCaja}
-                onChange={handleChange}
-                checkedChildren="Caja"
-                unCheckedChildren="Admin"
-              />
-              <span>{esCaja ? "Modo Caja" : "Modo Administración"}</span>
-
-              {/* <Button
-                type="primary"
-                icon={<SettingOutlined />}
-                size="large"
-                onClick={() => navigate("/admin/configuracion")}
-              >
-                Configuración
-              </Button> */}
-            </Space>
-          </Col>
         </Row>
       </div>
 
       {/* Métricas Principales */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title={<span>Ventas Totales</span>}
-              value={totalVentasHoy}
-              precision={0}
-              prefix="$"
-            />
-          </Card>
+          <CardEstatistica
+            loading={!metricas}
+            title="Ventas Totales"
+            value={metricas?.totalVentasDelDia || 0}
+            prefix={<DollarOutlined style={{ color: "#52c41a" }} />}
+            valueStyle={{ color: "#3f8600" }}
+          />
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <CardEstatistica
+            loading={!metricas}
+            title="Artículos Vendidos"
+            value={metricas?.cantidadProductosVendidos || 0}
+            prefix={<ShoppingCartOutlined style={{ color: "#1890ff" }} />}
+          />
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <CardEstatistica
+            loading={!metricas}
+            title="Producto Estrella"
+            value={metricas?.productoMasVendido?.nombre || "N/A"}
+            prefix={<TrophyOutlined style={{ color: "#722ed1" }} />}
+            valueStyle={{ fontSize: "18px", color: "#722ed1" }}
+          >
+            <div style={{ marginTop: 8 }}>
+              <Text type="secondary">Cantidad: </Text>
+              <Text strong>
+                {metricas?.productoMasVendido?.cantidadVendida || 0}
+              </Text>
+            </div>
+          </CardEstatistica>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <CardEstatistica
+            loading={!metricas}
+            title="Hora de Mayor Flujo"
+            value={
+              metricas?.horaPicoClientes?.hora
+                ? `${metricas.horaPicoClientes.hora}:00`
+                : "N/A"
+            }
+            prefix={<ClockCircleOutlined style={{ color: "#fa8c16" }} />}
+          >
+            <div style={{ marginTop: 8 }}>
+              <Text type="secondary">Ventas: </Text>
+              <Text strong>
+                {metricas?.horaPicoClientes?.cantidadVentas || 0}
+              </Text>
+            </div>
+          </CardEstatistica>
         </Col>
       </Row>
-
       {/* Accesos Rápidos y Actividad Reciente
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={16}>

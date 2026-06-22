@@ -62,7 +62,7 @@ export default function GestionCajas() {
   const buscarCajasporSucursal = async () => {
     try {
       const response = await buscarCajasPorSucursal(idSucursalSeleccionada);
-      //console.log("Respuesta de cajas por sucursal:", response);
+      console.log("Respuesta de cajas por sucursal:", response.data);
       if (response.status === 200) {
         setCajasSucursal(response.data);
       } else {
@@ -208,7 +208,7 @@ export default function GestionCajas() {
         </Typography.Title>
 
         <Card
-          bordered={false}
+          variant="borderless"
           style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.05)", borderRadius: 8 }}
         >
           <div
@@ -272,19 +272,26 @@ export default function GestionCajas() {
               },
               {
                 title: "Efectivo",
+                align: "right",
                 dataIndex: "montoCajaEfectivo",
+                render: (monto) => formatearDinero(monto || 0),
               },
               {
                 title: "Débito",
+                align: "right",
                 dataIndex: "montoCajaDebito",
+                render: (monto) => formatearDinero(monto || 0),
               },
               {
                 title: "Crédito",
+                align: "right",
                 dataIndex: "montoCajaCredito",
+                render: (monto) => formatearDinero(monto || 0),
               },
               {
                 title: "Estado",
                 dataIndex: "estadoCaja",
+                align: "center",
                 render: (estado) => (
                   <Tag
                     color={estado === "Abierta" ? "green" : "default"}
@@ -295,14 +302,73 @@ export default function GestionCajas() {
                 ),
               },
               {
+                title: "Fecha Apertura",
+                dataIndex: "registrocajas",
+                render: (registrocajas) => {
+                  const apertura = registrocajas?.[0]?.fechaApertura;
+                  return apertura
+                    ? new Date(apertura).toLocaleString("es-CL", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      })
+                    : "N/A";
+                },
+              },
+              {
+                title: "Monto Inicial",
+                dataIndex: "registrocajas",
+                align: "right",
+                render: (registrocajas) => {
+                  const montoInicial = registrocajas?.[0]?.montoInicial;
+                  return montoInicial ? formatearDinero(montoInicial) : "N/A";
+                },
+              },
+              {
+                title: "Retiros",
+                dataIndex: "retiros",
+                align: "right",
+                render: (retiros) => {
+                  const totalRetiros = retiros.reduce(
+                    (total, retiro) => total + Number(retiro.monto || 0),
+                    0,
+                  );
+                  return formatearDinero(totalRetiros);
+                },
+              },
+              {
+                title: "Arqueo Realizado",
+                dataIndex: "registrocajas",
+                align: "center",
+                render: (registrocajas) => {
+                  const seRealizoArqueo = registrocajas?.[0]?.seRealizoArqueo;
+                  return seRealizoArqueo ? (
+                    <Tag color="green" bordered={false}>
+                      Sí
+                    </Tag>
+                  ) : (
+                    <Tag color="red" bordered={false}>
+                      No
+                    </Tag>
+                  );
+                },
+              },
+              {
                 title: "Acciones",
                 key: "acciones",
                 align: "right",
                 render: (_, record) => (
                   <Button
                     type="primary"
+                    ghost
                     icon={<CalculatorOutlined />}
-                    disabled={record.estadoCaja === "Cerrada"}
+                    disabled={
+                      record.estadoCaja === "Cerrada" ||
+                      record.registrocajas?.[0]?.seRealizoArqueo === false
+                    }
                     onClick={() => abrirModalCadraturaCaja(record)}
                     style={{ color: "#1890ff" }}
                   >

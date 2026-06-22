@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
 
       if (response.status === 200) {
         const userData = response.data.payload;
-        console.log("Usuario autenticado:", userData);
+        //console.log("Usuario autenticado:", userData);
         setUser(userData);
         setIsAuthenticated(true);
         sessionStorage.setItem("userData", JSON.stringify(userData));
