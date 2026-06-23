@@ -18,6 +18,9 @@ import {
   Switch,
   notification,
   Skeleton,
+  Form,
+  Modal,
+  Input,
 } from "antd";
 import {
   BarChartOutlined,
@@ -49,11 +52,19 @@ import {
   obtenerMetricasSucursalDashboard,
 } from "../../services/Metricas.service";
 
+import { actualizarContraseñaAdministracion } from "../../services/Auth.services";
+
 const AdminDashboard = () => {
+  //usuario
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [sucursales, setSucursales] = useState();
   const [metricas, setMetricas] = useState(null);
+
+  const [modalNuevoUsuarioVisible, setModalNuevoUsuarioVisible] =
+    useState(false);
+  const [formNuevoUsuario] = Form.useForm();
 
   /**
    * Modificar
@@ -70,7 +81,7 @@ const AdminDashboard = () => {
   const recuperarMetricas = async () => {
     try {
       const respuesta = await obtenerMetricasDashboard();
-
+      console.log("Respuesta de métricas del dashboard:", respuesta.data);
       if (respuesta.status === 200) {
         setMetricas(respuesta.data);
 
@@ -112,14 +123,14 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
+    if (user.esUsuarioNuevoAdministracion) {
+      setModalNuevoUsuarioVisible(true);
+    }
     recuperarMetricas();
     recuperarMetricasSucursal();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  //usuario
-  const { user } = useAuth();
 
   // Actividad reciente
   // const actividadReciente = [
@@ -314,6 +325,52 @@ const AdminDashboard = () => {
     </Card>
   );
 
+  const handleNuevoUsuarioSubmit = async (values) => {
+    const nuevaContraseña = values.nuevaContraseña;
+    const confirmarContraseña = values.confirmarContraseña;
+    console.log(
+      "Datos del nuevo usuario:",
+      nuevaContraseña,
+      confirmarContraseña,
+    );
+    if (
+      nuevaContraseña !== confirmarContraseña ||
+      !nuevaContraseña ||
+      !confirmarContraseña
+    ) {
+      notification.error({
+        message: "Error",
+        description: "Las contraseñas no coinciden",
+      });
+      return;
+    }
+    try {
+      const response = await actualizarContraseñaAdministracion(
+        user?.email,
+        nuevaContraseña,
+      );
+      if (response.status === 200) {
+        notification.success({
+          message: "Éxito",
+          description: response.data?.message || "Contraseña actualizada",
+        });
+        setModalNuevoUsuarioVisible(false);
+        formNuevoUsuario.resetFields();
+      } else {
+        notification.error({
+          message: "Error",
+          description: response.data?.message || "Intente nuevamente",
+        });
+      }
+    } catch (error) {
+      console.error("Error al crear nuevo usuario:", error);
+      notification.error({
+        message: "Error",
+        description: error.response?.data?.message || "Intente nuevamente",
+      });
+    }
+  };
+
   return (
     <div
       style={{
@@ -372,7 +429,7 @@ const AdminDashboard = () => {
           <CardEstatistica
             loading={!metricas}
             title="Producto Estrella"
-            value={metricas?.productoMasVendido?.nombre || "N/A"}
+            value={metricas?.productoMasVendido?.nombre || "Sin Información"}
             prefix={<TrophyOutlined style={{ color: "#722ed1" }} />}
             valueStyle={{ fontSize: "18px", color: "#722ed1" }}
           >
@@ -392,7 +449,7 @@ const AdminDashboard = () => {
             value={
               metricas?.horaPicoClientes?.hora
                 ? `${metricas.horaPicoClientes.hora}:00`
-                : "N/A"
+                : " "
             }
             prefix={<ClockCircleOutlined style={{ color: "#fa8c16" }} />}
           >
@@ -406,53 +463,7 @@ const AdminDashboard = () => {
         </Col>
       </Row>
       {/* Accesos Rápidos y Actividad Reciente
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={16}>
-          <Card
-            title={
-              <Space>
-                <FireOutlined />
-                <span>Accesos Rápidos</span>
-              </Space>
-            }
-          >
-            <Row gutter={[16, 16]}>
-              {accesoRapido.map((item, index) => (
-                <Col xs={12} sm={12} md={6} key={index}>
-                  <Card
-                    hoverable
-                    onClick={() => navigate(item.path)}
-                    style={{
-                      textAlign: "center",
-                      borderRadius: 8,
-                      border: `2px solid ${item.color}20`,
-                    }}
-                  >
-                    <div style={{ color: item.color, marginBottom: 12 }}>
-                      {item.icon}
-                    </div>
-                    <Title level={5} style={{ margin: "8px 0 4px" }}>
-                      {item.title}
-                    </Title>
-                    <Text
-                      type="secondary"
-                      style={{ fontSize: "12px", display: "block" }}
-                    >
-                      {item.description}
-                    </Text>
-                    <Tag
-                      color={item.color}
-                      style={{ marginTop: 12, borderRadius: 12 }}
-                    >
-                      {item.stats}
-                    </Tag>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          </Card>
-        </Col>
-      </Row> */}
+     
 
       {/* Acceso Directo */}
       <section className="admin-quick-access">
@@ -524,6 +535,60 @@ const AdminDashboard = () => {
           </Card>
         </Col>
       </Row>
+      {/**Modal Nuevo Usuario */}
+      <Modal
+        title="Bienvenido al Sistema de Administración"
+        open={modalNuevoUsuarioVisible}
+        closable={false}
+        footer={null}
+        centered
+      >
+        <p>Por favor, actualize su contraseña para continuar.</p>
+        <Form
+          form={formNuevoUsuario}
+          layout="vertical"
+          onFinish={handleNuevoUsuarioSubmit}
+        >
+          <Form.Item label="Nombre de Usuario">
+            <Input value={user.nombre} disabled />
+          </Form.Item>
+          <Form.Item label="Email">
+            <Input value={user.email} disabled />
+          </Form.Item>
+          <Form.Item
+            label="Nueva Contraseña"
+            name="nuevaContraseña"
+            rules={[
+              {
+                required: true,
+                message: "Por favor ingrese su nueva contraseña",
+              },
+              {
+                min: 6,
+                message: "La contraseña debe tener al menos 6 caracteres",
+              },
+            ]}
+          >
+            <Input.Password placeholder="Ingrese su nueva contraseña" />
+          </Form.Item>
+          <Form.Item
+            label="Confirmar Contraseña"
+            name="confirmarContraseña"
+            dependencies={["nuevaContraseña"]}
+            rules={[
+              {
+                required: true,
+                message: "Por favor confirme su nueva contraseña",
+              },
+            ]}
+          >
+            <Input.Password placeholder="Confirme su nueva contraseña" />
+          </Form.Item>
+          <Button type="primary" htmlType="submit">
+            Actualizar Contraseña
+          </Button>
+        </Form>
+      </Modal>
     </div>
   );
 };

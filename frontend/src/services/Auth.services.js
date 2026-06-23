@@ -122,3 +122,36 @@ export async function inicioSesionCajaAlternativo(
     return error.response;
   }
 }
+
+export async function actualizarContraseñaCaja(email, newContraseñaCaja) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/actualizar/contrasena/caja/nuevo/user`,
+      { email, newContraseñaCaja },
+      { withCredentials: true },
+    );
+    //console.log("Respuesta del servidor en actualizarContraseñaCaja:", response);
+    return response;
+  } catch (error) {
+    //console.log(error);
+    return error.response;
+  }
+}
+
+export async function actualizarContraseñaAdministracion(
+  email,
+  newContraseñaAdmin,
+) {
+  try {
+    const response = await axios.post(
+      `${API_URL}/actualizar/contrasena/administracion/nuevo/user`,
+      { email, newContraseñaAdmin },
+      { withCredentials: true },
+    );
+    //console.log("Respuesta del servidor en actualizarContraseñaAdministracion:", response);
+    return response;
+  } catch (error) {
+    //console.log(error);
+    return error.response;
+  }
+}

@@ -61,7 +61,7 @@ const Login = () => {
     setLoading(true);
     try {
       const usuario = await inicioSesion(values.email, values.password);
-      //console.log("Usuario dentro de login", usuario);
+      console.log("Usuario dentro de login", usuario);
       if (usuario.status === 200) {
         login(usuario.data.datos, usuario.data.token);
         notification.success({

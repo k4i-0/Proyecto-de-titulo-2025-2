@@ -77,6 +77,16 @@ const funcionario = sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
+    esUsuarioNuevoCaja: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
+    esUsuarioNuevoAdministracion: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
     privilegiosFuncionario: {
       type: DataTypes.JSON,
       allowNull: true,

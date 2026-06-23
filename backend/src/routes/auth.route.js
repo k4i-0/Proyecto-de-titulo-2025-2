@@ -14,6 +14,17 @@ router.post("/login-codigo", authController.loginCodigo);
 router.post("/login/caja/alternativo", authController.loginCajaAlternativo);
 router.post("/logout", authController.logout);
 router.get("/yo", verifyToken, authController.miEstado);
+router.post(
+  "/actualizar/contrasena/caja/nuevo/user",
+  verifyToken,
+  authController.actualizarContraseñaCaja,
+);
+
+router.post(
+  "/actualizar/contrasena/administracion/nuevo/user",
+  verifyToken,
+  authController.actualizarContraseñaAdministracion,
+);
 
 //Bitacoras Solo Admin
 router.get(

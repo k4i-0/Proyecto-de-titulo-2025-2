@@ -109,14 +109,17 @@ async function login(req, res) {
       sameSite: "lax", // para evitar ataques CSRF, permite enviar cookies solo en solicitudes del mismo sitio
       maxAge: 24 * 60 * 60 * 1000,
     });
-    //console.log(funcionarioEncontrado);
+
     return res.status(200).json({
       datos: {
         email: funcionarioEncontrado.email,
         nombreRol: funcionarioEncontrado.dataValues.role.dataValues.nombreRol,
         nombre: funcionarioEncontrado.dataValues.nombre,
         tipoSession: funcionarioEncontrado.dataValues.tipoSession,
-        privilegios: funcionarioEncontrado.role.dataValues.privilegios,
+        privilegios: funcionarioEncontrado.role.privilegiosRol,
+        esUsuarioNuevoCaja: funcionarioEncontrado.dataValues.esUsuarioNuevoCaja,
+        esUsuarioNuevoAdministracion:
+          funcionarioEncontrado.dataValues.esUsuarioNuevoAdministracion,
       },
       token: {
         token,
@@ -224,8 +227,11 @@ async function loginCodigo(req, res) {
         email: verificarFuncionario.email,
         nombreRol: verificarFuncionario.dataValues.role.dataValues.nombreRol,
         nombre: verificarFuncionario.dataValues.nombre,
-        privilegios: verificarFuncionario.role.dataValues.privilegios,
+        privilegios: verificarFuncionario.role.dataValues.privilegiosRol,
         tipoSession: "Caja",
+        esUsuarioNuevoCaja: verificarFuncionario.dataValues.esUsuarioNuevoCaja,
+        esUsuarioNuevoAdministracion:
+          verificarFuncionario.dataValues.esUsuarioNuevoAdministracion,
       },
     });
   } catch (error) {
@@ -262,6 +268,13 @@ async function loginCajaAlternativo(req, res) {
       return res.status(401).json({
         code: 1012,
         message: "Usuario inactivo, verifique con el administrador",
+      });
+    }
+    if (!funcionarioEncontrado.passwordAlternativo) {
+      return res.status(401).json({
+        code: 1014,
+        message:
+          "Usuario no tiene contraseña alternativa, verifique con el administrador",
       });
     }
     const passwordMatch = await bcrypt.compare(
@@ -324,7 +337,10 @@ async function loginCajaAlternativo(req, res) {
         nombre: funcionarioEncontrado.dataValues.nombre,
         tipoSession: funcionarioEncontrado.dataValues.tipoSession,
         privilegios:
-          funcionarioEncontrado.dataValues.role.dataValues.privilegios,
+          funcionarioEncontrado.dataValues.role.dataValues.privilegiosRol,
+        esUsuarioNuevoCaja: funcionarioEncontrado.dataValues.esUsuarioNuevoCaja,
+        esUsuarioNuevoAdministracion:
+          funcionarioEncontrado.dataValues.esUsuarioNuevoAdministracion,
       },
       token: {
         token,
@@ -453,6 +469,10 @@ async function miEstado(req, res) {
         nombreRol: verificarFuncionario.dataValues.role.dataValues.nombreRol,
         nombre: verificarFuncionario.dataValues.nombre,
         tipoSession: verificarFuncionario.dataValues.tipoSession,
+        privilegios: verificarFuncionario.role.dataValues.privilegiosRol,
+        esUsuarioNuevoCaja: verificarFuncionario.dataValues.esUsuarioNuevoCaja,
+        esUsuarioNuevoAdministracion:
+          verificarFuncionario.dataValues.esUsuarioNuevoAdministracion,
       },
     });
   } catch (error) {
@@ -478,4 +498,99 @@ async function miEstado(req, res) {
   }
 }
 
-module.exports = { login, logout, miEstado, loginCodigo, loginCajaAlternativo };
+async function actualizarContraseñaCaja(req, res) {
+  try {
+    const { email, newContraseñaCaja } = req.body;
+    console.log("Datos recibidos en actualizarContraseñaCaja:", req.body);
+    if (!email || !newContraseñaCaja) {
+      return res.status(203).json({ message: "Faltan datos" });
+    }
+
+    const funcionarioEncontrado = await Funcionario.findOne({
+      where: { email },
+    });
+
+    if (!funcionarioEncontrado) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    console.log("Contraseña antes", funcionarioEncontrado.passwordCaja);
+    const hashedPassword = await bcrypt.hash(newContraseñaCaja, 10);
+    console.log("Contraseña hasheada:", hashedPassword);
+
+    const updatedFuncionario = await funcionarioEncontrado.update({
+      passwordAlternativo: hashedPassword,
+      esUsuarioNuevoCaja: false,
+    });
+    console.log(
+      "Funcionario actualizado:",
+      updatedFuncionario.dataValues.passwordAlternativo,
+    );
+    if (!updatedFuncionario) {
+      return res
+        .status(500)
+        .json({ message: "Error al actualizar la contraseña" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Contraseña actualizada correctamente" });
+  } catch (error) {
+    console.log("Error en actualizarContraseñaCaja:", error);
+    return res.status(500).json({ message: "Error interno" });
+  }
+}
+
+async function actualizarContraseñaAdministracion(req, res) {
+  try {
+    const { email, newContraseñaAdmin } = req.body;
+    console.log(
+      "Datos recibidos en actualizarContraseñaAdministracion:",
+      req.body,
+    );
+    if (!email || !newContraseñaAdmin) {
+      return res.status(203).json({ message: "Faltan datos" });
+    }
+
+    const funcionarioEncontrado = await Funcionario.findOne({
+      where: { email },
+    });
+
+    if (!funcionarioEncontrado) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    console.log("Contraseña antes", funcionarioEncontrado.password);
+    const hashedPassword = await bcrypt.hash(newContraseñaAdmin, 10);
+    console.log("Contraseña hasheada:", hashedPassword);
+
+    const updatedFuncionario = await funcionarioEncontrado.update({
+      password: hashedPassword,
+      esUsuarioNuevoAdministracion: false,
+    });
+    console.log(
+      "Funcionario actualizado:",
+      updatedFuncionario.dataValues.password,
+    );
+    if (!updatedFuncionario) {
+      return res
+        .status(500)
+        .json({ message: "Error al actualizar la contraseña" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Contraseña actualizada correctamente" });
+  } catch (error) {
+    console.log("Error en actualizarContraseñaAdministracion:", error);
+    return res.status(500).json({ message: "Error interno" });
+  }
+}
+
+module.exports = {
+  login,
+  logout,
+  miEstado,
+  loginCodigo,
+  loginCajaAlternativo,
+  actualizarContraseñaCaja,
+  actualizarContraseñaAdministracion,
+};

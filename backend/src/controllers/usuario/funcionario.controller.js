@@ -209,16 +209,23 @@ exports.crearFuncionario = async (req, res) => {
     ) {
       return res.status(422).json({ error: "Faltan datos obligatorios" });
     }
+    console.log("Datos recibidos para crear funcionario:", req.body);
     //contraseñas iniciales basadas en el rut
-    const passwordInicial = await bcrypt.hash(rut.split("-")[0], 10);
+    const passwordInicial = await bcrypt.hash(rut.split("-")[0], 10); // rut sin guion ni digito verificador
     const passwordCajaInicial = await bcrypt.hash(
-      rut.split("-")[0].slice(-4),
+      rut.split("-")[0].slice(-4), // ultimos 4 digitos del rut antes del guion
       10,
     );
     const passwordAlternativo = await bcrypt.hash(
-      rut.split("-")[0].slice(0, 4),
+      rut.split("-")[0].slice(-4), // ultimos 4 digitos del rut antes del guion
       10,
     );
+
+    console.log("Contraseñas iniciales generadas:", {
+      passwordInicial: rut.split("-")[0],
+      passwordCajaInicial: rut.split("-")[0].slice(-4),
+      passwordAlternativo: rut.split("-")[0].slice(-4),
+    });
 
     //buscar rol por nombre
     const rolEncontrado = await Roles.findOne(
@@ -243,14 +250,13 @@ exports.crearFuncionario = async (req, res) => {
       { where: { rut: rut } },
       { transaction: t },
     );
-    //console.log("Funcionario con mismo RUT encontrado:", rutExistente);
+    console.log("Funcionario con mismo RUT encontrado:", rutExistente);
     // verificar correo
     const emailExistente = await Funcionario.findOne(
       {
         where: {
           email: email,
           estaEliminado: false,
-          idFuncionario: { [Op.ne]: rutExistente.idFuncionario },
         },
       },
       { transaction: t },
@@ -338,11 +344,13 @@ exports.crearFuncionario = async (req, res) => {
         email,
         password: passwordInicial,
         passwordCaja: passwordCajaInicial,
+        passwordAlternativo: passwordAlternativo,
         telefono: `+56${telefono}`,
         direccion,
         privilegiosFuncionario: rolEncontrado.privilegiosRol,
         idRol: rolEncontrado.idRol,
         estado: "Activo",
+        esUsuarioNuevo: true,
       },
       { transaction: t },
     );

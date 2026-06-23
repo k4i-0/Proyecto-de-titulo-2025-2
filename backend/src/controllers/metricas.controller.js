@@ -46,10 +46,10 @@ exports.obtenerMetricasDashboard = async (req, res) => {
 
     let TotalVentasDelDia = 0;
     let idProductoMasVendido = null;
-    let nombreProductoMasVendido = "N/A";
+    let nombreProductoMasVendido = "Sin Información";
     let cantidadProductoMasVendido = 0;
     let cantidadTotalVendida = 0;
-    let horaPico = "N/A";
+    let horaPico = "--";
     let cantidadHoraPico = 0;
 
     if (VentasDelDia && VentasDelDia.length > 0) {
@@ -100,7 +100,7 @@ exports.obtenerMetricasDashboard = async (req, res) => {
         [null, 0],
       );
 
-      horaPico = resultadoHora[0] !== null ? `${resultadoHora[0]}:00` : "N/A";
+      horaPico = resultadoHora[0] !== null ? `${resultadoHora[0]}:00` : "--";
       cantidadHoraPico = resultadoHora[1];
     }
 

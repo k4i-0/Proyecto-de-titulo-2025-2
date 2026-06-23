@@ -1465,16 +1465,74 @@ const GestionColaborador = () => {
         const response = await crearFuncionario(valuesAEnviar);
         console.log("respuesta", response);
         if (response.status === 200 || response.status === 201) {
-          notification.success({
-            message: "Colaborador creado",
-            description: "El colaborador se ha creado correctamente.",
-            duration: 3,
+          Modal.success({
+            title: "¡Colaborador Creado Correctamente!",
+            width: 480,
+            centered: true,
+            okText: "Entendido y Copiado",
+            content: (
+              <div style={{ marginTop: 12 }}>
+                <p>El registro se ha completado con éxito en el sistema.</p>
+
+                <div
+                  style={{
+                    backgroundColor: "#f6ffed",
+                    border: "1px solid #b7eb8f",
+                    padding: "16px",
+                    borderRadius: "8px",
+                    marginTop: 16,
+                  }}
+                >
+                  <h4 style={{ margin: "0 0 8px 0", color: "#389e0d" }}>
+                    Credenciales Iniciales de Acceso:
+                  </h4>
+
+                  <p style={{ margin: "4px 0" }}>
+                    <strong>Contraseña de Caja:</strong>
+                  </p>
+                  <p
+                    style={{
+                      margin: "0 0 12px 0",
+                      color: "#595959",
+                      fontSize: "13px",
+                    }}
+                  >
+                    Los últimos 4 dígitos del mismo (sin el guión).
+                  </p>
+
+                  <p style={{ margin: "4px 0" }}>
+                    <strong>Contraseña de Administración:</strong>
+                  </p>
+                  <p
+                    style={{
+                      margin: "0 0 4px 0",
+                      color: "#595959",
+                      fontSize: "13px",
+                    }}
+                  >
+                    Su rut sin guion ni digito verificador si el colaborador
+                    tiene asignados privilegios de gestión o administración.
+                  </p>
+                </div>
+
+                <p
+                  style={{ marginTop: 16, fontSize: "12px", color: "#8c8c8c" }}
+                >
+                  * Se recomienda solicitar al colaborador el cambio de estas
+                  credenciales tras su primer inicio de sesión por motivos de
+                  seguridad.
+                </p>
+              </div>
+            ),
+            // Disparamos la limpieza del estado e interfaz RECIÉN cuando presionan el botón
+            onOk: () => {
+              obtenerColaboradores();
+              setDrawerVisible(false);
+              form.resetFields();
+              setLoading(false);
+            },
           });
-          //setColaboradores([...colaboradores, response.data]);
-          obtenerColaboradores();
-          setDrawerVisible(false);
-          form.resetFields();
-          setLoading(false);
+
           return;
         }
         notification.error({
@@ -2413,8 +2471,8 @@ const GestionColaborador = () => {
               >
                 <Select placeholder="Seleccione un cargo">
                   {roles.map((rol) => (
-                    <Option key={rol.id} value={rol.nombre}>
-                      {rol.nombre}
+                    <Option key={rol.idRol} value={rol.nombreRol}>
+                      {rol.nombreRol}
                     </Option>
                   ))}
                 </Select>

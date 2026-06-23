@@ -60,6 +60,7 @@ import {
   EyeOutlined,
   TagOutlined,
   InboxOutlined,
+  UserAddOutlined,
 } from "@ant-design/icons";
 
 import {
@@ -97,6 +98,8 @@ import { buscarTodasSucursales } from "../../services/functions/Sucursales.js";
 import { buscarTodosProductos } from "../../services/functions/Productos.js";
 
 import { crearDescuentoUnico } from "../../services/ventas/descuento.service.js";
+
+import { actualizarContraseñaCaja } from "../../services/Auth.services.js";
 
 const METODO_PAGO_DIFERIDO = "Pago diferido";
 
@@ -166,6 +169,9 @@ export default function MenuPrincipalCaja() {
     useState(false);
   const [stockProducto, setStockProducto] = useState(null);
 
+  const [modalNuevoUsuarioVisible, setModalNuevoUsuarioVisible] =
+    useState(false);
+
   const [formDescuentoProducto] = Form.useForm();
   const [formAutorizacion] = Form.useForm();
   const [formVentaProducto] = Form.useForm();
@@ -178,6 +184,7 @@ export default function MenuPrincipalCaja() {
   const [formRecuperarVentaCaja] = Form.useForm();
   const [formRetiros] = Form.useForm();
   const [formConsultarStock] = Form.useForm();
+  const [formNuevoUsuario] = Form.useForm();
 
   const inputRef = useRef(null);
 
@@ -290,6 +297,11 @@ export default function MenuPrincipalCaja() {
 
   useEffect(() => {
     const deviceID = localStorage.getItem("deviceID");
+    //console.log("Usuario actual:", user.esUsuarioNuevoCaja);
+    if (user.esUsuarioNuevoCaja) {
+      setModalNuevoUsuarioVisible(true);
+    }
+
     if (!deviceID) {
       obtenerSucursales();
       setModalRegistroCaja(true);
@@ -1641,6 +1653,49 @@ export default function MenuPrincipalCaja() {
       }
     } catch (error) {
       console.error("Error al consultar stock:", error);
+      notification.error({
+        message: "Error",
+        description: error.response?.data?.message || "Intente nuevamente",
+      });
+    }
+  };
+
+  // ------ Funcion nuevo usuario -------
+  const handleNuevoUsuarioSubmit = async (values) => {
+    const nuevaContraseña = values.newPassword;
+    const confirmarContraseña = values.confirmPassword;
+    console.log(
+      "Datos del nuevo usuario:",
+      nuevaContraseña,
+      confirmarContraseña,
+    );
+    if (nuevaContraseña !== confirmarContraseña) {
+      notification.error({
+        message: "Error",
+        description: "Las contraseñas no coinciden",
+      });
+      return;
+    }
+    try {
+      const response = await actualizarContraseñaCaja(
+        user?.email,
+        nuevaContraseña,
+      );
+      if (response.status === 200) {
+        notification.success({
+          message: "Éxito",
+          description: response.data?.message || "Contraseña actualizada",
+        });
+        setModalNuevoUsuarioVisible(false);
+        formNuevoUsuario.resetFields();
+      } else {
+        notification.error({
+          message: "Error",
+          description: response.data?.message || "Intente nuevamente",
+        });
+      }
+    } catch (error) {
+      console.error("Error al crear nuevo usuario:", error);
       notification.error({
         message: "Error",
         description: error.response?.data?.message || "Intente nuevamente",
@@ -4759,6 +4814,78 @@ export default function MenuPrincipalCaja() {
             </p>
           </div>
         )}
+      </Modal>
+      {/** Modal Nuevo Usuario */}
+      <Modal
+        open={modalNuevoUsuarioVisible}
+        closable={false}
+        title={
+          <Space>
+            <UserAddOutlined style={{ color: "#1890ff" }} />
+            Bienvenido al Sistema
+          </Space>
+        }
+        width={500}
+        centered
+        footer={null}
+      >
+        <p>Por favor, cambia tu contraseña para continuar.</p>
+        <Form
+          form={formNuevoUsuario}
+          layout="vertical"
+          onFinish={handleNuevoUsuarioSubmit}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Nombre"
+                name="nombre"
+                initialValue={user.nombre || ""}
+              >
+                <Input placeholder="Ingresa tu nombre completo" disabled />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="email"
+                name="email"
+                initialValue={user.email || ""}
+              >
+                <Input placeholder="Ingresa tu email" disabled />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item
+            label="Nueva Contraseña"
+            name="newPassword"
+            rules={[
+              {
+                required: true,
+                message: "Por favor ingresa una contraseña",
+              },
+            ]}
+          >
+            <Input.Password
+              placeholder="Ingresa tu contraseña"
+              autoComplete="new-password"
+            />
+          </Form.Item>
+          <Form.Item
+            label="Ingresa nuevamente la contraseña"
+            name="confirmPassword"
+          >
+            <Input.Password
+              placeholder="Confirma tu contraseña"
+              autoComplete="new-password"
+            />
+          </Form.Item>
+          <Button type="primary" htmlType="submit">
+            Actualizar Contraseña
+          </Button>
+          <Button onClick={logout} style={{ marginLeft: 8 }}>
+            Salir
+          </Button>
+        </Form>
       </Modal>
     </div>
   );
