@@ -34,10 +34,6 @@ const proveedor = sequelize.define(
       type: DataTypes.DATE,
       allowNull: false,
     },
-    rubro: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-    },
     giro: {
       type: DataTypes.STRING(100),
       allowNull: true,
@@ -52,7 +48,7 @@ const proveedor = sequelize.define(
   {
     tableName: "proveedor",
     timestamps: false,
-  }
+  },
 );
 
 module.exports = proveedor;

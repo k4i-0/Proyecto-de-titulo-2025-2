@@ -186,44 +186,41 @@ export default function Navegacion({
                         handleNavigate("/admin/gestion/compra_directa"),
                     },
                     {
-                      key: "ingreso_manual",
-                      label: "Ingreso Manual",
+                      key: "gestion_despachos",
+                      label: "Gestión de Despachos",
                       icon: <InboxOutlined />,
-                      onClick: () =>
-                        handleNavigate(
-                          "/admin/gestion/ingreso_manual_inventario",
-                        ),
+                      onClick: () => handleNavigate("/admin/gestion/despachos"),
                     },
                   ],
                 },
-                {
-                  key: "recepcion_proveedores",
-                  label: "Recepción de Proveedores",
-                  icon: <ReconciliationOutlined />,
-                  children: [
-                    {
-                      key: "recepcionar_ordenes_compra",
-                      label: "Recepcionar Ordenes De Compra",
-                      icon: <InboxOutlined />,
-                      onClick: () =>
-                        handleNavigate(
-                          "/admin/gestion/recepcionar_orden_compra",
-                        ),
-                    },
-                    {
-                      key: "devolucion_ordenes_compra",
-                      label: "Devolución Órdenes De Compra",
-                      icon: <InboxOutlined />,
-                      disabled: true,
-                    },
-                    {
-                      key: "incidentes_ordenes_compra",
-                      label: "Incidentes Órdenes De Compra",
-                      icon: <InboxOutlined />,
-                      disabled: true,
-                    },
-                  ],
-                },
+                // {
+                //   key: "recepcion_proveedores",
+                //   label: "Recepción de Proveedores",
+                //   icon: <ReconciliationOutlined />,
+                //   children: [
+                //     {
+                //       key: "recepcionar_ordenes_compra",
+                //       label: "Recepcionar Ordenes De Compra",
+                //       icon: <InboxOutlined />,
+                //       onClick: () =>
+                //         handleNavigate(
+                //           "/admin/gestion/recepcionar_orden_compra",
+                //         ),
+                //     },
+                //     {
+                //       key: "devolucion_ordenes_compra",
+                //       label: "Devolución Órdenes De Compra",
+                //       icon: <InboxOutlined />,
+                //       disabled: true,
+                //     },
+                //     {
+                //       key: "incidentes_ordenes_compra",
+                //       label: "Incidentes Órdenes De Compra",
+                //       icon: <InboxOutlined />,
+                //       disabled: true,
+                //     },
+                //   ],
+                // },
               ],
             },
             {

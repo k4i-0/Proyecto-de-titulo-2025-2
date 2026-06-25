@@ -57,7 +57,7 @@ export default function AgregarBodega({
         idSucursal: idSucursal || "",
         nombre: "",
         capacidad: null, // Usar null o undefined para placeholders numéricos
-        estado: "",
+        estado: "En Funcionamiento", // Valor por defecto
       });
       setMensaje("");
       setError(false);
@@ -161,7 +161,7 @@ export default function AgregarBodega({
         form={form}
         layout="vertical"
         onFinish={handleSubmit}
-        autoComplete="off"
+        //autoComplete="off"
       >
         <Row gutter={16}>
           <Col span={12}>
@@ -198,12 +198,11 @@ export default function AgregarBodega({
             <Form.Item
               label="Estado"
               name="estado"
-              rules={[
-                { required: true, message: "Por favor seleccione un estado" },
-              ]}
+              initialValue="En Funcionamiento"
             >
               <Select
                 placeholder="Seleccione un estado"
+                disabled
                 options={[
                   { value: "En Funcionamiento", label: "En Funcionamiento" },
                   { value: "En Mantenimiento", label: "En Mantenimiento" },

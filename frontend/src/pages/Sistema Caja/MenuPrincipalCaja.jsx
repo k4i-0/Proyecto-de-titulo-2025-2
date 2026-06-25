@@ -85,6 +85,7 @@ import {
   imprimirComprobanteRetiro,
   consultarStockProductos,
   imprimirArqueoCaja,
+  consultarSiSePuedeVenderProducto,
 } from "../../services/ventas/ventas.service.js";
 
 import {
@@ -336,6 +337,17 @@ export default function MenuPrincipalCaja() {
       //console.log("Respuesta de búsqueda de producto por código:", respuesta);
       if (respuesta.status === 200) {
         const producto = respuesta.data;
+        if (
+          Number(producto.precioVenta) <= 0 ||
+          producto.precioVenta === null ||
+          producto.precioVenta === undefined
+        ) {
+          notification.error({
+            message: "Precio inválido",
+            description: `El precio del producto ${producto.nombre} es inválido.`,
+          });
+          return;
+        }
         const nuevaCantidad =
           Number(formVentaProducto.getFieldValue("cantidad")) || 1;
 
@@ -343,7 +355,7 @@ export default function MenuPrincipalCaja() {
           const indiceExistente = listaActual.findIndex(
             (p) => p.idProducto === producto.id,
           );
-
+          console.log("Indice existente:", indiceExistente);
           if (indiceExistente >= 0) {
             const productoExistente = listaActual[indiceExistente];
             const cantidadTotal = productoExistente.cantidad + nuevaCantidad;
@@ -356,6 +368,17 @@ export default function MenuPrincipalCaja() {
               ...desc,
               montoDescontado: desc.montoDescontado * cantidadTotal,
             }));
+            console.log(
+              "Valor",
+              Number(producto.precioVenta) * Number(cantidadTotal),
+            );
+            if (Number(producto.precioVenta) * Number(cantidadTotal) <= 0) {
+              notification.error({
+                message: "Precio inválido",
+                description: `El precio del producto ${producto.nombre} es inválido.`,
+              });
+              return;
+            }
 
             const listaActualizada = [...listaActual];
             listaActualizada[indiceExistente] = {
@@ -378,6 +401,17 @@ export default function MenuPrincipalCaja() {
               ...desc,
               montoDescontado: desc.montoDescontado * nuevaCantidad,
             }));
+            console.log(
+              "Valor",
+              Number(producto.precioVenta) * Number(nuevaCantidad),
+            );
+            if (Number(producto.precioVenta) * Number(nuevaCantidad) <= 0) {
+              notification.error({
+                message: "Precio inválido",
+                description: `El precio del producto ${producto.nombre} es inválido.`,
+              });
+              return;
+            }
 
             const nuevoProducto = {
               idProducto: producto.id,
@@ -421,6 +455,7 @@ export default function MenuPrincipalCaja() {
   };
 
   // Transformamos el estado "productos" en filas visuales para Ant Design
+
   const filasParaTabla = productos.reduce((acumulador, prod) => {
     // 1. Fila principal del producto (mostrando el subtotal original sin rebaja)
     acumulador.push({
@@ -538,9 +573,10 @@ export default function MenuPrincipalCaja() {
       }
       notification.error({
         // Usamos el 'message' del backend como título principal
-        message: response?.data?.message || "Error",
+        message: response?.data?.message || response?.data?.error || "Error",
+        duration: 5,
         // Usamos el 'detalle' del backend como la descripción larga
-        description: response?.data?.detalle || "No se pudo registrar la caja",
+        //description: response?.data?.detalle || "No se pudo registrar la caja",
       });
     } catch (error) {
       const errorData = error.response?.data || error.data || {};
@@ -619,31 +655,97 @@ export default function MenuPrincipalCaja() {
 
       if (respuesta.status === 200) {
         const producto = respuesta.data;
+        if (
+          Number(producto.precioVenta) <= 0 ||
+          producto.precioVenta === null ||
+          producto.precioVenta === undefined
+        ) {
+          notification.error({
+            message: "Precio inválido",
+            description: `El precio del producto ${producto.nombre} es inválido.`,
+          });
+          return;
+        }
 
-        const nuevaCantidad = formVentaProducto.getFieldValue("cantidad") || 1;
+        const nuevaCantidad =
+          Number(formVentaProducto.getFieldValue("cantidad")) || 1;
+        setProductos((listaActual) => {
+          const indiceExistente = listaActual.findIndex(
+            (p) => p.idProducto === producto.id,
+          );
+          console.log("Indice existente:", indiceExistente);
+          if (indiceExistente >= 0) {
+            const productoExistente = listaActual[indiceExistente];
+            const cantidadTotal = productoExistente.cantidad + nuevaCantidad;
+            const descuentoTotalLinea =
+              (producto.montoDescuento || 0) * cantidadTotal;
 
-        const descuentoTotalLinea =
-          (producto.montoDescuento || 0) * nuevaCantidad;
+            const detalleDescuentosMultiplicados = (
+              producto.descuentosAplicados || []
+            ).map((desc) => ({
+              ...desc,
+              montoDescontado: desc.montoDescontado * cantidadTotal,
+            }));
+            console.log(
+              "Valor",
+              Number(producto.precioVenta) * Number(cantidadTotal),
+            );
+            if (Number(producto.precioVenta) * Number(cantidadTotal) <= 0) {
+              notification.error({
+                message: "Precio inválido",
+                description: `El precio del producto ${producto.nombre} es inválido.`,
+              });
+              return;
+            }
 
-        const detalleDescuentosMultiplicados = (
-          producto.descuentosAplicados || []
-        ).map((desc) => ({
-          ...desc,
-          montoDescontado: desc.montoDescontado * nuevaCantidad,
-        }));
+            const listaActualizada = [...listaActual];
+            listaActualizada[indiceExistente] = {
+              ...productoExistente,
+              cantidad: cantidadTotal,
+              descuento: descuentoTotalLinea,
+              descuentosAplicados: detalleDescuentosMultiplicados,
+              subtotal:
+                producto.precioVenta * cantidadTotal - descuentoTotalLinea,
+            };
 
-        const nuevoProducto = {
-          idProducto: producto.id,
-          codigo: producto.codigo,
-          nombre: producto.nombre,
-          precio: producto.precioVenta,
-          cantidad: nuevaCantidad,
-          descuento: descuentoTotalLinea,
-          subtotal: producto.precioVenta * nuevaCantidad - descuentoTotalLinea,
-          descuentosAplicados: detalleDescuentosMultiplicados,
-        };
+            return listaActualizada;
+          } else {
+            const descuentoTotalLinea =
+              (producto.montoDescuento || 0) * nuevaCantidad;
 
-        setProductos((listaActual) => [...listaActual, nuevoProducto]);
+            const detalleDescuentosMultiplicados = (
+              producto.descuentosAplicados || []
+            ).map((desc) => ({
+              ...desc,
+              montoDescontado: desc.montoDescontado * nuevaCantidad,
+            }));
+            console.log(
+              "Valor",
+              Number(producto.precioVenta) * Number(nuevaCantidad),
+            );
+            if (Number(producto.precioVenta) * Number(nuevaCantidad) <= 0) {
+              notification.error({
+                message: "Precio inválido",
+                description: `El precio del producto ${producto.nombre} es inválido.`,
+              });
+              return;
+            }
+
+            const nuevoProducto = {
+              idProducto: producto.id,
+              codigo: producto.codigo,
+              nombre: producto.nombre,
+              precio: producto.precioVenta,
+              cantidad: nuevaCantidad,
+              descuento: descuentoTotalLinea,
+              descuentosAplicados: detalleDescuentosMultiplicados,
+              subtotal:
+                producto.precioVenta * nuevaCantidad - descuentoTotalLinea,
+            };
+
+            return [...listaActual, nuevoProducto];
+          }
+        });
 
         setTerminoBusqueda("");
         setModalBusquedaProducto(false);
@@ -860,7 +962,32 @@ export default function MenuPrincipalCaja() {
     });
   };
 
-  const confirmarVenta = () => {
+  const confirmarVenta = async () => {
+    for (const producto of productos) {
+      try {
+        const stockDisponible = await consultarSiSePuedeVenderProducto(
+          producto.codigo,
+          producto.cantidad,
+        );
+        console.log("Respuesta de stock disponible:", stockDisponible.data);
+        if (stockDisponible.status !== 200) {
+          notification.error({
+            message: stockDisponible.data.message || "Stock insuficiente",
+            //description: `No hay suficiente stock para el producto ${producto.nombre}. Cantidad solicitada: ${producto.cantidad}.`,
+          });
+          setModalMetodoPago(false);
+          limpiarEstadoPago();
+          return;
+        }
+      } catch (error) {
+        notification.error({
+          message: "Error al verificar stock",
+          description: `No se pudo verificar el stock del producto ${producto.nombre}. Intente nuevamente.`,
+        });
+
+        return;
+      }
+    }
     setTotalPendientePagar(total);
     setInfoPagosDiferidos([]);
     setMontoVuelto(0);
@@ -871,7 +998,7 @@ export default function MenuPrincipalCaja() {
 
   const finalizarVentaExito = () => {
     notification.success({ message: "Venta registrada exitosamente" });
-    limpiarVenta(); // Tu función de limpieza global
+    limpiarVenta();
     setModalMetodoPago(false);
     limpiarEstadoPago();
     formVentaProducto.resetFields();
@@ -1324,6 +1451,7 @@ export default function MenuPrincipalCaja() {
           message: res.data.message || "Caja bloqueada",
         });
         obtenerDatosCaja(deviceID);
+        limpiarVenta();
         return;
       }
       notification.error({
@@ -1663,7 +1791,7 @@ export default function MenuPrincipalCaja() {
   // ------ Funcion nuevo usuario -------
   const handleNuevoUsuarioSubmit = async (values) => {
     const nuevaContraseña = values.newPassword;
-    const confirmarContraseña = values.confirmPassword;
+    const confirmarContraseña = values.reNewPassword;
     console.log(
       "Datos del nuevo usuario:",
       nuevaContraseña,
@@ -1795,7 +1923,10 @@ export default function MenuPrincipalCaja() {
                   key: "2",
                   icon: <AccountBookOutlined />,
                   label: "Arqueo de caja",
-                  disabled: cajaNoRegistrada || !cajaAperturada,
+                  disabled:
+                    cajaNoRegistrada ||
+                    !cajaAperturada ||
+                    informacionCaja.estadoCaja === "Bloqueada",
                   onClick: () => abrirModalArqueoCaja(),
                 },
                 // {
@@ -1828,7 +1959,10 @@ export default function MenuPrincipalCaja() {
                 {
                   key: "6",
                   icon: <HistoryOutlined />,
-                  disabled: cajaNoRegistrada || !cajaAperturada,
+                  disabled:
+                    cajaNoRegistrada ||
+                    !cajaAperturada ||
+                    informacionCaja.estadoCaja === "Bloqueada",
                   onClick: abrirModalVentasDelDia,
                   label: "Historial Ventas Sesión",
                 },
@@ -1836,7 +1970,10 @@ export default function MenuPrincipalCaja() {
                   key: "7",
                   icon: <FileSearchOutlined />,
                   label: "Retiros y Consignaciones",
-                  disabled: cajaNoRegistrada || !cajaAperturada,
+                  disabled:
+                    cajaNoRegistrada ||
+                    !cajaAperturada ||
+                    informacionCaja.estadoCaja === "Bloqueada",
                   onClick: abrirModalRetiros,
                 },
                 user?.nombreRol === "Administrador" && {
@@ -1852,6 +1989,7 @@ export default function MenuPrincipalCaja() {
                   disabled:
                     cajaNoRegistrada ||
                     !cajaAperturada ||
+                    informacionCaja.estadoCaja === "Bloqueada" ||
                     clavesSeleccionadas.length === 0,
                   onClick: solicitarAutorizacion,
                 },
@@ -1859,7 +1997,10 @@ export default function MenuPrincipalCaja() {
                   key: "10",
                   icon: <FileSearchOutlined />,
                   label: "Consultar Stock",
-                  disabled: cajaNoRegistrada || !cajaAperturada,
+                  disabled:
+                    cajaNoRegistrada ||
+                    !cajaAperturada ||
+                    informacionCaja.estadoCaja === "Bloqueada",
                   onClick: abrirModalConsultaStock,
                 },
               ]}
@@ -2039,6 +2180,11 @@ export default function MenuPrincipalCaja() {
                         rules={[{ required: true, message: "Ingresa ID" }]}
                       >
                         <Input
+                          disabled={
+                            cajaNoRegistrada ||
+                            !cajaAperturada ||
+                            informacionCaja.estadoCaja === "Bloqueada"
+                          }
                           placeholder="N° de venta"
                           prefix={
                             <NumberOutlined style={{ color: "#bfbfbf" }} />
@@ -2048,6 +2194,11 @@ export default function MenuPrincipalCaja() {
 
                       <Form.Item style={{ marginEnd: 0 }}>
                         <Button
+                          disabled={
+                            cajaNoRegistrada ||
+                            !cajaAperturada ||
+                            informacionCaja.estadoCaja === "Bloqueada"
+                          }
                           type="default"
                           icon={<SearchOutlined />}
                           htmlType="submit"
@@ -2379,7 +2530,11 @@ export default function MenuPrincipalCaja() {
                           //value={codigoProducto}
                           //   onChange={(e) => setCodigoProducto(e.target.value)}
                           //   onPressEnter={agregarProducto}
-                          disabled={cajaNoRegistrada || !cajaAperturada}
+                          disabled={
+                            cajaNoRegistrada ||
+                            !cajaAperturada ||
+                            informacionCaja.estadoCaja === "Bloqueada"
+                          }
                           ref={inputRef}
                           placeholder="Escribe o escanea el código"
                           prefix={<BarcodeOutlined />}
@@ -2403,7 +2558,11 @@ export default function MenuPrincipalCaja() {
                           //onChange={(valor) => setCantidadProducto(valor || 1)}
                           style={{ width: "100%" }}
                           size="large"
-                          disabled={cajaNoRegistrada || !cajaAperturada}
+                          disabled={
+                            cajaNoRegistrada ||
+                            !cajaAperturada ||
+                            informacionCaja.estadoCaja === "Bloqueada"
+                          }
                         />
                       </Form.Item>
                     </Col>
@@ -2414,7 +2573,11 @@ export default function MenuPrincipalCaja() {
                           icon={<PlusOutlined />}
                           htmlType="submit"
                           size="large"
-                          disabled={cajaNoRegistrada || !cajaAperturada}
+                          disabled={
+                            cajaNoRegistrada ||
+                            !cajaAperturada ||
+                            informacionCaja.estadoCaja === "Bloqueada"
+                          }
                         >
                           Agregar
                         </Button>
@@ -2427,7 +2590,11 @@ export default function MenuPrincipalCaja() {
                         block
                         icon={<ShopOutlined />}
                         onClick={() => setModalBusquedaProducto(true)}
-                        disabled={cajaNoRegistrada || !cajaAperturada}
+                        disabled={
+                          cajaNoRegistrada ||
+                          !cajaAperturada ||
+                          informacionCaja.estadoCaja === "Bloqueada"
+                        }
                       >
                         Buscar producto
                       </Button>
@@ -4865,19 +5032,19 @@ export default function MenuPrincipalCaja() {
               },
             ]}
           >
-            <Input.Password
-              placeholder="Ingresa tu contraseña"
-              autoComplete="new-password"
-            />
+            <Input.Password placeholder="Ingresa tu contraseña" />
           </Form.Item>
           <Form.Item
-            label="Ingresa nuevamente la contraseña"
-            name="confirmPassword"
+            label="Confirmar Contraseña"
+            name="reNewPassword"
+            rules={[
+              {
+                required: true,
+                message: "Por favor confirma tu contraseña",
+              },
+            ]}
           >
-            <Input.Password
-              placeholder="Confirma tu contraseña"
-              autoComplete="new-password"
-            />
+            <Input.Password placeholder="Confirma tu contraseña" />
           </Form.Item>
           <Button type="primary" htmlType="submit">
             Actualizar Contraseña

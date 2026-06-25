@@ -2232,7 +2232,8 @@ exports.guardarArqueoCaja = async (req, res) => {
       ],
     });
 
-    let montoTeorico = 0;
+    let montoTeoricoEfectivo = 0;
+    let montoTeoricoDebito = 0;
 
     ventasCaja.forEach((venta) => {
       //console.log("ventas caja para arqueo:", venta);
@@ -2240,16 +2241,34 @@ exports.guardarArqueoCaja = async (req, res) => {
         venta.DetallePagos || venta.detallepagos || venta.DetallePago || [];
 
       pagos.forEach((detalle) => {
-        const montoPagado = Number(detalle.montoPagado || 0);
-        montoTeorico += montoPagado;
+        if (detalle.metodoPago === "Efectivo") {
+          const montoPagado = Number(detalle.montoPagado || 0);
+          montoTeoricoEfectivo += montoPagado;
+        }
+        if (
+          detalle.metodoPago === "Debito" ||
+          detalle.metodoPago === "Débito"
+        ) {
+          const montoPagado = Number(detalle.montoPagado || 0);
+          montoTeoricoDebito += montoPagado;
+        }
       });
     });
+    console.log("valores", {
+      montoCierreReal,
+      montoTeoricoEfectivo,
+      registroAbiertoMontoApertura: registroAbierto.montoInicial,
+    });
+    const diferencia =
+      Number(montoTeoricoEfectivo) +
+      Number(registroAbierto.montoInicial) -
+      Number(montoCierreReal);
 
-    const diferencia = montoCierreReal - montoTeorico;
-
+    const montoCierreTeorico =
+      Number(montoTeoricoEfectivo) + Number(registroAbierto.montoInicial);
     await registroAbierto.update({
       montoCierreReal: montoCierreReal,
-      montoCierreTeorico: montoTeorico,
+      montoCierreTeorico: montoCierreTeorico,
       cantidadMontoCierreReal: cantidadMontoCierreReal,
       diferenciaCierre: diferencia,
       fechaGeneracionArqueo: new Date(),
@@ -3554,5 +3573,48 @@ exports.consultarStockProductos = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Error al consultar stock de productos" });
+  }
+};
+
+exports.consultarSiSePuedeVenderProducto = async (req, res) => {
+  try {
+    const { codigoProducto, cantidad } = req.params;
+    const stockProducto = await Inventario.findOne({
+      attributes: ["stock", "estado"],
+      include: [
+        {
+          model: Producto,
+          where: { codigo: codigoProducto },
+          attributes: ["nombre", "precioVenta"],
+        },
+      ],
+    });
+    if (!stockProducto) {
+      return res
+        .status(404)
+        .json({ message: "Producto no encontrado en inventario" });
+    }
+
+    if (
+      Number(stockProducto.stock) < Number(cantidad) ||
+      Number(stockProducto.stock) - Number(cantidad) < 0
+    ) {
+      return res
+        .status(400)
+        .json({ message: "No hay suficiente stock para la venta" });
+    }
+
+    return res.status(200).json({
+      message: "Producto disponible para la venta",
+      stock: stockProducto.stock,
+      estado: stockProducto.estado,
+      nombre: stockProducto.producto.nombre,
+      precioVenta: stockProducto.producto.precioVenta,
+    });
+  } catch (error) {
+    console.error("Error al consultar si se puede vender el producto:", error);
+    return res
+      .status(500)
+      .json({ message: "Error al consultar si se puede vender el producto" });
   }
 };

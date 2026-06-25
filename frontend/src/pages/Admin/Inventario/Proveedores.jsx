@@ -1012,7 +1012,7 @@ export default function Proveedor() {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
+              {/* <Form.Item
                 label="Rubro"
                 name="rubro"
                 rules={[
@@ -1020,48 +1020,40 @@ export default function Proveedor() {
                 ]}
               >
                 <Input placeholder="Ej: Alimentos, Tecnología, etc." />
+              </Form.Item> */}
+              <Form.Item
+                label="Giro"
+                name="giro"
+                rules={[
+                  { required: true, message: "Por favor seleccione el giro" },
+                ]}
+              >
+                <Select
+                  placeholder="Seleccione el giro del proveedor"
+                  showSearch
+                  virtual={false}
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                  options={girosSII.map((giro) => ({
+                    value: giro.codigo,
+                    label: `${giro.codigo} - ${giro.nombre}`,
+                  }))}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                label="Estado"
-                name="estado"
-                rules={[
-                  { required: true, message: "Por favor seleccione el estado" },
-                ]}
-                initialValue="Activo"
-              >
-                <Select placeholder="Seleccione el estado">
+              <Form.Item label="Estado" name="estado" initialValue="Activo">
+                <Select placeholder="Seleccione el estado" disabled>
                   <Select.Option value="Activo">Activo</Select.Option>
                   <Select.Option value="Inactivo">Inactivo</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
           </Row>
-
-          <Form.Item
-            label="Giro"
-            name="giro"
-            rules={[
-              { required: true, message: "Por favor seleccione el giro" },
-            ]}
-          >
-            <Select
-              placeholder="Seleccione el giro del proveedor"
-              showSearch
-              virtual={false}
-              optionFilterProp="children"
-              filterOption={(input, option) =>
-                (option?.label ?? "")
-                  .toLowerCase()
-                  .includes(input.toLowerCase())
-              }
-              options={girosSII.map((giro) => ({
-                value: giro.codigo,
-                label: `${giro.codigo} - ${giro.nombre}`,
-              }))}
-            />
-          </Form.Item>
 
           <Form.Item>
             <Row gutter={8} justify="end">
@@ -1637,12 +1629,13 @@ export default function Proveedor() {
                 {proveedorDetalle.proveedor.email}
               </Descriptions.Item>
 
-              <Descriptions.Item label="Rubro">
-                {proveedorDetalle.proveedor.rubro}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Giro">
-                {proveedorDetalle.proveedor.giro}
+              <Descriptions.Item label="Giro" span={2}>
+                {proveedorDetalle.proveedor.giro} -{" "}
+                {
+                  girosSII.find(
+                    (g) => g.codigo === proveedorDetalle.proveedor.giro,
+                  )?.nombre
+                }
               </Descriptions.Item>
 
               <Descriptions.Item label="Fecha Ingreso">

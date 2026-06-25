@@ -462,13 +462,13 @@ export default function DetalleCompraDirecta() {
             <Button
               icon={<EditOutlined />}
               onClick={abrirEdicion}
-              disabled={["anulada", "recepcionado"].includes(compra.estado)}
+              disabled={["anulada", "recepcionada"].includes(compra.estado)}
             >
               Editar
             </Button>
             <Button
               danger
-              disabled={["anulada", "recepcionado"].includes(compra.estado)}
+              disabled={["anulada", "recepcionada"].includes(compra.estado)}
               onClick={() => setModalAnularVisible(true)}
             >
               Anular

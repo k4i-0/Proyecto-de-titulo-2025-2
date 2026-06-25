@@ -2,6 +2,7 @@ import React from "react";
 import { Drawer, Descriptions, Card, Divider, Typography } from "antd";
 
 export default function DrawerDetalleDespachos({ open, onClose, ordenDrawer }) {
+  console.log("ordenDrawer", ordenDrawer);
   return (
     <Drawer
       title="Despachos asociados a la orden de compra"

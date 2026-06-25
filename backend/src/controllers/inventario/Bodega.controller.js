@@ -24,6 +24,17 @@ exports.createBodega = async (req, res) => {
     return res.status(422).json({ error: "Bodega ya existe" });
   }
 
+  //buscar si hay mas de una bodega
+  const bodegasExistentes = await Bodega.findAll({
+    where: { idSucursal },
+  });
+  if (bodegasExistentes.length >= 1) {
+    return res.status(422).json({
+      error:
+        "Ya existe una bodega para esta sucursal. No se pueden crear más bodegas.",
+    });
+  }
+
   //verificar que exista la sucursal
   const busquedaSucursal = await Sucursal.findByPk(idSucursal);
   if (!busquedaSucursal) {

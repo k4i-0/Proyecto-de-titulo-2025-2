@@ -871,6 +871,7 @@ exports.obtenerOrdenCompraVendedorPorNombreOrden = async (req, res) => {
                 "idDespacho",
                 "codigoDespacho",
                 "fechaDespacho",
+                "tipoDespacho",
                 "tipoDocumento",
                 "estado",
               ],
@@ -1270,9 +1271,9 @@ exports.recepcionarOrdenCompraSucursalVendedor = async (req, res) => {
     //crear detalle de despacho
     for (const p of productos) {
       const rDetalleDespacho = await crearDetalleDespacho(
-        p.cantidadSolicitada,
-        p.cantidadRecibida,
-        p.cantidadRechazada,
+        Number(p.cantidadSolicitada),
+        Number(p.cantidadRecibida),
+        Number(p.cantidadRechazada),
         observaciones || "Detalle de recepción generado automáticamente",
         despacho.idDespacho,
         t,
@@ -1292,7 +1293,7 @@ exports.recepcionarOrdenCompraSucursalVendedor = async (req, res) => {
       //crear lote para cada producto
       const rLote = await crearLote(
         "disponible",
-        p.cantidadRecibida,
+        Number(p.cantidadRecibida),
         null,
         p.idProducto,
         rDetalleDespachoData.idDetalledespacho,
@@ -1317,7 +1318,7 @@ exports.recepcionarOrdenCompraSucursalVendedor = async (req, res) => {
         //crear nuevo registro en inventario con la cantidad recibida
         const nuevoRegistroInventario = await Inventario.create(
           {
-            stock: p.cantidadRecibida,
+            stock: Number(p.cantidadRecibida),
             estado: "Bueno",
             idProducto: p.idProducto,
             idBodega: bodegasSucursal.idBodega,
@@ -1405,7 +1406,6 @@ exports.obtenerOrdenesCompraAdmin = async (req, res) => {
             "aprobada",
             "rechazada",
             "anulada",
-            "recepcionada",
           ],
         },
       },

@@ -28,7 +28,7 @@ async function crearLote(
       },
       { transaction: transaccion },
     );
-
+    console.log("Nuevo lote creado:", nuevoLote.toJSON());
     //actualizar bodega
     const bodega = await Bodega.findByPk(idBodega);
     if (!bodega) {

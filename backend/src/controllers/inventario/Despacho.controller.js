@@ -5,6 +5,8 @@ const OrdenCompra = require("../../models/inventario/OrdenCompra");
 const Lote = require("../../models/inventario/Lote");
 const Producto = require("../../models/inventario/Productos");
 const Proveedor = require("../../models/inventario/Proveedor");
+const Sucursal = require("../../models/inventario/Sucursal");
+const Funcionarios = require("../../models/Usuarios/Funcionario");
 
 exports.obtenerDespachosPorOrden = async (req, res) => {
   try {
@@ -89,6 +91,30 @@ exports.obtenerTodoDespachos = async (req, res) => {
             },
           ],
         },
+        {
+          model: OrdenCompra,
+          attributes: ["nombreOrden"],
+          include: [
+            {
+              model: CrearOrdenCompra,
+              include: [
+                {
+                  model: Proveedor,
+                  attributes: ["nombre", "rut"],
+                },
+                {
+                  model: Sucursal,
+                  attributes: ["nombre", "direccion"],
+                },
+                {
+                  model: Funcionarios,
+                  as: "administrador",
+                  attributes: ["nombre", "apellido", "rut"],
+                },
+              ],
+            },
+          ],
+        },
       ],
     });
 
@@ -130,17 +156,6 @@ exports.obtenerDespachosPorRutProveedor = async (req, res) => {
     const despachos = await Despachos.findAll({
       include: [
         {
-          model: OrdenCompra,
-          attributes: ["nombreOrden"],
-          include: [
-            {
-              model: CrearOrdenCompra,
-              attributes: [],
-              where: { idProveedor: proveedor.idProveedor },
-            },
-          ],
-        },
-        {
           model: DetalleDespacho,
           include: [
             {
@@ -149,6 +164,30 @@ exports.obtenerDespachosPorRutProveedor = async (req, res) => {
                 {
                   model: Producto,
                   attributes: ["codigo", "nombre", "precioVenta"],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: OrdenCompra,
+          attributes: ["nombreOrden"],
+          include: [
+            {
+              model: CrearOrdenCompra,
+              include: [
+                {
+                  model: Proveedor,
+                  attributes: ["nombre", "rut"],
+                },
+                {
+                  model: Sucursal,
+                  attributes: ["nombre", "direccion"],
+                },
+                {
+                  model: Funcionarios,
+                  as: "administrador",
+                  attributes: ["nombre", "apellido", "rut"],
                 },
               ],
             },

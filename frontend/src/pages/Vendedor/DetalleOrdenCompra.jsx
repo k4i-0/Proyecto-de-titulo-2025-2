@@ -165,6 +165,7 @@ export default function DetalleOrdenCompra() {
         });
         handleCerrarRecepcion();
         setModalLoading(false);
+        window.location.reload();
         return;
       }
       notification.error({
@@ -284,9 +285,11 @@ export default function DetalleOrdenCompra() {
           extra={
             <>
               <Button
-                disabled={["recepcionada", "recibida con faltante"].includes(
-                  ordenCompra?.ordencompra?.estado,
-                )}
+                disabled={[
+                  "pendiente de aprobacion",
+                  "recepcionada",
+                  "recibida con faltante",
+                ].includes(ordenCompra?.ordencompra?.estado)}
                 variant="solid"
                 color="green"
                 onClick={() => handleAbrirModalRecepcion()}

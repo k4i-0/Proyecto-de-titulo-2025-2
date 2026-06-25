@@ -1791,21 +1791,21 @@ export default function CompraDirecta() {
                   />
                 ),
               },
-              {
-                title: "Fecha Vencimiento",
-                key: "fechaVencimiento",
-                align: "center",
-                width: 160,
-                render: (_, __, index) => (
-                  <DatePicker
-                    style={{ width: "100%" }}
-                    placeholder="Opcional"
-                    onChange={(date) =>
-                      handleFechaVencimientoChange(index, date)
-                    }
-                  />
-                ),
-              },
+              // {
+              //   title: "Fecha Vencimiento",
+              //   key: "fechaVencimiento",
+              //   align: "center",
+              //   width: 160,
+              //   render: (_, __, index) => (
+              //     <DatePicker
+              //       style={{ width: "100%" }}
+              //       placeholder="Opcional"
+              //       onChange={(date) =>
+              //         handleFechaVencimientoChange(index, date)
+              //       }
+              //     />
+              //   ),
+              // },
               {
                 title: "Observaciones",
                 key: "observaciones",

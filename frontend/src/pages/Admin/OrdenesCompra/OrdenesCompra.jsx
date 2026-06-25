@@ -457,9 +457,13 @@ export default function OrdenesCompra() {
         cantidadRechazada: Number(detalle.cantidadRechazada) || 0,
       })),
     };
-
     try {
-      const respuesta = await crearOrdenCompraSucursalVendedor(payloadRecepcion);
+      const respuesta =
+        await crearOrdenCompraSucursalVendedor(payloadRecepcion);
+      console.log(
+        "Respuesta al registrar la recepción del despacho:",
+        respuesta,
+      );
       if (respuesta.status === 200) {
         notification.success({
           message: "Recepción registrada",
@@ -511,7 +515,8 @@ export default function OrdenesCompra() {
                 cantidadRecibida:
                   acumulador.cantidadRecibida +
                   (Number(
-                    detalleDespacho.cantidadRecibida ?? detalleDespacho.cantidad,
+                    detalleDespacho.cantidadRecibida ??
+                      detalleDespacho.cantidad,
                   ) || 0),
                 cantidadRechazada:
                   acumulador.cantidadRechazada +
@@ -525,7 +530,9 @@ export default function OrdenesCompra() {
             idProducto: detalle?.producto?.idProducto,
             productoNombre: detalle?.producto?.nombre || "",
             productoCodigo:
-              detalle?.producto?.codigo || detalle?.producto?.codigoProducto || "",
+              detalle?.producto?.codigo ||
+              detalle?.producto?.codigoProducto ||
+              "",
             cantidadSolicitada: Number(detalle?.cantidad) || 0,
             cantidadRecibida: detalleDespachoPorProducto.cantidadRecibida,
             cantidadRechazada: detalleDespachoPorProducto.cantidadRechazada,

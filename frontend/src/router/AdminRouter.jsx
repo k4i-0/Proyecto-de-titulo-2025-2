@@ -15,6 +15,7 @@ import OrdenesCompra from "../pages/Admin/OrdenesCompra/OrdenesCompra.jsx";
 import Bitacoras from "../pages/Admin/Bitacoras.jsx";
 import IngresoManual from "../pages/Admin/OrdenesCompra/IngresoManual.jsx";
 import DetalleCompraDirecta from "../pages/Admin/OrdenesCompra/DetalleCompraDirecta.jsx";
+import GestionDespachos from "../pages/Admin/GestionDespachosAdmin.jsx";
 
 //Ventas
 import GestionDescuentos from "../pages/Admin/ventas/GestionDescuentos.jsx";
@@ -48,6 +49,7 @@ const AdminRouter = () => {
           path="gestion/compra_directa/detalle"
           element={<DetalleCompraDirecta />}
         />
+        <Route path="gestion/despachos" element={<GestionDespachos />} />
         <Route
           path="gestion/ingreso_manual_inventario"
           element={<IngresoManual />}

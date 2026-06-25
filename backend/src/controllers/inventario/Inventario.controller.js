@@ -9,6 +9,8 @@ const { Op } = require("sequelize");
 
 const { crearLote } = require("../../services/inventario/lote.service");
 
+const { generarCodigo } = require("../../function/generarCodigo");
+
 exports.createInventario = async (req, res) => {
   const { nombre, fechaCreacion, encargado, stock, idBodega, idProducto } =
     req.body;
@@ -236,7 +238,7 @@ exports.ingresoManualProductos = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const productos = req.body;
-    console.log("Datos de front", productos);
+    //console.log("Datos de front", productos);
     for (const item of productos) {
       const { idProducto, cantidad, idSucursal, idBodega } = item;
       //comprobaciones
@@ -258,18 +260,13 @@ exports.ingresoManualProductos = async (req, res) => {
       }
       const bodega = await Bodega.findByPk(idBodega, { transaction: t });
       if (!bodega) {
-        console.log(`Bodega con ID ${idBodega} no encontrada`);
+        //console.log(`Bodega con ID ${idBodega} no encontrada`);
         await t.rollback();
         return res.status(422).json({
           error: `Bodega con ID ${idBodega} no encontrada`,
         });
       }
-      console.log(
-        "Datos bodega:",
-        typeof bodega.idSucursal,
-        "Datos sucursal:",
-        typeof idSucursal,
-      );
+
       if (Number(bodega.idSucursal) !== Number(idSucursal)) {
         console.log(
           `La bodega con ID ${idBodega} no pertenece a la sucursal con ID ${idSucursal}`,
@@ -279,13 +276,29 @@ exports.ingresoManualProductos = async (req, res) => {
         });
       }
       //crear lote
+      //   const nuevoLote = await Lote.create(
+      //   {
+      //     codigoLote: await generarCodigo("lote", t),
+      //     fechaCreacion: new Date(),
+      //     fechaVencimiento:
+      //       fechaVencimiento ||
+      //       new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+      //     estado: "creado",
+      //     cantidad: cantidad,
+      //     idProducto: idProducto,
+      //     idDetalleDespacho:  null,
+      //     idBodega: bodega.idBodega || null,
+      //   },
+      //   { transaction: t },
+      // );
+
       const nLote = await crearLote(
         "disponible",
         cantidad,
         null,
         idProducto,
         null,
-        idBodega,
+        bodega.idBodega,
         t,
       );
       if (nLote.code !== 201) {
@@ -303,13 +316,13 @@ exports.ingresoManualProductos = async (req, res) => {
       });
       if (inventario) {
         await inventario.update(
-          { stock: inventario.stock + cantidad },
+          { stock: Number(inventario.stock) + Number(cantidad) },
           { transaction: t },
         );
       } else {
         await Inventario.create(
           {
-            stock: cantidad,
+            stock: Number(cantidad),
             idBodega,
             idProducto,
             estado: "Bueno",

@@ -92,7 +92,7 @@ export default function GestionCajas() {
     const deviceID = localStorage.getItem("deviceID");
     try {
       const response = await buscarDatosCuadraturaCaja(deviceID);
-      //console.log("Respuesta de datos de cuadratura de caja:", response.data);
+      console.log("Respuesta de datos de cuadratura de caja:", response.data);
       if (response.status === 200) {
         setDatosCuadraturaCaja(response.data);
       } else {

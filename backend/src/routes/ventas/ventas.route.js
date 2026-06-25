@@ -79,4 +79,9 @@ router.get(
   "/imprimir/arqueo/caja/:idArqueo/:deviceID",
   ventasController.imprimirArqueoCaja,
 );
+
+router.get(
+  "/consultar/stock/producto/venta/:codigoProducto/:cantidad",
+  ventasController.consultarSiSePuedeVenderProducto,
+);
 module.exports = router;

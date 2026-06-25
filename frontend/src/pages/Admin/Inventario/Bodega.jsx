@@ -95,13 +95,13 @@ export default function Bodega() {
     cargarDatosBodega();
   }, [cargarDatosBodega]);
 
-  const handleVerEstantes = (bodegaId) => {
-    if (bodegaParaEstantesId === bodegaId) {
-      setBodegaParaEstantesId(null);
-    } else {
-      setBodegaParaEstantesId(bodegaId);
-    }
-  };
+  // const handleVerEstantes = (bodegaId) => {
+  //   if (bodegaParaEstantesId === bodegaId) {
+  //     setBodegaParaEstantesId(null);
+  //   } else {
+  //     setBodegaParaEstantesId(bodegaId);
+  //   }
+  // };
 
   const handleCrear = () => {
     setError(false);

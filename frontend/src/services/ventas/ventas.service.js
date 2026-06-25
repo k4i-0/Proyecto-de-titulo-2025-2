@@ -470,3 +470,26 @@ export async function imprimirArqueoCaja(idArqueo, deviceID) {
     return error.response;
   }
 }
+
+export async function consultarSiSePuedeVenderProducto(
+  codigoProducto,
+  cantidad,
+) {
+  try {
+    const response = await axios.get(
+      `${API_URL}/consultar/stock/producto/venta/${codigoProducto}/${cantidad}`,
+      {
+        withCredentials: true,
+      },
+    );
+    //console.log("Respuesta de consulta de stock de producto para venta:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error al consultar stock de producto para venta:", error);
+    console.error(
+      "Detalle del error:",
+      error.response?.data?.error || error.message,
+    );
+    return error.response;
+  }
+}

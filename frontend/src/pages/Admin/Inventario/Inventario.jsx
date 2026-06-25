@@ -493,7 +493,10 @@ export default function Inventario() {
   ];
 
   // Estadísticas rápidas
-  const totalStock = inventarios.reduce((s, i) => s + (i.stock || 0), 0);
+  const totalStock = inventarios.reduce(
+    (s, i) => Number(s) + Number(i.stock || 0),
+    0,
+  );
   const sinStock = inventarios.filter((i) => (i.stock || 0) === 0).length;
   const bajoStock = inventarios.filter(
     (i) => (i.stock || 0) > 0 && (i.stock || 0) <= (i.stockMinimo || 0),

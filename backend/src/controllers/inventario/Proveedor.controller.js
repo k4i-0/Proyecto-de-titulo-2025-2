@@ -42,8 +42,8 @@ exports.getProveedorVendedor = async (req, res) => {
 };
 
 exports.createProveedor = async (req, res) => {
-  const { rut, nombre, telefono, email, rubro, giro, estado } = req.body;
-  if (!rut || !nombre || !telefono || !email || !rubro || !giro || !estado) {
+  const { rut, nombre, telefono, email, giro, estado } = req.body;
+  if (!rut || !nombre || !telefono || !email || !giro || !estado) {
     return res
       .status(422)
       .json({ error: "Faltan datos obligatorios para crear el proveedor" });
@@ -62,7 +62,6 @@ exports.createProveedor = async (req, res) => {
       telefono,
       email,
       fechaIngreso: new Date(),
-      rubro,
       giro,
       estado,
     });

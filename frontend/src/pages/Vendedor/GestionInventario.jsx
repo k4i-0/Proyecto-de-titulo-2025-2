@@ -235,6 +235,7 @@ export default function GestionInventario() {
           type="link"
           icon={<EyeOutlined />}
           onClick={() => {
+            console.log("inventario seleccionado:", record);
             setInventarioSeleccionado(record);
             setDrawerVisible(true);
           }}
@@ -246,7 +247,7 @@ export default function GestionInventario() {
   ];
 
   const totalStock = tableData.reduce(
-    (acc, item) => acc + (item.stock || 0),
+    (acc, item) => acc + Number(item.stock || 0),
     0,
   );
   const sinStock = tableData.filter((item) => (item.stock || 0) === 0).length;
@@ -530,9 +531,9 @@ export default function GestionInventario() {
             <Descriptions.Item label="Marca">
               {inventarioSeleccionado.productoMarca}
             </Descriptions.Item>
-            <Descriptions.Item label="Sucursal">
-              {inventarioSeleccionado.sucursalNombre}
-            </Descriptions.Item>
+            {/* <Descriptions.Item label="Sucursal">
+              {inventarioSeleccionado.sucursal}
+            </Descriptions.Item> */}
             <Descriptions.Item label="Bodega">
               {inventarioSeleccionado.bodegaNombre}
             </Descriptions.Item>

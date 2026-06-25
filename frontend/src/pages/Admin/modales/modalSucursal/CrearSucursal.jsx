@@ -209,11 +209,9 @@ export default function AgregarSucursal({
                 label="Estado"
                 name="estadoSucursal"
                 initialValue="Abierta"
-                rules={[
-                  { required: true, message: "Por favor seleccione un estado" },
-                ]}
               >
                 <Select
+                  disabled
                   placeholder="Seleccione un estado"
                   options={[
                     { value: "Abierta", label: "Abierta" },
